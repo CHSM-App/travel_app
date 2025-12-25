@@ -1,21 +1,25 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:travel_agency_app/Screens/login.dart';
 
 void main() {
-  runApp(ProviderScope(child: MainApp()));
+  runApp(const MyApp());
 }
 
-class MainApp extends StatelessWidget {
-  const MainApp({super.key});
+
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
-      home: Scaffold(
-        body: Center(
-          child: Text('Hello World!'),
-        ),
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      title: 'Red Login Page',
+      theme: ThemeData(
+        primarySwatch: Colors.red,
       ),
+      home: const LoginPage(),
     );
   }
 }
+ 
+
