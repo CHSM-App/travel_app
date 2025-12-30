@@ -1,4 +1,4 @@
-import 'package:flutter_riverpod/legacy.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:travel_agency_app/core/storage/token_storage.dart';
 
 class TokenState {

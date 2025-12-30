@@ -1,0 +1,399 @@
+// import 'package:flutter/material.dart';
+// import 'package:intl/intl.dart';
+
+// class TripBookingForm extends StatefulWidget {
+//   const TripBookingForm({super.key});
+
+//   @override
+//   State<TripBookingForm> createState() => _TripBookingFormState();
+// }
+
+// class _TripBookingFormState extends State<TripBookingForm> {
+//   final _formKey = GlobalKey<FormState>();
+
+//   final vehicleId = TextEditingController();
+//   final driverId = TextEditingController();
+//   final pickup = TextEditingController();
+//   final drop = TextEditingController();
+//   final distance = TextEditingController();
+//   final fuelRequired = TextEditingController();
+//   final tollCharges = TextEditingController();
+//   final repairingCharges = TextEditingController();
+//   final driverCharges = TextEditingController();
+//   final status = TextEditingController(text: "Booked");
+//   final customerId = TextEditingController();
+//   final tripCharges = TextEditingController();
+
+//   final startDate = TextEditingController();
+//   final endDate = TextEditingController();
+//   final bookingDate = TextEditingController(
+//     text: DateFormat("yyyy-MM-dd").format(DateTime.now()),
+//   );
+
+//   Future<void> pickDate(TextEditingController controller) async {
+//     final date = await showDatePicker(
+//       context: context,
+//       firstDate: DateTime(2020),
+//       lastDate: DateTime(2050),
+//       initialDate: DateTime.now(),
+//     );
+
+//     if (date != null) {
+//       final time = await showTimePicker(
+//           context: context, initialTime: TimeOfDay.now());
+
+//       controller.text = DateFormat("yyyy-MM-dd HH:mm")
+//           .format(DateTime(date.year, date.month, date.day, time!.hour, time.minute));
+//     }
+//   }
+
+//   @override
+//   Widget build(BuildContext context) {
+//     return Scaffold(
+//       appBar: AppBar(
+//         title: const Text("Add Trip Booking"),
+//       ),
+//       body: Padding(
+//         padding: const EdgeInsets.all(14),
+//         child: Form(
+//           key: _formKey,
+//           child: ListView(
+//             children: [
+
+//               const Text("Trip Details",
+//                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+
+//               const SizedBox(height: 10),
+
+//               _number(vehicleId, "Vehicle ID"),
+//               _number(driverId, "Driver ID"),
+//               _text(pickup, "Pickup Location"),
+//               _text(drop, "Drop Location"),
+
+//               Row(
+//                 children: [
+//                   Expanded(child: _number(distance, "Distance (KM)")),
+//                   const SizedBox(width: 10),
+//                   Expanded(child: _number(fuelRequired, "Fuel Required")),
+//                 ],
+//               ),
+
+//               Row(
+//                 children: [
+//                   Expanded(child: _number(tollCharges, "Toll Charges")),
+//                   const SizedBox(width: 10),
+//                   Expanded(child: _number(repairingCharges, "Repair Charges")),
+//                 ],
+//               ),
+
+//               _number(driverCharges, "Driver Charges"),
+//               _number(tripCharges, "Trip Charges"),
+//               _number(customerId, "Customer ID"),
+
+//               const SizedBox(height: 16),
+
+//               _dateField(startDate, "Start Date & Time"),
+//               _dateField(endDate, "End Date & Time"),
+
+//               _text(status, "Status"),
+
+//               const SizedBox(height: 16),
+
+//               _readonly(bookingDate, "Booking Date (Today)"),
+
+//               const SizedBox(height: 20),
+
+//               FilledButton.icon(
+//                 icon: const Icon(Icons.save),
+//                 label: const Text("Save Booking"),
+//                 onPressed: () {
+//                   if (_formKey.currentState!.validate()) {
+//                     ScaffoldMessenger.of(context).showSnackBar(
+//                       const SnackBar(content: Text("Form Submitted")),
+//                     );
+//                   }
+//                 },
+//               )
+//             ],
+//           ),
+//         ),
+//       ),
+//     );
+//   }
+
+//   Widget _text(TextEditingController c, String label) {
+//     return Padding(
+//       padding: const EdgeInsets.symmetric(vertical: 6),
+//       child: TextFormField(
+//         controller: c,
+//         decoration: InputDecoration(
+//           labelText: label,
+//           border: const OutlineInputBorder(),
+//         ),
+//         validator: (v) => v!.isEmpty ? "Required" : null,
+//       ),
+//     );
+//   }
+
+//   Widget _number(TextEditingController c, String label) {
+//     return Padding(
+//       padding: const EdgeInsets.symmetric(vertical: 6),
+//       child: TextFormField(
+//         controller: c,
+//         keyboardType: TextInputType.number,
+//         decoration: InputDecoration(
+//           labelText: label,
+//           border: const OutlineInputBorder(),
+//         ),
+//         validator: (v) => v!.isEmpty ? "Required" : null,
+//       ),
+//     );
+//   }
+
+//   Widget _dateField(TextEditingController c, String label) {
+//     return Padding(
+//       padding: const EdgeInsets.symmetric(vertical: 6),
+//       child: TextFormField(
+//         controller: c,
+//         readOnly: true,
+//         decoration: InputDecoration(
+//           labelText: label,
+//           suffixIcon: const Icon(Icons.calendar_month),
+//           border: const OutlineInputBorder(),
+//         ),
+//         onTap: () => pickDate(c),
+//         validator: (v) => v!.isEmpty ? "Select date" : null,
+//       ),
+//     );
+//   }
+
+//   Widget _readonly(TextEditingController c, String label) {
+//     return TextFormField(
+//       controller: c,
+//       readOnly: true,
+//       decoration: InputDecoration(
+//         labelText: label,
+//         border: const OutlineInputBorder(),
+//       ),
+//     );
+//   }
+// }
+
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
+import 'package:travel_agency_app/domain/models/tripbooking_info.dart';
+import 'package:travel_agency_app/presentation/providers/viewmodel_provider.dart';
+
+
+class TripBookingForm extends ConsumerStatefulWidget {
+  const TripBookingForm({super.key});
+
+  @override
+  ConsumerState<TripBookingForm> createState() => _TripBookingFormState();
+}
+
+class _TripBookingFormState extends ConsumerState<TripBookingForm> {
+  final _formKey = GlobalKey<FormState>();
+
+  final vehicleId = TextEditingController();
+  final driverId = TextEditingController();
+  final pickup = TextEditingController();
+  final drop = TextEditingController();
+  final distance = TextEditingController();
+  final fuelRequired = TextEditingController();
+  final tollCharges = TextEditingController();
+  final repairingCharges = TextEditingController();
+  final driverCharges = TextEditingController();
+  final status = TextEditingController(text: "Booked");
+  final customerId = TextEditingController();
+  final tripCharges = TextEditingController();
+
+  final startDate = TextEditingController();
+  final endDate = TextEditingController();
+  final bookingDate = TextEditingController(
+    text: DateFormat("yyyy-MM-dd").format(DateTime.now()),
+  );
+
+  Future<void> pickDate(TextEditingController controller) async {
+    final date = await showDatePicker(
+      context: context,
+      firstDate: DateTime(2020),
+      lastDate: DateTime(2050),
+      initialDate: DateTime.now(),
+    );
+
+    if (date != null) {
+      final time = await showTimePicker(
+          context: context, initialTime: TimeOfDay.now());
+
+      controller.text = DateFormat("yyyy-MM-dd HH:mm")
+          .format(DateTime(date.year, date.month, date.day, time!.hour, time.minute));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final state = ref.watch(tripBookingViewModelProvider);
+
+    ref.listen(tripBookingViewModelProvider, (prev, next) {
+      if (next.error != null) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(next.error!)));
+      }
+
+      if (next.data != null && prev?.data != next.data) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Trip booking added successfully")),
+        );
+        Navigator.pop(context);
+      }
+    });
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text("Add Trip Booking"),
+      ),
+      body: Stack(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(14),
+            child: Form(
+              key: _formKey,
+              child: ListView(
+                children: [
+                  const Text("Trip Details",
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 10),
+
+                  _number(vehicleId, "Vehicle ID"),
+                  _number(driverId, "Driver ID"),
+                  _text(pickup, "Pickup Location"),
+                  _text(drop, "Drop Location"),
+
+                  Row(
+                    children: [
+                      Expanded(child: _number(distance, "Distance (KM)")),
+                      const SizedBox(width: 10),
+                      Expanded(child: _number(fuelRequired, "Fuel Required")),
+                    ],
+                  ),
+
+                  Row(
+                    children: [
+                      Expanded(child: _number(tollCharges, "Toll Charges")),
+                      const SizedBox(width: 10),
+                      Expanded(child: _number(repairingCharges, "Repair Charges")),
+                    ],
+                  ),
+
+                  _number(driverCharges, "Driver Charges"),
+                  _number(tripCharges, "Trip Charges"),
+                  _number(customerId, "Customer ID"),
+
+                  const SizedBox(height: 16),
+
+                  _dateField(startDate, "Start Date & Time"),
+                  _dateField(endDate, "End Date & Time"),
+
+                  _text(status, "Status"),
+
+                  const SizedBox(height: 16),
+
+                  _readonly(bookingDate, "Booking Date (Today)"),
+
+                  const SizedBox(height: 20),
+
+                  FilledButton.icon(
+                    icon: const Icon(Icons.save),
+                    label: const Text("Save Booking"),
+                    onPressed: state.isLoading
+                        ? null
+                        : () async {
+                            if (_formKey.currentState!.validate()) {
+                              final booking = TripBooking(
+                                vehicleid: int.parse(vehicleId.text),
+                                driverid: int.parse(driverId.text),
+                                pickuplocation: pickup.text,
+                                droplocation: drop.text,
+                                distance: double.parse(distance.text),
+                                fuelrequired: double.parse(fuelRequired.text),
+                                tollcharges: double.parse(tollCharges.text),
+                                repairingcharges: double.parse(repairingCharges.text),
+                                drivercharges: double.parse(driverCharges.text),
+                                tripcharges: double.parse(tripCharges.text),
+                                customerid: int.parse(customerId.text),
+                                startDateTime: DateTime.parse(startDate.text),
+                                endDateTime: DateTime.parse(endDate.text),
+                                status: status.text,
+                                bookingdate: DateTime.parse(bookingDate.text),
+                              );
+
+                              await ref
+                                  .read(tripBookingViewModelProvider.notifier)
+                                  .addTripBooking(booking);
+                            }
+                          },
+                  )
+                ],
+              ),
+            ),
+          ),
+
+          if (state.isLoading)
+            const Center(child: CircularProgressIndicator()),
+        ],
+      ),
+    );
+  }
+
+  Widget _text(TextEditingController c, String label) => Padding(
+        padding: const EdgeInsets.symmetric(vertical: 6),
+        child: TextFormField(
+          controller: c,
+          decoration: InputDecoration(
+            labelText: label,
+            border: const OutlineInputBorder(),
+          ),
+          validator: (v) => v!.isEmpty ? "Required" : null,
+        ),
+      );
+
+  Widget _number(TextEditingController c, String label) => Padding(
+        padding: const EdgeInsets.symmetric(vertical: 6),
+        child: TextFormField(
+          controller: c,
+          keyboardType: TextInputType.number,
+          decoration: InputDecoration(
+            labelText: label,
+            border: const OutlineInputBorder(),
+          ),
+          validator: (v) => v!.isEmpty ? "Required" : null,
+        ),
+      );
+
+  Widget _dateField(TextEditingController c, String label) => Padding(
+        padding: const EdgeInsets.symmetric(vertical: 6),
+        child: TextFormField(
+          controller: c,
+          readOnly: true,
+          decoration: InputDecoration(
+            labelText: label,
+            suffixIcon: const Icon(Icons.calendar_month),
+            border: const OutlineInputBorder(),
+          ),
+          onTap: () => pickDate(c),
+          validator: (v) => v!.isEmpty ? "Select date" : null,
+        ),
+      );
+
+  Widget _readonly(TextEditingController c, String label) =>
+      TextFormField(
+        controller: c,
+        readOnly: true,
+        decoration: InputDecoration(
+          labelText: label,
+          border: const OutlineInputBorder(),
+        ),
+      );
+}

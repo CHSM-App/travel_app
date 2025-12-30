@@ -2,6 +2,7 @@
 import 'package:dio/dio.dart';
 import 'package:retrofit/retrofit.dart';
 import 'package:travel_agency_app/core/storage/constant.dart';
+import 'package:travel_agency_app/domain/models/tripbooking_info.dart';
 
 part 'api_service.g.dart';
 
@@ -10,4 +11,10 @@ abstract class ApiService {
   factory ApiService(Dio dio, {String baseUrl}) = _ApiService;
   @GET('/')
   Future<HttpResponse> checkHealth(); 
+
+  // @POST('/insert/Addtripbooking')
+  // Future<HttpResponse> addTripBooking(@Body() Map<String, dynamic> tripBooking); 
+
+    @POST("insert/Addtripbooking")
+  Future<dynamic> addTripBooking(@Body() TripBooking tripBooking); 
 }

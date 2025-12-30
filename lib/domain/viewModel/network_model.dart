@@ -4,7 +4,8 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 
 import 'package:dio/dio.dart';
-import 'package:flutter_riverpod/legacy.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import 'package:travel_agency_app/data/api/api_service.dart';
 class NetworkState {
   final bool isConnected;

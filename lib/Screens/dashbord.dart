@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:travel_agency_app/Screens/new_booking.dart';
+import 'package:travel_agency_app/Screens/add_tripbooking.dart';
 import 'package:travel_agency_app/Screens/add_vehicle.dart';
 
 
@@ -149,7 +149,7 @@ Widget _actionButton(String title, IconData icon, BuildContext context) {
         case 'New Booking':
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (_) => NewTourBookingPage()),
+            MaterialPageRoute(builder: (_) => TripBookingForm()),
           );
           break;
 
@@ -163,28 +163,28 @@ Widget _actionButton(String title, IconData icon, BuildContext context) {
         case 'Drivers':
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (_) => NewTourBookingPage()),
+            MaterialPageRoute(builder: (_) => TripBookingForm()),
           );
           break;
 
         case 'Customers':
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (_) => NewTourBookingPage()),
+            MaterialPageRoute(builder: (_) => TripBookingForm()),
           );
           break;
 
         case 'Reports':
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (_) => NewTourBookingPage()),
+            MaterialPageRoute(builder: (_) => TripBookingForm()),
           );
           break;
 
         case 'Settings':
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (_) => NewTourBookingPage()),
+            MaterialPageRoute(builder: (_) => TripBookingForm()),
           );
           break;
       }
