@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:travel_agency_app/domain/models/drivers.dart';
 import 'package:travel_agency_app/domain/models/tripbooking_info.dart';
+import 'package:travel_agency_app/domain/viewModel/tripbooking_viewmodel.dart';
 import 'package:travel_agency_app/presentation/providers/viewmodel_provider.dart';
+
 
 class TripBookingForm extends ConsumerStatefulWidget {
   const TripBookingForm({super.key});
@@ -14,8 +17,7 @@ class TripBookingForm extends ConsumerStatefulWidget {
 class _TripBookingFormState extends ConsumerState<TripBookingForm> {
   final _formKey = GlobalKey<FormState>();
 
-  final vehicleId = TextEditingController();
-  final driverId = TextEditingController();
+  /// TEXT FIELDS
   final pickup = TextEditingController();
   final drop = TextEditingController();
   final distance = TextEditingController();
@@ -24,38 +26,48 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm> {
   final repairingCharges = TextEditingController();
   final driverCharges = TextEditingController();
   final tripCharges = TextEditingController();
-  final customerId = TextEditingController();
 
-  /// STATUS SHOULD BE STRING
-  final status = TextEditingController(text: "Booked");
-
-  final startDate = TextEditingController();
-  final endDate = TextEditingController();
   final bookingDate = TextEditingController(
     text: DateFormat("yyyy-MM-dd").format(DateTime.now()),
   );
 
+  /// DROPDOWN SELECTED IDS
+  int? selectedDriverId;
+  int? selectedVehicleId;
+  int? selectedCustomerId;
+
+  /// DATE
+  final startDate = TextEditingController();
+  final endDate = TextEditingController();
   DateTime? startDateValue;
   DateTime? endDateValue;
 
+  @override
+  void initState() {
+    super.initState();
+    Future.microtask(() {
+      final notifier =
+          ref.read(tripBookingViewModelProvider.notifier);
+      notifier.driverList();
+    //  notifier.vehicleList();
+     // notifier.customerList();
+    });
+  }
+
   Future<void> pickDate(
-    TextEditingController controller,
-    bool isStart,
-  ) async {
+      TextEditingController controller, bool isStart) async {
     final date = await showDatePicker(
       context: context,
       firstDate: DateTime(2020),
       lastDate: DateTime(2050),
       initialDate: DateTime.now(),
     );
-
     if (date == null) return;
 
     final time = await showTimePicker(
       context: context,
       initialTime: TimeOfDay.now(),
     );
-
     if (time == null) return;
 
     final selected = DateTime(
@@ -66,7 +78,8 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm> {
       time.minute,
     );
 
-    controller.text = DateFormat("yyyy-MM-dd HH:mm").format(selected);
+    controller.text =
+        DateFormat("yyyy-MM-dd HH:mm").format(selected);
 
     if (isStart) {
       startDateValue = selected;
@@ -84,10 +97,9 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm> {
         ScaffoldMessenger.of(context)
             .showSnackBar(SnackBar(content: Text(next.error!)));
       }
-
       if (next.data != null && prev?.data != next.data) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Trip booking added successfully")),
+          const SnackBar(content: Text("Trip booking added")),
         );
         Navigator.pop(context);
       }
@@ -103,14 +115,13 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm> {
               key: _formKey,
               child: ListView(
                 children: [
-                  const Text(
-                    "Trip Details",
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 10),
+                  _vehicleDropdown(state),
+                   const SizedBox(height: 12),
+                  _driverDropdown(state),
+                   const SizedBox(height: 12),
+                  _customerDropdown(state),
+                   const SizedBox(height: 12),
 
-                  _number(vehicleId, "Vehicle ID"),
-                  _number(driverId, "Driver ID"),
                   _text(pickup, "Pickup Location"),
                   _text(drop, "Drop Location"),
 
@@ -127,23 +138,16 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm> {
                       Expanded(child: _number(tollCharges, "Toll Charges")),
                       const SizedBox(width: 10),
                       Expanded(
-                          child: _number(
-                              repairingCharges, "Repair Charges")),
+                          child:
+                              _number(repairingCharges, "Repair Charges")),
                     ],
                   ),
 
                   _number(driverCharges, "Driver Charges"),
                   _number(tripCharges, "Trip Charges"),
-                  _number(customerId, "Customer ID"),
-
-                  const SizedBox(height: 16),
 
                   _dateField(startDate, "Start Date & Time", true),
                   _dateField(endDate, "End Date & Time", false),
-
-                  _text(status, "Status"),
-
-                  const SizedBox(height: 16),
 
                   _readonly(bookingDate, "Booking Date"),
 
@@ -156,31 +160,32 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm> {
                         ? null
                         : () async {
                             if (!_formKey.currentState!.validate()) return;
-
                             if (startDateValue == null ||
                                 endDateValue == null) {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(
-                                    content:
-                                        Text("Please select start & end date")),
+                                    content: Text("Select start & end date")),
                               );
                               return;
                             }
 
                             final booking = TripBooking(
-                              vehicleid: int.parse(vehicleId.text),
-                              driverid: int.parse(driverId.text),
+                              vehicleid: selectedVehicleId!,
+                              driverid: selectedDriverId!,
+                              customerid: selectedCustomerId!,
                               pickuplocation: pickup.text,
                               droplocation: drop.text,
                               distance: double.parse(distance.text),
-                              fuelrequired: double.parse(fuelRequired.text),
-                              tollcharges: double.parse(tollCharges.text),
+                              fuelrequired:
+                                  double.parse(fuelRequired.text),
+                              tollcharges:
+                                  double.parse(tollCharges.text),
                               repairingcharges:
                                   double.parse(repairingCharges.text),
                               drivercharges:
                                   double.parse(driverCharges.text),
-                              tripcharges: double.parse(tripCharges.text),
-                              customerid: int.parse(customerId.text),
+                              tripcharges:
+                                  double.parse(tripCharges.text),
                               startDateTime: startDateValue!,
                               endDateTime: endDateValue!,
                               status: 1,
@@ -188,10 +193,11 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm> {
                             );
 
                             await ref
-                                .read(tripBookingViewModelProvider.notifier)
+                                .read(tripBookingViewModelProvider
+                                    .notifier)
                                 .addTripBooking(booking);
                           },
-                  ),
+                  )
                 ],
               ),
             ),
@@ -203,7 +209,102 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm> {
     );
   }
 
-  Widget _text(TextEditingController c, String label) => Padding(
+  /// ---------------- DROPDOWNS ----------------
+
+ Widget _driverDropdown(TripBookingState state) =>
+      state.fetchDriverList.when(
+       loading: () => DropdownButtonFormField<int>(
+  items: const [],
+  onChanged: null,
+  decoration: const InputDecoration(
+    labelText: "Loading...",
+    border: OutlineInputBorder(),
+  ),
+),
+
+        error: (e, _) => Text("Driver error: $e"),
+        data: (List<Drivers> drivers) =>
+            DropdownButtonFormField<int>(
+          value: selectedDriverId,
+          items: drivers
+              .map((d) => DropdownMenuItem(
+                    value: d.driverId,
+                    child: Text(d.name??""),
+                  ))
+              .toList(),
+          onChanged: (v) => setState(() => selectedDriverId = v),
+          validator: (v) => v == null ? "Select driver" : null,
+          decoration: const InputDecoration(
+            labelText: "Driver",
+            border: OutlineInputBorder(),
+          ),
+        ),
+      );
+
+  Widget _vehicleDropdown(TripBookingState state) =>
+      state.fetchDriverList.when(
+       loading: () => DropdownButtonFormField<int>(
+  items: const [],
+  onChanged: null,
+  decoration: const InputDecoration(
+    labelText: "Loading...",
+    border: OutlineInputBorder(),
+  ),
+),
+
+        error: (e, _) => Text("Vehicle error: $e"),
+        data: (List<Drivers> vehicles) =>
+            DropdownButtonFormField<int>(
+          value: selectedVehicleId,
+          items: vehicles
+              .map((v) => DropdownMenuItem(
+                    value: v.driverId,
+                    child: Text(v.name??""),
+                  ))
+              .toList(),
+          onChanged: (v) => setState(() => selectedVehicleId = v),
+          validator: (v) => v == null ? "Select vehicle" : null,
+          decoration: const InputDecoration(
+            labelText: "Vehicle",
+            border: OutlineInputBorder(),
+          ),
+        ),
+      );
+
+  Widget _customerDropdown(TripBookingState state) =>
+      state.fetchDriverList.when(
+     loading: () => DropdownButtonFormField<int>(
+  items: const [],
+  onChanged: null,
+  decoration: const InputDecoration(
+    labelText: "Loading...",
+    border: OutlineInputBorder(),
+  ),
+),
+
+        error: (e, _) => Text("Customer error: $e"),
+        data: (List<Drivers> customers) =>
+            DropdownButtonFormField<int>(
+          value: selectedCustomerId,
+          items: customers
+              .map((c) => DropdownMenuItem(
+                    value: c.driverId,
+                    child: Text(c.name??""),
+                  ))
+              .toList(),
+          onChanged: (v) => setState(() => selectedCustomerId = v),
+          validator: (v) => v == null ? "Select customer" : null,
+          decoration: const InputDecoration(
+            labelText: "Customer",
+            border: OutlineInputBorder(),
+          ),
+        ),
+      );
+
+  /// ---------------- COMMON FIELDS ----------------
+
+  Widget _text(TextEditingController c, String label) =>
+      Padding(
         padding: const EdgeInsets.symmetric(vertical: 6),
         child: TextFormField(
           controller: c,
@@ -216,7 +317,8 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm> {
         ),
       );
 
-  Widget _number(TextEditingController c, String label) => Padding(
+  Widget _number(TextEditingController c, String label) =>
+      Padding(
         padding: const EdgeInsets.symmetric(vertical: 6),
         child: TextFormField(
           controller: c,
@@ -225,19 +327,15 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm> {
             labelText: label,
             border: const OutlineInputBorder(),
           ),
-          validator: (v) {
-            if (v == null || v.isEmpty) return "Required";
-            if (double.tryParse(v) == null) return "Invalid number";
-            return null;
-          },
+          validator: (v) =>
+              v == null || double.tryParse(v) == null
+                  ? "Invalid number"
+                  : null,
         ),
       );
 
   Widget _dateField(
-    TextEditingController c,
-    String label,
-    bool isStart,
-  ) =>
+          TextEditingController c, String label, bool isStart) =>
       Padding(
         padding: const EdgeInsets.symmetric(vertical: 6),
         child: TextFormField(
