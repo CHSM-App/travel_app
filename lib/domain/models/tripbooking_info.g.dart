@@ -16,14 +16,14 @@ TripBooking _$TripBookingFromJson(Map<String, dynamic> json) => TripBooking(
       tollcharges: (json['tollcharges'] as num?)?.toDouble(),
       repairingcharges: (json['repairingcharges'] as num?)?.toDouble(),
       drivercharges: (json['drivercharges'] as num?)?.toDouble(),
-      startDateTime: json['startDateTime'] == null
+      startDateTime: json['startdatetime'] == null
           ? null
-          : DateTime.parse(json['startDateTime'] as String),
-      endDateTime: json['endDateTime'] == null
+          : DateTime.parse(json['startdatetime'] as String),
+      endDateTime: json['enddatetime'] == null
           ? null
-          : DateTime.parse(json['endDateTime'] as String),
-      status: json['status'] as String?,
-      customerid: (json['customerid'] as num?)?.toInt(),
+          : DateTime.parse(json['enddatetime'] as String),
+      status: (json['status'] as num?)?.toInt(),
+      customerid: (json['Customerid'] as num?)?.toInt(),
       tripcharges: (json['tripcharges'] as num?)?.toDouble(),
       bookingdate: json['bookingdate'] == null
           ? null
@@ -41,10 +41,10 @@ Map<String, dynamic> _$TripBookingToJson(TripBooking instance) =>
       'tollcharges': instance.tollcharges,
       'repairingcharges': instance.repairingcharges,
       'drivercharges': instance.drivercharges,
-      'startDateTime': instance.startDateTime?.toIso8601String(),
-      'endDateTime': instance.endDateTime?.toIso8601String(),
+      'startdatetime': instance.startDateTime?.toIso8601String(),
+      'enddatetime': instance.endDateTime?.toIso8601String(),
       'status': instance.status,
-      'customerid': instance.customerid,
+      'Customerid': instance.customerid,
       'tripcharges': instance.tripcharges,
       'bookingdate': instance.bookingdate?.toIso8601String(),
     };

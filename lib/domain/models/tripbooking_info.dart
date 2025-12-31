@@ -13,10 +13,19 @@ class TripBooking {
   final double? tollcharges;
   final double? repairingcharges;
   final double? drivercharges;
+
+  @JsonKey(name: 'startdatetime')
   final DateTime? startDateTime;
+
+  @JsonKey(name: 'enddatetime')
   final DateTime? endDateTime;
-  final String? status;
+
+  @JsonKey(name: 'status')
+  final int? status;   // 👈 API expects int
+
+  @JsonKey(name: 'Customerid')
   final int? customerid;
+
   final double? tripcharges;
   final DateTime? bookingdate;
 
@@ -38,10 +47,8 @@ class TripBooking {
     this.bookingdate,
   });
 
-  /// REQUIRED for json_serializable
   factory TripBooking.fromJson(Map<String, dynamic> json) =>
       _$TripBookingFromJson(json);
 
-  /// REQUIRED so Dio can encode
   Map<String, dynamic> toJson() => _$TripBookingToJson(this);
 }

@@ -325,7 +325,7 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm> {
                                 customerid: int.parse(customerId.text),
                                 startDateTime: DateTime.parse(startDate.text),
                                 endDateTime: DateTime.parse(endDate.text),
-                                status: status.text,
+                                status: int.parse(status.text),
                                 bookingdate: DateTime.parse(bookingDate.text),
                               );
 
