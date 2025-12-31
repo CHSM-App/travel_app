@@ -4,12 +4,12 @@ publish_to: 'none'
 version: 0.1.0
 
 environment:
-  sdk: ^3.9.2
+  sdk: ^3.8.1
 
 dependencies:
   flutter:
     sdk: flutter
-  flutter_riverpod: ^2.4.5
+  flutter_riverpod: ^2.4.9
   retrofit: ^4.4.1
   dio: ^5.7.0
   flutter_secure_storage: ^9.0.0
