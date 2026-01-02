@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:travel_agency_app/Screens/bottom_navigation_bar.dart';
 import 'package:travel_agency_app/Screens/dashbord.dart';
 
 class LoginPage extends StatefulWidget {
@@ -68,7 +69,7 @@ class _LoginPageState extends State<LoginPage> {
                   Navigator.pushReplacement(
       context,
       MaterialPageRoute(
-        builder: (context) => const TravelAdminDashboard(),
+        builder: (context) => const MainBottomNav(),
       ),
     );
   },

@@ -4,6 +4,7 @@ import 'package:retrofit/retrofit.dart';
 import 'package:travel_agency_app/core/storage/constant.dart';
 import 'package:travel_agency_app/domain/models/drivers.dart';
 import 'package:travel_agency_app/domain/models/tripbooking_info.dart';
+import 'package:travel_agency_app/domain/models/vehicles.dart';
 
 part 'api_service.g.dart';
 
@@ -20,5 +21,8 @@ abstract class ApiService {
   
   @GET("users/driverList")
   Future<List<Drivers>> driverList();
+
+  @GET("users/VehicleList")
+  Future<List<Vehicles>> VehicleList();
 
 }
