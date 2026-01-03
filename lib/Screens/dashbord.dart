@@ -44,16 +44,7 @@ class TravelAdminDashboard extends StatelessWidget {
           ],
         ),
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        selectedItemColor: Colors.indigo,
-        unselectedItemColor: Colors.grey,
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-          BottomNavigationBarItem(icon: Icon(Icons.analytics), label: 'Reports'),
-          BottomNavigationBarItem(icon: Icon(Icons.settings), label: 'Settings'),
-        ],
-      ),
-    );
+         );
   }
 
   Widget _welcomeCard() {
@@ -156,7 +147,7 @@ Widget _actionButton(String title, IconData icon, BuildContext context) {
         case 'Vehicle':
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (_) => VehiclePage()),
+            MaterialPageRoute(builder: (_) => AddVehiclePage()),
           );
           break;
 

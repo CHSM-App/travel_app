@@ -1,3 +1,4 @@
+import 'package:travel_agency_app/domain/models/customers.dart';
 import 'package:travel_agency_app/domain/models/drivers.dart';
 import 'package:travel_agency_app/domain/models/tripbooking_info.dart';
 import 'package:travel_agency_app/domain/models/vehicles.dart';
@@ -16,4 +17,9 @@ class TripbookingUsecase {
   Future<List<Vehicles>> vehicleList() {
     return repository.vehicleList();
   }
+
+  Future<List<Customer>> customerList() {
+    return repository.customerList();
+  }
+
 }

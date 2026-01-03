@@ -2,6 +2,7 @@
 import 'package:dio/dio.dart';
 import 'package:retrofit/retrofit.dart';
 import 'package:travel_agency_app/core/storage/constant.dart';
+import 'package:travel_agency_app/domain/models/customers.dart';
 import 'package:travel_agency_app/domain/models/drivers.dart';
 import 'package:travel_agency_app/domain/models/tripbooking_info.dart';
 import 'package:travel_agency_app/domain/models/vehicles.dart';
@@ -24,5 +25,12 @@ abstract class ApiService {
 
   @GET("users/VehicleList")
   Future<List<Vehicles>> VehicleList();
+
+  @GET("users/customerList")
+  Future<List<Customer>> customerList();
+
+  @POST("insert/Addvehicle")
+  Future<dynamic> addVehicle(@Body() Vehicles vehicle);
+
 
 }

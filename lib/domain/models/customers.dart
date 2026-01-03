@@ -4,17 +4,22 @@ part 'customers.g.dart';
             
 @JsonSerializable()
 class Customer {
-   String name;
-   String phone;
-   String address;
-   String licenceNo;
-   DateTime licenceExpiry;
+  int? customerId;
+   String? name;
+   String? phone;
+   String? address;
+   String? licenceNo;
+   DateTime? licenceExpiry;
 
   Customer({
-    required this.name,
-    required this.phone,
-    required this.address,
-    required this.licenceNo,
-    required this.licenceExpiry,
+  this.customerId,
+    this.name,
+     this.phone,
+     this.address,
+    this.licenceNo,
+    this.licenceExpiry,
   });
+  factory Customer.fromJson(Map<String, dynamic> json) => _$CustomerFromJson(json);
+   Map<String, dynamic> toJson() => _$CustomerToJson(this);
+ 
 }

@@ -23,7 +23,7 @@ class _MainBottomNavState extends State<MainBottomNav> {
     TravelAdminDashboard(),
     TripsPage(),
     CustomersPage(),
-    VehiclesPage(),
+    VehiclePage(),
     DriversPage(),
   ];
 

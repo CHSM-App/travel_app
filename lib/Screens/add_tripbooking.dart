@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:travel_agency_app/domain/models/customers.dart';
 import 'package:travel_agency_app/domain/models/drivers.dart';
 import 'package:travel_agency_app/domain/models/tripbooking_info.dart';
 import 'package:travel_agency_app/domain/models/vehicles.dart';
@@ -51,7 +52,7 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm> {
           ref.read(tripBookingViewModelProvider.notifier);
       notifier.driverList();
       notifier.vehicleList();
-     // notifier.customerList();
+      notifier.customerList();
     });
   }
 
@@ -273,7 +274,7 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm> {
       );
 
   Widget _customerDropdown(TripBookingState state) =>
-      state.fetchDriverList.when(
+      state.fetchCustomerList.when(
      loading: () => DropdownButtonFormField<int>(
   items: const [],
   onChanged: null,
@@ -284,12 +285,12 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm> {
 ),
 
         error: (e, _) => Text("Customer error: $e"),
-        data: (List<Drivers> customers) =>
+        data: (List<Customer> customers) =>
             DropdownButtonFormField<int>(
           value: selectedCustomerId,
           items: customers
               .map((c) => DropdownMenuItem(
-                    value: c.driverId,
+                    value: c.customerId??0,
                     child: Text(c.name??""),
                   ))
               .toList(),
