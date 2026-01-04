@@ -4,6 +4,7 @@ import 'package:travel_agency_app/domain/models/customers.dart';
 import 'package:travel_agency_app/domain/models/drivers.dart';
 import 'package:travel_agency_app/domain/models/tripbooking_info.dart';
 import 'package:travel_agency_app/domain/models/vehicles.dart';
+import 'package:travel_agency_app/domain/usecase/addVehicleUseCase.dart';
 import 'package:travel_agency_app/domain/usecase/tripbooking_usecase.dart';
 
 @immutable
@@ -53,7 +54,7 @@ final bool isLoading;
 
 class AddVehicleViewModel extends StateNotifier<AddVehicleState> {
   final Ref ref;
-  final TripbookingUsecase usecase;
+  final AddVehicleUseCase usecase;
 
   AddVehicleViewModel(this.ref, this.usecase)
       : super(const AddVehicleState());

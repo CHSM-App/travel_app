@@ -19,7 +19,7 @@ class TripBookingImpl implements Tripbookingrepository {
   }
 
   Future<List<Vehicles>> vehicleList() {
-    return apiService.VehicleList();
+    return apiService.vehicleList();
   }
 
   Future<List<Customer>> customerList() {

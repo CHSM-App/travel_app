@@ -24,7 +24,7 @@ abstract class ApiService {
   Future<List<Drivers>> driverList();
 
   @GET("users/VehicleList")
-  Future<List<Vehicles>> VehicleList();
+  Future<List<Vehicles>> vehicleList();
 
   @GET("users/customerList")
   Future<List<Customer>> customerList();

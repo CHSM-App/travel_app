@@ -108,14 +108,14 @@ class _ApiService implements ApiService {
           .map((dynamic i) => Drivers.fromJson(i as Map<String, dynamic>))
           .toList();
     } on Object catch (e, s) {
-      //errorLogger?.logError(e, s, _options);
+      errorLogger?.logError(e, s, _options);
       rethrow;
     }
     return _value;
   }
 
   @override
-  Future<List<Vehicles>> VehicleList() async {
+  Future<List<Vehicles>> vehicleList() async {
     final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
     final _headers = <String, dynamic>{};
@@ -143,7 +143,7 @@ class _ApiService implements ApiService {
           .map((dynamic i) => Vehicles.fromJson(i as Map<String, dynamic>))
           .toList();
     } on Object catch (e, s) {
-      //errorLogger?.logError(e, s, _options);
+      errorLogger?.logError(e, s, _options);
       rethrow;
     }
     return _value;
@@ -178,7 +178,7 @@ class _ApiService implements ApiService {
           .map((dynamic i) => Customer.fromJson(i as Map<String, dynamic>))
           .toList();
     } on Object catch (e, s) {
-     // errorLogger?.logError(e, s, _options);
+      errorLogger?.logError(e, s, _options);
       rethrow;
     }
     return _value;

@@ -25,10 +25,10 @@ class _AddVehiclePageState extends ConsumerState<AddVehiclePage> {
 
   @override
   Widget build(BuildContext context) {
-    final state = ref.watch(vehicleViewModelProvider);
+    final state = ref.watch(addVehicleViewModelProvider);
 
-    ref.listen(vehicleViewModelProvider, (previous, next) {
-      if (next is AsyncData && next.value == true) {
+    ref.listen(addVehicleViewModelProvider, (previous, next) {
+      if (next is AsyncData && next.data == true) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text("Vehicle added successfully")),
         );
@@ -60,19 +60,21 @@ class _AddVehiclePageState extends ConsumerState<AddVehiclePage> {
                     ? null
                     : () {
                         if (_formKey.currentState!.validate()) {
-                          final vehicle = Vehicle(
+                          final vehicle = Vehicles(
+                            vehicleId: null,
+                            fueltype: int.parse(fuelType.text),
                             name: name.text,
                             number: number.text,
-                            type: type.text,
+                            type: type.text as int?,
                             capacity: int.parse(capacity.text),
-                            fuelType: fuelType.text,
-                            mileage: double.parse(mileage.text),
-                            status: status.text,
-                            rcDocument: rcDocument.text,
+                            // fuelType: fuelType.text,
+                            mileage: (mileage.text),
+                            status: status.text as int?,
+                            // rcDocument: rcDocument.text,
                           );
 
                           ref
-                              .read(vehicleViewModelProvider.notifier)
+                              .read(addVehicleViewModelProvider.notifier)
                               .addVehicle(vehicle);
                         }
                       },

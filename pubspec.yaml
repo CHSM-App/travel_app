@@ -10,7 +10,7 @@ dependencies:
   flutter:
     sdk: flutter
   flutter_riverpod: ^2.4.9
-  retrofit: ^4.4.1
+  retrofit: 4.9.1
   dio: ^5.7.0
   flutter_secure_storage: ^9.0.0
   # Serialization
@@ -30,7 +30,7 @@ dev_dependencies:
   flutter_lints: ^5.0.0
     # Code generation
   build_runner: ^2.4.9
-  retrofit_generator: ^8.1.0
+  retrofit_generator: 8.2.1
   # retrofit_generator: ^8.0.5
   json_serializable: ^6.8.0
   freezed: ^2.4.6
