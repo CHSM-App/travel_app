@@ -56,8 +56,7 @@ class _ApiService implements ApiService {
     final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
     final _headers = <String, dynamic>{};
-    final _data = <String, dynamic>{};
-    _data.addAll(tripBooking.toJson());
+    final _data = tripBooking;
     final _options = _setStreamType<dynamic>(Options(
       method: 'POST',
       headers: _headers,
