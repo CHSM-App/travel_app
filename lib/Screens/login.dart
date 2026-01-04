@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:travel_agency_app/Screens/bottom_nevigation_bar.dart';
+import 'package:travel_agency_app/Screens/bottom_navigation_bar.dart';
 import 'package:travel_agency_app/Screens/dashbord.dart';
 
 class LoginPage extends StatefulWidget {

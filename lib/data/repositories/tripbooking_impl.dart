@@ -1,4 +1,5 @@
 import 'package:travel_agency_app/data/api/api_service.dart';
+import 'package:travel_agency_app/domain/models/customers.dart';
 import 'package:travel_agency_app/domain/models/drivers.dart';
 import 'package:travel_agency_app/domain/models/tripbooking_info.dart';
 import 'package:travel_agency_app/domain/models/vehicles.dart';
@@ -18,9 +19,12 @@ class TripBookingImpl implements Tripbookingrepository {
   }
 
   Future<List<Vehicles>> vehicleList() {
-    return apiService.VehicleList();
+    return apiService.vehicleList();
   }
 
+  Future<List<Customer>> customerList() {
+    return apiService.customerList();
+  }
     
 
 }

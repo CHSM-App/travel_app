@@ -107,14 +107,14 @@ class _ApiService implements ApiService {
           .map((dynamic i) => Drivers.fromJson(i as Map<String, dynamic>))
           .toList();
     } on Object catch (e, s) {
-     // errorLogger?.logError(e, s, _options);
+      errorLogger?.logError(e, s, _options);
       rethrow;
     }
     return _value;
   }
 
   @override
-  Future<List<Vehicles>> VehicleList() async {
+  Future<List<Vehicles>> vehicleList() async {
     final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
     final _headers = <String, dynamic>{};
@@ -142,9 +142,72 @@ class _ApiService implements ApiService {
           .map((dynamic i) => Vehicles.fromJson(i as Map<String, dynamic>))
           .toList();
     } on Object catch (e, s) {
-    //  errorLogger?.logError(e, s, _options);
+      errorLogger?.logError(e, s, _options);
       rethrow;
     }
+    return _value;
+  }
+
+  @override
+  Future<List<Customer>> customerList() async {
+    final _extra = <String, dynamic>{};
+    final queryParameters = <String, dynamic>{};
+    final _headers = <String, dynamic>{};
+    const Map<String, dynamic>? _data = null;
+    final _options = _setStreamType<List<Customer>>(Options(
+      method: 'GET',
+      headers: _headers,
+      extra: _extra,
+    )
+        .compose(
+          _dio.options,
+          'users/customerList',
+          queryParameters: queryParameters,
+          data: _data,
+        )
+        .copyWith(
+            baseUrl: _combineBaseUrls(
+          _dio.options.baseUrl,
+          baseUrl,
+        )));
+    final _result = await _dio.fetch<List<dynamic>>(_options);
+    late List<Customer> _value;
+    try {
+      _value = _result.data!
+          .map((dynamic i) => Customer.fromJson(i as Map<String, dynamic>))
+          .toList();
+    } on Object catch (e, s) {
+      errorLogger?.logError(e, s, _options);
+      rethrow;
+    }
+    return _value;
+  }
+
+  @override
+  Future<dynamic> addVehicle(Vehicles vehicle) async {
+    final _extra = <String, dynamic>{};
+    final queryParameters = <String, dynamic>{};
+    final _headers = <String, dynamic>{};
+    final _data = <String, dynamic>{};
+    _data.addAll(vehicle.toJson());
+    final _options = _setStreamType<dynamic>(Options(
+      method: 'POST',
+      headers: _headers,
+      extra: _extra,
+    )
+        .compose(
+          _dio.options,
+          'insert/Addvehicle',
+          queryParameters: queryParameters,
+          data: _data,
+        )
+        .copyWith(
+            baseUrl: _combineBaseUrls(
+          _dio.options.baseUrl,
+          baseUrl,
+        )));
+    final _result = await _dio.fetch(_options);
+    final _value = _result.data;
     return _value;
   }
 
