@@ -1,5 +1,5 @@
 import 'package:json_annotation/json_annotation.dart';
-part 'Status.g.dart';
+part 'status.g.dart';
             
 @JsonSerializable()
 class Status {

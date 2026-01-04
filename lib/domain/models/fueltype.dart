@@ -1,13 +1,16 @@
 import 'package:json_annotation/json_annotation.dart';
 
-part 'Fueltype.g.dart';
+part 'fueltype.g.dart';
 
 @JsonSerializable()
 class Fueltype {
-  int? FuelTypeId;
-  String? FuelType;
+  final int? fuelTypeId;
+  final String? fuelType;
 
-  Fueltype({this.FuelTypeId, this.FuelType});
+  Fueltype({this.fuelTypeId, this.fuelType});
 
+  factory Fueltype.fromJson(Map<String, dynamic> json) =>
+      _$FueltypeFromJson(json);
 
+  Map<String, dynamic> toJson() => _$FueltypeToJson(this);
 }
