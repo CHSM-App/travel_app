@@ -4,8 +4,11 @@ import 'package:retrofit/retrofit.dart';
 import 'package:travel_agency_app/core/storage/constant.dart';
 import 'package:travel_agency_app/domain/models/customers.dart';
 import 'package:travel_agency_app/domain/models/drivers.dart';
+import 'package:travel_agency_app/domain/models/fueltype.dart';
+import 'package:travel_agency_app/domain/models/status.dart';
 import 'package:travel_agency_app/domain/models/tripbooking_info.dart';
 import 'package:travel_agency_app/domain/models/vehicles.dart';
+import 'package:travel_agency_app/domain/models/vehicletype.dart';
 
 part 'api_service.g.dart';
 
@@ -15,10 +18,8 @@ abstract class ApiService {
   @GET('/')
   Future<HttpResponse> checkHealth(); 
 
-
-    @POST("insert/Addtripbooking")
+  @POST("insert/Addtripbooking")
   Future<dynamic> addTripBooking(@Body() TripBooking tripBooking); 
-
   
   @GET("users/driverList")
   Future<List<Drivers>> driverList();
@@ -32,5 +33,14 @@ abstract class ApiService {
   @POST("insert/Addvehicle")
   Future<dynamic> addVehicle(@Body() Vehicles vehicle);
 
+  @GET("users/VehicleTypeList")
+  Future<List<VehicleType>> vehicleTypeList();
+
+  @GET("users/StatusList")
+  Future<List<Status>> statusList();
+  
+
+  @GET("users/FuelTypeList")
+  Future<List<Fueltype>> fuelTypeList();
 
 }
