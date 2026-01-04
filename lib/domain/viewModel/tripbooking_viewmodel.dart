@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:travel_agency_app/domain/models/drivers.dart';
 import 'package:travel_agency_app/domain/models/tripbooking_info.dart';
+import 'package:travel_agency_app/domain/models/vehicles.dart';
 import 'package:travel_agency_app/domain/usecase/tripbooking_usecase.dart';
 
 @immutable
@@ -11,13 +12,15 @@ final bool isLoading;
   final Map<String, dynamic>? data;
   final String? error;
    final AsyncValue<List<Drivers>> fetchDriverList;
+  final AsyncValue<List<Vehicles>> fetchVehicleList;
   const TripBookingState({
    
      this.isLoading = false,
     this.data,
     this.error,
     this.fetchDriverList = const AsyncValue.loading(),
-  });
+    this.fetchVehicleList = const AsyncValue.loading(),
+      });
 
 
 
@@ -27,6 +30,7 @@ final bool isLoading;
     Map<String, dynamic>? data,
     String? error,
     AsyncValue<List<Drivers>>? fetchDriverList,
+    AsyncValue<List<Vehicles>>? fetchVehicleList,
   }) {
     return TripBookingState(
     
@@ -34,6 +38,7 @@ final bool isLoading;
       data: data ?? this.data,
       error: error ?? this.error,
       fetchDriverList: fetchDriverList ?? this.fetchDriverList,
+      fetchVehicleList: fetchVehicleList ?? this.fetchVehicleList
     );
   }
 }
@@ -63,5 +68,13 @@ class TripBookingViewModel extends StateNotifier<TripBookingState> {
     }
   }
 
+  Future<void> vehicleList() async {
+    state = state.copyWith(fetchVehicleList: const AsyncValue.loading());
+    try {
+      final result = await usecase.vehicleList();
+      state = state.copyWith(fetchVehicleList: AsyncValue.data(result));
+    } catch (e, st) {
+      state = state.copyWith(fetchVehicleList: AsyncValue.error(e, st));
+    }
+  }
 }
-

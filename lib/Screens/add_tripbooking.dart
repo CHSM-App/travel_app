@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:travel_agency_app/domain/models/drivers.dart';
 import 'package:travel_agency_app/domain/models/tripbooking_info.dart';
+import 'package:travel_agency_app/domain/models/vehicles.dart';
 import 'package:travel_agency_app/domain/viewModel/tripbooking_viewmodel.dart';
 import 'package:travel_agency_app/presentation/providers/viewmodel_provider.dart';
 
@@ -49,7 +50,7 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm> {
       final notifier =
           ref.read(tripBookingViewModelProvider.notifier);
       notifier.driverList();
-    //  notifier.vehicleList();
+      notifier.vehicleList();
      // notifier.customerList();
     });
   }
@@ -242,7 +243,7 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm> {
       );
 
   Widget _vehicleDropdown(TripBookingState state) =>
-      state.fetchDriverList.when(
+      state.fetchVehicleList.when(
        loading: () => DropdownButtonFormField<int>(
   items: const [],
   onChanged: null,
@@ -253,12 +254,12 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm> {
 ),
 
         error: (e, _) => Text("Vehicle error: $e"),
-        data: (List<Drivers> vehicles) =>
+        data: (List<Vehicles> vehicles) =>
             DropdownButtonFormField<int>(
           value: selectedVehicleId,
           items: vehicles
               .map((v) => DropdownMenuItem(
-                    value: v.driverId,
+                    value: v.vehicleId,
                     child: Text(v.name??""),
                   ))
               .toList(),
