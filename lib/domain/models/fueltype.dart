@@ -4,10 +4,10 @@ part 'fueltype.g.dart';
 
 @JsonSerializable()
 class Fueltype {
-  final int? fuelTypeId;
-  final String? fuelType;
+  final int? FuelTypeId;
+  final String? FuelType;
 
-  Fueltype({this.fuelTypeId, this.fuelType});
+  Fueltype({this.FuelTypeId, this.FuelType});
 
   factory Fueltype.fromJson(Map<String, dynamic> json) =>
       _$FueltypeFromJson(json);

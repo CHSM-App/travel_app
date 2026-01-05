@@ -4,18 +4,18 @@ part 'vehicletype.g.dart';
 @JsonSerializable()
 class VehicleType {
   int? TypeId;
-    String? type;
+    String? Type;
 
-   VehicleType({this.TypeId, this.type});
+   VehicleType({this.TypeId, this.Type});
 
    factory VehicleType.fromJson(Map<String, dynamic> json) => VehicleType(
          TypeId: json['TypeId'] as int?,
-         type: json['type'] as String?,
+         Type: json['Type'] as String?,
        );
 
    Map<String, dynamic> toJson() => {
-         'vehicleTypeId': TypeId,
-         'typeName': type,
+         'TypeId': TypeId,
+         'Type': Type,
        };
 
 }

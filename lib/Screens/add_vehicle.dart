@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:travel_agency_app/domain/models/fueltype.dart';
+import 'package:travel_agency_app/domain/models/status.dart';
 import 'package:travel_agency_app/domain/models/vehicles.dart';
+import 'package:travel_agency_app/domain/models/vehicletype.dart';
 import 'package:travel_agency_app/domain/viewModel/addVehicle_viewmodel.dart';
 import 'package:travel_agency_app/presentation/providers/viewmodel_provider.dart';
 
@@ -35,9 +38,9 @@ class _AddVehiclePageState extends ConsumerState<AddVehiclePage> {
     super.initState();
     Future.microtask(() {
       final notifier = ref.read(addVehicleViewModelProvider.notifier);
-      //notifier.driverList();
-      //notifier.vehicleList();
-     // notifier.customerList();
+      notifier.fetchVehicleFuelTypeList();
+      notifier.fetchVehicleTypeList();
+      notifier.fetchstatusList();
     });
   }
 
@@ -70,6 +73,7 @@ class _AddVehiclePageState extends ConsumerState<AddVehiclePage> {
           key: _formKey,
           child: ListView(
             children: [
+               const SizedBox(height: 10),
               _VehicleTypeDropdown(state),
                   const SizedBox(height: 12),
               _FuelTypeDropdown(state),
@@ -119,7 +123,7 @@ class _AddVehiclePageState extends ConsumerState<AddVehiclePage> {
     );
   }
 
- Widget _VehicleTypeDropdown(AddVehicleState state) => state.fetchDriverList.when(
+ Widget _VehicleTypeDropdown(AddVehicleState state) => state.fetchVehicleTypeList.when(
     loading: () => DropdownButtonFormField<int>(
       items: const [],
       onChanged: null,
@@ -129,23 +133,82 @@ class _AddVehiclePageState extends ConsumerState<AddVehiclePage> {
       ),
     ),
 
-    error: (e, _) => Text("Driver error: $e"),
-    data: (List<Drivers> drivers) => DropdownButtonFormField<int>(
-      value: selectedDriverId,
-      items: drivers
+    error: (e, _) => Text("Vehicle Type error: $e"),
+    data: (List<VehicleType> vehicleTypes) => DropdownButtonFormField<int>(
+      value: selectedTypeId,
+      items: vehicleTypes
           .map(
             (d) =>
-                DropdownMenuItem(value: d.driverId, child: Text(d.name ?? "")),
+                DropdownMenuItem(value: d.TypeId, child: Text(d.Type ?? "")),
           )
           .toList(),
-      onChanged: (v) => setState(() => selectedDriverId = v),
-      validator: (v) => v == null ? "Select driver" : null,
+      onChanged: (v) => setState(() => selectedTypeId = v),
+      validator: (v) => v == null ? "Select vehicle type" : null,
       decoration: const InputDecoration(
-        labelText: "Driver",
+        labelText: "Vehicle Type",
         border: OutlineInputBorder(),
       ),
     ),
   );
+
+
+ Widget _FuelTypeDropdown(AddVehicleState state) => state.fetchFuelTypeList.when(
+    loading: () => DropdownButtonFormField<int>(
+      items: const [],
+      onChanged: null,
+      decoration: const InputDecoration(
+        labelText: "Loading...",
+        border: OutlineInputBorder(),
+      ),
+    ),
+
+    error: (e, _) => Text("Fuel Type error: $e"),
+    data: (List<Fueltype> fuelTypes) => DropdownButtonFormField<int>(
+      value: selectedFuelTypeId,
+      items: fuelTypes
+          .map(
+            (d) =>
+                DropdownMenuItem(value: d.FuelTypeId, child: Text(d.FuelType ?? "")),
+          )
+          .toList(),
+      onChanged: (v) => setState(() => selectedFuelTypeId = v),
+      validator: (v) => v == null ? "Select fuel type" : null,
+      decoration: const InputDecoration(
+        labelText: "Fuel Type",
+        border: OutlineInputBorder(),
+      ),
+    ),
+  );
+
+
+ Widget _StatusDropdown(AddVehicleState state) => state.fetchstatusList.when(
+    loading: () => DropdownButtonFormField<int>(
+      items: const [],
+      onChanged: null,
+      decoration: const InputDecoration(
+        labelText: "Loading...",
+        border: OutlineInputBorder(),
+      ),
+    ),
+
+    error: (e, _) => Text("Status Type error: $e"),
+    data: (List<Status> statuses) => DropdownButtonFormField<int>(
+      value: selectedStatusId,
+      items: statuses
+          .map(
+            (d) =>
+                DropdownMenuItem(value: d.StatusId, child: Text(d.StatusName ?? "")),
+          )
+          .toList(),
+      onChanged: (v) => setState(() => selectedStatusId = v),
+      validator: (v) => v == null ? "Select Status" : null,
+      decoration: const InputDecoration(
+        labelText: "Status",
+        border: OutlineInputBorder(),
+      ),
+    ),
+  );
+
 
   Widget _input(TextEditingController c, String label,
       {bool number = false, bool decimal = false}) {
