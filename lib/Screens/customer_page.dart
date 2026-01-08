@@ -1,13 +1,34 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:travel_agency_app/presentation/providers/customer_viewmodel_provider.dart';
 
-class CustomersPage extends StatefulWidget {
+
+class CustomersPage extends ConsumerStatefulWidget {
   const CustomersPage({Key? key}) : super(key: key);
 
   @override
-  State<CustomersPage> createState() => _CustomersPageState();
+  ConsumerState<CustomersPage> createState() => _CustomersPageState();
+
 }
 
-class _CustomersPageState extends State<CustomersPage> {
+class _CustomersPageState extends ConsumerState<CustomersPage> {
+final TextEditingController _searchCtrl = TextEditingController();  
+final _formKey = GlobalKey<FormState>();  
+final TextEditingController _customerNameCtrl = TextEditingController();  
+final TextEditingController _customerEmailCtrl = TextEditingController(); 
+final TextEditingController _customerPhoneCtrl = TextEditingController();
+final TextEditingController _customerLocationCtrl = TextEditingController();
+final TextEditingController _customerStatusCtrl = TextEditingController();
+final TextEditingController _customerTripsCtrl = TextEditingController();
+
+@override
+void initState() {
+  super.initState();
+  Future.microtask(() {
+    // Load initial customer data if needed
+    ref.read(customerViewModelProvider.notifier).customerList();
+  });
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(

@@ -43,4 +43,4 @@ abstract class ApiService {
   @GET("users/FuelTypeList")
   Future<List<Fueltype>> fuelTypeList();
 
-}
+}  

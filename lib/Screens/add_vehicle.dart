@@ -49,13 +49,33 @@ class _AddVehiclePageState extends ConsumerState<AddVehiclePage> {
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(addVehicleViewModelProvider);
-
+    String error = "";
+    String message="" ;
     ref.listen(addVehicleViewModelProvider, (prev, next) {
     
     if (next.error != null) {
+         error = next.error!.toLowerCase().toString();
+
+  if (error.contains("unique") || error.contains("duplicate")) {
+    error = "Vehicle number already exists.";
+  }
+
+  if (error.contains("foreign key")) {
+    message = "Selected record is linked and cannot be deleted.";
+  }
+
+  if (error.contains("not null")) {
+    message = "Required field is missing.";
+  }
+
+  if (error.contains("check constraint")) {
+    message = "Entered value is not valid.";
+  }
+
+
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text(next.error!)));
+        ).showSnackBar(SnackBar(content: Text(error.toString())));
       }
       if (next.data != null && prev?.data != next.data) {
         ScaffoldMessenger.of(
@@ -80,7 +100,7 @@ class _AddVehiclePageState extends ConsumerState<AddVehiclePage> {
                   const SizedBox(height: 12), 
               _StatusDropdown(state),
               const SizedBox(height: 12),
-
+ 
               _input(name, "Vehicle Name"),
               _input(number, "Vehicle Number"),
               _input(capacity, "Capacity", number: true),
@@ -111,7 +131,7 @@ class _AddVehiclePageState extends ConsumerState<AddVehiclePage> {
                               .read(addVehicleViewModelProvider.notifier)
                               .addVehicle(vehicle);
                         }
-                      },
+                      }, 
                 child: state.isLoading
                     ? const CircularProgressIndicator()
                     : const Text("Add Vehicle"),

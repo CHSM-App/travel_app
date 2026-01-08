@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:travel_agency_app/domain/models/customers.dart';
@@ -61,16 +62,35 @@ class AddVehicleViewModel extends StateNotifier<AddVehicleState> {
   AddVehicleViewModel(this.ref, this.usecase)
       : super(const AddVehicleState());
 
- Future<void> addVehicle(Vehicles vehicle) async {
-    state = state.copyWith(isLoading: true, error: null);
-    try {
-       final result = await usecase.addVehicle(vehicle);
-      
-    }catch (e) {
-      state = state.copyWith(isLoading: false, error: e.toString());
-    }
 
+Future<void> addVehicle(Vehicles vehicle) async {
+  state = state.copyWith(isLoading: true, error: null);
+
+  try {
+    final result = await usecase.addVehicle(vehicle);
+
+    state = state.copyWith(
+      isLoading: false,
+      error: null, // success, so no error
+    );
+
+  } on DioException catch (e) {
+    final serverMessage = e.response?.data?['message'];
+
+    state = state.copyWith(
+      isLoading: false,
+      error: serverMessage ?? 'Server error',
+    );
+
+    debugPrint("Server error: $serverMessage");
+  } catch (e) {
+    state = state.copyWith(
+      isLoading: false,
+      error: e.toString(),
+    );
+  }
 }
+
   Future<void> fetchVehicleTypeList() async {
     state = state.copyWith(fetchVehicleTypeList: const AsyncValue.loading());
     try {

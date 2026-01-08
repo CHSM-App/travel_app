@@ -349,3 +349,4 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm> {
     ),
   );
 }
+ 

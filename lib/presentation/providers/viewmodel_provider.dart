@@ -42,3 +42,9 @@ final addVehicleViewModelProvider =
   final usecase = ref.watch(addVehicleUseCaseProvider);
   return AddVehicleViewModel(ref, usecase);
 });
+
+final customerViewModelProvider =
+    StateNotifierProvider<CustomerViewModel, CustomerState>((ref) {
+  final usecase = ref.watch(customerUseCaseProvider);
+  return CustomerViewModel(ref,usecase);
+  });
