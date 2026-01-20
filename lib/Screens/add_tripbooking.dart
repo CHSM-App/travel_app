@@ -218,7 +218,7 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm> {
 
     error: (e, _) => Text("Driver error: $e"),
     data: (List<Drivers> drivers) => DropdownButtonFormField<int>(
-      value: selectedDriverId,
+      initialValue: selectedDriverId,
       items: drivers
           .map(
             (d) =>
@@ -247,7 +247,7 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm> {
 
         error: (e, _) => Text("Vehicle error: $e"),
         data: (List<Vehicles> vehicles) => DropdownButtonFormField<int>(
-          value: selectedVehicleId,
+          initialValue: selectedVehicleId,
           items: vehicles
               .map(
                 (v) => DropdownMenuItem(
@@ -279,7 +279,7 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm> {
 
         error: (e, _) => Text("Customer error: $e"),
         data: (List<Customer> customers) => DropdownButtonFormField<int>(
-          value: selectedCustomerId,
+          initialValue: selectedCustomerId,
           items: customers
               .map(
                 (c) => DropdownMenuItem(

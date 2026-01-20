@@ -6,7 +6,7 @@ import 'package:travel_agency_app/Screens/trip_page.dart';
 import 'package:travel_agency_app/Screens/vehicle_page.dart';
 
 class MainBottomNav extends StatefulWidget {
-  const MainBottomNav({Key? key}) : super(key: key);
+  const MainBottomNav({super.key});
 
   @override
   State<MainBottomNav> createState() => _MainBottomNavState();
@@ -19,7 +19,7 @@ class _MainBottomNavState extends State<MainBottomNav> {
   final List<Widget> pages = [
     TravelAdminDashboard(),
     TripsPage(),
-    CustomersPage(),
+    CustomerPage(),
     VehiclePage(),
     DriversPage(),
   ];

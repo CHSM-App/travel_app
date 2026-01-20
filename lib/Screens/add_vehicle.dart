@@ -155,7 +155,7 @@ class _AddVehiclePageState extends ConsumerState<AddVehiclePage> {
 
     error: (e, _) => Text("Vehicle Type error: $e"),
     data: (List<VehicleType> vehicleTypes) => DropdownButtonFormField<int>(
-      value: selectedTypeId,
+      initialValue: selectedTypeId,
       items: vehicleTypes
           .map(
             (d) =>
@@ -184,7 +184,7 @@ class _AddVehiclePageState extends ConsumerState<AddVehiclePage> {
 
     error: (e, _) => Text("Fuel Type error: $e"),
     data: (List<Fueltype> fuelTypes) => DropdownButtonFormField<int>(
-      value: selectedFuelTypeId,
+      initialValue: selectedFuelTypeId,
       items: fuelTypes
           .map(
             (d) =>
@@ -213,7 +213,7 @@ class _AddVehiclePageState extends ConsumerState<AddVehiclePage> {
 
     error: (e, _) => Text("Status Type error: $e"),
     data: (List<Status> statuses) => DropdownButtonFormField<int>(
-      value: selectedStatusId,
+      initialValue: selectedStatusId,
       items: statuses
           .map(
             (d) =>

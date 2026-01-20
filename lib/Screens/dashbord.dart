@@ -14,7 +14,7 @@ class TravelAdminDashboard extends StatelessWidget {
       appBar: AppBar(
         elevation: 0,
         backgroundColor: Colors.indigo,
-        title: const Text('My Business', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text('My Business' , style: TextStyle(fontWeight: FontWeight.bold)),
         actions: const [
           Padding(
             padding: EdgeInsets.only(right: 16),

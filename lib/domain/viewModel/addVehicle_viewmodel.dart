@@ -1,15 +1,11 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:travel_agency_app/domain/models/customers.dart';
-import 'package:travel_agency_app/domain/models/drivers.dart';
 import 'package:travel_agency_app/domain/models/fueltype.dart';
 import 'package:travel_agency_app/domain/models/status.dart';
-import 'package:travel_agency_app/domain/models/tripbooking_info.dart';
 import 'package:travel_agency_app/domain/models/vehicles.dart';
 import 'package:travel_agency_app/domain/models/vehicletype.dart';
 import 'package:travel_agency_app/domain/usecase/addVehicleUseCase.dart';
-import 'package:travel_agency_app/domain/usecase/tripbooking_usecase.dart';
 
 @immutable
 class AddVehicleState {

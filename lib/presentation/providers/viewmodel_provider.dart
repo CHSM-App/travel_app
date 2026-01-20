@@ -1,9 +1,11 @@
 // ignore: file_names
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:travel_agency_app/domain/usecase/customerUseCase.dart';
 import 'package:travel_agency_app/domain/viewModel/addVehicle_viewmodel.dart' show AddVehicleViewModel, AddVehicleState;
 
 import 'package:travel_agency_app/domain/viewModel/auth_model.dart';
+import 'package:travel_agency_app/domain/viewModel/customerViewModel.dart';
 import 'package:travel_agency_app/domain/viewModel/network_model.dart';
 import 'package:travel_agency_app/domain/viewModel/tripbooking_viewmodel.dart';
 import 'package:travel_agency_app/presentation/providers/usecase_provider.dart';
@@ -46,5 +48,5 @@ final addVehicleViewModelProvider =
 final customerViewModelProvider =
     StateNotifierProvider<CustomerViewModel, CustomerState>((ref) {
   final usecase = ref.watch(customerUseCaseProvider);
-  return CustomerViewModel(ref,usecase);
+  return CustomerViewModel(usecase);
   });

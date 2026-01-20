@@ -1,285 +1,117 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:travel_agency_app/presentation/providers/customer_viewmodel_provider.dart';
+import 'package:travel_agency_app/domain/models/customers.dart';
+import 'package:travel_agency_app/presentation/providers/viewmodel_provider.dart';
 
-
-class CustomersPage extends ConsumerStatefulWidget {
-  const CustomersPage({Key? key}) : super(key: key);
+class CustomerPage extends ConsumerStatefulWidget {
+  const CustomerPage({super.key});
 
   @override
-  ConsumerState<CustomersPage> createState() => _CustomersPageState();
-
+  ConsumerState<CustomerPage> createState() => _CustomerPageState();
 }
 
-class _CustomersPageState extends ConsumerState<CustomersPage> {
-final TextEditingController _searchCtrl = TextEditingController();  
-final _formKey = GlobalKey<FormState>();  
-final TextEditingController _customerNameCtrl = TextEditingController();  
-final TextEditingController _customerEmailCtrl = TextEditingController(); 
-final TextEditingController _customerPhoneCtrl = TextEditingController();
-final TextEditingController _customerLocationCtrl = TextEditingController();
-final TextEditingController _customerStatusCtrl = TextEditingController();
-final TextEditingController _customerTripsCtrl = TextEditingController();
-
-@override
-void initState() {
-  super.initState();
-  Future.microtask(() {
-    // Load initial customer data if needed
-    ref.read(customerViewModelProvider.notifier).customerList();
-  });
+class _CustomerPageState extends ConsumerState<CustomerPage> {
+  @override
+  void initState() {
+    super.initState();
+    Future.microtask(() {
+      ref
+          .read(customerViewModelProvider.notifier)
+          .fetchCustomerslist();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
+    final state = ref.watch(customerViewModelProvider);
+
     return Scaffold(
       backgroundColor: Colors.grey.shade100,
-
       appBar: AppBar(
         title: const Text("Customers"),
         centerTitle: true,
-        backgroundColor: Colors.blue,
-        elevation: 0,
-        actions: [
-          IconButton(
-            onPressed: () {},
-            icon: const Icon(Icons.add),
-          )
-        ],
-      ),
-
-      body: Column(
-        children: [
-          const SizedBox(height: 10),
-
-          // Search bar with filter icon + badge
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            child: Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    decoration: InputDecoration(
-                      hintText: "Search Customers",
-                      prefixIcon: const Icon(Icons.search),
-                      filled: true,
-                      fillColor: Colors.white,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(14),
-                        borderSide: BorderSide.none,
-                      ),
-                    ),
-                  ),
-                ),
-
-                const SizedBox(width: 10),
-
-                Stack(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                      child: const Icon(Icons.filter_list),
-                    ),
-
-                    Positioned(
-                      right: 0,
-                      top: 2,
-                      child: CircleAvatar(
-                        radius: 10,
-                        backgroundColor: Colors.blue,
-                        child: const Text(
-                          "12",
-                          style: TextStyle(fontSize: 11, color: Colors.white),
-                        ),
-                      ),
-                    )
-                  ],
-                )
-              ],
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Colors.indigo, Colors.blue],
             ),
           ),
-
-          const SizedBox(height: 10),
-
-          Expanded(
-            child: ListView(
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              children: const [
-                CustomerCard(
-                  name: "Rohan Gupta",
-                  phone: "+1 123-456-7890",
-                  email: "rohan.gupta@email.com",
-                  trips: "12 Trips",
-                  location: "Delhi, India",
-                  imageUrl:
-                      "https://randomuser.me/api/portraits/men/31.jpg",
-                  status: "Frequent",
-                ),
-
-                CustomerCard(
-                  name: "Anjali Sharma",
-                  phone: "+91 98765 43210",
-                  email: "anjali.sharma@email.com",
-                  trips: "2 Trips",
-                  location: "Mumbai, India",
-                  imageUrl:
-                      "https://randomuser.me/api/portraits/women/65.jpg",
-                  status: "New",
-                ),
-
-                CustomerCard(
-                  name: "Arun Patel",
-                  phone: "+44 7891 234567",
-                  email: "arun.patel@email.com",
-                  trips: "8 Trips",
-                  location: "London, UK",
-                  imageUrl:
-                      "https://randomuser.me/api/portraits/men/76.jpg",
-                  status: "Regular",
-                ),
-
-                CustomerCard(
-                  name: "Priya Verma",
-                  phone: "+61 410 123 987",
-                  email: "priya.verma@email.com",
-                  trips: "15 Trips",
-                  location: "Sydney, Australia",
-                  imageUrl:
-                      "https://randomuser.me/api/portraits/women/21.jpg",
-                  status: "Frequent",
-                ),
-
-                CustomerCard(
-                  name: "Vikram Joshi",
-                  phone: "+91 99876 54321",
-                  email: "vikram.joshi@email.com",
-                  trips: "5 Trips",
-                  location: "Jaipur, India",
-                  imageUrl:
-                      "https://randomuser.me/api/portraits/men/5.jpg",
-                  status: "Regular",
-                ),
-
-                CustomerCard(
-                  name: "Simran Kaur",
-                  phone: "+1 987-654-3210",
-                  email: "simran.kaur@email.com",
-                  trips: "1 Trip",
-                  location: "Toronto, Canada",
-                  imageUrl:
-                      "https://randomuser.me/api/portraits/women/44.jpg",
-                  status: "Inactive",
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    
-    );
-  }
-}
-
-class CustomerCard extends StatelessWidget {
-  final String name;
-  final String phone;
-  final String email;
-  final String trips;
-  final String location;
-  final String imageUrl;
-  final String status;
-
-  const CustomerCard({
-    super.key,
-    required this.name,
-    required this.phone,
-    required this.email,
-    required this.trips,
-    required this.location,
-    required this.imageUrl,
-    required this.status,
-  });
-
-  Color getStatusColor() {
-    switch (status) {
-      case "Frequent":
-        return Colors.teal.shade600;
-      case "Regular":
-        return Colors.blue.shade600;
-      case "New":
-        return Colors.orange.shade600;
-      default:
-        return Colors.grey.shade500;
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 14),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Row(
-          children: [
-            CircleAvatar(
-              radius: 28,
-              backgroundImage: NetworkImage(imageUrl),
-            ),
-
-            const SizedBox(width: 12),
-
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(name,
-                            style: const TextStyle(
-                                fontWeight: FontWeight.bold, fontSize: 16)),
-                      ),
-                      Chip(
-                        label: Text(status),
-                        backgroundColor: getStatusColor(),
-                        labelStyle: const TextStyle(color: Colors.white),
-                      )
-                    ],
-                  ),
-
-                  Row(
-                    children: [
-                      const Icon(Icons.phone, size: 16),
-                      const SizedBox(width: 6),
-                      Text(phone),
-                    ],
-                  ),
-
-                  Row(
-                    children: [
-                      const Icon(Icons.email, size: 16),
-                      const SizedBox(width: 6),
-                      Text(email),
-                    ],
-                  ),
-
-                  Row(
-                    children: [
-                      const Icon(Icons.location_on, size: 16),
-                      const SizedBox(width: 6),
-                      Text("$trips · $location"),
-                    ],
-                  ),
-                ],
-              ),
-            )
-          ],
         ),
       ),
+      body: state.CustomerList.when(
+        loading: () =>
+            const Center(child: CircularProgressIndicator()),
+
+        error: (e, _) =>
+            Center(child: Text("Error: $e")),
+
+        data: (customers) => customers.isEmpty
+            ? _emptyView()
+            : RefreshIndicator(
+                onRefresh: () => ref
+                    .read(customerViewModelProvider.notifier)
+                    .fetchCustomerslist(),
+                child: ListView.builder(
+                  padding: const EdgeInsets.all(12),
+                  itemCount: customers.length,
+                  itemBuilder: (_, i) =>
+                      _customerCard(customers[i]),
+                ),
+              ),
+      ),
+    );
+  }
+
+  Widget _customerCard(Customer customer) {
+    return Card(
+      elevation: 4,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+      margin: const EdgeInsets.only(bottom: 12),
+      child: ListTile(
+        contentPadding: const EdgeInsets.all(12),
+        leading: CircleAvatar(
+          radius: 26,
+          backgroundColor: Colors.indigo.shade100,
+          child: Text(
+            customer.name![0],
+            style: const TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: Colors.indigo,
+            ),
+          ),
+        ),
+        title: Text(
+          customer.name!,
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SizedBox(height: 4),
+            Text(customer.phone ?? ''),
+            Text(customer.licenceNo ?? ''),
+            Text(customer.licenceExpiry?.toString() ?? ''),
+          ],
+        ),
+        trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+      ),
+    );
+  }
+
+  Widget _emptyView() {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: const [
+        Icon(Icons.people_outline, size: 80, color: Colors.grey),
+        SizedBox(height: 12),
+        Text(
+          "No customers found",
+          style: TextStyle(fontSize: 16),
+        ),
+      ],
     );
   }
 }
