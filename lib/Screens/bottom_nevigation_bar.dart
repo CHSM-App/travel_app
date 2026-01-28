@@ -18,7 +18,7 @@ class _MainBottomNavState extends State<MainBottomNav> {
 
   final List<Widget> pages = [
     TravelAdminDashboard(),
-    TripsPage(),
+    TripPage(),
     CustomerPage(),
     VehiclePage(),
     DriversPage(),

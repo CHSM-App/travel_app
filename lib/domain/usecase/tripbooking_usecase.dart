@@ -1,3 +1,4 @@
+import 'package:travel_agency_app/domain/models/booking_info.dart';
 import 'package:travel_agency_app/domain/models/customers.dart';
 import 'package:travel_agency_app/domain/models/drivers.dart';
 import 'package:travel_agency_app/domain/models/tripbooking_info.dart';
@@ -20,6 +21,18 @@ class TripbookingUsecase {
 
   Future<List<Customer>> customerList() {
     return repository.customerList();
+  }
+
+  Future<List<BookingInfo>> upcomingTrip() {
+    return repository.upcomingTrip();
+  }
+
+  Future<List<BookingInfo>> historyTrip() {
+    return repository.historyTrip();
+  }
+
+  Future<List<BookingInfo>> unpaidTrip() {
+    return repository.unpaidTrip();
   }
 
 }

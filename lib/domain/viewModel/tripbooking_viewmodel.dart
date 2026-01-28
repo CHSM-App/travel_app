@@ -102,5 +102,7 @@ class TripBookingViewModel extends StateNotifier<TripBookingState> {
 
   }
 
+  
+
 
 }

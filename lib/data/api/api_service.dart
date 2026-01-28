@@ -2,6 +2,7 @@
 import 'package:dio/dio.dart';
 import 'package:retrofit/retrofit.dart';
 import 'package:travel_agency_app/core/storage/constant.dart';
+import 'package:travel_agency_app/domain/models/booking_info.dart';
 import 'package:travel_agency_app/domain/models/customers.dart';
 import 'package:travel_agency_app/domain/models/drivers.dart';
 import 'package:travel_agency_app/domain/models/fueltype.dart';
@@ -42,5 +43,15 @@ abstract class ApiService {
 
   @GET("users/FuelTypeList")
   Future<List<Fueltype>> fuelTypeList();
+
+  @GET("users//UpcomingTrip")
+  Future<List<BookingInfo>> UpcomingTrip();
+
+  @GET("users/HistoryTrip")
+  Future<List<BookingInfo>> HistoryTrip();
+
+  @GET("users/Unpaidtrip")
+  Future<List<BookingInfo>> Unpaidtrip();
+
 
 }  

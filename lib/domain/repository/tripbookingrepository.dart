@@ -1,3 +1,4 @@
+import 'package:travel_agency_app/domain/models/booking_info.dart';
 import 'package:travel_agency_app/domain/models/customers.dart';
 import 'package:travel_agency_app/domain/models/drivers.dart';
 import 'package:travel_agency_app/domain/models/tripbooking_info.dart';
@@ -11,4 +12,11 @@ abstract class Tripbookingrepository {
   Future<List<Vehicles>> vehicleList();
 
   Future<List<Customer>> customerList();
-} 
+
+  Future<List<BookingInfo>> upcomingTrip();
+
+  Future<List<BookingInfo>> historyTrip();
+
+  Future<List<BookingInfo>> unpaidTrip();
+  
+}

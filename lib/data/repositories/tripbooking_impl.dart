@@ -1,4 +1,5 @@
 import 'package:travel_agency_app/data/api/api_service.dart';
+import 'package:travel_agency_app/domain/models/booking_info.dart';
 import 'package:travel_agency_app/domain/models/customers.dart';
 import 'package:travel_agency_app/domain/models/drivers.dart';
 import 'package:travel_agency_app/domain/models/tripbooking_info.dart';
@@ -29,5 +30,24 @@ class TripBookingImpl implements Tripbookingrepository {
     return apiService.customerList();
   }
     
+  
+  
+  @override
+  Future<List<BookingInfo>> historyTrip() {
+    return apiService.HistoryTrip();
+  }
+  
+  @override
+  Future<List<BookingInfo>> unpaidTrip() {
+    return apiService.Unpaidtrip();
+    
+  }
+  
+  @override
+  Future<List<BookingInfo>> upcomingTrip() {
+    return apiService.UpcomingTrip();
+  }
+  
+  
 
 }

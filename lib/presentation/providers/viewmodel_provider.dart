@@ -6,8 +6,12 @@ import 'package:travel_agency_app/domain/viewModel/addVehicle_viewmodel.dart' sh
 
 import 'package:travel_agency_app/domain/viewModel/auth_model.dart';
 import 'package:travel_agency_app/domain/viewModel/customerViewModel.dart';
+import 'package:travel_agency_app/domain/viewModel/historytrip_viewmodel.dart';
 import 'package:travel_agency_app/domain/viewModel/network_model.dart';
-import 'package:travel_agency_app/domain/viewModel/tripbooking_viewmodel.dart';
+import 'package:travel_agency_app/domain/viewModel/trip_page_viewmodel.dart';
+import 'package:travel_agency_app/domain/viewModel/tripbooking_viewmodel.dart' hide TripPageViewModel;
+import 'package:travel_agency_app/domain/viewModel/unpaidtrip_viewmodel.dart';
+import 'package:travel_agency_app/domain/viewModel/upcomingtrip_viewmodel.dart';
 import 'package:travel_agency_app/presentation/providers/usecase_provider.dart';
 
  
@@ -49,4 +53,10 @@ final customerViewModelProvider =
     StateNotifierProvider<CustomerViewModel, CustomerState>((ref) {
   final usecase = ref.watch(customerUseCaseProvider);
   return CustomerViewModel(usecase);
+  });
+
+final TripPageViewModelProvider =
+    StateNotifierProvider<TripPageViewModel, TripPageState>((ref) {
+  final usecase = ref.watch(tripBookingUseCaseProvider);
+  return TripPageViewModel(ref,usecase);
   });
