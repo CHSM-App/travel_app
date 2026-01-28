@@ -24,7 +24,7 @@ final dioProvider = FutureProvider<Dio>((ref) {
     },
   ));
 
-  dio.interceptors.add(LogInterceptor(requestBody: true, responseBody: true));
+  //dio.interceptors.add(LogInterceptor(requestBody: true, responseBody: true));
   
   // Add Network Interceptor
    //dio.interceptors.add(NetworkInterceptor(ref));

@@ -7,7 +7,6 @@ import 'package:travel_agency_app/domain/repository/AddVehicleRepository.dart';
 import 'package:travel_agency_app/domain/repository/CustomerRepository.dart';
 import 'package:travel_agency_app/domain/repository/auth_repo.dart';
 import 'package:travel_agency_app/domain/repository/tripbookingrepository.dart';
-import 'package:travel_agency_app/domain/viewModel/upcomingtrip_viewmodel.dart';
 import '../../core/network/dio_provider.dart';
 import '../../data/api/api_service.dart';
 

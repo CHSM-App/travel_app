@@ -56,7 +56,8 @@ class _ApiService implements ApiService {
     final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
     final _headers = <String, dynamic>{};
-    final _data = tripBooking;
+    final _data = <String, dynamic>{};
+    _data.addAll(tripBooking.toJson());
     final _options = _setStreamType<dynamic>(Options(
       method: 'POST',
       headers: _headers,
@@ -65,6 +66,34 @@ class _ApiService implements ApiService {
         .compose(
           _dio.options,
           'insert/Addtripbooking',
+          queryParameters: queryParameters,
+          data: _data,
+        )
+        .copyWith(
+            baseUrl: _combineBaseUrls(
+          _dio.options.baseUrl,
+          baseUrl,
+        )));
+    final _result = await _dio.fetch(_options);
+    final _value = _result.data;
+    return _value;
+  }
+
+  @override
+  Future<dynamic> addVehicle(Vehicles vehicle) async {
+    final _extra = <String, dynamic>{};
+    final queryParameters = <String, dynamic>{};
+    final _headers = <String, dynamic>{};
+    final _data = <String, dynamic>{};
+    _data.addAll(vehicle.toJson());
+    final _options = _setStreamType<dynamic>(Options(
+      method: 'POST',
+      headers: _headers,
+      extra: _extra,
+    )
+        .compose(
+          _dio.options,
+          'insert/Addvehicle',
           queryParameters: queryParameters,
           data: _data,
         )
@@ -184,34 +213,6 @@ class _ApiService implements ApiService {
   }
 
   @override
-  Future<dynamic> addVehicle(Vehicles vehicle) async {
-    final _extra = <String, dynamic>{};
-    final queryParameters = <String, dynamic>{};
-    final _headers = <String, dynamic>{};
-    final _data = <String, dynamic>{};
-    _data.addAll(vehicle.toJson());
-    final _options = _setStreamType<dynamic>(Options(
-      method: 'POST',
-      headers: _headers,
-      extra: _extra,
-    )
-        .compose(
-          _dio.options,
-          'insert/Addvehicle',
-          queryParameters: queryParameters,
-          data: _data,
-        )
-        .copyWith(
-            baseUrl: _combineBaseUrls(
-          _dio.options.baseUrl,
-          baseUrl,
-        )));
-    final _result = await _dio.fetch(_options);
-    final _value = _result.data;
-    return _value;
-  }
-
-  @override
   Future<List<VehicleType>> vehicleTypeList() async {
     final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
@@ -317,7 +318,7 @@ class _ApiService implements ApiService {
   }
 
   @override
-  Future<List<BookingInfo>> UpcomingTrip() async {
+  Future<List<BookingInfo>> upcomingTrip() async {
     final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
     final _headers = <String, dynamic>{};
@@ -352,7 +353,7 @@ class _ApiService implements ApiService {
   }
 
   @override
-  Future<List<BookingInfo>> HistoryTrip() async {
+  Future<List<BookingInfo>> historyTrip() async {
     final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
     final _headers = <String, dynamic>{};
@@ -387,7 +388,7 @@ class _ApiService implements ApiService {
   }
 
   @override
-  Future<List<BookingInfo>> Unpaidtrip() async {
+  Future<List<BookingInfo>> unpaidtrip() async {
     final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
     final _headers = <String, dynamic>{};

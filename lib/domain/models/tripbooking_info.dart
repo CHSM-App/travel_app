@@ -46,6 +46,9 @@ class TripBooking {
     this.tripcharges,
     this.bookingdate,
   });
+ factory TripBooking.fromJson(Map<String, dynamic> json) =>
+      _$TripBookingFromJson(json);
 
+  Map<String, dynamic> toJson() => _$TripBookingToJson(this);
   
 }

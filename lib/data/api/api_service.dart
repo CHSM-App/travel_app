@@ -12,6 +12,13 @@ import 'package:travel_agency_app/domain/models/vehicles.dart';
 import 'package:travel_agency_app/domain/models/vehicletype.dart';
 
 part 'api_service.g.dart';
+abstract class ParseErrorLogger {
+  void logError(
+    Object error,
+    StackTrace stackTrace,
+    RequestOptions requestOptions,
+  );
+}
 
 @RestApi(baseUrl: baseUrl)
 abstract class ApiService {
@@ -19,9 +26,19 @@ abstract class ApiService {
   @GET('/')
   Future<HttpResponse> checkHealth(); 
 
+  //POST API CALL
   @POST("insert/Addtripbooking")
   Future<dynamic> addTripBooking(@Body() TripBooking tripBooking); 
+ 
   
+  @POST("insert/Addvehicle")
+  Future<dynamic> addVehicle(@Body() Vehicles vehicle);
+  
+
+ //------------------------------------------------------------------------------------------/
+ 
+
+  //GET API CALL
   @GET("users/driverList")
   Future<List<Drivers>> driverList();
 
@@ -31,27 +48,23 @@ abstract class ApiService {
   @GET("users/customerList")
   Future<List<Customer>> customerList();
 
-  @POST("insert/Addvehicle")
-  Future<dynamic> addVehicle(@Body() Vehicles vehicle);
-
   @GET("users/VehicleTypeList")
   Future<List<VehicleType>> vehicleTypeList();
 
   @GET("users/StatusList")
   Future<List<Status>> statusList();
   
-
   @GET("users/FuelTypeList")
   Future<List<Fueltype>> fuelTypeList();
 
   @GET("users//UpcomingTrip")
-  Future<List<BookingInfo>> UpcomingTrip();
+  Future<List<BookingInfo>> upcomingTrip();
 
   @GET("users/HistoryTrip")
-  Future<List<BookingInfo>> HistoryTrip();
+  Future<List<BookingInfo>> historyTrip();
 
   @GET("users/Unpaidtrip")
-  Future<List<BookingInfo>> Unpaidtrip();
+  Future<List<BookingInfo>> unpaidtrip();
 
 
 }  
