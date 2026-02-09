@@ -2,6 +2,7 @@
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:travel_agency_app/domain/usecase/customerUseCase.dart';
+import 'package:travel_agency_app/domain/viewModel/addDriver_viewmodel.dart';
 import 'package:travel_agency_app/domain/viewModel/addVehicle_viewmodel.dart';
 import 'package:travel_agency_app/domain/viewModel/auth_model.dart';
 import 'package:travel_agency_app/domain/viewModel/customerViewModel.dart';
@@ -56,3 +57,9 @@ final TripPageViewModelProvider =
   final usecase = ref.watch(tripBookingUseCaseProvider);
   return TripPageViewModel(ref,usecase);
   });
+
+final addDriverViewModelProvider =
+  StateNotifierProvider<AdddriverViewmodel, AddDriverState>((ref) {
+  final usecase = ref.watch(addDriverUseCaseProvider);
+  return AdddriverViewmodel(ref, usecase);
+});

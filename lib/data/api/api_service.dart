@@ -33,6 +33,9 @@ abstract class ApiService {
   
   @POST("insert/Addvehicle")
   Future<dynamic> addVehicle(@Body() Vehicles vehicle);
+
+  @POST("insert/AddDriver")
+  Future<dynamic> AddDriver(@Body() Drivers driver);
   
 
  //------------------------------------------------------------------------------------------/

@@ -161,6 +161,15 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm> {
   // ---------------- SECTIONS ----------------
 
   List<Widget> _sections(TripBookingState state) => [
+         _sectionCard("Schedule", [
+          _readonly(bookingDate, "Booking Date"),
+          _gap(),
+          _dateField(startDate, "Start Date & Time", true),
+          _gap(),
+          _dateField(endDate, "End Date & Time", false),
+                   
+        ]),
+
         _sectionCard("Trip Details", [
           _vehicleDropdown(state),
           _gap(),
@@ -168,11 +177,13 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm> {
           _gap(),
           _customerDropdown(state),
         ]),
+
         _sectionCard("Locations", [
           _text(pickup, "Pickup Location", Icons.location_on),
           _gap(),
           _text(drop, "Drop Location", Icons.flag),
         ]),
+        
         _sectionCard("Charges & Distance", [
           _number(distance, "Distance (KM)", Icons.route),
           _gap(),
@@ -186,13 +197,7 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm> {
           _gap(),
           _number(tripCharges, "Total Charges", Icons.currency_rupee),
         ]),
-        _sectionCard("Schedule", [
-          _dateField(startDate, "Start Date & Time", true),
-          _gap(),
-          _dateField(endDate, "End Date & Time", false),
-          _gap(),
-          _readonly(bookingDate, "Booking Date"),
-        ]),
+       
       ];
 
   // ---------------- SAVE ----------------

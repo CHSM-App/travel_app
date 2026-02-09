@@ -1,10 +1,12 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:travel_agency_app/data/repositories/adddriver_impl.dart';
 import 'package:travel_agency_app/data/repositories/addvehicle_impl.dart';
 import 'package:travel_agency_app/data/repositories/auth_impl.dart';
 import 'package:travel_agency_app/data/repositories/customer_impl.dart';
 import 'package:travel_agency_app/data/repositories/tripbooking_impl.dart';
 import 'package:travel_agency_app/domain/repository/AddVehicleRepository.dart';
 import 'package:travel_agency_app/domain/repository/CustomerRepository.dart';
+import 'package:travel_agency_app/domain/repository/adddriverRepository.dart';
 import 'package:travel_agency_app/domain/repository/auth_repo.dart';
 import 'package:travel_agency_app/domain/repository/tripbookingrepository.dart';
 import '../../core/network/dio_provider.dart';
@@ -35,3 +37,8 @@ final customerRepositoryProvider = Provider<CustomerRepository>((ref) {
   return CustomerImpl(api);
 });
 
+final AdddriverrepositoryProvider=Provider<Adddriverrepository>((ref){
+  final dio=ref.watch(dioProvider).value!;
+  final api=ApiService(dio);
+  return AddDriverImpl(api);
+});
