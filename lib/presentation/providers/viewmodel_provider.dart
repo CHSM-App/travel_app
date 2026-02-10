@@ -1,5 +1,5 @@
 // ignore: file_names
-import 'package:firebase_messaging/firebase_messaging.dart';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:travel_agency_app/domain/usecase/customerUseCase.dart';
 import 'package:travel_agency_app/domain/viewModel/addDriver_viewmodel.dart';
@@ -12,9 +12,9 @@ import 'package:travel_agency_app/domain/viewModel/tripbooking_viewmodel.dart';
 import 'package:travel_agency_app/presentation/providers/usecase_provider.dart';
 
  
-final firebaseMessagingProvider = Provider<FirebaseMessaging>((ref) {
-  return FirebaseMessaging.instance;
-});
+// final firebaseMessagingProvider = Provider<FirebaseMessaging>((ref) {
+//   return FirebaseMessaging.instance;
+// });
 
 final networkStateProvider =
     StateNotifierProvider<EnhancedNetworkStateNotifier, NetworkState>(

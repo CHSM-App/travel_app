@@ -7,11 +7,11 @@ part of 'fueltype.dart';
 // **************************************************************************
 
 Fueltype _$FueltypeFromJson(Map<String, dynamic> json) => Fueltype(
-      FuelTypeId: (json['FuelTypeId'] as num?)?.toInt(),
-      FuelType: json['FuelType'] as String?,
-    );
+  FuelTypeId: (json['FuelTypeId'] as num?)?.toInt(),
+  FuelType: json['FuelType'] as String?,
+);
 
 Map<String, dynamic> _$FueltypeToJson(Fueltype instance) => <String, dynamic>{
-      'FuelTypeId': instance.FuelTypeId,
-      'FuelType': instance.FuelType,
-    };
+  'FuelTypeId': instance.FuelTypeId,
+  'FuelType': instance.FuelType,
+};

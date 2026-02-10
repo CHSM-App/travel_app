@@ -7,12 +7,9 @@ part of 'vehicletype.dart';
 // **************************************************************************
 
 VehicleType _$VehicleTypeFromJson(Map<String, dynamic> json) => VehicleType(
-      TypeId: (json['TypeId'] as num?)?.toInt(),
-      Type: json['Type'] as String?,
-    );
+  TypeId: (json['TypeId'] as num?)?.toInt(),
+  Type: json['Type'] as String?,
+);
 
 Map<String, dynamic> _$VehicleTypeToJson(VehicleType instance) =>
-    <String, dynamic>{
-      'TypeId': instance.TypeId,
-      'Type': instance.Type,
-    };
+    <String, dynamic>{'TypeId': instance.TypeId, 'Type': instance.Type};

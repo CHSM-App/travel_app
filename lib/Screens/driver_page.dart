@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:travel_agency_app/Screens/add_driver.dart';
 
-class DriversPage extends StatefulWidget {
+class DriversPage extends ConsumerStatefulWidget {
   const DriversPage({super.key});
 
   @override
-  State<DriversPage> createState() => _DriversPageState();
+  ConsumerState<DriversPage> createState() => _DriversPageState();
 }
 
-class _DriversPageState extends State<DriversPage> {
+class _DriversPageState extends ConsumerState<DriversPage> {
+
   String selectedFilter = "All";
 
   final List<String> filters = ["All", "Available", "On Trip"];
@@ -41,11 +44,19 @@ class _DriversPageState extends State<DriversPage> {
         centerTitle: true,
       ),
 
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {},
-        icon: const Icon(Icons.person_add_alt),
-        label: const Text("Add Driver"),
+    floatingActionButton: FloatingActionButton.extended(
+  onPressed: () {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const AddDriverPage(),
       ),
+    );
+  },
+  icon: const Icon(Icons.person_add_alt),
+  label: const Text("Add Driver"),
+),
+
 
       body: Padding(
         padding: const EdgeInsets.all(16),

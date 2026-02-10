@@ -1,3 +1,4 @@
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:travel_agency_app/domain/models/drivers.dart';
@@ -40,52 +41,30 @@ class _AddDriverPageState extends ConsumerState<AddDriverPage> {
   }
 
   @override
-  void initState() {
-    super.initState();
-    Future.microtask(() {
-      final notifier = ref.read(addDriverViewModelProvider.notifier);
-     
-    });
-  }
-
-  @override
   Widget build(BuildContext context) {
-    final state= ref.watch(addDriverViewModelProvider);
-    String error="";
-     String message="" ;
+    final state = ref.watch(addDriverViewModelProvider);
+
+
     ref.listen(addDriverViewModelProvider, (prev, next) {
-    if (next.error != null) {
-         error = next.error!.toLowerCase().toString();
+      if (prev == next) return;
 
-  if (error.contains("unique") || error.contains("duplicate")) {
-    error = "Vehicle number already exists.";
-  }
-
-  if (error.contains("foreign key")) {
-    message = "Selected record is linked and cannot be deleted.";
-  }
-
-  if (error.contains("not null")) {
-    message = "Required field is missing.";
-  }
-
-  if (error.contains("check constraint")) {
-    message = "Entered value is not valid.";
-  }
-     ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(error.toString())));
+      if (next.error != null) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(next.error!)),
+          );
+        });
       }
+
       if (next.data != null && prev?.data != next.data) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text("Driver Added Successfully")));
-        Navigator.pop(context);
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("Driver Added Successfully")),
+          );
+          Navigator.pop(context);
+        });
       }
     });
-
-
-
 
     return Scaffold(
       appBar: AppBar(
@@ -98,7 +77,6 @@ class _AddDriverPageState extends ConsumerState<AddDriverPage> {
           key: _formKey,
           child: Column(
             children: [
-
               /// Driver Photo
               Center(
                 child: Stack(
@@ -174,30 +152,34 @@ class _AddDriverPageState extends ConsumerState<AddDriverPage> {
                 width: double.infinity,
                 height: 50,
                 child: ElevatedButton(
-                  onPressed: state.isLoading?null: () async {
-                    if (_formKey.currentState!.validate()) {
-                      
-                      final driver=Drivers(
-                        driverId: 0,
-                        name: nameController.text,
-                        phone: phoneController.text,
-                        address: addressController.text,
-                        licenceNo: licenceNoController.text,
-                       
-                        licenceExpiry: DateTime.now(),
-                         
-                      );
-                       ref
-                              .read(addDriverViewModelProvider.notifier)
-                              .addDriver(Drivers as Drivers);
-                        }
-                  },
+                  onPressed: state.isLoading
+                      ? null
+                      : () {
+                          if (_formKey.currentState!.validate()) {
+                            final driver = Drivers(
+                              driverId: 0,
+                              name: nameController.text,
+                              phone: phoneController.text,
+                              address: addressController.text,
+                              licenceNo: licenceNoController.text,
+                              licenceExpiry: selectedExpiryDate,
+                            );
+
+                            ref
+                                .read(addDriverViewModelProvider.notifier)
+                                .addDriver(driver);
+                          }
+                        },
                   child: state.isLoading
-                  ? const CircularProgressIndicator() 
-                  :const Text(
-                    "Save Driver",
-                    style: TextStyle(fontSize: 16),
-                  ),
+                      ? const SizedBox(
+                          height: 24,
+                          width: 24,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Text("Save Driver"),
                 ),
               ),
             ],
@@ -205,7 +187,6 @@ class _AddDriverPageState extends ConsumerState<AddDriverPage> {
         ),
       ),
     );
-
   }
 
   Widget _buildTextField({
@@ -233,5 +214,4 @@ class _AddDriverPageState extends ConsumerState<AddDriverPage> {
       ),
     );
   }
-  
 }

@@ -31,42 +31,48 @@ class AddDriverState{
  }
   
 }
-
 class AdddriverViewmodel extends StateNotifier<AddDriverState> {
   final Ref ref;
   final AddDeiverUseCase usecase;
 
-AdddriverViewmodel(this.ref,this.usecase)
-: super(AddDriverState());
+  AdddriverViewmodel(this.ref, this.usecase)
+      : super(AddDriverState());
 
-Future<void> addDriver(Drivers drivers) async {
-state=state.copyWith(isLoading: true,error: null);
+  Future<void> addDriver(Drivers drivers) async {
+    state = state.copyWith(
+      isLoading: true,
+      error: null,
+      data: null, // reset old data
+    );
 
-try{
-final result=await usecase.addDriver(drivers);
+    try {
+      final result = await usecase.addDriver(drivers);
 
-state=state.copyWith(
-  isLoading: false,
-  error:null,
-);
+      /// ✅ IMPORTANT: SET DATA ON SUCCESS
+      state = state.copyWith(
+        isLoading: false,
+        data: {
+          "success": true,
+          "message": "Driver added",
+        },
+        error: null,
+      );
+    } on DioException catch (e) {
+      final serverMessage = e.response?.data?['message'];
 
-} on DioException catch(e) {
-final serverMessage= e.response?.data?['message'];
+      state = state.copyWith(
+        isLoading: false,
+        error: serverMessage ?? 'Server error',
+      );
 
-state=state.copyWith(
-  isLoading: false,
-  error:serverMessage ?? 'Server error',
-);
-
-debugPrint("Server error: $serverMessage");
-}catch(e){
-  state=state.copyWith(
-    isLoading: false,
-    error:e.toString(),
-  );
-}
-
-}
+      debugPrint("Server error: $serverMessage");
+    } catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        error: e.toString(),
+      );
+    }
+  }
 
 }
 

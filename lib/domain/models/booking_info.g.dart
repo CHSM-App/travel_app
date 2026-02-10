@@ -7,31 +7,31 @@ part of 'booking_info.dart';
 // **************************************************************************
 
 BookingInfo _$BookingInfoFromJson(Map<String, dynamic> json) => BookingInfo(
-      tripId: (json['trip_id'] as num?)?.toInt(),
-      vehicleId: (json['vehicle_id'] as num?)?.toInt(),
-      driverId: (json['driver_id'] as num?)?.toInt(),
-      pickupLocation: json['pickup_location'] as String?,
-      dropLocation: json['drop_location'] as String?,
-      distance: (json['distance'] as num?)?.toDouble(),
-      fuelRequired: (json['fuel_required'] as num?)?.toDouble(),
-      tollCharges: (json['toll_charges'] as num?)?.toDouble(),
-      repairingCharges: (json['repairing_charges'] as num?)?.toDouble(),
-      driverCharges: (json['driver_charges'] as num?)?.toDouble(),
-      startDateTime: json['start_datetime'] == null
-          ? null
-          : DateTime.parse(json['start_datetime'] as String),
-      endDateTime: json['end_datetime'] == null
-          ? null
-          : DateTime.parse(json['end_datetime'] as String),
-      status: (json['status'] as num?)?.toInt(),
-      purpose: json['purpose'] as String?,
-      amountApprove: (json['amount_approve'] as num?)?.toDouble(),
-      amountReceived: (json['amount_received'] as num?)?.toDouble(),
-      customerId: (json['customer_id'] as num?)?.toInt(),
-      vehicle_info: json['Vehicle_info'] as String?,
-      customer_name: json['Customer_name'] as String?,
-      driver_name: json['Driver_name'] as String?,
-    );
+  tripId: (json['trip_id'] as num?)?.toInt(),
+  vehicleId: (json['vehicle_id'] as num?)?.toInt(),
+  driverId: (json['driver_id'] as num?)?.toInt(),
+  pickupLocation: json['pickup_location'] as String?,
+  dropLocation: json['drop_location'] as String?,
+  distance: (json['distance'] as num?)?.toDouble(),
+  fuelRequired: (json['fuel_required'] as num?)?.toDouble(),
+  tollCharges: (json['toll_charges'] as num?)?.toDouble(),
+  repairingCharges: (json['repairing_charges'] as num?)?.toDouble(),
+  driverCharges: (json['driver_charges'] as num?)?.toDouble(),
+  startDateTime: json['start_datetime'] == null
+      ? null
+      : DateTime.parse(json['start_datetime'] as String),
+  endDateTime: json['end_datetime'] == null
+      ? null
+      : DateTime.parse(json['end_datetime'] as String),
+  status: (json['status'] as num?)?.toInt(),
+  purpose: json['purpose'] as String?,
+  amountApprove: (json['amount_approve'] as num?)?.toDouble(),
+  amountReceived: (json['amount_received'] as num?)?.toDouble(),
+  customerId: (json['customer_id'] as num?)?.toInt(),
+  vehicle_info: json['Vehicle_info'] as String?,
+  customer_name: json['Customer_name'] as String?,
+  driver_name: json['Driver_name'] as String?,
+);
 
 Map<String, dynamic> _$BookingInfoToJson(BookingInfo instance) =>
     <String, dynamic>{

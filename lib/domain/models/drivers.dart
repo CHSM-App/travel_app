@@ -13,12 +13,12 @@ class Drivers {
   final String? photo;
 
   Drivers({
-    required this.driverId,
-    required this.name,
-    required this.phone,
+     this.driverId,
+     this.name,
+     this.phone,
     this.address,
-    required this.licenceNo,
-    required this.licenceExpiry,
+     this.licenceNo,
+     this.licenceExpiry,
     this.vehicleId,
     this.photo,
   });
