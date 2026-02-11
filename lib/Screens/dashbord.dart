@@ -12,20 +12,6 @@ class TravelAdminDashboard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF4F6FA),
-      appBar: AppBar(
-        elevation: 0,
-        backgroundColor: Colors.indigo,
-        title: const Text('My Business' , style: TextStyle(fontWeight: FontWeight.bold)),
-        actions: const [
-          Padding(
-            padding: EdgeInsets.only(right: 16),
-            child: CircleAvatar(
-              backgroundColor: Colors.white,
-              child: Icon(Icons.person, color: Colors.indigo),
-            ),
-          )
-        ],
-      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -109,11 +95,11 @@ class TravelAdminDashboard extends StatelessWidget {
       physics: const NeverScrollableScrollPhysics(),
       children: [
         _actionButton('New Booking', Icons.add_chart, context),
-        _actionButton('Vehicle', Icons.receipt, context),
-        _actionButton('Drivers', Icons.inventory, context),
+        _actionButton('Vehicle', Icons.drive_eta_rounded, context),
+        _actionButton('Drivers', Icons.person, context),
         _actionButton('Customers', Icons.people_alt, context),
         _actionButton('Reports', Icons.bar_chart, context),
-        _actionButton('Settings', Icons.settings, context),
+        _actionButton('Trips', Icons.card_travel, context),
       ],
     );
   }
@@ -173,7 +159,7 @@ Widget _actionButton(String title, IconData icon, BuildContext context) {
           );
           break;
 
-        case 'Settings':
+        case 'Trips':
           Navigator.push(
             context,
             MaterialPageRoute(builder: (_) => TripBookingForm()),

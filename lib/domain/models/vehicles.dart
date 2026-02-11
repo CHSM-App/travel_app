@@ -6,23 +6,29 @@ class Vehicles {
   final int? vehicleId;
   final String? name;
   final String? number;
-  final int? type;
+  final int? TypeId;
   final int? capacity;
-  final int? fueltype;
+  final int? FuelTypeId;
   final String? mileage;
-  final int? status;
+  final int? StatusId;
   final String? rcdocuments;
+  final String? FuelType;
+  final String? Type;
+  final String? StatusName;
 
   Vehicles({
     required this.vehicleId,
     required this.name,
     required this.number,
-    this.type,
-    required this.capacity,
-    required this.fueltype,
+    this.TypeId,
+     this.capacity,
+     this.FuelTypeId,
     this.mileage,
-    this.status,
-    this.rcdocuments
+    this.StatusId,
+    this.rcdocuments,
+    this.FuelType,
+    this.Type,
+    this.StatusName,
   });
 
   factory Vehicles.fromJson(Map<String, dynamic> json) =>
