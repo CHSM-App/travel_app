@@ -7,21 +7,21 @@ part of 'customers.dart';
 // **************************************************************************
 
 Customer _$CustomerFromJson(Map<String, dynamic> json) => Customer(
-  CustomerId: (json['CustomerId'] as num?)?.toInt(),
+  customerId: (json['CustomerId'] as num?)?.toInt(),
   name: json['name'] as String?,
   phone: json['phone'] as String?,
   address: json['address'] as String?,
-  licenceNo: json['licenceNo'] as String?,
-  licenceExpiry: json['licenceExpiry'] == null
+  licenceNo: json['LicenceNo'] as String?,
+  licenceExpiry: json['LicenceExpiry'] == null
       ? null
-      : DateTime.parse(json['licenceExpiry'] as String),
+      : DateTime.parse(json['LicenceExpiry'] as String),
 );
 
 Map<String, dynamic> _$CustomerToJson(Customer instance) => <String, dynamic>{
-  'CustomerId': instance.CustomerId,
+  'CustomerId': instance.customerId,
   'name': instance.name,
   'phone': instance.phone,
   'address': instance.address,
-  'licenceNo': instance.licenceNo,
-  'licenceExpiry': instance.licenceExpiry?.toIso8601String(),
+  'LicenceNo': instance.licenceNo,
+  'LicenceExpiry': instance.licenceExpiry?.toIso8601String(),
 };

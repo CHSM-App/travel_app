@@ -4,6 +4,8 @@ abstract class CustomerRepository {
  // Future<dynamic> addcustomer(Customer customer);
 
   Future<List<Customer>> customerList();
+
+  Future<dynamic> addCustomer(Customer customer);
  
  
 

@@ -170,10 +170,7 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm> {
                 )
               : const Text(
                   "Save Booking",
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                 ),
         ),
       ),
@@ -188,10 +185,12 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm> {
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            ..._sections(state).map((section) => Padding(
-                  padding: const EdgeInsets.only(bottom: 16),
-                  child: section,
-                )),
+            ..._sections(state).map(
+              (section) => Padding(
+                padding: const EdgeInsets.only(bottom: 16),
+                child: section,
+              ),
+            ),
             const SizedBox(height: 80),
           ],
         ),
@@ -210,10 +209,10 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm> {
               spacing: 16,
               runSpacing: 16,
               children: _sections(state)
-                  .map((section) => SizedBox(
-                        width: (900 - 40 - 16) / 2,
-                        child: section,
-                      ))
+                  .map(
+                    (section) =>
+                        SizedBox(width: (900 - 40 - 16) / 2, child: section),
+                  )
                   .toList(),
             ),
           ),
@@ -233,10 +232,10 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm> {
               spacing: 20,
               runSpacing: 20,
               children: _sections(state)
-                  .map((section) => SizedBox(
-                        width: (1300 - 48 - 40) / 3,
-                        child: section,
-                      ))
+                  .map(
+                    (section) =>
+                        SizedBox(width: (1300 - 48 - 40) / 3, child: section),
+                  )
                   .toList(),
             ),
           ),
@@ -263,9 +262,7 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      CircularProgressIndicator(
-                        color: primaryIndigo,
-                      ),
+                      CircularProgressIndicator(color: primaryIndigo),
                       SizedBox(height: 16),
                       Text(
                         "Processing...",
@@ -287,65 +284,41 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm> {
   // ---------------- SECTIONS ----------------
 
   List<Widget> _sections(TripBookingState state) => [
-        _sectionCard(
-          "Schedule",
-          Icons.calendar_today_rounded,
-          [
-            _readonly(bookingDate, "Booking Date", Icons.today),
-            _gap(),
-            _dateField(startDate, "Start Date & Time", true),
-            _gap(),
-            _dateField(endDate, "End Date & Time", false),
-          ],
-        ),
-        _sectionCard(
-          "Trip Details",
-          Icons.info_outline_rounded,
-          [
-            _vehicleDropdown(state),
-            _gap(),
-            _driverDropdown(state),
-            _gap(),
-            _customerDropdown(state),
-          ],
-        ),
-        _sectionCard(
-          "Locations",
-          Icons.place_outlined,
-          [
-            _text(pickup, "Pickup Location", Icons.my_location),
-            _gap(),
-            _text(drop, "Drop Location", Icons.location_on),
-          ],
-        ),
-        _sectionCard(
-          "Distance & Fuel",
-          Icons.route_outlined,
-          [
-            _number(distance, "Distance (KM)", Icons.straighten),
-            _gap(),
-            _number(fuelRequired, "Fuel Required (L)", Icons.local_gas_station),
-          ],
-        ),
-        _sectionCard(
-          "Additional Charges",
-          Icons.receipt_long_outlined,
-          [
-            _number(tollCharges, "Toll Charges", Icons.toll),
-            _gap(),
-            _number(repairingCharges, "Repair Charges", Icons.build),
-            _gap(),
-            _number(driverCharges, "Driver Charges", Icons.person),
-          ],
-        ),
-        _sectionCard(
-          "Total Amount",
-          Icons.payments_outlined,
-          [
-            _number(tripCharges, "Total Trip Charges", Icons.currency_rupee),
-          ],
-        ),
-      ];
+    _sectionCard("Schedule", Icons.calendar_today_rounded, [
+      _readonly(bookingDate, "Booking Date", Icons.today),
+      _gap(),
+      _dateField(startDate, "Start Date & Time", true),
+      _gap(),
+      _dateField(endDate, "End Date & Time", false),
+    ]),
+    _sectionCard("Trip Details", Icons.info_outline_rounded, [
+      _vehicleDropdown(state),
+      _gap(),
+      _driverDropdown(state),
+      _gap(),
+      _customerDropdown(state),
+    ]),
+    _sectionCard("Locations", Icons.place_outlined, [
+      _text(pickup, "Pickup Location", Icons.my_location),
+      _gap(),
+      _text(drop, "Drop Location", Icons.location_on),
+    ]),
+    _sectionCard("Distance & Fuel", Icons.route_outlined, [
+      _number(distance, "Distance (KM)", Icons.straighten),
+      _gap(),
+      _number(fuelRequired, "Fuel Required (L)", Icons.local_gas_station),
+    ]),
+    _sectionCard("Additional Charges", Icons.receipt_long_outlined, [
+      _number(tollCharges, "Toll Charges", Icons.toll),
+      _gap(),
+      _number(repairingCharges, "Repair Charges", Icons.build),
+      _gap(),
+      _number(driverCharges, "Driver Charges", Icons.person),
+    ]),
+    _sectionCard("Total Amount", Icons.payments_outlined, [
+      _number(tripCharges, "Total Trip Charges", Icons.currency_rupee),
+    ]),
+  ];
 
   // ---------------- SAVE ----------------
 
@@ -403,17 +376,11 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm> {
 
   // ---------------- UI HELPERS ----------------
 
-  Widget _sectionCard(
-    String title,
-    IconData icon,
-    List<Widget> children,
-  ) {
+  Widget _sectionCard(String title, IconData icon, List<Widget> children) {
     return Card(
       elevation: 2,
       shadowColor: primaryIndigo.withOpacity(0.1),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -429,11 +396,7 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm> {
             ),
             child: Row(
               children: [
-                Icon(
-                  icon,
-                  color: primaryIndigo,
-                  size: 22,
-                ),
+                Icon(icon, color: primaryIndigo, size: 22),
                 const SizedBox(width: 12),
                 Text(
                   title,
@@ -448,9 +411,7 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm> {
           ),
           Padding(
             padding: const EdgeInsets.all(16),
-            child: Column(
-              children: children,
-            ),
+            child: Column(children: children),
           ),
         ],
       ),
@@ -471,17 +432,12 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm> {
         controller: c,
         keyboardType: const TextInputType.numberWithOptions(decimal: true),
         decoration: _decoration(label, icon),
-        validator: (v) =>
-            v == null || v.isEmpty || double.tryParse(v) == null
-                ? "Enter valid number"
-                : null,
+        validator: (v) => v == null || v.isEmpty || double.tryParse(v) == null
+            ? "Enter valid number"
+            : null,
       );
 
-  Widget _dateField(
-    TextEditingController c,
-    String label,
-    bool isStart,
-  ) =>
+  Widget _dateField(TextEditingController c, String label, bool isStart) =>
       TextFormField(
         controller: c,
         readOnly: true,
@@ -492,11 +448,7 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm> {
         validator: (v) => v == null || v.isEmpty ? "Select date" : null,
       );
 
-  Widget _readonly(
-    TextEditingController c,
-    String label,
-    IconData icon,
-  ) =>
+  Widget _readonly(TextEditingController c, String label, IconData icon) =>
       TextFormField(
         controller: c,
         readOnly: true,
@@ -504,36 +456,33 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm> {
       );
 
   InputDecoration _decoration(String label, IconData icon) => InputDecoration(
-        labelText: label,
-        labelStyle: TextStyle(color: Colors.grey[700]),
-        prefixIcon: Icon(icon, color: lightIndigo, size: 22),
-        filled: true,
-        fillColor: Colors.white,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.grey[300]!),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.grey[300]!),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: primaryIndigo, width: 2),
-        ),
-        errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Colors.red),
-        ),
-        focusedErrorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Colors.red, width: 2),
-        ),
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 16,
-          vertical: 16,
-        ),
-      );
+    labelText: label,
+    labelStyle: TextStyle(color: Colors.grey[700]),
+    prefixIcon: Icon(icon, color: lightIndigo, size: 22),
+    filled: true,
+    fillColor: Colors.white,
+    border: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+      borderSide: BorderSide(color: Colors.grey[300]!),
+    ),
+    enabledBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+      borderSide: BorderSide(color: Colors.grey[300]!),
+    ),
+    focusedBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+      borderSide: const BorderSide(color: primaryIndigo, width: 2),
+    ),
+    errorBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+      borderSide: const BorderSide(color: Colors.red),
+    ),
+    focusedErrorBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+      borderSide: const BorderSide(color: Colors.red, width: 2),
+    ),
+    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+  );
 
   // ---------------- DATE PICKER ----------------
 
@@ -578,8 +527,13 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm> {
     );
     if (time == null) return;
 
-    final selected =
-        DateTime(date.year, date.month, date.day, time.hour, time.minute);
+    final selected = DateTime(
+      date.year,
+      date.month,
+      date.day,
+      time.hour,
+      time.minute,
+    );
 
     controller.text = DateFormat("MMM dd, yyyy • hh:mm a").format(selected);
 
@@ -595,23 +549,25 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm> {
   // ---------------- DROPDOWNS ----------------
 
   Widget _driverDropdown(TripBookingState state) => state.fetchDriverList.when(
-        loading: () => _loadingDropdown("Driver", Icons.person),
-        error: (e, _) => _errorText("Driver error: $e"),
-        data: (List<Drivers> drivers) => DropdownButtonFormField<int>(
-          value: selectedDriverId,
-          items: drivers
-              .map((d) => DropdownMenuItem(
-                    value: d.driverId,
-                    child: Text(d.name ?? "Unknown"),
-                  ))
-              .toList(),
-          onChanged: (v) => setState(() => selectedDriverId = v),
-          validator: (v) => v == null ? "Select driver" : null,
-          decoration: _decoration("Select Driver", Icons.person),
-          isExpanded: true,
-          icon: const Icon(Icons.arrow_drop_down, color: primaryIndigo),
-        ),
-      );
+    loading: () => _loadingDropdown("Driver", Icons.person),
+    error: (e, _) => _errorText("Driver error: $e"),
+    data: (List<Drivers> drivers) => DropdownButtonFormField<int>(
+      value: selectedDriverId,
+      items: drivers
+          .map(
+            (d) => DropdownMenuItem(
+              value: d.driverId,
+              child: Text(d.name ?? "Unknown"),
+            ),
+          )
+          .toList(),
+      onChanged: (v) => setState(() => selectedDriverId = v),
+      validator: (v) => v == null ? "Select driver" : null,
+      decoration: _decoration("Select Driver", Icons.person),
+      isExpanded: true,
+      icon: const Icon(Icons.arrow_drop_down, color: primaryIndigo),
+    ),
+  );
 
   Widget _vehicleDropdown(TripBookingState state) =>
       state.fetchVehicleList.when(
@@ -620,10 +576,12 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm> {
         data: (List<Vehicles> vehicles) => DropdownButtonFormField<int>(
           value: selectedVehicleId,
           items: vehicles
-              .map((v) => DropdownMenuItem(
-                    value: v.vehicleId,
-                    child: Text(v.name ?? "Unknown"),
-                  ))
+              .map(
+                (v) => DropdownMenuItem(
+                  value: v.vehicleId,
+                  child: Text(v.name ?? "Unknown"),
+                ),
+              )
               .toList(),
           onChanged: (v) => setState(() => selectedVehicleId = v),
           validator: (v) => v == null ? "Select vehicle" : null,
@@ -633,25 +591,65 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm> {
         ),
       );
 
+  // Widget _customerDropdown(TripBookingState state) =>
+  //     state.fetchCustomerList.when(
+  //       loading: () => _loadingDropdown("Customer", Icons.people),
+  //       error: (e, _) => _errorText("Customer error: $e"),
+  //       data: (List<Customer> customers) => DropdownButtonFormField<int>(
+  //         value: selectedCustomerId,
+  //         items: customers
+  //             .map(
+  //               (c) => DropdownMenuItem(
+  //                 value: c.customerId,
+  //                 child: Text(c.name ?? "Unknown"),
+  //               ),
+  //             )
+  //             .toList(),
+  //         onChanged: (v) => setState(() => selectedCustomerId = v),
+  //         validator: (v) => v == null ? "Select customer" : null,
+  //         decoration: _decoration("Select Customer", Icons.people),
+  //         isExpanded: true,
+  //         icon: const Icon(Icons.arrow_drop_down, color: primaryIndigo),
+  //       ),
+  //     );
+
   Widget _customerDropdown(TripBookingState state) =>
-      state.fetchCustomerList.when(
-        loading: () => _loadingDropdown("Customer", Icons.people),
-        error: (e, _) => _errorText("Customer error: $e"),
-        data: (List<Customer> customers) => DropdownButtonFormField<int>(
+    
+    state.fetchCustomerList.when(
+      loading: () => _loadingDropdown("Customer", Icons.people),
+      error: (e, _) => _errorText("Customer error: $e"),
+      data: (List<Customer> customers) {
+
+        // Remove duplicates (very important)
+        final uniqueCustomers = {
+          for (var c in customers) c.customerId: c
+        }.values.toList();
+
+        // If selected ID is not in list, reset it
+        if (selectedCustomerId != null &&
+            !uniqueCustomers.any((c) => c.customerId == selectedCustomerId)) {
+          selectedCustomerId = null;
+        }
+
+        return DropdownButtonFormField<int>(
           value: selectedCustomerId,
-          items: customers
-              .map((c) => DropdownMenuItem(
-                    value: c.CustomerId,
-                    child: Text(c.name ?? "Unknown"),
-                  ))
+          items: uniqueCustomers
+              .map(
+                (c) => DropdownMenuItem<int>(
+                  value: c.customerId,
+                  child: Text(c.name ?? "Unknown"),
+                ),
+              )
               .toList(),
           onChanged: (v) => setState(() => selectedCustomerId = v),
           validator: (v) => v == null ? "Select customer" : null,
           decoration: _decoration("Select Customer", Icons.people),
           isExpanded: true,
           icon: const Icon(Icons.arrow_drop_down, color: primaryIndigo),
-        ),
-      );
+        );
+      },
+    );
+
 
   Widget _loadingDropdown(String label, IconData icon) =>
       DropdownButtonFormField<int>(
@@ -673,26 +671,23 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm> {
       );
 
   Widget _errorText(String error) => Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: Colors.red.shade50,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.red.shade200),
+    padding: const EdgeInsets.all(12),
+    decoration: BoxDecoration(
+      color: Colors.red.shade50,
+      borderRadius: BorderRadius.circular(12),
+      border: Border.all(color: Colors.red.shade200),
+    ),
+    child: Row(
+      children: [
+        Icon(Icons.error_outline, color: Colors.red.shade700, size: 20),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            error,
+            style: TextStyle(color: Colors.red.shade700, fontSize: 13),
+          ),
         ),
-        child: Row(
-          children: [
-            Icon(Icons.error_outline, color: Colors.red.shade700, size: 20),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                error,
-                style: TextStyle(
-                  color: Colors.red.shade700,
-                  fontSize: 13,
-                ),
-              ),
-            ),
-          ],
-        ),
-      );
+      ],
+    ),
+  );
 }

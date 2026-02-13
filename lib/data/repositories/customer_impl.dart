@@ -11,4 +11,9 @@ class CustomerImpl implements CustomerRepository {
   Future<List<Customer>> customerList() {
     return apiService.customerList();
   }
+
+    @override
+  Future<dynamic> addCustomer(Customer customer) {
+    return apiService.addCustomer(customer);
+  }
 }

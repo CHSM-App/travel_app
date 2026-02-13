@@ -1,6 +1,3 @@
-
-import 'dart:io';
-
 import 'package:dio/dio.dart';
 import 'package:travel_agency_app/core/storage/constant.dart';
 import 'package:travel_agency_app/domain/models/booking_info.dart';
@@ -18,8 +15,10 @@ abstract class ParseErrorLogger {
   void logError(
     Object error,
     StackTrace stackTrace,
-    RequestOptions requestOptions,
-  );
+    // RequestOptions requestOptions,
+     RequestOptions requestOptions, {
+    Response? response,
+  });
 }
 
 @RestApi(baseUrl: baseUrl)
@@ -38,6 +37,9 @@ abstract class ApiService {
 
   @POST("insert/AddDriver")
   Future<dynamic> AddDriver(@Body() Drivers driver);
+
+  @POST("insert/addCustomer")
+  Future<dynamic> addCustomer(@Body() Customer customer);
   
 
  //------------------------------------------------------------------------------------------/
