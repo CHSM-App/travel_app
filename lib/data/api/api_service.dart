@@ -18,7 +18,7 @@ abstract class ParseErrorLogger {
   void logError(
     Object error,
     StackTrace stackTrace,
-    RequestOptions requestOptions,
+    RequestOptions requestOptions, {required Response<List> response}
   );
 }
 
@@ -39,7 +39,9 @@ abstract class ApiService {
   @POST("insert/AddDriver")
   Future<dynamic> AddDriver(@Body() Drivers driver);
   
-
+  @POST("insert/AddCustomer")
+  Future<dynamic> addcustomer(@Body() Customer customer);
+  
  //------------------------------------------------------------------------------------------/
  
 
@@ -70,6 +72,13 @@ abstract class ApiService {
 
   @GET("users/Unpaidtrip")
   Future<List<BookingInfo>> unpaidtrip();
+
+
+
+  //------------------------ Get for Selected
+
+  @GET("users//Customerhistory/{customer_id}")
+  Future<List<BookingInfo>> customerhist(@Path("customer_id") int customerId);
 
 
 }  

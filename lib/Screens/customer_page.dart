@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:travel_agency_app/Screens/customer_hist.dart';
 import 'package:travel_agency_app/domain/models/customers.dart';
 import 'package:travel_agency_app/presentation/providers/viewmodel_provider.dart';
 
@@ -97,6 +98,15 @@ class _CustomerPageState extends ConsumerState<CustomerPage> {
           ],
         ),
         trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+         onTap: () {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+       builder: (context) => CustomerHist(customer: customer),
+      ),
+    );
+  },
+
       ),
     );
   }
