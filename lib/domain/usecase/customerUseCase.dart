@@ -6,6 +6,10 @@ class customerUseCase {
 
   Future<dynamic> customerList() {
     return customerrepository.customerList();
+  }
+
+  Future<dynamic> addCustomer(Customer customer) {
+    return customerrepository.addCustomer(customer);
   }      
 
  Future<dynamic> customerhist(int customer_id) {

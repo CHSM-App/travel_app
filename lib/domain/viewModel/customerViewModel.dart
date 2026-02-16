@@ -10,7 +10,8 @@ class CustomerState {
   final bool isLoading;
   final Map<String, dynamic>? data;
   final String? error;
-    final AsyncValue<List<Customer>> CustomerList;
+  final AsyncValue<List<Customer>> CustomerList;
+  final int? adminId;
     final AsyncValue<List<BookingInfo>> Customerhist;
 
   const CustomerState({
@@ -18,6 +19,7 @@ class CustomerState {
      this.data ,
     this.error,
     this.CustomerList = const AsyncValue.loading(),
+    this.adminId
     this.Customerhist= const AsyncValue.loading(),
   });
 
@@ -28,6 +30,7 @@ class CustomerState {
     Map<String, dynamic>? data,
     String? error,
     AsyncValue<List<Customer>>? CustomerList,
+    int? adminId
     AsyncValue<List<BookingInfo>>? Customerhist,
 
   }) {
@@ -36,6 +39,7 @@ class CustomerState {
       data: data ?? this.data,
       error: error ?? this.error,
       CustomerList: CustomerList ?? this.CustomerList,
+      adminId: adminId ?? this.adminId
       Customerhist: Customerhist ?? this.Customerhist,
     );
   } 
@@ -69,6 +73,47 @@ class CustomerViewModel extends StateNotifier<CustomerState> {
   //     );
   //   }
   // }
+
+//     Future<int> addEmployee(Customer customer) async {
+//   state = state.copyWith(isLoading: true, error: null);
+//   try {
+    
+//     final response = await usecase.addCostomer(customer);
+//     // Extract CustomerId from response map
+//     final int newCustomerId = response['CustomerId'] as int;
+
+//     state = state.copyWith(isLoading: false);
+//     return newCustomerId;
+//   } catch (e) {
+//     state = state.copyWith(isLoading: false, error: e.toString());
+//     rethrow;
+//   }
+// }
+
+  Future<int> addCustomer(Customer customer) async {
+  state = state.copyWith(isLoading: true, error: null);
+
+  try {
+    final response = await usecase.addCustomer(customer);
+
+    // Extract customer_id from response
+    final int newCustomerId = response['customer_id'] as int;
+
+    // Refresh customer list (if needed)
+    await fetchCustomerslist();
+
+    state = state.copyWith(isLoading: false);
+
+    return newCustomerId;
+  } catch (e) {
+    state = state.copyWith(
+      isLoading: false,
+      error: e.toString(),
+    );
+    rethrow;
+  }
+}
+
 
 
   Future<void> fetchCustomerslist() async {
