@@ -24,7 +24,7 @@ class _CustomerHistState extends ConsumerState<CustomerHist>
 
     Future.microtask(() {
       final notifier = ref.read(customerViewModelProvider.notifier);
-      notifier.fetchCustomershist(widget.customer.CustomerId??0);
+      notifier.fetchCustomershist(widget.customer.customerId??0);
     });
   }
 

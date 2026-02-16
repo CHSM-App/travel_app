@@ -19,7 +19,7 @@ class CustomerState {
      this.data ,
     this.error,
     this.CustomerList = const AsyncValue.loading(),
-    this.adminId
+    this.adminId,
     this.Customerhist= const AsyncValue.loading(),
   });
 
@@ -30,7 +30,7 @@ class CustomerState {
     Map<String, dynamic>? data,
     String? error,
     AsyncValue<List<Customer>>? CustomerList,
-    int? adminId
+    int? adminId,
     AsyncValue<List<BookingInfo>>? Customerhist,
 
   }) {
@@ -39,7 +39,7 @@ class CustomerState {
       data: data ?? this.data,
       error: error ?? this.error,
       CustomerList: CustomerList ?? this.CustomerList,
-      adminId: adminId ?? this.adminId
+      adminId: adminId ?? this.adminId,
       Customerhist: Customerhist ?? this.Customerhist,
     );
   } 

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:travel_agency_app/Screens/add_customer.dart';
 import 'package:travel_agency_app/Screens/customer_hist.dart';
 import 'package:travel_agency_app/domain/models/customers.dart';
 import 'package:travel_agency_app/presentation/providers/viewmodel_provider.dart';
@@ -189,7 +190,7 @@ class _CustomerPageState extends ConsumerState<CustomerPage> {
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
       ),
-      margin: const EdgeInsets.only(bottom: 12),
+     // margin: const EdgeInsets.only(bottom: 12),
       child: ListTile(
         contentPadding: const EdgeInsets.all(12),
         leading: CircleAvatar(

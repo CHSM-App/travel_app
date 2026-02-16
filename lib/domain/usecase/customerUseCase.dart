@@ -1,3 +1,4 @@
+import 'package:travel_agency_app/domain/models/customers.dart';
 import 'package:travel_agency_app/domain/repository/CustomerRepository.dart';
 class customerUseCase {
   // Add your use case methods here
@@ -11,7 +12,7 @@ class customerUseCase {
   Future<dynamic> addCustomer(Customer customer) {
     return customerrepository.addCustomer(customer);
   }      
-
+ 
  Future<dynamic> customerhist(int customer_id) {
     return customerrepository.customerhist(customer_id);
   }   
