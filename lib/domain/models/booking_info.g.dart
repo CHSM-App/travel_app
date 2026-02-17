@@ -31,6 +31,7 @@ BookingInfo _$BookingInfoFromJson(Map<String, dynamic> json) => BookingInfo(
   vehicle_info: json['Vehicle_info'] as String?,
   customer_name: json['Customer_name'] as String?,
   driver_name: json['Driver_name'] as String?,
+  payment_status: json['payment_status'] as String?,
 );
 
 Map<String, dynamic> _$BookingInfoToJson(BookingInfo instance) =>
@@ -55,4 +56,5 @@ Map<String, dynamic> _$BookingInfoToJson(BookingInfo instance) =>
       'Vehicle_info': instance.vehicle_info,
       'Customer_name': instance.customer_name,
       'Driver_name': instance.driver_name,
+      'payment_status': instance.payment_status,
     };

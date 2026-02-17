@@ -22,8 +22,8 @@ Widget build(BuildContext context) {
     decoration: BoxDecoration(
       gradient: const LinearGradient(
         colors: [
-          Color(0xFF2196F3), // vibrant blue
-          Color(0xFF00BCD4), // vibrant teal
+          Color(0xFF2196F3),
+          Color(0xFF00BCD4),
         ],
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
@@ -47,7 +47,7 @@ Widget build(BuildContext context) {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
 
-          // 🚗 Vehicle + Amount
+          /// 🚗 Vehicle + Amount
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -70,7 +70,7 @@ Widget build(BuildContext context) {
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
                     colors: [
-                      Color(0xFF00C853), // bright green
+                      Color(0xFF00C853),
                       Color(0xFF00E676),
                     ],
                   ),
@@ -88,9 +88,38 @@ Widget build(BuildContext context) {
             ],
           ),
 
+          const SizedBox(height: 12),
+
+          /// 💳 PAYMENT STATUS (NEW SECTION)
+          Row(
+            children: [
+              const Icon(Icons.payment, color: Color(0xFF7B1FA2), size: 20),
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 12, vertical: 5),
+                decoration: BoxDecoration(
+                  color: (bookinginfo.payment_status == "PAID")
+                      ? Colors.green.shade100
+                      : Colors.orange.shade100,
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Text(
+                  bookinginfo.payment_status ?? "UNPAID",
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: (bookinginfo.payment_status == "PAID")
+                        ? Colors.green.shade800
+                        : Colors.orange.shade800,
+                  ),
+                ),
+              ),
+            ],
+          ),
+
           const SizedBox(height: 14),
 
-          // 👤 Driver
+          /// 👤 Driver
           Row(
             children: [
               const Icon(Icons.person,
@@ -111,7 +140,7 @@ Widget build(BuildContext context) {
           const SizedBox(height: 14),
           const Divider(thickness: 1.2),
 
-          // 📍 Locations
+          /// 📍 Locations
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -137,7 +166,7 @@ Widget build(BuildContext context) {
 
           const SizedBox(height: 14),
 
-          // 📅 Dates
+          /// 📅 Dates
           Row(
             children: [
               const Icon(Icons.date_range,
