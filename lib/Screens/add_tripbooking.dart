@@ -365,7 +365,7 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm> {
       tripcharges: double.parse(tripCharges.text),
       startDateTime: startDateValue!,
       endDateTime: endDateValue!,
-      status: 1,
+      status: 3,
       bookingdate: DateTime.now(),
     );
 

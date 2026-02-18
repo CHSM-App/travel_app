@@ -1,4 +1,3 @@
-
 // import 'package:flutter/material.dart';
 // import 'package:flutter_riverpod/flutter_riverpod.dart';
 // import 'package:travel_agency_app/domain/models/drivers.dart';
@@ -43,7 +42,6 @@
 //   @override
 //   Widget build(BuildContext context) {
 //     final state = ref.watch(addDriverViewModelProvider);
-
 
 //     ref.listen(addDriverViewModelProvider, (prev, next) {
 //       if (prev == next) return;
@@ -219,6 +217,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:travel_agency_app/domain/models/drivers.dart';
 import 'package:travel_agency_app/presentation/providers/viewmodel_provider.dart';
+import 'package:flutter/services.dart';
 
 class AddDriverPage extends ConsumerStatefulWidget {
   const AddDriverPage({super.key});
@@ -373,7 +372,9 @@ class _AddDriverPageState extends ConsumerState<AddDriverPage> {
                               shape: BoxShape.circle,
                               boxShadow: [
                                 BoxShadow(
-                                  color: const Color(0xFF6C63FF).withOpacity(0.4),
+                                  color: const Color(
+                                    0xFF6C63FF,
+                                  ).withOpacity(0.4),
                                   blurRadius: 8,
                                   offset: const Offset(0, 2),
                                 ),
@@ -402,12 +403,32 @@ class _AddDriverPageState extends ConsumerState<AddDriverPage> {
                     const SizedBox(height: 20),
 
                     // Phone Number
+                    // _buildInputField(
+                    //   label: "Phone Number",
+                    //   controller: phoneController,
+                    //   icon: Icons.phone_outlined,
+                    //   iconColor: const Color(0xFF6C63FF),
+                    //   keyboardType: TextInputType.phone,
+                    // ),
                     _buildInputField(
                       label: "Phone Number",
                       controller: phoneController,
                       icon: Icons.phone_outlined,
                       iconColor: const Color(0xFF6C63FF),
-                      keyboardType: TextInputType.phone,
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [
+                        FilteringTextInputFormatter.digitsOnly,
+                        LengthLimitingTextInputFormatter(10),
+                      ],
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return "Phone number is required";
+                        }
+                        if (value.length != 10) {
+                          return "Phone number must be 10 digits";
+                        }
+                        return null;
+                      },
                     ),
 
                     const SizedBox(height: 20),
@@ -529,6 +550,8 @@ class _AddDriverPageState extends ConsumerState<AddDriverPage> {
     required Color iconColor,
     TextInputType keyboardType = TextInputType.text,
     int maxLines = 1,
+    List<TextInputFormatter>? inputFormatters,
+    String? Function(String?)? validator,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -560,19 +583,17 @@ class _AddDriverPageState extends ConsumerState<AddDriverPage> {
             controller: controller,
             keyboardType: keyboardType,
             maxLines: maxLines,
-            validator: (value) =>
-                value == null || value.isEmpty ? "This field is required" : null,
+            inputFormatters: inputFormatters,
+             validator: validator ??
+      (value) =>
+          value == null || value.isEmpty ? "This field is required" : null,
             style: const TextStyle(
               fontSize: 15,
               color: Colors.black87,
               fontWeight: FontWeight.w500,
             ),
             decoration: InputDecoration(
-              prefixIcon: Icon(
-                icon,
-                color: iconColor,
-                size: 22,
-              ),
+              prefixIcon: Icon(icon, color: iconColor, size: 22),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
                 borderSide: BorderSide.none,
@@ -590,17 +611,11 @@ class _AddDriverPageState extends ConsumerState<AddDriverPage> {
               ),
               errorBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(
-                  color: Colors.red,
-                  width: 1,
-                ),
+                borderSide: const BorderSide(color: Colors.red, width: 1),
               ),
               focusedErrorBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(
-                  color: Colors.red,
-                  width: 2,
-                ),
+                borderSide: const BorderSide(color: Colors.red, width: 2),
               ),
               filled: true,
               fillColor: Colors.white,

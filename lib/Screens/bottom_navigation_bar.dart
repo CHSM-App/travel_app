@@ -24,7 +24,7 @@ class _MainBottomNavState extends State<MainBottomNav> with TickerProviderStateM
     TravelAdminDashboard(),
     TripPage(),
     CustomerPage(),
-    VehiclePage(),
+    VehiclePage(),   
     ModernSettingsPage(),
   ];
 
@@ -267,7 +267,7 @@ class _MainBottomNavState extends State<MainBottomNav> with TickerProviderStateM
               label: "Customers",
             ),
             NavigationDestination(
-              icon: _buildNavIcon(Icons.directions_car_outlined, 3),
+              icon: _buildNavIcon(Icons.directions_car_filled_rounded, 3),
               selectedIcon: _buildSelectedNavIcon(Icons.directions_car, 3),
               label: "Vehicles",
             ),

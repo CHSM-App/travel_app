@@ -18,5 +18,9 @@ abstract class Tripbookingrepository {
   Future<List<BookingInfo>> historyTrip();
 
   Future<List<BookingInfo>> unpaidTrip();
+
+  Future<List<BookingInfo>> activeTrip();
+
+  Future<List<BookingInfo>> cancelledTrip();
   
 }

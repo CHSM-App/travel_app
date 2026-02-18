@@ -47,6 +47,17 @@ class TripBookingImpl implements Tripbookingrepository {
   Future<List<BookingInfo>> upcomingTrip() {
     return apiService.upcomingTrip();
   }
+
+  @override
+  Future<List<BookingInfo>> activeTrip() {
+    return apiService.activeTrip();
+  }
+
+  @override
+  Future<List<BookingInfo>> cancelledTrip() {
+    return apiService.cancelledTrip();
+  }
+  
   
   
 

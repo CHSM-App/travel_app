@@ -73,5 +73,12 @@ abstract class ApiService {
   @GET("users/Unpaidtrip")
   Future<List<BookingInfo>> unpaidtrip();
 
+  @GET("users/activeTrip")
+  Future<List<BookingInfo>> activeTrip();
+
+  @GET("users/cancelledTrip")
+  Future<List<BookingInfo>> cancelledTrip();
+
+
 
 }  
