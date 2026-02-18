@@ -22,6 +22,10 @@ class AddVehicleUseCase {
 
     Future<List<Status>> getVehicleStatuses() {
       return addvehiclerepository.getVehicleStatuses();
-    } 
+    }
+
+  Future<dynamic> updateVehicle(Vehicles vehicle) {
+     return addvehiclerepository.updateVehicle(vehicle);
+  } 
 
 }

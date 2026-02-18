@@ -43,6 +43,12 @@ abstract class ApiService {
   
   @POST("insert/AddCustomer")
   Future<dynamic> addcustomer(@Body() Customer customer);
+
+  @POST("insert/Updatevehicle")
+  Future<dynamic> updateVehicle(@Body() Vehicles vehicle);
+
+    @POST("insert/Updatedriver")
+  Future<dynamic> updateDriver(@Body() Drivers driver);
   
  //------------------------------------------------------------------------------------------/
  

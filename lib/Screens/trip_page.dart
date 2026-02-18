@@ -129,7 +129,7 @@ class _TripPageState extends ConsumerState<TripPage> {
 
                   const SizedBox(width: 12),
 
-                  // Dropdown Filter
+                  // Dropdown Filter 
                   Container(
                     height: 48,
                     padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -253,7 +253,11 @@ class _TripPageState extends ConsumerState<TripPage> {
     }
 
     return _buildTripList(currentList, _selectedFilter);
+    
   }
+
+
+  
 
   Widget _buildTripList(AsyncValue<List<BookingInfo>> state, String type) {
     return state.when(
@@ -333,12 +337,15 @@ class _TripPageState extends ConsumerState<TripPage> {
           final driverName = trip.driver_name?.toLowerCase() ?? '';
           final startLocation = trip.pickupLocation?.toLowerCase() ?? '';
           final endLocation = trip.dropLocation?.toLowerCase() ?? '';
+          final paymentStatus = trip.payment_status?.toLowerCase()?? '';
+          
           
           return customerName.contains(_searchQuery) ||
                vehicleNumber.contains(_searchQuery) ||
               driverName.contains(_searchQuery) ||
               startLocation.contains(_searchQuery) ||
-              endLocation.contains(_searchQuery);
+              endLocation.contains(_searchQuery) ||
+              paymentStatus.contains(_searchQuery);
         }).toList();
 
         if (filteredTrips.isEmpty) {

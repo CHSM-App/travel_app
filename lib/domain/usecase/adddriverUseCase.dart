@@ -8,4 +8,8 @@ class AddDeiverUseCase {
   Future<dynamic> addDriver(Drivers driver) {
     return adddriverrepository.addDriver(driver);
   }
+
+  Future<dynamic> updateDriver(Drivers driver)  {
+    return adddriverrepository.updateDriver(driver);
+  }
 }

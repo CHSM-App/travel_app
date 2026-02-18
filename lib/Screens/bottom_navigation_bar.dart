@@ -23,7 +23,8 @@ class _MainBottomNavState extends State<MainBottomNav> with TickerProviderStateM
   final List<Widget> pages = [
     TravelAdminDashboard(),
     TripPage(),
-    CustomerPage(),
+    // CustomerPage(),
+    CustomerListPage(),
     VehiclePage(),   
     ModernSettingsPage(),
   ];
@@ -100,7 +101,7 @@ class _MainBottomNavState extends State<MainBottomNav> with TickerProviderStateM
             ],
           ),
           child: AppBar(
-            backgroundColor: Colors.indigo,
+            backgroundColor: const Color.fromARGB(255, 63, 81, 181),
             elevation: 0,
             toolbarHeight: 70,
             title: Row(

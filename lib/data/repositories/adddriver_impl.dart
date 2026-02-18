@@ -6,9 +6,14 @@ class AddDriverImpl implements Adddriverrepository {
  final ApiService apiService;
 
   AddDriverImpl(this.apiService);
-  @override
 
+  @override
   Future<dynamic> addDriver(Drivers driver) {
     return apiService.AddDriver(driver);
+  }
+
+    @override
+  Future<dynamic> updateDriver(Drivers driver) {
+    return apiService.updateDriver(driver);
   }
 }

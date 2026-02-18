@@ -65,10 +65,10 @@ Map<String, dynamic> _$BookingInfoToJson(BookingInfo instance) =>
       'customer_phone': instance.customer_phone,
       'TripStatus': instance.tripStatus,
       'Driver_name': instance.driver_name,
-      'payment_status': instance.payment_status,
       'driver_LicenceNo': instance.driverLicenceNo,
       'driver_phone': instance.driverPhone,
       'mileage': instance.mileage,
       'FuelType': instance.fuelType,
       'capacity': instance.capacity,
+      'payment_status': instance.payment_status,
     };

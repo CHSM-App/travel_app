@@ -109,7 +109,7 @@ class BookingInfo {
     this.customer_name,
     this.customer_phone,
     this.driver_name,
-    this.payment_status
+    this.payment_status,
     this.tripStatus,
     this.driverLicenceNo,
     this.driverPhone,

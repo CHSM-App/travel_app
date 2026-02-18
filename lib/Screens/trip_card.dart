@@ -4,19 +4,34 @@ import 'package:travel_agency_app/domain/models/booking_info.dart';
 class TripCard extends StatelessWidget {
   final BookingInfo bookinginfo;
 
-  const TripCard({
-    super.key,
-    required this.bookinginfo,
-  });
+  const TripCard({super.key, required this.bookinginfo});
 
   String _formatDate(DateTime? date) {
     if (date == null) return '--';
     return "${date.day}/${date.month}/${date.year}";
   }
 
+  String get paymentStatus {
+    final approved = bookinginfo.amountApprove ?? 0;
+    final received = bookinginfo.amountReceived ?? 0;
 
+    if (received == 0) return "Unpaid";
+    if (received < approved) return "Partial";
+    return "Paid";
+  }
 
-void _showTripDetails(BuildContext context) {
+  Color _getPaymentStatusColor(String status) {
+    switch (status.toLowerCase()) {
+      case 'paid':
+        return Colors.green;
+      case 'unpaid':
+        return Colors.red;
+      default:
+        return Colors.grey;
+    }
+  }
+
+  void _showTripDetails(BuildContext context) {
     showDialog(
       context: context,
       barrierDismissible: true,
@@ -27,10 +42,7 @@ void _showTripDetails(BuildContext context) {
           ),
           child: Container(
             width: double.infinity,
-            constraints: const BoxConstraints(
-              maxHeight: 650,
-              maxWidth: 500,
-            ),
+            constraints: const BoxConstraints(maxHeight: 650, maxWidth: 500),
             child: Column(
               children: [
                 // Modern Header with Gradient
@@ -38,10 +50,7 @@ void _showTripDetails(BuildContext context) {
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
-                      colors: [
-                        Colors.indigo.shade700,
-                        Colors.indigo.shade500,
-                      ],
+                      colors: [Colors.indigo.shade700, Colors.indigo.shade500],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
@@ -95,24 +104,58 @@ void _showTripDetails(BuildContext context) {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         // Vehicle Section
-                        _sectionHeader("Vehicle Information", Icons.directions_car_rounded),
+                        _sectionHeader(
+                          "Vehicle Information",
+                          Icons.directions_car_rounded,
+                        ),
                         const SizedBox(height: 12),
                         _modernCard([
-                          _detailRow("Vehicle", bookinginfo.vehicle_info ?? "--", Icons.local_shipping_rounded),
-                          _detailRow("Capacity", bookinginfo.capacity?.toString() ?? "--", Icons.people_rounded),
-                          _detailRow("Fuel Type", bookinginfo.fuelType ?? "--", Icons.local_gas_station_rounded),
-                          _detailRow("Mileage", bookinginfo.mileage ?? "--", Icons.speed_rounded),
+                          _detailRow(
+                            "Vehicle",
+                            bookinginfo.vehicle_info ?? "--",
+                            Icons.local_shipping_rounded,
+                          ),
+                          _detailRow(
+                            "Capacity",
+                            bookinginfo.capacity?.toString() ?? "--",
+                            Icons.people_rounded,
+                          ),
+                          _detailRow(
+                            "Fuel Type",
+                            bookinginfo.fuelType ?? "--",
+                            Icons.local_gas_station_rounded,
+                          ),
+                          _detailRow(
+                            "Mileage",
+                            bookinginfo.mileage ?? "--",
+                            Icons.speed_rounded,
+                          ),
                         ]),
 
                         const SizedBox(height: 20),
 
                         // Driver Section
-                        _sectionHeader("Driver Information", Icons.person_rounded),
+                        _sectionHeader(
+                          "Driver Information",
+                          Icons.person_rounded,
+                        ),
                         const SizedBox(height: 12),
                         _modernCard([
-                          _detailRow("Driver Name", bookinginfo.driver_name ?? "--", Icons.badge_rounded),
-                          _detailRow("Phone", bookinginfo.driverPhone ?? "--", Icons.phone_rounded),
-                          _detailRow("Licence No", bookinginfo.driverLicenceNo ?? "--", Icons.credit_card_rounded),
+                          _detailRow(
+                            "Driver Name",
+                            bookinginfo.driver_name ?? "--",
+                            Icons.badge_rounded,
+                          ),
+                          _detailRow(
+                            "Phone",
+                            bookinginfo.driverPhone ?? "--",
+                            Icons.phone_rounded,
+                          ),
+                          _detailRow(
+                            "Licence No",
+                            bookinginfo.driverLicenceNo ?? "--",
+                            Icons.credit_card_rounded,
+                          ),
                         ]),
 
                         const SizedBox(height: 20),
@@ -121,47 +164,112 @@ void _showTripDetails(BuildContext context) {
                         _sectionHeader("Trip Information", Icons.route_rounded),
                         const SizedBox(height: 12),
                         _modernCard([
-                          _detailRow("Pickup", bookinginfo.pickupLocation ?? "--", Icons.location_on_rounded),
-                          _detailRow("Drop", bookinginfo.dropLocation ?? "--", Icons.flag_rounded),
-                          _detailRow("Start Date", _formatDate(bookinginfo.startDateTime), Icons.calendar_today_rounded),
-                          _detailRow("End Date", _formatDate(bookinginfo.endDateTime), Icons.event_rounded),
-                          _detailRow("Distance", bookinginfo.distance?.toString() ?? "--", Icons.straighten_rounded),
+                          _detailRow(
+                            "Pickup",
+                            bookinginfo.pickupLocation ?? "--",
+                            Icons.location_on_rounded,
+                          ),
+                          _detailRow(
+                            "Drop",
+                            bookinginfo.dropLocation ?? "--",
+                            Icons.flag_rounded,
+                          ),
+                          _detailRow(
+                            "Start Date",
+                            _formatDate(bookinginfo.startDateTime),
+                            Icons.calendar_today_rounded,
+                          ),
+                          _detailRow(
+                            "End Date",
+                            _formatDate(bookinginfo.endDateTime),
+                            Icons.event_rounded,
+                          ),
+                          _detailRow(
+                            "Distance",
+                            bookinginfo.distance?.toString() ?? "--",
+                            Icons.straighten_rounded,
+                          ),
                         ]),
 
                         const SizedBox(height: 20),
 
                         // Charges Section
-                        _sectionHeader("Charges & Expenses", Icons.attach_money_rounded),
+                        _sectionHeader(
+                          "Charges & Expenses",
+                          Icons.attach_money_rounded,
+                        ),
                         const SizedBox(height: 12),
                         _modernCard([
-                          _detailRow("Fuel Required", bookinginfo.fuelRequired?.toString() ?? "--", Icons.local_gas_station_rounded),
-                          _detailRow("Toll Charges", bookinginfo.tollCharges?.toString() ?? "--", Icons.toll_rounded),
-                          _detailRow("Repairing", bookinginfo.repairingCharges?.toString() ?? "--", Icons.build_rounded),
-                          _detailRow("Driver Charges", bookinginfo.driverCharges?.toString() ?? "--", Icons.payments_rounded),
+                          _detailRow(
+                            "Fuel Required",
+                            bookinginfo.fuelRequired?.toString() ?? "--",
+                            Icons.local_gas_station_rounded,
+                          ),
+                          _detailRow(
+                            "Toll Charges",
+                            bookinginfo.tollCharges?.toString() ?? "--",
+                            Icons.toll_rounded,
+                          ),
+                          _detailRow(
+                            "Repairing",
+                            bookinginfo.repairingCharges?.toString() ?? "--",
+                            Icons.build_rounded,
+                          ),
+                          _detailRow(
+                            "Driver Charges",
+                            bookinginfo.driverCharges?.toString() ?? "--",
+                            Icons.payments_rounded,
+                          ),
                         ]),
 
                         const SizedBox(height: 20),
 
                         // Customer Section
-                        _sectionHeader("Customer Information", Icons.account_circle_rounded),
+                        _sectionHeader(
+                          "Customer Information",
+                          Icons.account_circle_rounded,
+                        ),
                         const SizedBox(height: 12),
                         _modernCard([
-                          _detailRow("Customer Name", bookinginfo.customer_name ?? "--", Icons.person_outline_rounded),
-                          _detailRow("Phone", bookinginfo.customer_phone ?? "--", Icons.phone_rounded),
+                          _detailRow(
+                            "Customer Name",
+                            bookinginfo.customer_name ?? "--",
+                            Icons.person_outline_rounded,
+                          ),
+                          _detailRow(
+                            "Phone",
+                            bookinginfo.customer_phone ?? "--",
+                            Icons.phone_rounded,
+                          ),
                         ]),
 
                         const SizedBox(height: 20),
 
                         // Payment Section
-                        _sectionHeader("Payment Status", Icons.account_balance_wallet_rounded),
+                        _sectionHeader(
+                          "Payment Status",
+                          Icons.account_balance_wallet_rounded,
+                        ),
                         const SizedBox(height: 12),
                         _modernCard([
-                          _detailRow("Trip Status", bookinginfo.tripStatus ?? "--", Icons.info_rounded, 
-                            valueColor: _getStatusColor(bookinginfo.tripStatus)),
-                          _detailRow("Amount Approved", "₹${bookinginfo.amountApprove?.toString() ?? "0"}", Icons.check_circle_rounded,
-                            valueColor: Colors.green.shade700),
-                          _detailRow("Amount Received", "₹${bookinginfo.amountReceived?.toString() ?? "0"}", Icons.account_balance_rounded,
-                            valueColor: Colors.blue.shade700),
+                          _detailRow(
+                            "Trip Status",
+                            bookinginfo.tripStatus ?? "--",
+                            Icons.info_rounded,
+                            valueColor: _getStatusColor(bookinginfo.tripStatus),
+                          ),
+                          _detailRow(
+                            "Amount Approved",
+                            "₹${bookinginfo.amountApprove?.toString() ?? "0"}",
+                            Icons.check_circle_rounded,
+                            valueColor: Colors.green.shade700,
+                          ),
+                          _detailRow(
+                            "Amount Received",
+                            "₹${bookinginfo.amountReceived?.toString() ?? "0"}",
+                            Icons.account_balance_rounded,
+                            valueColor: Colors.blue.shade700,
+                          ),
                         ]),
 
                         const SizedBox(height: 12),
@@ -186,11 +294,7 @@ void _showTripDetails(BuildContext context) {
             color: Colors.indigo.shade50,
             borderRadius: BorderRadius.circular(8),
           ),
-          child: Icon(
-            icon,
-            size: 18,
-            color: Colors.indigo.shade700,
-          ),
+          child: Icon(icon, size: 18, color: Colors.indigo.shade700),
         ),
         const SizedBox(width: 10),
         Text(
@@ -211,10 +315,7 @@ void _showTripDetails(BuildContext context) {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: Colors.grey.shade200,
-          width: 1,
-        ),
+        border: Border.all(color: Colors.grey.shade200, width: 1),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.04),
@@ -223,24 +324,22 @@ void _showTripDetails(BuildContext context) {
           ),
         ],
       ),
-      child: Column(
-        children: children,
-      ),
+      child: Column(children: children),
     );
   }
 
- 
-  Widget _detailRow(String label, String value, IconData icon, {Color? valueColor}) {
+  Widget _detailRow(
+    String label,
+    String value,
+    IconData icon, {
+    Color? valueColor,
+  }) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(
-            icon,
-            size: 18,
-            color: Colors.grey.shade600,
-          ),
+          Icon(icon, size: 18, color: Colors.grey.shade600),
           const SizedBox(width: 10),
           Expanded(
             flex: 2,
@@ -272,7 +371,7 @@ void _showTripDetails(BuildContext context) {
 
   Color _getStatusColor(String? status) {
     if (status == null) return Colors.grey;
-    
+
     switch (status.toLowerCase()) {
       case 'active':
         return Colors.green.shade700;
@@ -289,8 +388,6 @@ void _showTripDetails(BuildContext context) {
     }
   }
 
- 
-
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
@@ -300,15 +397,12 @@ void _showTripDetails(BuildContext context) {
         elevation: 6,
         color: Colors.white,
         margin: const EdgeInsets.symmetric(horizontal: 7, vertical: 5),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(18),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-
               /// Top Summary
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -317,15 +411,17 @@ void _showTripDetails(BuildContext context) {
                     child: Text(
                       bookinginfo.vehicle_info ?? 'Vehicle not available',
                       style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold),
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                   Text(
                     "₹${bookinginfo.amountApprove ?? 0}",
                     style: const TextStyle(
-                        color: Colors.green,
-                        fontWeight: FontWeight.bold),
+                      color: Colors.green,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ],
               ),
@@ -341,20 +437,29 @@ void _showTripDetails(BuildContext context) {
                       "${bookinginfo.pickupLocation} → ${bookinginfo.dropLocation}",
                     ),
                   ),
+                  const Spacer(),
+                  Text(
+                    "${bookinginfo.payment_status ?? ''}",
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: _getPaymentStatusColor(
+                        bookinginfo.payment_status ?? '',
+                      ),
+                    ),
+                  ),
                 ],
               ),
 
               const SizedBox(height: 8),
-                Row(
+              Row(
                 children: [
                   const Icon(Icons.people_outlined, size: 16),
                   const SizedBox(width: 4),
-                  Text(
-                    "${(bookinginfo.customer_name)}",
-                  ),
+                  Text("${(bookinginfo.customer_name)}"),
                 ],
               ),
               const SizedBox(height: 8),
+
               Row(
                 children: [
                   const Icon(Icons.date_range, size: 16),
@@ -362,6 +467,8 @@ void _showTripDetails(BuildContext context) {
                   Text(
                     "${_formatDate(bookinginfo.startDateTime)} → ${_formatDate(bookinginfo.endDateTime)}",
                   ),
+
+                
                 ],
               ),
             ],

@@ -74,6 +74,17 @@ class AdddriverViewmodel extends StateNotifier<AddDriverState> {
     }
   }
 
+  Future<void> updateDriver(Drivers driver) async {
+  state = state.copyWith(isLoading: true, error: null);
+
+  try {
+    final result = await usecase.updateDriver(driver);
+    state = state.copyWith(isLoading: false, data: result);
+  } catch (e) {
+    state = state.copyWith(isLoading: false, error: e.toString());
+  }
+}
+
 }
 
 
