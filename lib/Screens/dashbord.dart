@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:travel_agency_app/Screens/add_customer.dart';
 import 'package:travel_agency_app/Screens/add_driver.dart';
 import 'package:travel_agency_app/Screens/add_tripbooking.dart';
 import 'package:travel_agency_app/Screens/add_vehicle.dart';
-
-
 
 class TravelAdminDashboard extends StatelessWidget {
   const TravelAdminDashboard({super.key});
@@ -95,11 +94,11 @@ class TravelAdminDashboard extends StatelessWidget {
       physics: const NeverScrollableScrollPhysics(),
       children: [
         _actionButton('New Booking', Icons.add_chart, context),
-        _actionButton('Vehicle', Icons.drive_eta_rounded, context),
-        _actionButton('Drivers', Icons.person, context),
-        _actionButton('Customers', Icons.people_alt, context),
-        _actionButton('Reports', Icons.bar_chart, context),
-        _actionButton('Trips', Icons.card_travel, context),
+        _actionButton('New Vehicle', Icons.drive_eta_rounded, context),
+        _actionButton('New Drivers', Icons.person, context),
+        _actionButton('New Customers', Icons.people_alt, context),
+       // _actionButton('Reports', Icons.bar_chart, context),
+      //  _actionButton('Trips', Icons.card_travel, context),
       ],
     );
   }
@@ -148,23 +147,23 @@ Widget _actionButton(String title, IconData icon, BuildContext context) {
         case 'Customers':
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (_) => TripBookingForm()),
+            MaterialPageRoute(builder: (_) => AddCustomerPage()),
           );
           break;
 
-        case 'Reports':
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => TripBookingForm()),
-          );
-          break;
+       // case 'Reports':
+         // Navigator.push(
+           // context,
+      //      MaterialPageRoute(builder: (_) => TripBookingForm()),
+      //    );
+      //    break;
 
-        case 'Trips':
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => TripBookingForm()),
-          );
-          break;
+      //  case 'Trips':
+      //    Navigator.push(
+      //      context,
+      //      MaterialPageRoute(builder: (_) => TripBookingForm()),
+      //    );
+       //   break; 
       }
     },
     child: Column(

@@ -41,7 +41,9 @@ abstract class ApiService {
   @POST("insert/addCustomer")
   Future<dynamic> addCustomer(@Body() Customer customer);
   
-
+  @POST("insert/AddCustomer")
+  Future<dynamic> addcustomer(@Body() Customer customer);
+  
  //------------------------------------------------------------------------------------------/
  
 
@@ -79,6 +81,13 @@ abstract class ApiService {
   @GET("users/cancelledTrip")
   Future<List<BookingInfo>> cancelledTrip();
 
+
+
+
+  //------------------------ Get for Selected
+
+  @GET("users//Customerhistory/{customer_id}")
+  Future<List<BookingInfo>> customerhist(@Path("customer_id") int customerId);
 
 
 }  
