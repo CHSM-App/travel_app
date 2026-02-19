@@ -1,73 +1,119 @@
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:travel_agency_app/Screens/bottom_navigation_bar.dart';
-import 'package:travel_agency_app/Screens/forgot_password.dart';
-import 'package:travel_agency_app/Screens/signup_page.dart';
 import 'package:travel_agency_app/domain/models/login_info.dart';
 import 'package:travel_agency_app/presentation/providers/viewmodel_provider.dart';
 
-class LoginPage extends ConsumerStatefulWidget {
-  const LoginPage({super.key});
+class ForgotPasswordPage extends ConsumerStatefulWidget {
+  const ForgotPasswordPage({super.key});
 
   @override
-  ConsumerState<LoginPage> createState() => _LoginPageState();
+  ConsumerState<ForgotPasswordPage> createState() =>
+      _ForgotPasswordPageState();
 }
 
-class _LoginPageState extends ConsumerState<LoginPage> {
+class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
+  //--------------------------------------------------
+  // Controllers
+  //--------------------------------------------------
   final TextEditingController _mobileController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
 
-  Future<void> _login() async {
+  //--------------------------------------------------
+  // Forgot Password Function
+  //--------------------------------------------------
+  Future<void> _forgotPassword() async {
+    final mobile = _mobileController.text.trim();
+    final password = _passwordController.text.trim();
+
+    //--------------------------------------------------
+    // Validation
+    //--------------------------------------------------
+    if (mobile.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Please enter mobile number")),
+      );
+      return;
+    }
+
+    if (password.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Please enter new password")),
+      );
+      return;
+    }
+
+    //--------------------------------------------------
+    // API Request
+    //--------------------------------------------------
     final loginInfo = LoginInfo(
-      mobile: _mobileController.text.trim(), // now using mobile
-      password: _passwordController.text.trim(),
+      mobile: mobile,
+      password: password,
     );
 
-    final response =
-        await ref.read(loginViewModelProvider.notifier).login(loginInfo);
+    final response = await ref
+        .read(loginViewModelProvider.notifier)
+        .forgotPassword(loginInfo);
 
+    if (!mounted) return;
+
+    //--------------------------------------------------
+    // Response Handling
+    //--------------------------------------------------
     if (response != null && response.success == 1) {
-      if (mounted) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => const MainBottomNav()),
-        );
-      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(response.message)),
+      );
+      Navigator.pop(context);
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(response?.message ?? "Login failed"),
+          content: Text(response?.message ?? "Password reset failed"),
         ),
       );
     }
   }
 
+  //--------------------------------------------------
+  // UI
+  //--------------------------------------------------
   @override
   Widget build(BuildContext context) {
-    final loginState = ref.watch(loginViewModelProvider);
+    final state = ref.watch(loginViewModelProvider);
 
     return Scaffold(
       backgroundColor: Colors.grey.shade50,
+      appBar: AppBar(
+        title: const Text("Forgot Password"),
+        backgroundColor: Colors.indigo,
+      ),
       body: Center(
         child: SingleChildScrollView(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24.0),
+            padding: const EdgeInsets.symmetric(horizontal: 24),
             child: Column(
               children: [
                 const SizedBox(height: 40),
+
+                //--------------------------------------------------
+                // ICON
+                //--------------------------------------------------
                 CircleAvatar(
                   radius: 50,
                   backgroundColor: Colors.indigo,
-                  child: Icon(
-                    Icons.travel_explore,
+                  child: const Icon(
+                    Icons.lock_reset,
                     size: 50,
                     color: Colors.white,
                   ),
                 ),
+
                 const SizedBox(height: 30),
+
+                //--------------------------------------------------
+                // TITLE
+                //--------------------------------------------------
                 const Text(
-                  "Welcome Back",
+                  "Reset Password",
                   style: TextStyle(
                     fontSize: 28,
                     fontWeight: FontWeight.bold,
@@ -76,23 +122,29 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                 ),
                 const SizedBox(height: 10),
                 const Text(
-                  "Login to your account",
+                  "Enter mobile number and new password",
                   style: TextStyle(
                     fontSize: 16,
                     color: Colors.indigoAccent,
                   ),
                 ),
                 const SizedBox(height: 40),
+
+                //--------------------------------------------------
+                // CARD
+                //--------------------------------------------------
                 Card(
                   elevation: 6,
                   shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16)),
-                  color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                  ),
                   child: Padding(
-                    padding: const EdgeInsets.all(20.0),
+                    padding: const EdgeInsets.all(20),
                     child: Column(
                       children: [
-                        // Mobile Number Field
+                        //--------------------------------------------------
+                        // Mobile Field
+                        //--------------------------------------------------
                         TextField(
                           controller: _mobileController,
                           keyboardType: TextInputType.phone,
@@ -111,12 +163,15 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                           ),
                         ),
                         const SizedBox(height: 20),
+
+                        //--------------------------------------------------
                         // Password Field
+                        //--------------------------------------------------
                         TextField(
                           controller: _passwordController,
                           obscureText: true,
                           decoration: InputDecoration(
-                            labelText: "Password",
+                            labelText: "New Password",
                             prefixIcon: const Icon(
                               Icons.lock,
                               color: Colors.indigo,
@@ -130,80 +185,56 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                           ),
                         ),
                         const SizedBox(height: 30),
+
+                        //--------------------------------------------------
+                        // Button
+                        //--------------------------------------------------
                         ElevatedButton(
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.indigo,
                             padding: const EdgeInsets.symmetric(
-                                horizontal: 100, vertical: 15),
+                              horizontal: 80,
+                              vertical: 15,
+                            ),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
                           ),
-                          onPressed: loginState.isLoading ? null : _login,
-                          child: loginState.isLoading
-                              ? const SizedBox(
-                                  height: 20,
-                                  width: 20,
-                                  child: CircularProgressIndicator(
-                                    color: Colors.white,
-                                  ),
+                          onPressed:
+                              state.isLoading ? null : _forgotPassword,
+                          child: state.isLoading
+                              ? const CircularProgressIndicator(
+                                  color: Colors.white,
                                 )
                               : const Text(
-                                  "Login",
+                                  "Reset Password",
                                   style: TextStyle(
                                     fontSize: 18,
                                     color: Colors.white,
                                   ),
                                 ),
                         ),
-                        const SizedBox(height: 15),
-                        TextButton(
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => const ForgotPasswordPage(),
-                              ),
-                            );
-                          },
-                          child: const Text(
-                            "Forgot Password?",
-                            style: TextStyle(
-                              color: Colors.indigo,
-                              decoration: TextDecoration.underline,
-                            ),
-                          ),
-                        ),
                       ],
                     ),
                   ),
                 ),
+
                 const SizedBox(height: 20),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Text(
-                      "Don't have an account? ",
-                      style: TextStyle(color: Colors.black54),
+
+                //--------------------------------------------------
+                // Back Button
+                //--------------------------------------------------
+                TextButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                  },
+                  child: const Text(
+                    "Back to Login",
+                    style: TextStyle(
+                      color: Colors.indigo,
+                      fontWeight: FontWeight.bold,
                     ),
-                    TextButton(
-                      onPressed: () {
-                        Navigator.pushReplacement(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const SignUpPage(),
-                          ),
-                        );
-                      },
-                      child: const Text(
-                        "Sign Up",
-                        style: TextStyle(
-                          color: Colors.indigo,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
               ],
             ),

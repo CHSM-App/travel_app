@@ -4,7 +4,10 @@ import 'package:travel_agency_app/domain/models/booking_info.dart';
 import 'package:travel_agency_app/domain/models/customers.dart';
 import 'package:travel_agency_app/domain/models/drivers.dart';
 import 'package:travel_agency_app/domain/models/fueltype.dart';
+import 'package:travel_agency_app/domain/models/login_info.dart';
+import 'package:travel_agency_app/domain/models/login_response.dart';
 import 'package:travel_agency_app/domain/models/status.dart';
+import 'package:travel_agency_app/domain/models/token_response.dart';
 import 'package:travel_agency_app/domain/models/tripbooking_info.dart';
 import 'package:travel_agency_app/domain/models/vehicles.dart';
 import 'package:travel_agency_app/domain/models/vehicletype.dart';
@@ -27,6 +30,26 @@ abstract class ApiService {
   @GET('/')
   Future<HttpResponse> checkHealth(); 
 
+//Login Api call
+
+  @POST("login/CreateLogin")
+  Future<TokenResponse> createLogin(@Body() TokenResponse tokenResponse);
+
+  @POST("login/refreshAccessToken")
+  Future<TokenResponse> refreshAccessToken(@Body() TokenResponse tokenResponse);
+
+
+    
+  @POST("login/Adminlogin")
+  Future<LoginResponse> login(@Body() LoginInfo logininfo);
+
+    
+  @POST("login/forgotPassword")
+  Future<LoginResponse> forgotPassword(@Body() LoginInfo logininfo);
+  
+
+
+
   //POST API CALL
   @POST("insert/Addtripbooking")
   Future<dynamic> addTripBooking(@Body() TripBooking tripBooking); 
@@ -43,6 +66,11 @@ abstract class ApiService {
   
   @POST("insert/AddCustomer")
   Future<dynamic> addcustomer(@Body() Customer customer);
+
+
+  @POST("insert/AddAdmin")
+  Future<LoginResponse> addAdmin(@Body() LoginInfo logininfo);
+
   
  //------------------------------------------------------------------------------------------/
  
@@ -79,8 +107,12 @@ abstract class ApiService {
 
   //------------------------ Get for Selected
 
-  @GET("users//Customerhistory/{customer_id}")
+  @GET("users/Customerhistory/{customer_id}")
   Future<List<BookingInfo>> customerhist(@Path("customer_id") int customerId);
+
+  
+  @GET("users/AdminProfile/{admin_id}")
+  Future<List<LoginInfo>> adminProfile(@Path("admin_id") int adminId);
 
 
 }  

@@ -1,14 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:travel_agency_app/Screens/login.dart';
 import 'package:travel_agency_app/Screens/profile.dart';
-class ModernSettingsPage extends StatefulWidget {
+import 'package:travel_agency_app/domain/models/login_info.dart';
+import 'package:travel_agency_app/presentation/providers/viewmodel_provider.dart';
+class ModernSettingsPage extends ConsumerStatefulWidget {
+ // final int adminId; // pass admin id here
   const ModernSettingsPage({Key? key}) : super(key: key);
 
   @override
-  State<ModernSettingsPage> createState() => _ModernSettingsPageState();
+  ConsumerState<ModernSettingsPage> createState() =>
+      _ModernSettingsPageState();
 }
 
-class _ModernSettingsPageState extends State<ModernSettingsPage>
+class _ModernSettingsPageState extends ConsumerState<ModernSettingsPage>
     with SingleTickerProviderStateMixin {
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
@@ -22,6 +27,7 @@ class _ModernSettingsPageState extends State<ModernSettingsPage>
   @override
   void initState() {
     super.initState();
+
     _animationController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 800),
@@ -44,6 +50,11 @@ class _ModernSettingsPageState extends State<ModernSettingsPage>
       ),
     );
 
+    // fetch admin profile
+    Future.microtask(() {
+      ref.read(loginViewModelProvider.notifier).adminProfile(ref.read(loginViewModelProvider).adminId);
+    });
+
     _animationController.forward();
   }
 
@@ -57,6 +68,9 @@ class _ModernSettingsPageState extends State<ModernSettingsPage>
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
     final isTablet = size.width > 600;
+
+    final loginState = ref.watch(loginViewModelProvider);
+    final adminProfile = loginState.adminProfile;
 
     return Scaffold(
       body: Container(
@@ -79,7 +93,6 @@ class _ModernSettingsPageState extends State<ModernSettingsPage>
               child: CustomScrollView(
                 physics: const BouncingScrollPhysics(),
                 slivers: [
-                 // _buildAppBar(context),
                   SliverPadding(
                     padding: EdgeInsets.symmetric(
                       horizontal: isTablet ? 40.0 : 20.0,
@@ -87,25 +100,23 @@ class _ModernSettingsPageState extends State<ModernSettingsPage>
                     ),
                     sliver: SliverList(
                       delegate: SliverChildListDelegate([
-                        _buildProfileSection(context),
+                        _buildProfileSection(context, adminProfile),
                         const SizedBox(height: 24),
-                      
                         _buildSectionTitle('Account'),
                         const SizedBox(height: 12),
-                       _buildAccountOption(
-  icon: Icons.person_outline_rounded,
-  title: 'Edit Profile',
-  subtitle: 'Change your personal information',
-  onTap: () {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) =>  ProfilePage(),
-      ),
-    );
-  },
-),
-
+                        _buildAccountOption(
+                          icon: Icons.person_outline_rounded,
+                          title: 'Edit Profile',
+                          subtitle: 'Change your personal information',
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => ProfilePage(),
+                              ),
+                            );
+                          },
+                        ),
                         const SizedBox(height: 12),
                         _buildAccountOption(
                           icon: Icons.lock_outline_rounded,
@@ -145,115 +156,195 @@ class _ModernSettingsPageState extends State<ModernSettingsPage>
         ),
       ),
     );
-  }
+  }Widget _buildProfileSection(
+  BuildContext context, 
+  AsyncValue<List<LoginInfo>> adminProfile
+) {
+  return adminProfile.when(
+    loading: () => _buildProfilePlaceholder(),
+    error: (err, st) => _buildProfileError(err),
+    data: (profileList) {
+      final profile = profileList.isNotEmpty ? profileList.first : null;
+      return _buildProfileCard(profile);
+    },
+  );
+}
 
-  Widget _buildProfileSection(BuildContext context) {
-    return TweenAnimationBuilder<double>(
-      tween: Tween(begin: 0.0, end: 1.0),
-      duration: const Duration(milliseconds: 600),
-      curve: Curves.easeOut,
-      builder: (context, value, child) {
-        return Transform.scale(
-          scale: 0.9 + (value * 0.1),
-          child: Opacity(
-            opacity: value,
-            child: child,
-          ),
-        );
-      },
-      child: Container(
-        padding: const EdgeInsets.all(24),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Colors.indigo.shade700,
-              Colors.indigo.shade500,
-            ],
-          ),
-          borderRadius: BorderRadius.circular(24),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.indigo.shade300.withOpacity(0.4),
-              blurRadius: 20,
-              offset: const Offset(0, 10),
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 70,
-              height: 70,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color: Colors.white.withOpacity(0.3),
-                  width: 3,
-                ),
-              ),
-              child: Icon(
-                Icons.person_rounded,
-                size: 36,
-                color: Colors.indigo.shade600,
-              ),
-            ),
-            const SizedBox(width: 20),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'John Doe',
-                    style: TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                      letterSpacing: -0.5,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'john.doe@email.com',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.white.withOpacity(0.9),
-                      letterSpacing: 0.2,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-           GestureDetector(
-  onTap: () {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) =>  ProfilePage(),
-      ),
-    );
-  },
-  child: Container(
-    padding: const EdgeInsets.all(12),
+Widget _buildProfilePlaceholder() {
+  return Container(
+    padding: const EdgeInsets.all(24),
     decoration: BoxDecoration(
-      color: Colors.white.withOpacity(0.2),
-      borderRadius: BorderRadius.circular(14),
+      gradient: LinearGradient(
+        colors: [Colors.indigo.shade700, Colors.indigo.shade500],
+      ),
+      borderRadius: BorderRadius.circular(24),
     ),
-    child: const Icon(
-      Icons.edit_rounded,
-      color: Colors.white,
-      size: 20,
+    child: const SizedBox(
+      height: 80,
+      child: Center(
+        child: CircularProgressIndicator(color: Colors.white),
+      ),
     ),
-  ),
-),
+  );
+}
 
-          ],
+Widget _buildProfileError(Object err) {
+  return Container(
+    padding: const EdgeInsets.all(24),
+    decoration: BoxDecoration(
+      gradient: LinearGradient(
+        colors: [Colors.indigo.shade700, Colors.indigo.shade500],
+      ),
+      borderRadius: BorderRadius.circular(24),
+    ),
+    child: Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        const Text(
+          'Error loading profile',
+          style: TextStyle(color: Colors.white, fontSize: 16),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          err.toString(),
+          style: const TextStyle(color: Colors.white70, fontSize: 12),
+        ),
+        const SizedBox(height: 12),
+        ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.white,
+            foregroundColor: Colors.indigo.shade700,
+          ),
+          onPressed: () {
+            ref.read(loginViewModelProvider.notifier).adminProfile(ref.read(loginViewModelProvider).adminId);
+          },
+          child: const Text('Retry'),
+        ),
+      ],
+    ),
+  );
+}
+
+Widget _buildProfileCard(LoginInfo? profile) {
+  return TweenAnimationBuilder<double>(
+    tween: Tween(begin: 0.0, end: 1.0),
+    duration: const Duration(milliseconds: 600),
+    curve: Curves.easeOut,
+    builder: (context, value, child) {
+      return Transform.scale(
+        scale: 0.9 + (value * 0.1),
+        child: Opacity(opacity: value, child: child),
+      );
+    },
+    child: Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Colors.indigo.shade700, Colors.indigo.shade500],
+        ),
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.indigo.shade300.withOpacity(0.4),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          _buildProfileAvatar(),
+          const SizedBox(width: 20),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  profile?.name ?? 'No Name',
+                  style: const TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  profile?.email ?? 'No Email',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.white.withOpacity(0.9),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          _buildEditButton(context),
+        ],
+      ),
+    ),
+  );
+}
+Widget _buildProfileAvatar() {
+  final loginState = ref.watch(loginViewModelProvider);
+  final adminProfile = loginState.adminProfile;
+
+  String firstLetter = 'U'; // Default fallback
+  if (adminProfile is AsyncData && adminProfile.value!.isNotEmpty) {
+    final name = adminProfile.value?.first.name;
+    if (name != null && name.isNotEmpty) {
+      firstLetter = name[0].toUpperCase();
+    }
+  }
+
+  return Container(
+    width: 70,
+    height: 70,
+    decoration: BoxDecoration(
+      color: Colors.indigo.shade50,
+      borderRadius: BorderRadius.circular(35), // circle
+      border: Border.all(
+        color: Colors.white.withOpacity(0.3),
+        width: 3,
+      ),
+    ),
+    child: Center(
+      child: Text(
+        firstLetter,
+        style: TextStyle(
+          fontSize: 36,
+          fontWeight: FontWeight.bold,
+          color: Colors.indigo.shade600,
         ),
       ),
-    );
-  }
+    ),
+  );
+}
+
+Widget _buildEditButton(BuildContext context) {
+  return GestureDetector(
+    onTap: () {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => ProfilePage(),
+        ),
+      );
+    },
+    child: Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.2),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: const Icon(
+        Icons.edit_rounded,
+        color: Colors.white,
+        size: 20,
+      ),
+    ),
+  );
+}
+
 
   Widget _buildSectionTitle(String title) {
     return Padding(

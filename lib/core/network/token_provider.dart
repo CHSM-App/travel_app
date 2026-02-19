@@ -4,18 +4,21 @@ import 'package:travel_agency_app/core/storage/token_storage.dart';
 class TokenState {
   final String? accessToken;
   final String? refreshToken;
+  final bool isLoading;
 
-  const TokenState({this.accessToken, this.refreshToken});
+  const TokenState({this.accessToken, this.refreshToken,this.isLoading=true});
 
   bool get isLoggedIn => accessToken != null && refreshToken != null;
 
   TokenState copyWith({
     String? accessToken,
     String? refreshToken,
+    bool?isLoading,
   }) {
     return TokenState(
       accessToken: accessToken ?? this.accessToken,
       refreshToken: refreshToken ?? this.refreshToken,
+      isLoading: isLoading ?? this.isLoading,
     );
   }
 }
@@ -30,6 +33,7 @@ class TokenNotifier extends StateNotifier<TokenState> {
       state = TokenState(
         accessToken: tokens['accessToken'],
         refreshToken: tokens['refreshToken'],
+        isLoading: false,
       );
     }
   }
