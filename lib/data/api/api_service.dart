@@ -67,6 +67,13 @@ abstract class ApiService {
   @POST("insert/AddCustomer")
   Future<dynamic> addcustomer(@Body() Customer customer);
 
+  @POST("insert/Updatevehicle")
+  Future<dynamic> updateVehicle(@Body() Vehicles vehicle);
+
+    @POST("insert/Updatedriver")
+  Future<dynamic> updateDriver(@Body() Drivers driver);
+  
+
 
   @POST("insert/AddAdmin")
   Future<LoginResponse> addAdmin(@Body() LoginInfo logininfo);
@@ -102,6 +109,13 @@ abstract class ApiService {
 
   @GET("users/Unpaidtrip")
   Future<List<BookingInfo>> unpaidtrip();
+
+  @GET("users/activeTrip")
+  Future<List<BookingInfo>> activeTrip();
+
+  @GET("users/cancelledTrip")
+  Future<List<BookingInfo>> cancelledTrip();
+
 
 
 

@@ -68,11 +68,31 @@ class TripBooking {
   final double? repairingcharges;
   final double? drivercharges;
 
-  @JsonKey(name: 'startdatetime')
-  final DateTime? startDateTime;
+  // @JsonKey(name: 'startdatetime')
+  // final DateTime? startDateTime;
 
-  @JsonKey(name: 'enddatetime')
-  final DateTime? endDateTime;
+  // @JsonKey(name: 'enddatetime')
+  // final DateTime? endDateTime;
+ @JsonKey(
+  name: 'startdatetime',
+  toJson: _dateToJson,
+  fromJson: _dateFromJson,
+)
+final DateTime? startDateTime;
+
+@JsonKey(
+  name: 'enddatetime',
+  toJson: _dateToJson,
+  fromJson: _dateFromJson,
+)
+final DateTime? endDateTime;
+
+@JsonKey(
+  name: 'bookingdate',
+  toJson: _dateToJson,
+  fromJson: _dateFromJson,
+)
+final DateTime? bookingdate;
 
   final int? status;
 
@@ -81,8 +101,8 @@ class TripBooking {
 
   final double? tripcharges;
 
-  @JsonKey(name: 'bookingdate')
-  final DateTime? bookingdate;
+  // @JsonKey(name: 'bookingdate')
+  // final DateTime? bookingdate;
 
   TripBooking({
     this.vehicleid,
@@ -106,4 +126,16 @@ class TripBooking {
       _$TripBookingFromJson(json);
 
   Map<String, dynamic> toJson() => _$TripBookingToJson(this);
+
+
+  static String? _dateToJson(DateTime? date) {
+  if (date == null) return null;
+  return date.toLocal().toString(); // prevents UTC shift
+}
+
+static DateTime? _dateFromJson(String? date) {
+  if (date == null) return null;
+  return DateTime.parse(date);
+}
+
 }

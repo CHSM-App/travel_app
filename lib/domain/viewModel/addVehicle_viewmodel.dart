@@ -87,6 +87,18 @@ Future<void> addVehicle(Vehicles vehicle) async {
   }
 }
 
+Future<void> updateVehicle(Vehicles vehicle) async {
+  state = state.copyWith(isLoading: true, error: null);
+
+  try {
+    final result = await usecase.updateVehicle(vehicle);
+    state = state.copyWith(isLoading: false, data: result);
+  } catch (e) {
+    state = state.copyWith(isLoading: false, error: e.toString());
+  }
+}
+
+
   Future<void> fetchVehicleTypeList() async {
     state = state.copyWith(fetchVehicleTypeList: const AsyncValue.loading());
     try {
@@ -105,6 +117,8 @@ Future<void> addVehicle(Vehicles vehicle) async {
       state = state.copyWith(fetchFuelTypeList: AsyncValue.error(e, st));
     }
   }
+
+
     Future<void> fetchstatusList() async {
     state = state.copyWith(fetchstatusList: const AsyncValue.loading());
     try {

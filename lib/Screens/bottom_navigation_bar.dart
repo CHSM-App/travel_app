@@ -26,8 +26,9 @@ class _MainBottomNavState extends ConsumerState<MainBottomNav>
   final List<Widget> pages = [
     TravelAdminDashboard(),
     TripPage(),
-    CustomerPage(),
-    VehiclePage(),
+    // CustomerPage(),
+    CustomerListPage(),
+    VehiclePage(),   
     ModernSettingsPage(),
   ];
 
@@ -117,7 +118,7 @@ class _MainBottomNavState extends ConsumerState<MainBottomNav>
             ),
           ),
           child: AppBar(
-            backgroundColor: Colors.indigo,
+            backgroundColor: const Color.fromARGB(255, 63, 81, 181),
             elevation: 0,
             toolbarHeight: 70,
 
@@ -219,39 +220,55 @@ class _MainBottomNavState extends ConsumerState<MainBottomNav>
         ),
       ),
 
-      /// BOTTOM NAV
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: selectedIndex,
-        onDestinationSelected: _onItemTapped,
-        height: 70,
-
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.home_outlined),
-            selectedIcon: Icon(Icons.home),
-            label: "Home",
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.card_travel_outlined),
-            selectedIcon: Icon(Icons.card_travel),
-            label: "Trips",
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.people_outline),
-            selectedIcon: Icon(Icons.people),
-            label: "Customers",
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.directions_car_outlined),
-            selectedIcon: Icon(Icons.directions_car),
-            label: "Vehicles",
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.settings_outlined),
-            selectedIcon: Icon(Icons.settings),
-            label: "Setting",
-          ),
-        ],
+      // Modern Bottom Navigation Bar
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          boxShadow: [
+            BoxShadow(
+              color: Colors.indigo.withOpacity(0.1),
+              blurRadius: 20,
+              offset: const Offset(0, -5),
+            ),
+          ],
+        ),
+        child: NavigationBar(
+          selectedIndex: selectedIndex,
+          onDestinationSelected: _onItemTapped,
+          height: 70,
+          elevation: 0,
+          backgroundColor: Colors.white,
+          indicatorColor: Theme.of(context).primaryColor.withOpacity(0.15),
+          animationDuration: const Duration(milliseconds: 400),
+          labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+          
+          destinations: [
+            NavigationDestination(
+              icon: _buildNavIcon(Icons.home_outlined, 0),
+              selectedIcon: _buildSelectedNavIcon(Icons.home, 0),
+              label: "Home",
+            ),
+            NavigationDestination(
+              icon: _buildNavIcon(Icons.card_travel_outlined, 1),
+              selectedIcon: _buildSelectedNavIcon(Icons.card_travel, 1),
+              label: "Trips",
+            ),
+            NavigationDestination(
+              icon: _buildNavIcon(Icons.people_outline, 2),
+              selectedIcon: _buildSelectedNavIcon(Icons.people, 2),
+              label: "Customers",
+            ),
+            NavigationDestination(
+              icon: _buildNavIcon(Icons.directions_car_filled_rounded, 3),
+              selectedIcon: _buildSelectedNavIcon(Icons.directions_car, 3),
+              label: "Vehicles",
+            ),
+            NavigationDestination(
+              icon: _buildNavIcon(Icons.settings_outlined, 4),
+              selectedIcon: _buildSelectedNavIcon(Icons.settings, 4),
+              label: "Setting",
+            ),
+          ],
+        ),
       ),
     );
   }

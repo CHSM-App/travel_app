@@ -28,6 +28,11 @@ class AddvehicleImpl implements Addvehiclerepository {
   Future<List<Fueltype>> getVehicleFuelTypes() {
     return apiService.fuelTypeList();
   }  
+
+   @override
+  Future<dynamic> updateVehicle(Vehicles vehicle) {
+    return apiService.updateVehicle(vehicle);
+  }  
 }
 
  

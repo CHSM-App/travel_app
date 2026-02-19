@@ -1,10 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:travel_agency_app/domain/models/booking_info.dart';
-import 'package:travel_agency_app/domain/models/customers.dart';
-import 'package:travel_agency_app/domain/models/drivers.dart';
-import 'package:travel_agency_app/domain/models/tripbooking_info.dart';
-import 'package:travel_agency_app/domain/models/vehicles.dart';
 import 'package:travel_agency_app/domain/usecase/tripbooking_usecase.dart';
 
 @immutable
@@ -16,6 +12,8 @@ final bool isLoading;
   final AsyncValue<List<BookingInfo>> upcomingList;
   final AsyncValue<List<BookingInfo>> historyList;
   final AsyncValue<List<BookingInfo>> unpaidList;
+  final AsyncValue<List<BookingInfo>> activeList;
+  final AsyncValue<List<BookingInfo>> cancelledList;
   const TripPageState({
    
      this.isLoading = false,
@@ -24,6 +22,8 @@ final bool isLoading;
     this.upcomingList = const AsyncValue.loading(),
     this.historyList = const AsyncValue.loading(),
     this.unpaidList = const AsyncValue.loading(),
+    this.activeList = const AsyncValue.loading(),
+    this.cancelledList = const AsyncValue.loading()
       });
 
 
@@ -35,7 +35,9 @@ final bool isLoading;
     String? error,
     AsyncValue<List<BookingInfo>>? upcomingList,
     AsyncValue<List<BookingInfo>>? historyList,
-    AsyncValue<List<BookingInfo>>? unpaidList
+    AsyncValue<List<BookingInfo>>? unpaidList,
+    AsyncValue<List<BookingInfo>>? activeList,
+    AsyncValue<List<BookingInfo>>? cancelledList,
   }) {
     return TripPageState(
     
@@ -43,8 +45,10 @@ final bool isLoading;
       data: data ?? this.data,
       error: error ?? this.error,
       upcomingList: upcomingList ?? this.upcomingList,
-      historyList: historyList ?? this.historyList
-      ,unpaidList: unpaidList ?? this.unpaidList
+      historyList: historyList ?? this.historyList,
+      unpaidList: unpaidList ?? this.unpaidList,
+      activeList: activeList ?? this.activeList,
+      cancelledList: cancelledList ?? this.cancelledList
     );
   }
 }
@@ -82,6 +86,26 @@ class TripPageViewModel extends StateNotifier<TripPageState> {
       state = state.copyWith(unpaidList: AsyncValue.data(result));
     } catch (e, st) {
       state = state.copyWith(unpaidList: AsyncValue.error(e, st));
+    }
+  }
+
+    Future<void> activeList() async {
+    state = state.copyWith(activeList: const AsyncValue.loading());
+    try {
+      final result = await usecase.activeTrip();
+      state = state.copyWith(activeList: AsyncValue.data(result));
+    } catch (e, st) {
+      state = state.copyWith(activeList: AsyncValue.error(e, st));
+    }
+  }
+
+  Future<void> cancelledList() async {
+    state = state.copyWith(cancelledList: const AsyncValue.loading());
+    try {
+      final result = await usecase.cancelledTrip();
+      state = state.copyWith(cancelledList: AsyncValue.data(result));
+    } catch (e, st) {
+      state = state.copyWith(cancelledList: AsyncValue.error(e, st));
     }
   }
 

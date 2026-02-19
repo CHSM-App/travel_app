@@ -1,6 +1,6 @@
 import 'package:json_annotation/json_annotation.dart';
 part 'booking_info.g.dart';
-            
+
 @JsonSerializable()
 class BookingInfo {
   @JsonKey(name: 'trip_id')
@@ -60,8 +60,29 @@ class BookingInfo {
   @JsonKey(name: 'Customer_name')
   final String? customer_name;
 
+  @JsonKey(name: 'customer_phone')
+  final String? customer_phone;
+
+  @JsonKey(name: 'TripStatus')
+  final String? tripStatus;
+
   @JsonKey(name: 'Driver_name')
   final String? driver_name;
+
+  @JsonKey(name: 'driver_LicenceNo')
+  final String? driverLicenceNo;
+
+  @JsonKey(name: 'driver_phone')
+  final String? driverPhone;
+
+  @JsonKey(name: 'mileage')
+  final String? mileage;
+
+  @JsonKey(name: 'FuelType')
+  final String? fuelType;
+
+  @JsonKey(name: 'capacity')
+  final int? capacity;
 
  @JsonKey(name: 'payment_status')
   final String? payment_status;
@@ -69,7 +90,7 @@ class BookingInfo {
   BookingInfo({
     this.tripId,
     this.vehicleId,
-    this.driverId, 
+    this.driverId,
     this.pickupLocation,
     this.dropLocation,
     this.distance,
@@ -84,16 +105,21 @@ class BookingInfo {
     this.amountApprove,
     this.amountReceived,
     this.customerId,
-     this.vehicle_info,
-    this.customer_name,  
+    this.vehicle_info,
+    this.customer_name,
+    this.customer_phone,
     this.driver_name,
-    this.payment_status
+    this.payment_status,
+    this.tripStatus,
+    this.driverLicenceNo,
+    this.driverPhone,
+    this.mileage,
+    this.fuelType,
+    this.capacity,
   });
 
   factory BookingInfo.fromJson(Map<String, dynamic> json) =>
-      _$BookingInfoFromJson(json);  
+      _$BookingInfoFromJson(json);
 
-  Map<String, dynamic> toJson() => _$BookingInfoToJson(this); 
+  Map<String, dynamic> toJson() => _$BookingInfoToJson(this);
 }
-
-

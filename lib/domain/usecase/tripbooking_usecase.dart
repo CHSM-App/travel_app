@@ -35,4 +35,12 @@ class TripbookingUsecase {
     return repository.unpaidTrip();
   }
 
+  Future<List<BookingInfo>> activeTrip() {
+    return repository.activeTrip();
+  }
+
+  Future<List<BookingInfo>> cancelledTrip(){
+    return repository.cancelledTrip();
+  }
+
 }

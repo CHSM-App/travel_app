@@ -3,13 +3,28 @@ part 'drivers.g.dart';
             
 @JsonSerializable()
 class Drivers {
+  @JsonKey(name: 'driverId')
   final int? driverId;
+
+  @JsonKey(name: 'name')
   final String? name;
+
+  @JsonKey(name: 'phone')
   final String? phone;
+
+  @JsonKey(name: 'address')
   final String? address;
+
+  @JsonKey(name: 'LicenceNo')
   final String? licenceNo;
+
+  @JsonKey(name: 'LicenceExpiry')
   final DateTime? licenceExpiry;
+
+  @JsonKey(name: 'vehicleId')
   final int? vehicleId;
+
+  @JsonKey(name: 'photo')
   final String? photo;
 
   Drivers({
