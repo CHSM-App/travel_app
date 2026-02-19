@@ -43,4 +43,8 @@ class TripbookingUsecase {
     return repository.cancelledTrip();
   }
 
+  Future<dynamic> settleTrip(BookingInfo tripbooking){
+     return repository.settleTrip(tripbooking);
+  }
+
 }

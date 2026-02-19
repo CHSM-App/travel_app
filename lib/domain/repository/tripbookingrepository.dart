@@ -22,5 +22,7 @@ abstract class Tripbookingrepository {
   Future<List<BookingInfo>> activeTrip();
 
   Future<List<BookingInfo>> cancelledTrip();
+
+  Future<dynamic> settleTrip(BookingInfo tripbooking);
   
 }

@@ -72,6 +72,9 @@ abstract class ApiService {
 
     @POST("insert/Updatedriver")
   Future<dynamic> updateDriver(@Body() Drivers driver);
+
+  @POST("insert/settleTrip/")
+  Future<dynamic> settleTrip(@Body() BookingInfo tripbooking);
   
 
 
