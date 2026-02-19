@@ -7,11 +7,11 @@ import 'package:travel_agency_app/domain/models/vehicles.dart';
 abstract class Tripbookingrepository {
   Future<dynamic> addTripBooking(TripBooking tripBooking);
 
-  Future<List<Drivers>> driverList();
+  Future<List<Drivers>> driverList(String agencyId);
 
-  Future<List<Vehicles>> vehicleList();
+  Future<List<Vehicles>> vehicleList(String agencyId);
 
-  Future<List<Customer>> customerList();
+  Future<List<Customer>> customerList(String agencyId);
 
   Future<List<BookingInfo>> upcomingTrip();
 

@@ -64,8 +64,8 @@ class _VehicleDriverPageState extends ConsumerState<VehiclePage>
     _tabController.addListener(() => setState(() {}));
 
     Future.microtask(() {
-      ref.read(tripBookingViewModelProvider.notifier).vehicleList();
-      ref.read(tripBookingViewModelProvider.notifier).driverList();
+      ref.read(tripBookingViewModelProvider.notifier).vehicleList(ref.read(loginViewModelProvider).agencyId??"");
+      ref.read(tripBookingViewModelProvider.notifier).driverList(ref.read(loginViewModelProvider).agencyId??"");
     });
   }
 
@@ -438,7 +438,7 @@ Widget _statusChip(int? statusId) {
             ),
           );
           if (result == true) {
-            ref.read(tripBookingViewModelProvider.notifier).vehicleList();
+            ref.read(tripBookingViewModelProvider.notifier).vehicleList(ref.read(loginViewModelProvider).agencyId??"");
           }
         } else if (val == 'delete') {
           _showDeleteDialog(
@@ -448,7 +448,7 @@ Widget _statusChip(int? statusId) {
             onConfirm: () {
               Navigator.pop(context);
               // TODO: call delete API
-              ref.read(tripBookingViewModelProvider.notifier).vehicleList();
+              ref.read(tripBookingViewModelProvider.notifier).vehicleList(ref.read(loginViewModelProvider).agencyId??"");
             },
           );
         }
@@ -609,7 +609,7 @@ Widget _statusChip(int? statusId) {
             ),
           );
           if (result == true) {
-            ref.read(tripBookingViewModelProvider.notifier).driverList();
+            ref.read(tripBookingViewModelProvider.notifier).driverList(ref.read(loginViewModelProvider).agencyId??"");
           }
         } else if (val == 'delete') {
           _showDeleteDialog(
@@ -619,7 +619,7 @@ Widget _statusChip(int? statusId) {
             onConfirm: () {
               Navigator.pop(context);
               // TODO: call delete API
-              ref.read(tripBookingViewModelProvider.notifier).driverList();
+ref.read(tripBookingViewModelProvider.notifier).driverList(ref.read(loginViewModelProvider).agencyId??"");
             },
           );
         }

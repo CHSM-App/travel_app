@@ -19,6 +19,7 @@ Vehicles _$VehiclesFromJson(Map<String, dynamic> json) => Vehicles(
   FuelType: json['FuelType'] as String?,
   Type: json['Type'] as String?,
   StatusName: json['StatusName'] as String?,
+  agencyId: json['agency_id'] as String?,
 );
 
 Map<String, dynamic> _$VehiclesToJson(Vehicles instance) => <String, dynamic>{
@@ -34,4 +35,5 @@ Map<String, dynamic> _$VehiclesToJson(Vehicles instance) => <String, dynamic>{
   'FuelType': instance.FuelType,
   'Type': instance.Type,
   'StatusName': instance.StatusName,
+  'agency_id': instance.agencyId,
 };

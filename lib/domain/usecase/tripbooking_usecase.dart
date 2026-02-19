@@ -12,15 +12,15 @@ class TripbookingUsecase {
   Future<dynamic> addTripBooking(TripBooking tripBooking) {
     return repository.addTripBooking(tripBooking);
   }
-  Future<List<Drivers>> driverList() {
-    return repository.driverList();
+  Future<List<Drivers>> driverList(String agencyId) {
+    return repository.driverList(agencyId);
   }
-  Future<List<Vehicles>> vehicleList() {
-    return repository.vehicleList();
+  Future<List<Vehicles>> vehicleList(String agencyId) {
+    return repository.vehicleList(agencyId);
   }
 
-  Future<List<Customer>> customerList() {
-    return repository.customerList();
+  Future<List<Customer>> customerList(String agencyId) {
+    return repository.customerList(agencyId);
   }
 
   Future<List<BookingInfo>> upcomingTrip() {

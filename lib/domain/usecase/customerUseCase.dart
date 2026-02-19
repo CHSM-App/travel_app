@@ -5,8 +5,8 @@ class customerUseCase {
   final CustomerRepository customerrepository;
   customerUseCase(this.customerrepository);
 
-  Future<dynamic> customerList() {
-    return customerrepository.customerList();
+  Future<dynamic> customerList(String agencyId) {
+    return customerrepository.customerList(agencyId);
   }
 
   Future<dynamic> addCustomer(Customer customer) {

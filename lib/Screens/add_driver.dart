@@ -593,6 +593,7 @@ class _AddDriverPageState extends ConsumerState<AddDriverPage>
         address: addressController.text.trim(),
         licenceNo: licenceNoController.text.trim(),
         licenceExpiry: selectedExpiryDate,
+        agencyId: ref.read(loginViewModelProvider).agencyId.toString(),
       );
 
       if (widget.isEdit) {

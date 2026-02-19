@@ -338,7 +338,7 @@ class _ApiService implements ApiService {
   }
 
   @override
-  Future<List<Drivers>> driverList() async {
+  Future<List<Drivers>> driverList(String agencyId) async {
     final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
     final _headers = <String, dynamic>{};
@@ -347,7 +347,7 @@ class _ApiService implements ApiService {
       Options(method: 'GET', headers: _headers, extra: _extra)
           .compose(
             _dio.options,
-            'users/driverList',
+            'users/driverList/${agencyId}',
             queryParameters: queryParameters,
             data: _data,
           )
@@ -367,7 +367,7 @@ class _ApiService implements ApiService {
   }
 
   @override
-  Future<List<Vehicles>> vehicleList() async {
+  Future<List<Vehicles>> vehicleList(String agencyId) async {
     final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
     final _headers = <String, dynamic>{};
@@ -376,7 +376,7 @@ class _ApiService implements ApiService {
       Options(method: 'GET', headers: _headers, extra: _extra)
           .compose(
             _dio.options,
-            'users/VehicleList',
+            'users/VehicleList/${agencyId}',
             queryParameters: queryParameters,
             data: _data,
           )
@@ -396,7 +396,7 @@ class _ApiService implements ApiService {
   }
 
   @override
-  Future<List<Customer>> customerList() async {
+  Future<List<Customer>> customerList(String agencyId) async {
     final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
     final _headers = <String, dynamic>{};
@@ -405,7 +405,7 @@ class _ApiService implements ApiService {
       Options(method: 'GET', headers: _headers, extra: _extra)
           .compose(
             _dio.options,
-            'users/customerList',
+            'users/customerList/${agencyId}',
             queryParameters: queryParameters,
             data: _data,
           )

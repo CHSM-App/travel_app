@@ -1,8 +1,9 @@
 import 'package:json_annotation/json_annotation.dart';
 part 'drivers.g.dart';
-            
+
 @JsonSerializable()
 class Drivers {
+
   @JsonKey(name: 'driverId')
   final int? driverId;
 
@@ -18,7 +19,12 @@ class Drivers {
   @JsonKey(name: 'LicenceNo')
   final String? licenceNo;
 
-  @JsonKey(name: 'LicenceExpiry')
+  // ✅ FIX HERE
+  @JsonKey(
+    name: 'LicenceExpiry',
+    fromJson: _dateFromJson,
+    toJson: _dateToJson,
+  )
   final DateTime? licenceExpiry;
 
   @JsonKey(name: 'vehicleId')
@@ -27,20 +33,33 @@ class Drivers {
   @JsonKey(name: 'photo')
   final String? photo;
 
+  @JsonKey(name: 'agency_id')
+  final String? agencyId;
+
   Drivers({
-     this.driverId,
-     this.name,
-     this.phone,
+    this.driverId,
+    this.name,
+    this.phone,
     this.address,
-     this.licenceNo,
-     this.licenceExpiry,
+    this.licenceNo,
+    this.licenceExpiry,
     this.vehicleId,
     this.photo,
+    this.agencyId,
   });
 
   factory Drivers.fromJson(Map<String, dynamic> json) =>
-      _$DriversFromJson(json);  
-  Map<String, dynamic> toJson() => _$DriversToJson(this); 
+      _$DriversFromJson(json);
+
+  Map<String, dynamic> toJson() =>
+      _$DriversToJson(this);
+
+  /// ✅ Convert String → DateTime
+  static DateTime? _dateFromJson(String? date) =>
+      date == null ? null : DateTime.parse(date);
+
+  /// ✅ Convert DateTime → String (SQL format)
+  static String? _dateToJson(DateTime? date) =>
+      date == null ? null : date.toIso8601String();
+
 }
-
-

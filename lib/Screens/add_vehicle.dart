@@ -347,6 +347,7 @@ class _AddVehiclePageState extends ConsumerState<AddVehiclePage>
         mileage: mileage.text.trim(),
         StatusId: selectedStatusId!,
         rcdocuments: rcDocument.text.isEmpty ? null : rcDocument.text.trim(),
+        agencyId: ref.read(loginViewModelProvider).agencyId.toString(),
       );
 
       if (widget.isEdit) {

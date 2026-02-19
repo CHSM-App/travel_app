@@ -63,31 +63,31 @@ class TripBookingViewModel extends StateNotifier<TripBookingState> {
       state = state.copyWith(isLoading: false, error: e.toString());
     }
   }
-    Future<void> driverList() async {
+    Future<void> driverList(String agencyId) async {
     state = state.copyWith(fetchDriverList: const AsyncValue.loading());
     try {
-      final result = await usecase.driverList();
+      final result = await usecase.driverList(agencyId);
       state = state.copyWith(fetchDriverList: AsyncValue.data(result));
     } catch (e, st) {
       state = state.copyWith(fetchDriverList: AsyncValue.error(e, st));
     }
   }
 
-  Future<void> vehicleList() async {
+  Future<void> vehicleList(String agencyId) async {
     // state = state.copyWith(fetchVehicleList: const AsyncValue.loading());
     state = state.copyWith(isLoading: true);
     try {
-      final result = await usecase.vehicleList();
+      final result = await usecase.vehicleList(agencyId);
       state = state.copyWith(isLoading: false, fetchVehicleList: AsyncValue.data(result));
     } catch (e, st) {
       state = state.copyWith(isLoading: false, fetchVehicleList: AsyncValue.error(e, st));
     }
   }
 
-  Future<void> customerList() async {  
+  Future<void> customerList(String agencyId) async {  
     state = state.copyWith(isLoading: true);
     try {
-      final result = await usecase.customerList();
+      final result = await usecase.customerList(agencyId);
       state = state.copyWith(isLoading: false, fetchCustomerList: AsyncValue.data(result));
     } catch (e, st) {
       state = state.copyWith(isLoading: false, fetchCustomerList: AsyncValue.error(e, st));
