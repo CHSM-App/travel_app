@@ -30,8 +30,6 @@ class TripBookingImpl implements Tripbookingrepository {
     return apiService.customerList();
   }
     
-  
-  
   @override
   Future<List<BookingInfo>> historyTrip() {
     return apiService.historyTrip();
@@ -58,6 +56,10 @@ class TripBookingImpl implements Tripbookingrepository {
     return apiService.cancelledTrip();
   }
   
+   @override
+  Future<dynamic> settleTrip(BookingInfo tripbooking) {
+    return apiService.settleTrip(tripbooking);
+  }
   
   
 

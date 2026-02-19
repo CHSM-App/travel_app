@@ -87,6 +87,7 @@ class BookingInfo {
  @JsonKey(name: 'payment_status')
   final String? payment_status;
 
+
   BookingInfo({
     this.tripId,
     this.vehicleId,
@@ -117,6 +118,9 @@ class BookingInfo {
     this.fuelType,
     this.capacity,
   });
+
+
+  
 
   factory BookingInfo.fromJson(Map<String, dynamic> json) =>
       _$BookingInfoFromJson(json);

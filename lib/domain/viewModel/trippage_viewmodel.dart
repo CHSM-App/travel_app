@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:travel_agency_app/domain/models/booking_info.dart';
 import 'package:travel_agency_app/domain/usecase/tripbooking_usecase.dart';
 
-@immutable
+
 class TripPageState {
 
 final bool isLoading;
@@ -14,6 +14,7 @@ final bool isLoading;
   final AsyncValue<List<BookingInfo>> unpaidList;
   final AsyncValue<List<BookingInfo>> activeList;
   final AsyncValue<List<BookingInfo>> cancelledList;
+ 
   const TripPageState({
    
      this.isLoading = false,
@@ -23,10 +24,9 @@ final bool isLoading;
     this.historyList = const AsyncValue.loading(),
     this.unpaidList = const AsyncValue.loading(),
     this.activeList = const AsyncValue.loading(),
-    this.cancelledList = const AsyncValue.loading()
+    this.cancelledList = const AsyncValue.loading(),
+ 
       });
-
-
 
   TripPageState copyWith({
 
@@ -38,6 +38,7 @@ final bool isLoading;
     AsyncValue<List<BookingInfo>>? unpaidList,
     AsyncValue<List<BookingInfo>>? activeList,
     AsyncValue<List<BookingInfo>>? cancelledList,
+   
   }) {
     return TripPageState(
     
@@ -48,10 +49,14 @@ final bool isLoading;
       historyList: historyList ?? this.historyList,
       unpaidList: unpaidList ?? this.unpaidList,
       activeList: activeList ?? this.activeList,
-      cancelledList: cancelledList ?? this.cancelledList
+      cancelledList: cancelledList ?? this.cancelledList,
+       
     );
   }
 }
+
+
+
 class TripPageViewModel extends StateNotifier<TripPageState> {
   final Ref ref;
   final TripbookingUsecase usecase;
@@ -110,5 +115,19 @@ class TripPageViewModel extends StateNotifier<TripPageState> {
   }
 
 
+   Future<void> settleTrip(BookingInfo bookinginfo) async {
+    state = state.copyWith(isLoading: true, error: null);
+    try {
+      final result = await usecase.settleTrip(bookinginfo);
+      state = state.copyWith(isLoading: false, data: result);
+    } catch (e) {
+      state = state.copyWith(isLoading: false, error: e.toString());
+    }
+  }
 
+  
 }
+
+
+
+

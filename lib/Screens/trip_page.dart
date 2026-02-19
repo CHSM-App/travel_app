@@ -362,6 +362,7 @@ class _TripPageState extends ConsumerState<TripPage> {
             itemBuilder: (_, i) => TripCard(
               key: ValueKey(filteredTrips[i].tripId ?? i),
               bookinginfo: filteredTrips[i],
+              ref: ref,
             ),
           ),
         );

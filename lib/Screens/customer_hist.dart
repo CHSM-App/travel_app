@@ -64,7 +64,7 @@ class _CustomerHistState extends ConsumerState<CustomerHist>
           itemCount: trips.length,
           itemBuilder: (_, i) => TripCard(
             key: ValueKey(trips[i].customerId), // ✅ better than index
-            bookinginfo: trips[i],
+            bookinginfo: trips[i], ref: ref,
           ),
         );
       },

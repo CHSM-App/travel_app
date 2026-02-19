@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:travel_agency_app/domain/models/booking_info.dart';
+import 'package:travel_agency_app/presentation/providers/viewmodel_provider.dart';
 
 class TripCard extends StatelessWidget {
   final BookingInfo bookinginfo;
+  final WidgetRef ref; 
 
-  const TripCard({super.key, required this.bookinginfo});
+  const TripCard({super.key, required this.bookinginfo, required this.ref,});
 
   String _formatDate(DateTime? date) {
     if (date == null) return '--';
@@ -388,10 +391,159 @@ class TripCard extends StatelessWidget {
     }
   }
 
+  void _showSettlementBottomSheet(
+    BuildContext context,
+    BookingInfo booking,
+  ) {
+
+  final tollController =
+      TextEditingController(text: booking.tollCharges?.toString() ?? "0");
+
+  final repairController =
+      TextEditingController(text: booking.repairingCharges?.toString() ?? "0");
+
+  final driverController =
+      TextEditingController(text: booking.driverCharges?.toString() ?? "0");
+
+  final receivedController = TextEditingController();
+
+  showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+    ),
+    builder: (context) {
+      return Padding(
+        padding: EdgeInsets.only(
+          left: 16,
+          right: 16,
+          top: 20,
+          bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+
+            const Text(
+              "Trip Settlement",
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+
+            const SizedBox(height: 20),
+
+            _numberField(tollController, "Toll Charges"),
+            const SizedBox(height: 12),
+
+            _numberField(repairController, "Repair Charges"),
+            const SizedBox(height: 12),
+
+            _numberField(driverController, "Driver Charges"),
+            const SizedBox(height: 12),
+
+            _numberField(receivedController, "Received Amount"),
+            const SizedBox(height: 20),
+
+            ElevatedButton(
+              // onPressed: () async {
+
+              //  final notifier = ref.read(TripPageViewModelProvider.notifier);
+
+
+              //   await notifier.settleTrip(booking);
+
+              //   Navigator.pop(context);
+              // },
+             onPressed: () async {
+
+final updatedBooking = BookingInfo(
+  tripId: booking.tripId,
+  vehicleId: booking.vehicleId,
+  driverId: booking.driverId,
+  pickupLocation: booking.pickupLocation,
+  dropLocation: booking.dropLocation,
+  distance: booking.distance,
+  fuelRequired: booking.fuelRequired,
+
+  tollCharges: double.tryParse(tollController.text) ?? 0.0,
+  repairingCharges: double.tryParse(repairController.text) ?? 0.0,
+  driverCharges: double.tryParse(driverController.text) ?? 0.0,
+  amountReceived: double.tryParse(receivedController.text) ?? 0.0,
+
+  startDateTime: booking.startDateTime,
+  endDateTime: booking.endDateTime,
+  status: 4,
+  purpose: booking.purpose,
+  amountApprove: booking.amountApprove,
+  customerId: booking.customerId,
+  vehicle_info: booking.vehicle_info,
+  customer_name: booking.customer_name,
+  customer_phone: booking.customer_phone,
+  driver_name: booking.driver_name,
+  payment_status: booking.payment_status,
+  tripStatus: booking.tripStatus,
+  driverLicenceNo: booking.driverLicenceNo,
+  driverPhone: booking.driverPhone,
+  mileage: booking.mileage,
+  fuelType: booking.fuelType,
+  capacity: booking.capacity,
+);
+
+  final notifier =
+      ref.read(TripPageViewModelProvider.notifier);
+
+  await notifier.settleTrip(updatedBooking);
+
+  Navigator.pop(context);
+},
+
+
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.indigo.shade700,
+                foregroundColor: Colors.white,
+                minimumSize: const Size(double.infinity, 48),
+              ),
+              child: const Text("Submit & Mark Paid"),
+            ),
+          ],
+        ),
+      );
+    },
+  );
+}
+
+
+
+Widget _numberField(TextEditingController controller, String label) {
+  return TextField(
+    controller: controller,
+    keyboardType:
+        const TextInputType.numberWithOptions(decimal: true),
+    decoration: InputDecoration(
+      labelText: label,
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+    ),
+  );
+}
+
+
+
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () => _showTripDetails(context),
+      onTap: ()   {
+  if (bookinginfo.status == 3) {
+    _showSettlementBottomSheet(context, bookinginfo);
+  } else {
+    _showTripDetails(context);
+  }
+},
+
 
       child: Card(
         elevation: 6,

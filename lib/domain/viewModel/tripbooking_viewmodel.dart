@@ -63,6 +63,8 @@ class TripBookingViewModel extends StateNotifier<TripBookingState> {
       state = state.copyWith(isLoading: false, error: e.toString());
     }
   }
+
+  
     Future<void> driverList() async {
     state = state.copyWith(fetchDriverList: const AsyncValue.loading());
     try {

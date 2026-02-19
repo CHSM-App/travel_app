@@ -283,6 +283,19 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm> {
 
   // ---------------- SECTIONS ----------------
 
+  Widget _disabledNumber(TextEditingController c, String label, IconData icon) =>
+    TextFormField(
+      controller: c,
+      readOnly: true,
+      enabled: false,
+      decoration: _decoration(label, icon).copyWith(
+        fillColor: Colors.grey[200],
+      ),
+    );
+
+
+
+
   List<Widget> _sections(TripBookingState state) => [
     _sectionCard("Schedule", Icons.calendar_today_rounded, [
       _readonly(bookingDate, "Booking Date", Icons.today),
@@ -308,13 +321,21 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm> {
       _gap(),
       _number(fuelRequired, "Fuel Required (L)", Icons.local_gas_station),
     ]),
+    // _sectionCard("Additional Charges", Icons.receipt_long_outlined, [
+    //   _number(tollCharges, "Toll Charges", Icons.toll),
+    //   _gap(),
+    //   _number(repairingCharges, "Repair Charges", Icons.build),
+    //   _gap(),
+    //   _number(driverCharges, "Driver Charges", Icons.person),
+    // ]),
     _sectionCard("Additional Charges", Icons.receipt_long_outlined, [
-      _number(tollCharges, "Toll Charges", Icons.toll),
-      _gap(),
-      _number(repairingCharges, "Repair Charges", Icons.build),
-      _gap(),
-      _number(driverCharges, "Driver Charges", Icons.person),
-    ]),
+  _disabledNumber(tollCharges, "Toll Charges", Icons.toll),
+  _gap(),
+  _disabledNumber(repairingCharges, "Repair Charges", Icons.build),
+  _gap(),
+  _disabledNumber(driverCharges, "Driver Charges", Icons.person),
+]),
+
     _sectionCard("Total Amount", Icons.payments_outlined, [
       _number(tripCharges, "Total Trip Charges", Icons.currency_rupee),
     ]),
@@ -359,9 +380,13 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm> {
       droplocation: drop.text,
       distance: double.parse(distance.text),
       fuelrequired: double.parse(fuelRequired.text),
-      tollcharges: double.parse(tollCharges.text),
-      repairingcharges: double.parse(repairingCharges.text),
-      drivercharges: double.parse(driverCharges.text),
+      // tollcharges: double.parse(tollCharges.text),
+      // repairingcharges: double.parse(repairingCharges.text),
+      // drivercharges: double.parse(driverCharges.text),
+      tollcharges: 0,
+      repairingcharges: 0,
+      drivercharges: 0,
+
       tripcharges: double.parse(tripCharges.text),
       startDateTime: startDateValue!,
       endDateTime: endDateValue!,
