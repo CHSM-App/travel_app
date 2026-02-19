@@ -1,19 +1,25 @@
-import 'dart:io';
-import 'dart:ui';
-import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
 
-class ProfilePage extends StatefulWidget {
+import 'dart:io';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:travel_agency_app/domain/models/login_info.dart';
+import 'package:travel_agency_app/presentation/providers/viewmodel_provider.dart';
+
+class ProfilePage extends ConsumerStatefulWidget {
+  const ProfilePage({Key? key}) : super(key: key);
+
   @override
-  _ProfilePageState createState() => _ProfilePageState();
+  ConsumerState<ProfilePage> createState() => _ProfilePageState();
 }
 
-class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStateMixin {
+class _ProfilePageState extends ConsumerState<ProfilePage>
+    with SingleTickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
   final ImagePicker _picker = ImagePicker();
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
-  
+
   // Controllers
   TextEditingController nameController = TextEditingController();
   TextEditingController mobileController = TextEditingController();
@@ -22,22 +28,26 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
   TextEditingController agencyController = TextEditingController();
   TextEditingController cityController = TextEditingController();
   TextEditingController pincodeController = TextEditingController();
-  
+
   File? _profileImage;
   String? _imageUrl;
 
   @override
   void initState() {
     super.initState();
+
     _animationController = AnimationController(
-      duration: Duration(milliseconds: 800),
+      duration: const Duration(milliseconds: 800),
       vsync: this,
     );
-    _fadeAnimation = CurvedAnimation(
-      parent: _animationController,
-      curve: Curves.easeInOut,
-    );
+    _fadeAnimation =
+        CurvedAnimation(parent: _animationController, curve: Curves.easeInOut);
     _animationController.forward();
+
+    // Fetch profile from API
+    Future.microtask(() {
+      ref.read(loginViewModelProvider.notifier).adminProfile(ref.read(loginViewModelProvider).adminId);
+    });
   }
 
   @override
@@ -53,99 +63,117 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
     super.dispose();
   }
 
+  void _populateProfile(LoginInfo profile) {
+    nameController.text = profile.name ?? '';
+    mobileController.text = profile.mobile ?? '';
+    emailController.text = profile.email ?? '';
+    addressController.text = profile.address ?? '';
+    agencyController.text = profile.agencyName ?? '';
+    cityController.text = profile.city ?? '';
+  //  pincodeController.text = profile.pincode ?? '';
+  //  _imageUrl = profile.imageUrl;
+  }
+
   void _showImageOptions() {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
-      builder: (BuildContext context) {
-        return Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.only(
-              topLeft: Radius.circular(25),
-              topRight: Radius.circular(25),
-            ),
+      builder: (context) => Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(25),
+            topRight: Radius.circular(25),
           ),
-          child: SafeArea(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                SizedBox(height: 15),
-                Container(
-                  width: 50,
-                  height: 5,
+        ),
+        child: SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(height: 15),
+              Container(
+                width: 50,
+                height: 5,
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+              const SizedBox(height: 20),
+              const Text(
+                'Profile Photo',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 20),
+              ListTile(
+                leading: Container(
+                  padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: Colors.grey[300],
-                    borderRadius: BorderRadius.circular(10),
+                    color: Colors.indigo.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
                   ),
+                  child: const Icon(Icons.photo_camera, color: Colors.indigo),
                 ),
-                SizedBox(height: 20),
-                Text(
-                  'Profile Photo',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
+                title: const Text(
+                  'Camera',
+                  style: TextStyle(fontWeight: FontWeight.w500),
+                ),
+                onTap: () {
+                  Navigator.pop(context);
+                  _pickImage(ImageSource.camera);
+                },
+              ),
+              ListTile(
+                leading: Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: Colors.indigo.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
                   ),
+                  child: const Icon(Icons.photo_library, color: Colors.indigo),
                 ),
-                SizedBox(height: 20),
+                title: const Text(
+                  'Gallery',
+                  style: TextStyle(fontWeight: FontWeight.w500),
+                ),
+                onTap: () {
+                  Navigator.pop(context);
+                  _pickImage(ImageSource.gallery);
+                },
+              ),
+              if (_profileImage != null || _imageUrl != null)
                 ListTile(
                   leading: Container(
-                    padding: EdgeInsets.all(10),
+                    padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
-                      color: Colors.indigo.withOpacity(0.1),
+                      color: Colors.red.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: Icon(Icons.photo_camera, color: Colors.indigo),
+                    child: const Icon(Icons.delete, color: Colors.red),
                   ),
-                  title: Text('Camera', style: TextStyle(fontWeight: FontWeight.w500)),
+                  title: const Text(
+                    'Remove',
+                    style: TextStyle(color: Colors.red, fontWeight: FontWeight.w500),
+                  ),
                   onTap: () {
                     Navigator.pop(context);
-                    _pickImage(ImageSource.camera);
+                    setState(() {
+                      _profileImage = null;
+                      _imageUrl = null;
+                    });
                   },
                 ),
-                ListTile(
-                  leading: Container(
-                    padding: EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: Colors.indigo.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Icon(Icons.photo_library, color: Colors.indigo),
-                  ),
-                  title: Text('Gallery', style: TextStyle(fontWeight: FontWeight.w500)),
-                  onTap: () {
-                    Navigator.pop(context);
-                    _pickImage(ImageSource.gallery);
-                  },
-                ),
-                if (_profileImage != null || _imageUrl != null)
-                  ListTile(
-                    leading: Container(
-                      padding: EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: Colors.red.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Icon(Icons.delete, color: Colors.red),
-                    ),
-                    title: Text('Remove', style: TextStyle(color: Colors.red, fontWeight: FontWeight.w500)),
-                    onTap: () {
-                      Navigator.pop(context);
-                      _removeImage();
-                    },
-                  ),
-                SizedBox(height: 20),
-              ],
-            ),
+              const SizedBox(height: 20),
+            ],
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 
   Future<void> _pickImage(ImageSource source) async {
     final XFile? pickedFile = await _picker.pickImage(source: source);
-    
+
     if (pickedFile != null) {
       setState(() {
         _profileImage = File(pickedFile.path);
@@ -153,35 +181,57 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
       });
     }
   }
+  void _saveProfile() async {
 
-  void _removeImage() {
-    setState(() {
-      _profileImage = null;
-      _imageUrl = null;
-    });
+  if (!_formKey.currentState!.validate()) return;
+
+  final profileList = ref.read(loginViewModelProvider).adminProfile.value;
+
+  int adminId = 0;
+
+  if (profileList != null && profileList.isNotEmpty) {
+    adminId = profileList.first.adminId ?? 0;
   }
 
-  void _saveProfile() {
-    if (_formKey.currentState!.validate()) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Row(
-            children: [
-              Icon(Icons.check_circle, color: Colors.white),
-              SizedBox(width: 10),
-              Text('Profile saved successfully!'),
-            ],
-          ),
-          backgroundColor: Colors.green,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-          ),
-          margin: EdgeInsets.all(20),
-        ),
-      );
-    }
+  final loginInfo = LoginInfo(
+    adminId: adminId,
+    name: nameController.text,
+    email: emailController.text,
+    mobile: mobileController.text,
+    address: addressController.text,
+    agencyName: agencyController.text,
+    city: cityController.text,
+  );
+
+  final response = await ref
+      .read(loginViewModelProvider.notifier)
+      .addAdmin(loginInfo);
+
+  if (response?.success == 1) {
+
+    // ✅ Reload profile (IMPORTANT)
+    await ref
+        .read(loginViewModelProvider.notifier)
+        .adminProfile(adminId);
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text("Profile Updated successfully"),
+        backgroundColor: Colors.green,
+      ),
+    );
+
+  } else {
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(response?.message ?? "Update failed"),
+        backgroundColor: Colors.red,
+      ),
+    );
   }
+
+}
 
   Widget _buildTextField({
     required TextEditingController controller,
@@ -200,7 +250,7 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
             blurRadius: 10,
-            offset: Offset(0, 5),
+            offset: const Offset(0, 5),
           ),
         ],
       ),
@@ -209,13 +259,11 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
         keyboardType: keyboardType,
         maxLength: maxLength,
         maxLines: maxLines,
-        style: TextStyle(fontSize: 16),
         decoration: InputDecoration(
           labelText: label,
-          labelStyle: TextStyle(color: Colors.grey[600]),
           prefixIcon: Container(
-            margin: EdgeInsets.all(12),
-            padding: EdgeInsets.all(8),
+            margin: const EdgeInsets.all(12),
+            padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
               color: Colors.indigo,
               borderRadius: BorderRadius.circular(10),
@@ -226,26 +274,9 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
             borderRadius: BorderRadius.circular(15),
             borderSide: BorderSide.none,
           ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(15),
-            borderSide: BorderSide.none,
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(15),
-            borderSide: BorderSide(color: Colors.indigo, width: 2),
-          ),
-          errorBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(15),
-            borderSide: BorderSide(color: Colors.red.shade300, width: 2),
-          ),
-          focusedErrorBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(15),
-            borderSide: BorderSide(color: Colors.red.shade300, width: 2),
-          ),
           filled: true,
           fillColor: Colors.white,
           counterText: '',
-          contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 18),
         ),
         validator: validator,
       ),
@@ -254,323 +285,215 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
 
   @override
   Widget build(BuildContext context) {
+    final loginState = ref.watch(loginViewModelProvider);
+
     return Scaffold(
       backgroundColor: Colors.grey[50],
-      body: Container(
-        color: Colors.grey[50],
-        child: SafeArea(
-          child: Column(
-            children: [
-              // Custom App Bar
-              Padding(
-                padding: EdgeInsets.all(20),
-                child: Row(
-                  children: [
-                    Container(
-                      decoration: BoxDecoration(
-                      //  color: Colors.white,
-                        borderRadius: BorderRadius.circular(12),
-                        // boxShadow: [
-                        //   BoxShadow(
-                        //     color: Colors.black.withOpacity(0.1),
-                        //     blurRadius: 10,
-                        //     offset: Offset(0, 5),
-                        //   ),
-                        // ],
+      body: SafeArea(
+        child: loginState.adminProfile.when(
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (err, st) => Center(child: Text('Error: $err')),
+          data: (profileList) {
+            if (profileList.isNotEmpty) {
+              final profile = profileList.first;
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                _populateProfile(profile);
+              });
+            }
+
+            // Scrollable form (design unchanged)
+            return SingleChildScrollView(
+              physics: const BouncingScrollPhysics(),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+              child: FadeTransition(
+                opacity: _fadeAnimation,
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    children: [
+                      // AppBar
+                      Row(
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.arrow_back, color: Colors.indigo),
+                            onPressed: () => Navigator.pop(context),
+                          ),
+                          const SizedBox(width: 10),
+                          const Text(
+                            'My Profile',
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.indigo,
+                            ),
+                          ),
+                        ],
                       ),
-                      child: IconButton(
-                        icon: Icon(Icons.arrow_back, color: Colors.indigo),
-                        onPressed: () => Navigator.pop(context),
-                      ),
-                    ),
-                    SizedBox(width: 15),
-                    Text(
-                      'My Profile',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.indigo,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              
-              // Scrollable Content
-              Expanded(
-                child: SingleChildScrollView(
-                  physics: BouncingScrollPhysics(),
-                  child: FadeTransition(
-                    opacity: _fadeAnimation,
-                    child: Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 20),
-                      child: Form(
-                        key: _formKey,
-                        child: Column(
-                          children: [
-                            SizedBox(height: 10),
-                            
-                            // Profile Image Card
-                            Container(
-                              padding: EdgeInsets.all(20),
-                              // decoration: BoxDecoration(
-                              //   color: Colors.white.withOpacity(0.9),
-                              //   borderRadius: BorderRadius.circular(25),
-                              //   boxShadow: [
-                              //     BoxShadow(
-                              //       color: Colors.black.withOpacity(0.1),
-                              //       blurRadius: 20,
-                              //       offset: Offset(0, 10),
-                              //     ),
-                              //   ],
-                              // ),
-                              child: Column(
-                                children: [
-                                  Stack(
-                                    children: [
-                                      Container(
-                                        padding: EdgeInsets.all(5),
-                                        decoration: BoxDecoration(
-                                          shape: BoxShape.circle,
-                                          color: Colors.indigo,
-                                        ),
-                                        child: Container(
-                                          padding: EdgeInsets.all(3),
-                                          decoration: BoxDecoration(
-                                            color: Colors.white,
-                                            shape: BoxShape.circle,
-                                          ),
-                                          child: CircleAvatar(
-                                            radius: 60,
-                                            backgroundColor: Colors.grey[200],
-                                            backgroundImage: _profileImage != null
-                                                ? FileImage(_profileImage!)
-                                                : _imageUrl != null
-                                                    ? NetworkImage(_imageUrl!)
-                                                    : null,
-                                            child: _profileImage == null && _imageUrl == null
-                                                ? Icon(Icons.person, size: 60, color: Colors.grey[400])
-                                                : null,
-                                          ),
-                                        ),
-                                      ),
-                                      Positioned(
-                                        bottom: 0,
-                                        right: 0,
-                                        child: GestureDetector(
-                                          onTap: _showImageOptions,
-                                          child: Container(
-                                            padding: EdgeInsets.all(12),
-                                            decoration: BoxDecoration(
-                                              color: Colors.indigo,
-                                              shape: BoxShape.circle,
-                                              boxShadow: [
-                                                BoxShadow(
-                                                  color: Colors.indigo.withOpacity(0.4),
-                                                  blurRadius: 10,
-                                                  offset: Offset(0, 5),
-                                                ),
-                                              ],
-                                            ),
-                                            child: Icon(
-                                              Icons.camera_alt,
-                                              color: Colors.white,
-                                              size: 20,
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  SizedBox(height: 15),
-                                  Text(
-                                    'Upload Profile Photo',
-                                    style: TextStyle(
-                                      color: Colors.grey[600],
-                                      fontSize: 14,
-                                    ),
-                                  ),
-                                ],
+                      const SizedBox(height: 20),
+
+                      // Profile Image
+                      Stack(
+                        children: [
+                         CircleAvatar(
+  radius: 60,
+  backgroundColor: Colors.indigo.shade100,
+  backgroundImage: _profileImage != null
+      ? FileImage(_profileImage!)
+      : _imageUrl != null
+          ? NetworkImage(_imageUrl!) as ImageProvider
+          : null,
+  child: (_profileImage == null && _imageUrl == null)
+      ? Text(
+          nameController.text.isNotEmpty
+              ? nameController.text[0].toUpperCase()
+              : 'U', // fallback if name is empty
+          style: const TextStyle(
+            fontSize: 40,
+            color: Colors.indigo,
+            fontWeight: FontWeight.bold,
+          ),
+        )
+      : null,
+),
+
+                          Positioned(
+                            bottom: 0,
+                            right: 0,
+                            child: GestureDetector(
+                              onTap: _showImageOptions,
+                              child: Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: Colors.indigo,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(Icons.camera_alt, color: Colors.white),
                               ),
                             ),
-                            
-                            SizedBox(height: 30),
-                            
-                            // Form Fields
-                            _buildTextField(
-                              controller: nameController,
-                              label: 'Full Name',
-                              icon: Icons.person_outline,
-                              validator: (value) {
-                                if (value == null || value.isEmpty) {
-                                  return 'Please enter name';
-                                }
-                                return null;
-                              },
-                            ),
-                            
-                            SizedBox(height: 20),
-                            
-                            _buildTextField(
-                              controller: mobileController,
-                              label: 'Mobile Number',
-                              icon: Icons.phone_outlined,
-                              keyboardType: TextInputType.phone,
-                              maxLength: 10,
-                              validator: (value) {
-                                if (value == null || value.isEmpty) {
-                                  return 'Please enter mobile number';
-                                }
-                                if (value.length != 10) {
-                                  return 'Mobile number must be 10 digits';
-                                }
-                                return null;
-                              },
-                            ),
-                            
-                            SizedBox(height: 20),
-                            
-                            _buildTextField(
-                              controller: emailController,
-                              label: 'Email Address',
-                              icon: Icons.email_outlined,
-                              keyboardType: TextInputType.emailAddress,
-                              validator: (value) {
-                                if (value == null || value.isEmpty) {
-                                  return 'Please enter email';
-                                }
-                                if (!value.contains('@')) {
-                                  return 'Please enter valid email';
-                                }
-                                return null;
-                              },
-                            ),
-                            
-                            SizedBox(height: 20),
-                            
-                            _buildTextField(
-                              controller: addressController,
-                              label: 'Address',
-                              icon: Icons.home_outlined,
-                              maxLines: 2,
-                              validator: (value) {
-                                if (value == null || value.isEmpty) {
-                                  return 'Please enter address';
-                                }
-                                return null;
-                              },
-                            ),
-                            
-                            SizedBox(height: 20),
-                            
-                            _buildTextField(
-                              controller: agencyController,
-                              label: 'Agency Name',
-                              icon: Icons.business_outlined,
-                              validator: (value) {
-                                if (value == null || value.isEmpty) {
-                                  return 'Please enter agency name';
-                                }
-                                return null;
-                              },
-                            ),
-                            
-                            SizedBox(height: 20),
-                            
-                            Row(
-                              children: [
-                                Expanded(
-                                  flex: 2,
-                                  child: _buildTextField(
-                                    controller: cityController,
-                                    label: 'City',
-                                    icon: Icons.location_city_outlined,
-                                    validator: (value) {
-                                      if (value == null || value.isEmpty) {
-                                        return 'Please enter city';
-                                      }
-                                      return null;
-                                    },
-                                  ),
-                                ),
-                                SizedBox(width: 15),
-                                Expanded(
-                                  flex: 1,
-                                  child: _buildTextField(
-                                    controller: pincodeController,
-                                    label: 'Pincode',
-                                    icon: Icons.pin_drop_outlined,
-                                    keyboardType: TextInputType.number,
-                                    maxLength: 6,
-                                    validator: (value) {
-                                      if (value == null || value.isEmpty) {
-                                        return 'Required';
-                                      }
-                                      if (value.length != 6) {
-                                        return '6 digits';
-                                      }
-                                      return null;
-                                    },
-                                  ),
-                                ),
-                              ],
-                            ),
-                            
-                            SizedBox(height: 35),
-                            
-                            // Save Button
-                            Container(
-                              width: double.infinity,
-                              height: 56,
-                              decoration: BoxDecoration(
-                                color: Colors.indigo,
-                                borderRadius: BorderRadius.circular(15),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.indigo.withOpacity(0.3),
-                                    blurRadius: 15,
-                                    offset: Offset(0, 8),
-                                  ),
-                                ],
-                              ),
-                              child: ElevatedButton(
-                                onPressed: _saveProfile,
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.transparent,
-                                  shadowColor: Colors.transparent,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(15),
-                                  ),
-                                ),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(Icons.save_outlined, color: Colors.white),
-                                    SizedBox(width: 10),
-                                    Text(
-                                      'Save Profile',
-                                      style: TextStyle(
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.white,
-                                        letterSpacing: 0.5,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                            
-                            SizedBox(height: 30),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
-                    ),
+                      const SizedBox(height: 15),
+                      const Text(
+                        'Upload Profile Photo',
+                        style: TextStyle(color: Colors.grey, fontSize: 14),
+                      ),
+                      const SizedBox(height: 30),
+
+                      // Form Fields
+                      _buildTextField(
+                        controller: nameController,
+                        label: 'Full Name',
+                        icon: Icons.person_outline,
+                        validator: (value) =>
+                            value == null || value.isEmpty ? 'Enter name' : null,
+                      ),
+                      const SizedBox(height: 20),
+                      _buildTextField(
+                        controller: mobileController,
+                        label: 'Mobile Number',
+                        icon: Icons.phone_outlined,
+                        keyboardType: TextInputType.phone,
+                        maxLength: 10,
+                        validator: (value) {
+                          if (value == null || value.isEmpty) return 'Enter mobile';
+                          if (value.length != 10) return '10 digits required';
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 20),
+                      _buildTextField(
+                        controller: emailController,
+                        label: 'Email Address',
+                        icon: Icons.email_outlined,
+                        keyboardType: TextInputType.emailAddress,
+                        validator: (value) {
+                          if (value == null || value.isEmpty) return 'Enter email';
+                          if (!value.contains('@')) return 'Enter valid email';
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 20),
+                      _buildTextField(
+                        controller: addressController,
+                        label: 'Address',
+                        icon: Icons.home_outlined,
+                        maxLines: 2,
+                        validator: (value) =>
+                            value == null || value.isEmpty ? 'Enter address' : null,
+                      ),
+                      const SizedBox(height: 20),
+                      _buildTextField(
+                        controller: agencyController,
+                        label: 'Agency Name',
+                        icon: Icons.business_outlined,
+                        validator: (value) =>
+                            value == null || value.isEmpty ? 'Enter agency' : null,
+                      ),
+                      const SizedBox(height: 20),
+                      Row(
+                        children: [
+                          Expanded(
+                            flex: 2,
+                            child: _buildTextField(
+                              controller: cityController,
+                              label: 'City',
+                              icon: Icons.location_city_outlined,
+                              validator: (value) =>
+                                  value == null || value.isEmpty ? 'Enter city' : null,
+                            ),
+                          ),
+                          const SizedBox(width: 15),
+                          // Expanded(
+                          //   flex: 1,
+                          //   child: _buildTextField(
+                          //     controller: pincodeController,
+                          //     label: 'Pincode',
+                          //     icon: Icons.pin_drop_outlined,
+                          //     keyboardType: TextInputType.number,
+                          //     maxLength: 6,
+                          //     validator: (value) {
+                          //       if (value == null || value.isEmpty) return 'Required';
+                          //       if (value.length != 6) return '6 digits';
+                          //       return null;
+                          //     },
+                          //   ),
+                          // ),
+                        ],
+                      ),
+                      const SizedBox(height: 35),
+
+                      // Save Button
+                   SizedBox(
+  width: double.infinity,
+  height: 56,
+  child: ElevatedButton.icon(
+    icon: const Icon(Icons.save_outlined),
+    label: const Text(
+      'Save Profile',
+      style: TextStyle(
+        fontSize: 18,
+        color: Colors.white, // 👈 text white
+      ),
+    ),
+    style: ElevatedButton.styleFrom(
+      backgroundColor: Colors.indigo,
+      foregroundColor: Colors.white, // 👈 icon + text white
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(15),
+      ),
+    ),
+    onPressed: _saveProfile,
+  ),
+),
+
+                      const SizedBox(height: 30),
+                    ],
                   ),
                 ),
               ),
-            ],
-          ),
+            );
+          },
         ),
       ),
     );

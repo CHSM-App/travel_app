@@ -7,6 +7,7 @@ import 'package:travel_agency_app/domain/viewModel/addDriver_viewmodel.dart';
 import 'package:travel_agency_app/domain/viewModel/addVehicle_viewmodel.dart';
 import 'package:travel_agency_app/domain/viewModel/auth_model.dart';
 import 'package:travel_agency_app/domain/viewModel/customerViewModel.dart';
+import 'package:travel_agency_app/domain/viewModel/login_viewmodel.dart';
 import 'package:travel_agency_app/domain/viewModel/network_model.dart';
 import 'package:travel_agency_app/domain/viewModel/trippage_viewmodel.dart';
 import 'package:travel_agency_app/domain/viewModel/tripbooking_viewmodel.dart';
@@ -33,6 +34,13 @@ final authViewModelProvider =
  
   return AuthViewModel(ref,usecase);
 
+  });
+
+  
+  final loginViewModelProvider =
+    StateNotifierProvider<LoginViewModel, LoginState>((ref) {
+  final usecase = ref.watch(loginUseCaseProvider);
+  return LoginViewModel(usecase);
   });
 
 final tripBookingViewModelProvider =
