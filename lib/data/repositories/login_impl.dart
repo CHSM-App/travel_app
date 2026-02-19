@@ -13,9 +13,7 @@ class LoginImpl implements LoginRepo {
   Future<LoginResponse> addAdmin(LoginInfo loginInfo) {
     return apiService.addAdmin(loginInfo);
   }
-// Future<LoginResponse> login(LoginInfo loginInfo) {
-//     return apiService.login(loginInfo);
-//   }
+
 
   @override
   Future<LoginResponse> login(LoginInfo loginInfo) async {

@@ -266,45 +266,22 @@ class _ApiService implements ApiService {
   }
 
   @override
-<<<<<<< HEAD
-  Future<LoginResponse> addAdmin(LoginInfo logininfo) async {
-=======
   Future<dynamic> updateVehicle(Vehicles vehicle) async {
->>>>>>> 2c241469c4a7317ac1e0f28b8f43f86631f35a75
     final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
     final _headers = <String, dynamic>{};
     final _data = <String, dynamic>{};
-<<<<<<< HEAD
-    _data.addAll(logininfo.toJson());
-    final _options = _setStreamType<LoginResponse>(
-      Options(method: 'POST', headers: _headers, extra: _extra)
-          .compose(
-            _dio.options,
-            'insert/AddAdmin',
-=======
     _data.addAll(vehicle.toJson());
     final _options = _setStreamType<dynamic>(
       Options(method: 'POST', headers: _headers, extra: _extra)
           .compose(
             _dio.options,
             'insert/Updatevehicle',
->>>>>>> 2c241469c4a7317ac1e0f28b8f43f86631f35a75
             queryParameters: queryParameters,
             data: _data,
           )
           .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
     );
-<<<<<<< HEAD
-    final _result = await _dio.fetch<Map<String, dynamic>>(_options);
-    late LoginResponse _value;
-    try {
-      _value = LoginResponse.fromJson(_result.data!);
-    } on Object catch (e, s) {
-      errorLogger?.logError(e, s, _options, response: _result);
-      rethrow;
-    }
-=======
     final _result = await _dio.fetch(_options);
     final _value = _result.data;
     return _value;
@@ -329,7 +306,34 @@ class _ApiService implements ApiService {
     );
     final _result = await _dio.fetch(_options);
     final _value = _result.data;
->>>>>>> 2c241469c4a7317ac1e0f28b8f43f86631f35a75
+    return _value;
+  }
+
+  @override
+  Future<LoginResponse> addAdmin(LoginInfo logininfo) async {
+    final _extra = <String, dynamic>{};
+    final queryParameters = <String, dynamic>{};
+    final _headers = <String, dynamic>{};
+    final _data = <String, dynamic>{};
+    _data.addAll(logininfo.toJson());
+    final _options = _setStreamType<LoginResponse>(
+      Options(method: 'POST', headers: _headers, extra: _extra)
+          .compose(
+            _dio.options,
+            'insert/AddAdmin',
+            queryParameters: queryParameters,
+            data: _data,
+          )
+          .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
+    );
+    final _result = await _dio.fetch<Map<String, dynamic>>(_options);
+    late LoginResponse _value;
+    try {
+      _value = LoginResponse.fromJson(_result.data!);
+    } on Object catch (e, s) {
+      errorLogger?.logError(e, s, _options, response: _result);
+      rethrow;
+    }
     return _value;
   }
 
