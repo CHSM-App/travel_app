@@ -39,7 +39,7 @@ class BookingInfo {
   @JsonKey(name: 'end_datetime')
   final DateTime? endDateTime;
 
-  @JsonKey(name: 'status')
+  @JsonKey(name: 'trip_status_id')
   final int? status;
 
   @JsonKey(name: 'purpose')

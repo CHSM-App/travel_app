@@ -16,18 +16,18 @@ class TripBookingImpl implements Tripbookingrepository {
     return apiService.addTripBooking(tripBooking);
   }
   @override
-  Future<List<Drivers>> driverList() {
-    return apiService.driverList();
+  Future<List<Drivers>> driverList(String agencyId) {
+    return apiService.driverList(agencyId);
   }
 
   @override
-  Future<List<Vehicles>> vehicleList() {
-    return apiService.vehicleList();
+  Future<List<Vehicles>> vehicleList(String agencyId) {
+    return apiService.vehicleList(agencyId);
   }
 
   @override
-  Future<List<Customer>> customerList() {
-    return apiService.customerList();
+  Future<List<Customer>> customerList(String agencyId) {
+    return apiService.customerList(agencyId);
   }
     
   @override
@@ -57,8 +57,8 @@ class TripBookingImpl implements Tripbookingrepository {
   }
   
    @override
-  Future<dynamic> settleTrip(BookingInfo tripbooking) {
-    return apiService.settleTrip(tripbooking);
+  Future<dynamic> updatePaymentStatus(BookingInfo tripbooking) {
+    return apiService.updatePaymentStatus(tripbooking);
   }
   
   

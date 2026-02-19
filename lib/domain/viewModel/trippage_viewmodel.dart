@@ -1,4 +1,4 @@
-import 'package:flutter/foundation.dart';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:travel_agency_app/domain/models/booking_info.dart';
 import 'package:travel_agency_app/domain/usecase/tripbooking_usecase.dart';
@@ -115,10 +115,10 @@ class TripPageViewModel extends StateNotifier<TripPageState> {
   }
 
 
-   Future<void> settleTrip(BookingInfo bookinginfo) async {
+   Future<void> updatePaymentStatus(BookingInfo bookinginfo) async {
     state = state.copyWith(isLoading: true, error: null);
     try {
-      final result = await usecase.settleTrip(bookinginfo);
+      final result = await usecase.updatePaymentStatus(bookinginfo);
       state = state.copyWith(isLoading: false, data: result);
     } catch (e) {
       state = state.copyWith(isLoading: false, error: e.toString());

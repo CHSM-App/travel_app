@@ -310,6 +310,28 @@ class _ApiService implements ApiService {
   }
 
   @override
+  Future<dynamic> updatePaymentStatus(BookingInfo tripbooking) async {
+    final _extra = <String, dynamic>{};
+    final queryParameters = <String, dynamic>{};
+    final _headers = <String, dynamic>{};
+    final _data = <String, dynamic>{};
+    _data.addAll(tripbooking.toJson());
+    final _options = _setStreamType<dynamic>(
+      Options(method: 'POST', headers: _headers, extra: _extra)
+          .compose(
+            _dio.options,
+            'insert/updatePaymentStatus/',
+            queryParameters: queryParameters,
+            data: _data,
+          )
+          .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
+    );
+    final _result = await _dio.fetch(_options);
+    final _value = _result.data;
+    return _value;
+  }
+
+  @override
   Future<LoginResponse> addAdmin(LoginInfo logininfo) async {
     final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
@@ -338,29 +360,7 @@ class _ApiService implements ApiService {
   }
 
   @override
-  Future<dynamic> settleTrip(BookingInfo tripbooking) async {
-    final _extra = <String, dynamic>{};
-    final queryParameters = <String, dynamic>{};
-    final _headers = <String, dynamic>{};
-    final _data = <String, dynamic>{};
-    _data.addAll(tripbooking.toJson());
-    final _options = _setStreamType<dynamic>(
-      Options(method: 'POST', headers: _headers, extra: _extra)
-          .compose(
-            _dio.options,
-            'insert/settleTrip/',
-            queryParameters: queryParameters,
-            data: _data,
-          )
-          .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
-    );
-    final _result = await _dio.fetch(_options);
-    final _value = _result.data;
-    return _value;
-  }
-
-  @override
-  Future<List<Drivers>> driverList() async {
+  Future<List<Drivers>> driverList(String agencyId) async {
     final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
     final _headers = <String, dynamic>{};
@@ -369,7 +369,7 @@ class _ApiService implements ApiService {
       Options(method: 'GET', headers: _headers, extra: _extra)
           .compose(
             _dio.options,
-            'users/driverList',
+            'users/driverList/{agency_id}',
             queryParameters: queryParameters,
             data: _data,
           )
@@ -389,7 +389,7 @@ class _ApiService implements ApiService {
   }
 
   @override
-  Future<List<Vehicles>> vehicleList() async {
+  Future<List<Vehicles>> vehicleList(String agencyId) async {
     final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
     final _headers = <String, dynamic>{};
@@ -398,7 +398,7 @@ class _ApiService implements ApiService {
       Options(method: 'GET', headers: _headers, extra: _extra)
           .compose(
             _dio.options,
-            'users/VehicleList',
+            'users/VehicleList/{agency_id}',
             queryParameters: queryParameters,
             data: _data,
           )
@@ -418,7 +418,7 @@ class _ApiService implements ApiService {
   }
 
   @override
-  Future<List<Customer>> customerList() async {
+  Future<List<Customer>> customerList(String agencyId) async {
     final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
     final _headers = <String, dynamic>{};
@@ -427,7 +427,7 @@ class _ApiService implements ApiService {
       Options(method: 'GET', headers: _headers, extra: _extra)
           .compose(
             _dio.options,
-            'users/customerList',
+            'users/customerList/{agency_id}',
             queryParameters: queryParameters,
             data: _data,
           )

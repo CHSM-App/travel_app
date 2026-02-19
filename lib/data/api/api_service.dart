@@ -73,8 +73,8 @@ abstract class ApiService {
     @POST("insert/Updatedriver")
   Future<dynamic> updateDriver(@Body() Drivers driver);
 
-  @POST("insert/settleTrip/")
-  Future<dynamic> settleTrip(@Body() BookingInfo tripbooking);
+  @POST("insert/updatePaymentStatus/")
+  Future<dynamic> updatePaymentStatus(@Body() BookingInfo tripbooking);
   
 
 
@@ -86,14 +86,14 @@ abstract class ApiService {
  
 
   //GET API CALL
-  @GET("users/driverList")
-  Future<List<Drivers>> driverList();
+  @GET("users/driverList/{agency_id}")
+  Future<List<Drivers>> driverList(@Path() String agencyId);
 
-  @GET("users/VehicleList")
-  Future<List<Vehicles>> vehicleList();
+  @GET("users/VehicleList/{agency_id}")
+  Future<List<Vehicles>> vehicleList(@Path() String agencyId);
 
-  @GET("users/customerList")
-  Future<List<Customer>> customerList();
+  @GET("users/customerList/{agency_id}")
+  Future<List<Customer>> customerList(@Path() String agencyId);
 
   @GET("users/VehicleTypeList")
   Future<List<VehicleType>> vehicleTypeList();

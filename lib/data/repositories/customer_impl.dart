@@ -9,8 +9,8 @@ class CustomerImpl implements CustomerRepository {
   CustomerImpl(this.apiService); 
 
   @override
-  Future<List<Customer>> customerList() {
-    return apiService.customerList();
+  Future<List<Customer>> customerList(String agencyId) {
+    return apiService.customerList(agencyId);
   }
 
   @override

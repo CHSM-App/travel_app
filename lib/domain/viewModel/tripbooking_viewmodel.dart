@@ -15,6 +15,7 @@ final bool isLoading;
   final AsyncValue<List<Drivers>> fetchDriverList;
   final AsyncValue<List<Vehicles>> fetchVehicleList;
   final AsyncValue<List<Customer>> fetchCustomerList;
+  final String? agencyId;
   const TripBookingState({
    
      this.isLoading = false,
@@ -23,6 +24,7 @@ final bool isLoading;
     this.fetchDriverList = const AsyncValue.loading(),
     this.fetchVehicleList = const AsyncValue.loading(),
     this.fetchCustomerList = const AsyncValue.loading(),
+    this.agencyId,
       });
 
 
@@ -35,6 +37,7 @@ final bool isLoading;
     AsyncValue<List<Drivers>>? fetchDriverList,
     AsyncValue<List<Vehicles>>? fetchVehicleList,
     AsyncValue<List<Customer>>? fetchCustomerList,
+    String? agencyId
   }) {
     return TripBookingState(
     
@@ -43,7 +46,8 @@ final bool isLoading;
       error: error ?? this.error,
       fetchDriverList: fetchDriverList ?? this.fetchDriverList,
       fetchVehicleList: fetchVehicleList ?? this.fetchVehicleList
-      ,fetchCustomerList: fetchCustomerList ?? this.fetchCustomerList
+      ,fetchCustomerList: fetchCustomerList ?? this.fetchCustomerList,
+      agencyId: agencyId ?? this.agencyId
     );
   }
 }
@@ -65,31 +69,31 @@ class TripBookingViewModel extends StateNotifier<TripBookingState> {
   }
 
   
-    Future<void> driverList() async {
+    Future<void> driverList(String agencyId) async {
     state = state.copyWith(fetchDriverList: const AsyncValue.loading());
     try {
-      final result = await usecase.driverList();
+      final result = await usecase.driverList(agencyId);
       state = state.copyWith(fetchDriverList: AsyncValue.data(result));
     } catch (e, st) {
       state = state.copyWith(fetchDriverList: AsyncValue.error(e, st));
     }
   }
 
-  Future<void> vehicleList() async {
+  Future<void> vehicleList(String agencyId) async {
     // state = state.copyWith(fetchVehicleList: const AsyncValue.loading());
     state = state.copyWith(isLoading: true);
     try {
-      final result = await usecase.vehicleList();
+      final result = await usecase.vehicleList(agencyId);
       state = state.copyWith(isLoading: false, fetchVehicleList: AsyncValue.data(result));
     } catch (e, st) {
       state = state.copyWith(isLoading: false, fetchVehicleList: AsyncValue.error(e, st));
     }
   }
 
-  Future<void> customerList() async {  
+  Future<void> customerList(String agencyId) async {  
     state = state.copyWith(isLoading: true);
     try {
-      final result = await usecase.customerList();
+      final result = await usecase.customerList(agencyId);
       state = state.copyWith(isLoading: false, fetchCustomerList: AsyncValue.data(result));
     } catch (e, st) {
       state = state.copyWith(isLoading: false, fetchCustomerList: AsyncValue.error(e, st));

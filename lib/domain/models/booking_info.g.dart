@@ -23,7 +23,7 @@ BookingInfo _$BookingInfoFromJson(Map<String, dynamic> json) => BookingInfo(
   endDateTime: json['end_datetime'] == null
       ? null
       : DateTime.parse(json['end_datetime'] as String),
-  status: (json['status'] as num?)?.toInt(),
+  status: (json['trip_status_id'] as num?)?.toInt(),
   purpose: json['purpose'] as String?,
   amountApprove: (json['amount_approve'] as num?)?.toDouble(),
   amountReceived: (json['amount_received'] as num?)?.toDouble(),
@@ -55,7 +55,7 @@ Map<String, dynamic> _$BookingInfoToJson(BookingInfo instance) =>
       'driver_charges': instance.driverCharges,
       'start_datetime': instance.startDateTime?.toIso8601String(),
       'end_datetime': instance.endDateTime?.toIso8601String(),
-      'status': instance.status,
+      'trip_status_id': instance.status,
       'purpose': instance.purpose,
       'amount_approve': instance.amountApprove,
       'amount_received': instance.amountReceived,

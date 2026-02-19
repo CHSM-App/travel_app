@@ -98,7 +98,7 @@ class CustomerViewModel extends StateNotifier<CustomerState> {
     final int newCustomerId = response['customer_id'] as int;
 
     // Refresh customer list (if needed)
-    await fetchCustomerslist();
+    // await fetchCustomerslist();
 
     state = state.copyWith(isLoading: false);
 
@@ -114,10 +114,10 @@ class CustomerViewModel extends StateNotifier<CustomerState> {
 
 
 
-  Future<void> fetchCustomerslist() async {
+  Future<void> fetchCustomerslist(String agencyId) async {
     state = state.copyWith(CustomerList: const AsyncValue.loading());
     try {
-      final result = await usecase.customerList();
+      final result = await usecase.customerList(agencyId);
       state = state.copyWith(CustomerList: AsyncValue.data(result));
     } catch (e, st) {
       state = state.copyWith(CustomerList: AsyncValue.error(e, st));
