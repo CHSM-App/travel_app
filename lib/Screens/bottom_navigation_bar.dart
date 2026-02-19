@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:travel_agency_app/Screens/customer_page.dart';
 import 'package:travel_agency_app/Screens/dashbord.dart';
-import 'package:travel_agency_app/Screens/driver_page.dart';
 import 'package:travel_agency_app/Screens/setting.dart';
 import 'package:travel_agency_app/Screens/trip_page.dart';
 import 'package:travel_agency_app/Screens/vehicle_page.dart';

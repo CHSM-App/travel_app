@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:travel_agency_app/domain/models/booking_info.dart';
 import 'package:travel_agency_app/domain/models/customers.dart';
@@ -88,31 +89,29 @@ class CustomerViewModel extends StateNotifier<CustomerState> {
 //   }
 // }
 
-  Future<int> addCustomer(Customer customer) async {
-  state = state.copyWith(isLoading: true, error: null);
+Future<void> addcustomer(Customer customer) async {
+    state = state.copyWith(isLoading: true, error: null);
 
-  try {
-    final response = await usecase.addCustomer(customer);
-
-    // Extract customer_id from response
-    final int newCustomerId = response['customer_id'] as int;
-
-    // Refresh customer list (if needed)
-    // await fetchCustomerslist();
-
-    state = state.copyWith(isLoading: false);
-
-    return newCustomerId;
-  } catch (e) {
-    state = state.copyWith(
-      isLoading: false,
-      error: e.toString(),
-    );
-    rethrow;
+    try {
+      final result = await usecase.addCustomer(customer);
+      state = state.copyWith(
+        isLoading: false,
+        data: {
+          'customers': result,
+        },
+      );
+    } on DioException catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        error: e.response?.data?['message'] ?? 'Server error',
+      );
+    } catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        error: e.toString(),
+      );
+    }
   }
-}
-
-
 
   Future<void> fetchCustomerslist(String agencyId) async {
     state = state.copyWith(CustomerList: const AsyncValue.loading());

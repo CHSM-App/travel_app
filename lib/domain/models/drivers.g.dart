@@ -12,11 +12,10 @@ Drivers _$DriversFromJson(Map<String, dynamic> json) => Drivers(
   phone: json['phone'] as String?,
   address: json['address'] as String?,
   licenceNo: json['LicenceNo'] as String?,
-  licenceExpiry: json['LicenceExpiry'] == null
-      ? null
-      : DateTime.parse(json['LicenceExpiry'] as String),
+  licenceExpiry: Drivers._dateFromJson(json['LicenceExpiry'] as String?),
   vehicleId: (json['vehicleId'] as num?)?.toInt(),
   photo: json['photo'] as String?,
+  agencyId: json['agency_id'] as String?,
 );
 
 Map<String, dynamic> _$DriversToJson(Drivers instance) => <String, dynamic>{
@@ -25,7 +24,8 @@ Map<String, dynamic> _$DriversToJson(Drivers instance) => <String, dynamic>{
   'phone': instance.phone,
   'address': instance.address,
   'LicenceNo': instance.licenceNo,
-  'LicenceExpiry': instance.licenceExpiry?.toIso8601String(),
+  'LicenceExpiry': Drivers._dateToJson(instance.licenceExpiry),
   'vehicleId': instance.vehicleId,
   'photo': instance.photo,
+  'agency_id': instance.agencyId,
 };

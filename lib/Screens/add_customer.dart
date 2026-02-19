@@ -156,33 +156,34 @@ class _AddCustomerPageState extends ConsumerState<AddCustomerPage> {
                     onPressed: () async {
   if (_formKey.currentState!.validate()) {
     try {
-      final newId = await ref
-          .read(customerViewModelProvider.notifier)
-          .addCustomer(
-            Customer(
-              customerId: widget.isEdit
-                  ? widget.customer?.customerId ?? 0
-                  : 0,
-              name: name.text,
-              phone: phone.text,
-              address: address.text,
-              
+  final newId = await ref
+      .read(customerViewModelProvider.notifier)
+      .addcustomer(
+        Customer(
+          customerId: widget.isEdit
+              ? widget.customer?.customerId ?? 0
+              : 0,
+          name: name.text,
+          phone: phone.text,
+          address: address.text,
+          
 
-            ),
-          );
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            widget.isEdit
-                ? "Customer Updated Successfully"
-                : "Customer Added Successfully",
-          ),
-          backgroundColor: Colors.green,
         ),
       );
 
-      Navigator.pop(context, newId);
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      content: Text(
+        widget.isEdit
+            ? "Customer Updated Successfully"
+            : "Customer Added Successfully",
+      ),
+      backgroundColor: Colors.green,
+    ),
+  );
+
+  //Navigator.of(context).pop(newId);
+    
 
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(

@@ -86,14 +86,15 @@ abstract class ApiService {
  
 
   //GET API CALL
-  @GET("users/driverList/{agency_id}")
-  Future<List<Drivers>> driverList(@Path() String agencyId);
+  @GET("users/driverList/{agency_id}/{agency_id}")
+  Future<List<Drivers>> driverList(@Path("agency_id") String agencyId@Path() String agencyId);
+  
 
-  @GET("users/VehicleList/{agency_id}")
-  Future<List<Vehicles>> vehicleList(@Path() String agencyId);
+  @GET("users/VehicleList/{agency_id}/{agency_id}")
+  Future<List<Vehicles>> vehicleList(@Path("agency_id") String agencyId@Path() String agencyId);
 
-  @GET("users/customerList/{agency_id}")
-  Future<List<Customer>> customerList(@Path() String agencyId);
+  @GET("users/customerList/{agency_id}/{agency_id}")
+  Future<List<Customer>> customerList(@Path("agency_id") String agencyId@Path() String agencyId);
 
   @GET("users/VehicleTypeList")
   Future<List<VehicleType>> vehicleTypeList();
