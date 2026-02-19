@@ -73,7 +73,7 @@ class TripBookingViewModel extends StateNotifier<TripBookingState> {
     state = state.copyWith(fetchDriverList: const AsyncValue.loading());
     try {
       final result = await usecase.driverList(agencyId);
-      final result = await usecase.driverList(agencyId);
+      // final result = await usecase.driverList(agencyId);
       state = state.copyWith(fetchDriverList: AsyncValue.data(result));
     } catch (e, st) {
       state = state.copyWith(fetchDriverList: AsyncValue.error(e, st));
@@ -81,12 +81,12 @@ class TripBookingViewModel extends StateNotifier<TripBookingState> {
   }
 
   Future<void> vehicleList(String agencyId) async {
-  Future<void> vehicleList(String agencyId) async {
+  // Future<void> vehicleList(String agencyId) async {
     // state = state.copyWith(fetchVehicleList: const AsyncValue.loading());
     state = state.copyWith(isLoading: true);
     try {
       final result = await usecase.vehicleList(agencyId);
-      final result = await usecase.vehicleList(agencyId);
+      // final result = await usecase.vehicleList(agencyId);
       state = state.copyWith(isLoading: false, fetchVehicleList: AsyncValue.data(result));
     } catch (e, st) {
       state = state.copyWith(isLoading: false, fetchVehicleList: AsyncValue.error(e, st));
@@ -94,11 +94,11 @@ class TripBookingViewModel extends StateNotifier<TripBookingState> {
   }
 
   Future<void> customerList(String agencyId) async {  
-  Future<void> customerList(String agencyId) async {  
+  // Future<void> customerList(String agencyId) async {  
     state = state.copyWith(isLoading: true);
     try {
       final result = await usecase.customerList(agencyId);
-      final result = await usecase.customerList(agencyId);
+      // final result = await usecase.customerList(agencyId);
       state = state.copyWith(isLoading: false, fetchCustomerList: AsyncValue.data(result));
     } catch (e, st) {
       state = state.copyWith(isLoading: false, fetchCustomerList: AsyncValue.error(e, st));
