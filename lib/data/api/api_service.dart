@@ -111,7 +111,7 @@ abstract class ApiService {
 
   @GET("users/VehicleTypeList")
   Future<List<VehicleType>> vehicleTypeList();
-
+  
   @GET("users/StatusList")
   Future<List<Status>> statusList();
   
