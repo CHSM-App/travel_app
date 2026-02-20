@@ -310,28 +310,6 @@ class _ApiService implements ApiService {
   }
 
   @override
-  Future<dynamic> settleTrip(BookingInfo tripbooking) async {
-    final _extra = <String, dynamic>{};
-    final queryParameters = <String, dynamic>{};
-    final _headers = <String, dynamic>{};
-    final _data = <String, dynamic>{};
-    _data.addAll(tripbooking.toJson());
-    final _options = _setStreamType<dynamic>(
-      Options(method: 'POST', headers: _headers, extra: _extra)
-          .compose(
-            _dio.options,
-            'insert/settleTrip/',
-            queryParameters: queryParameters,
-            data: _data,
-          )
-          .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
-    );
-    final _result = await _dio.fetch(_options);
-    final _value = _result.data;
-    return _value;
-  }
-
-  @override
   Future<dynamic> updatePaymentStatus(BookingInfo tripbooking) async {
     final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
@@ -382,6 +360,42 @@ class _ApiService implements ApiService {
   }
 
   @override
+  Future<dynamic> AdminImage(File imageUrl, String adminId) async {
+    final _extra = <String, dynamic>{};
+    final queryParameters = <String, dynamic>{};
+    final _headers = <String, dynamic>{};
+    final _data = FormData();
+    _data.files.add(
+      MapEntry(
+        'image_url',
+        MultipartFile.fromFileSync(
+          imageUrl.path,
+          filename: imageUrl.path.split(Platform.pathSeparator).last,
+        ),
+      ),
+    );
+    _data.fields.add(MapEntry('admin_id', adminId));
+    final _options = _setStreamType<dynamic>(
+      Options(
+            method: 'POST',
+            headers: _headers,
+            extra: _extra,
+            contentType: 'multipart/form-data',
+          )
+          .compose(
+            _dio.options,
+            'upload/AdminImage',
+            queryParameters: queryParameters,
+            data: _data,
+          )
+          .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
+    );
+    final _result = await _dio.fetch(_options);
+    final _value = _result.data;
+    return _value;
+  }
+
+  @override
   Future<List<Drivers>> driverList(String agencyId) async {
     final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
@@ -391,7 +405,7 @@ class _ApiService implements ApiService {
       Options(method: 'GET', headers: _headers, extra: _extra)
           .compose(
             _dio.options,
-            'users/driverList/${agencyId}/{agency_id}',
+            'users/driverList/${agencyId}',
             queryParameters: queryParameters,
             data: _data,
           )
@@ -420,7 +434,7 @@ class _ApiService implements ApiService {
       Options(method: 'GET', headers: _headers, extra: _extra)
           .compose(
             _dio.options,
-            'users/VehicleList/${agencyId}/{agency_id}',
+            'users/VehicleList/${agencyId}',
             queryParameters: queryParameters,
             data: _data,
           )
@@ -449,7 +463,7 @@ class _ApiService implements ApiService {
       Options(method: 'GET', headers: _headers, extra: _extra)
           .compose(
             _dio.options,
-            'users/customerList/${agencyId}/{agency_id}',
+            'users/customerList/${agencyId}',
             queryParameters: queryParameters,
             data: _data,
           )

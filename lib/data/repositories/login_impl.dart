@@ -19,6 +19,9 @@ class LoginImpl implements LoginRepo {
   Future<LoginResponse> login(LoginInfo loginInfo) async {
 
     final response = await apiService.login(loginInfo);
+      print("LOGIN RESPONSE:");
+  print("adminId: ${response.adminId}");
+  print("agencyId: ${response.agencyId}");
 
     // LOGIN SUCCESS -> SAVE TOKEN + USER DATA
     if (response.success == true) {

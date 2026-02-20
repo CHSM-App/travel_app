@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:dio/dio.dart';
 import 'package:travel_agency_app/core/storage/constant.dart';
 import 'package:travel_agency_app/domain/models/booking_info.dart';
@@ -38,12 +40,9 @@ abstract class ApiService {
   @POST("login/refreshAccessToken")
   Future<TokenResponse> refreshAccessToken(@Body() TokenResponse tokenResponse);
 
-
-    
   @POST("login/Adminlogin")
   Future<LoginResponse> login(@Body() LoginInfo logininfo);
 
-    
   @POST("login/forgotPassword")
   Future<LoginResponse> forgotPassword(@Body() LoginInfo logininfo);
   
@@ -54,7 +53,6 @@ abstract class ApiService {
   @POST("insert/Addtripbooking")
   Future<dynamic> addTripBooking(@Body() TripBooking tripBooking); 
  
-  
   @POST("insert/Addvehicle")
   Future<dynamic> addVehicle(@Body() Vehicles vehicle);
 
@@ -70,30 +68,33 @@ abstract class ApiService {
   @POST("insert/Updatevehicle")
   Future<dynamic> updateVehicle(@Body() Vehicles vehicle);
 
-    @POST("insert/Updatedriver")
+  @POST("insert/Updatedriver")
   Future<dynamic> updateDriver(@Body() Drivers driver);
 
   @POST("insert/updatePaymentStatus/")
   Future<dynamic> updatePaymentStatus(@Body() BookingInfo tripbooking);
   
-
-
   @POST("insert/AddAdmin")
   Future<LoginResponse> addAdmin(@Body() LoginInfo logininfo);
 
-  
+   @MultiPart()
+  @POST("upload/AdminImage")
+  Future<dynamic> AdminImage(
+    @Part(name: "image_url") File imageUrl,
+    @Part(name: "admin_id") String adminId,
+  );
  //------------------------------------------------------------------------------------------/
  
 
   //GET API CALL
-  @GET("users/driverList/{agency_id}/{agency_id}")
+  @GET("users/driverList/{agency_id}")
   Future<List<Drivers>> driverList(@Path("agency_id") String agencyId);
   
 
-  @GET("users/VehicleList/{agency_id}/{agency_id}")
+  @GET("users/VehicleList/{agency_id}")
   Future<List<Vehicles>> vehicleList(@Path("agency_id") String agencyId);
 
-  @GET("users/customerList/{agency_id}/{agency_id}")
+  @GET("users/customerList/{agency_id}")
   Future<List<Customer>> customerList(@Path("agency_id") String agencyId);
 
   @GET("users/VehicleTypeList")
@@ -120,15 +121,9 @@ abstract class ApiService {
   @GET("users/cancelledTrip")
   Future<List<BookingInfo>> cancelledTrip();
 
-
-
-
-  //------------------------ Get for Selected
-
   @GET("users/Customerhistory/{customer_id}")
   Future<List<BookingInfo>> customerhist(@Path("customer_id") int customerId);
 
-  
   @GET("users/AdminProfile/{admin_id}")
   Future<List<LoginInfo>> adminProfile(@Path("admin_id") int adminId);
 
