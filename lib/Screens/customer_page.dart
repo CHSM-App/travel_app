@@ -47,7 +47,7 @@ class _CustomerListPageState extends ConsumerState<CustomerListPage> {
   void initState() {
     super.initState();
     Future.microtask(
-      () => ref.read(customerViewModelProvider.notifier).fetchCustomerslist(ref.read(tripBookingViewModelProvider).agencyId?? ''),
+      () => ref.read(customerViewModelProvider.notifier).fetchCustomerslist(ref.read(loginViewModelProvider).agencyId?? ''),
     );
   }
 
@@ -59,7 +59,7 @@ class _CustomerListPageState extends ConsumerState<CustomerListPage> {
 
   // ── Helpers ──────────────────────────────────────────────────────────────────
   void _refresh() =>
-      ref.read(customerViewModelProvider.notifier).fetchCustomerslist(ref.read(tripBookingViewModelProvider).agencyId?? '');
+      ref.read(customerViewModelProvider.notifier).fetchCustomerslist(ref.read(loginViewModelProvider).agencyId?? '');
 
   String _initials(String? name) {
     if (name == null || name.trim().isEmpty) return '?';
