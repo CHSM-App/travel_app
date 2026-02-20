@@ -1,4 +1,6 @@
 
+import 'dart:io';
+
 import 'package:travel_agency_app/domain/models/fueltype.dart';
 import 'package:travel_agency_app/domain/models/status.dart';
 import 'package:travel_agency_app/domain/models/vehicles.dart';
@@ -11,7 +13,7 @@ abstract class Addvehiclerepository {
   Future<List<VehicleType>> getVehicleTypes();
   Future<List<Fueltype>> getVehicleFuelTypes();
   Future<List<Status>> getVehicleStatuses();
-
+  Future<dynamic> uploadVehicleDocument(File rcDocuments, int vehicleId, String agencyId);
   
 
 }

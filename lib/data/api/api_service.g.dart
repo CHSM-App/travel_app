@@ -360,7 +360,11 @@ class _ApiService implements ApiService {
   }
 
   @override
-  Future<dynamic> AdminImage(File imageUrl, String adminId) async {
+  Future<dynamic> updateAdminProfile(
+    File imageUrl,
+    int adminId,
+    String agencyId,
+  ) async {
     final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
     final _headers = <String, dynamic>{};
@@ -374,7 +378,8 @@ class _ApiService implements ApiService {
         ),
       ),
     );
-    _data.fields.add(MapEntry('admin_id', adminId));
+    _data.fields.add(MapEntry('admin_id', adminId.toString()));
+    _data.fields.add(MapEntry('agency_id', agencyId));
     final _options = _setStreamType<dynamic>(
       Options(
             method: 'POST',
@@ -385,6 +390,47 @@ class _ApiService implements ApiService {
           .compose(
             _dio.options,
             'upload/AdminImage',
+            queryParameters: queryParameters,
+            data: _data,
+          )
+          .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
+    );
+    final _result = await _dio.fetch(_options);
+    final _value = _result.data;
+    return _value;
+  }
+
+  @override
+  Future<dynamic> uploadVehicleDocument(
+    File rcDocument,
+    int vehicleId,
+    String agencyId,
+  ) async {
+    final _extra = <String, dynamic>{};
+    final queryParameters = <String, dynamic>{};
+    final _headers = <String, dynamic>{};
+    final _data = FormData();
+    _data.files.add(
+      MapEntry(
+        'rcdocument',
+        MultipartFile.fromFileSync(
+          rcDocument.path,
+          filename: rcDocument.path.split(Platform.pathSeparator).last,
+        ),
+      ),
+    );
+    _data.fields.add(MapEntry('vehicleId', vehicleId.toString()));
+    _data.fields.add(MapEntry('agency_id', agencyId));
+    final _options = _setStreamType<dynamic>(
+      Options(
+            method: 'POST',
+            headers: _headers,
+            extra: _extra,
+            contentType: 'multipart/form-data',
+          )
+          .compose(
+            _dio.options,
+            'upload/VehicleDocuments',
             queryParameters: queryParameters,
             data: _data,
           )

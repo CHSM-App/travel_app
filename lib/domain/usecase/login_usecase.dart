@@ -1,6 +1,8 @@
 
 
 
+import 'dart:io';
+
 import 'package:travel_agency_app/domain/models/login_info.dart';
 import 'package:travel_agency_app/domain/models/login_response.dart';
 import 'package:travel_agency_app/domain/repository/login_repo.dart';
@@ -23,4 +25,8 @@ class LoginUseCase {
   Future<List<LoginInfo>> adminProfile(int adminId) {
     return loginRepo.adminProfile(adminId);
   }
+    Future<dynamic> updateAdminProfile(File image, int adminId, String agencyId) {
+    return loginRepo.updateAdminProfile(image, adminId, agencyId);
+  }
+
 }

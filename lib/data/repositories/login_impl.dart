@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:travel_agency_app/core/storage/token_storage.dart';
 import 'package:travel_agency_app/data/api/api_service.dart';
 import 'package:travel_agency_app/domain/models/login_info.dart';
@@ -44,14 +46,24 @@ class LoginImpl implements LoginRepo {
 
     return response;
   }
-
+@override
   Future<LoginResponse> forgotPassword(LoginInfo loginInfo) {
     return apiService.forgotPassword(loginInfo);
   }
 
+@override
   Future<List<LoginInfo>> adminProfile(int adminId) {
     return apiService.adminProfile(adminId);
   }
+
+
+  @override
+  Future updateAdminProfile(File image, int adminId, String agencyId) {
+     return apiService.updateAdminProfile(image,adminId, agencyId);
+  }
+
+
+
 
 }
 
