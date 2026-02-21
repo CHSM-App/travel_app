@@ -232,28 +232,6 @@ class _ApiService implements ApiService {
       Options(method: 'POST', headers: _headers, extra: _extra)
           .compose(
             _dio.options,
-            'insert/addCustomer',
-            queryParameters: queryParameters,
-            data: _data,
-          )
-          .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
-    );
-    final _result = await _dio.fetch(_options);
-    final _value = _result.data;
-    return _value;
-  }
-
-  @override
-  Future<dynamic> addcustomer(Customer customer) async {
-    final _extra = <String, dynamic>{};
-    final queryParameters = <String, dynamic>{};
-    final _headers = <String, dynamic>{};
-    final _data = <String, dynamic>{};
-    _data.addAll(customer.toJson());
-    final _options = _setStreamType<dynamic>(
-      Options(method: 'POST', headers: _headers, extra: _extra)
-          .compose(
-            _dio.options,
             'insert/AddCustomer',
             queryParameters: queryParameters,
             data: _data,
@@ -299,6 +277,28 @@ class _ApiService implements ApiService {
           .compose(
             _dio.options,
             'insert/Updatedriver',
+            queryParameters: queryParameters,
+            data: _data,
+          )
+          .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
+    );
+    final _result = await _dio.fetch(_options);
+    final _value = _result.data;
+    return _value;
+  }
+
+  @override
+  Future<dynamic> updateCustomer(Customer customer) async {
+    final _extra = <String, dynamic>{};
+    final queryParameters = <String, dynamic>{};
+    final _headers = <String, dynamic>{};
+    final _data = <String, dynamic>{};
+    _data.addAll(customer.toJson());
+    final _options = _setStreamType<dynamic>(
+      Options(method: 'POST', headers: _headers, extra: _extra)
+          .compose(
+            _dio.options,
+            'insert/UpdateCustomer',
             queryParameters: queryParameters,
             data: _data,
           )
@@ -910,7 +910,7 @@ class _ApiService implements ApiService {
       Options(method: 'GET', headers: _headers, extra: _extra)
           .compose(
             _dio.options,
-            'users/VehicleTrips/${vehicleid}',
+            'users/VehicleHistory/${vehicleid}',
             queryParameters: queryParameters,
             data: _data,
           )

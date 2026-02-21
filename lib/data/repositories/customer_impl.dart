@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:travel_agency_app/data/api/api_service.dart';
 import 'package:travel_agency_app/domain/models/booking_info.dart';
 import 'package:travel_agency_app/domain/models/customers.dart';
@@ -17,9 +19,21 @@ class CustomerImpl implements CustomerRepository {
   Future<List<BookingInfo>> customerhist(int customer_id) {
     return apiService.customerhist(customer_id);
   }
-
+  
+  
   @override
-  Future<dynamic> addCustomer(Customer customer) {
+  Future<dynamic> addcustomer(Customer customer) {
     return apiService.addCustomer(customer);
   }
+      
+  @override
+  Future<dynamic> updatecustomer(Customer customer) {
+    return apiService.updateCustomer(customer);
+  }
+    
+  @override
+  Future uploadCustomerDocument(File document, String customerId, String agencyId) {
+     return apiService.uploadCustomerDocument(document,customerId, agencyId);
+  }
+
 }

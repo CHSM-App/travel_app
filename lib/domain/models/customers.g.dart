@@ -15,6 +15,8 @@ Customer _$CustomerFromJson(Map<String, dynamic> json) => Customer(
   licenceExpiry: json['LicenceExpiry'] == null
       ? null
       : DateTime.parse(json['LicenceExpiry'] as String),
+  documents: json['documents'] as String?,
+  agencyId: json['agency_id'] as String?,
 );
 
 Map<String, dynamic> _$CustomerToJson(Customer instance) => <String, dynamic>{
@@ -24,4 +26,6 @@ Map<String, dynamic> _$CustomerToJson(Customer instance) => <String, dynamic>{
   'address': instance.address,
   'LicenceNo': instance.licenceNo,
   'LicenceExpiry': instance.licenceExpiry?.toIso8601String(),
+  'documents': instance.documents,
+  'agency_id': instance.agencyId,
 };

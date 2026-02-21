@@ -85,6 +85,7 @@ Future<int> addVehicle(Vehicles vehicle) async {
     rethrow;
   }
 }
+
 Future<void> updateVehicle(Vehicles vehicle) async {
   state = state.copyWith(isLoading: true, error: null);
 

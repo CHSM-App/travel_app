@@ -1,5 +1,4 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:travel_agency_app/domain/usecase/addCustomerUseCase.dart';
 import 'package:travel_agency_app/domain/usecase/addVehicleUseCase.dart';
 import 'package:travel_agency_app/domain/usecase/adddriverUseCase.dart';
 import 'package:travel_agency_app/domain/usecase/auth_use_case.dart';
@@ -42,7 +41,3 @@ final addDriverUseCaseProvider= Provider<AddDeiverUseCase>((ref) {
   return AddDeiverUseCase(repository);
 }) ;
 
-final AddCustomerUseCaseProvider=Provider<AddCustomerUseCase>((ref){
-  final repository=ref.watch(addcustomerrepositoryProvider);
-  return AddCustomerUseCase(repository);
-  });

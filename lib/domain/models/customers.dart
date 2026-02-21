@@ -21,6 +21,12 @@ class Customer {
   @JsonKey(name: 'LicenceExpiry')
   DateTime? licenceExpiry;
 
+  @JsonKey(name: 'documents')
+  String? documents;
+
+  @JsonKey(name: 'agency_id')
+  String? agencyId;
+
   Customer({
     this.customerId,
     this.name,
@@ -28,8 +34,68 @@ class Customer {
     this.address,
     this.licenceNo,
     this.licenceExpiry,
+    this.documents,
+    this.agencyId,
   });
-  factory Customer.fromJson(Map<String, dynamic> json) =>
-      _$CustomerFromJson(json);
-  Map<String, dynamic> toJson() => _$CustomerToJson(this);
+
+  factory Customer.fromJson(Map<String, dynamic> json) => Customer(
+        customerId: _readInt(json, const ['CustomerId', 'customerId', 'id']),
+        name: _readString(json, const ['name', 'Name']),
+        phone: _readString(json, const ['phone', 'Phone']),
+        address: _readString(json, const ['address', 'Address']),
+        licenceNo: _readString(json, const ['LicenceNo', 'licenseNo']),
+        licenceExpiry: _readDate(json, const ['LicenceExpiry', 'licenseExpiry']),
+        documents: _readString(json, const [
+          'documents',
+          'Documents',
+          'document',
+          'Document',
+          'id_proof',
+          'Id_Proof',
+          'photo',
+          'Photo',
+          'idProof',
+          'IdProof',
+        ]),
+        agencyId: _readString(json, const ['agency_id', 'agencyId']),
+      );
+
+  Map<String, dynamic> toJson() => {
+        'CustomerId': customerId,
+        'name': name,
+        'phone': phone,
+        'address': address,
+        'LicenceNo': licenceNo,
+        'LicenceExpiry': licenceExpiry?.toIso8601String(),
+        'documents': documents,
+        'agency_id': agencyId,
+      };
+
+  static int? _readInt(Map<String, dynamic> json, List<String> keys) {
+    for (final key in keys) {
+      final value = json[key];
+      if (value == null) continue;
+      if (value is int) return value;
+      if (value is num) return value.toInt();
+      final parsed = int.tryParse(value.toString());
+      if (parsed != null) return parsed;
+    }
+    return null;
+  }
+
+  static String? _readString(Map<String, dynamic> json, List<String> keys) {
+    for (final key in keys) {
+      final value = json[key];
+      if (value == null) continue;
+      final text = value.toString().trim();
+      if (text.isNotEmpty && text.toLowerCase() != 'null') return text;
+    }
+    return null;
+  }
+
+  static DateTime? _readDate(Map<String, dynamic> json, List<String> keys) {
+    final raw = _readString(json, keys);
+    if (raw == null) return null;
+    return DateTime.tryParse(raw);
+  }
 }
