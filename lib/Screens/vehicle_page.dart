@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:travel_agency_app/Screens/add_vehicle.dart';
 import 'package:travel_agency_app/Screens/add_driver.dart';
+import 'package:travel_agency_app/Screens/vehicle_history.dart';
 import 'package:travel_agency_app/domain/models/vehicles.dart';
 import 'package:travel_agency_app/domain/models/drivers.dart';
 import 'package:travel_agency_app/presentation/providers/viewmodel_provider.dart';
@@ -196,7 +197,17 @@ Widget _vehicleCard(Vehicles v, int i) {
       opacity: val,
       child: Transform.translate(offset: Offset(0, 10 * (1 - val)), child: child),
     ),
-    child: Container(
+    child: InkWell(
+  borderRadius: BorderRadius.circular(14),
+  onTap: () {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => VehicleTripHistory(vehicle: v, vehicleId: v.vehicleId ?? 0, vehicleName: v.name ?? 'Unknown Vehicle'),
+      ),
+    );
+  },
+  child: Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
@@ -320,6 +331,7 @@ Row(
           ),
         ],
       ),
+    ),
     ),
   );
 }

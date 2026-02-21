@@ -27,7 +27,6 @@ class _CustomerHistState extends ConsumerState<CustomerHist>
   static const Color _surfaceLight  = Color(0xFFF0F3FA);
   static const Color _accent        = Color(0xFF3D5AFE);
   static const Color _accentSoft    = Color(0xFFEEF1FF);
-  static const Color _accentDark    = Color(0xFF2541D4);
   static const Color _textPrimary   = Color(0xFF1A1D2E);
   static const Color _textSecondary = Color(0xFF7B82A0);
   static const Color _divider       = Color(0xFFE4E8F0);

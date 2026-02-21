@@ -909,6 +909,15 @@ class TripCard extends StatelessWidget {
                                       .read(TripPageViewModelProvider.notifier)
                                       .updatePaymentStatus(updated);
                                   Navigator.pop(ctx);
+
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                        "Payment details updated successfully!",
+                                      ),
+                                      backgroundColor: Colors.green,
+                                    ),
+                                  );
                                 },
                                 child: Container(
                                   width: double.infinity,
@@ -1169,7 +1178,7 @@ class TripCard extends StatelessWidget {
                         color: _warning,
                       ),
                       const SizedBox(width: 4),
-                      Flexible(
+                      Expanded(
                         child: Text(
                           "${_formatDate(bookinginfo.startDateTime)} ${_formatTime(bookinginfo.startDateTime)}",
                           style: TextStyle(
@@ -1177,7 +1186,9 @@ class TripCard extends StatelessWidget {
                             color: _textSec,
                             fontWeight: FontWeight.w500,
                           ),
-                          overflow: TextOverflow.ellipsis,
+                          softWrap: true,
+                          maxLines: 2, // allow 2 lines
+                          overflow: TextOverflow.visible,
                         ),
                       ),
                     ],

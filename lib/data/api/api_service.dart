@@ -139,5 +139,6 @@ abstract class ApiService {
   @GET("users/AdminProfile/{admin_id}")
   Future<List<LoginInfo>> adminProfile(@Path("admin_id") int adminId);
 
-
+  @GET("users/VehicleHistory/{vehicle_id}")
+  Future<List<BookingInfo>> getTripsByVehicle(@Path("vehicle_id") int vehicleid);
 }  
