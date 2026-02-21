@@ -45,7 +45,6 @@ class LoginInfo {
     this.agencyId,
     this.imageUrl,
   });
-
   factory LoginInfo.fromJson(Map<String, dynamic> json) =>
       _$LoginInfoFromJson(json);
   Map<String, dynamic> toJson() => _$LoginInfoToJson(this);

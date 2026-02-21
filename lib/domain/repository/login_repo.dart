@@ -13,5 +13,5 @@ abstract class LoginRepo {
   Future<LoginResponse> login(LoginInfo loginInfo);
   Future<LoginResponse> forgotPassword(LoginInfo loginInfo);
   Future<List<LoginInfo>> adminProfile(int adminId);
-    Future<dynamic> updateAdminProfile(File image, int adminId, String agencyId);
+    Future<dynamic> updateAdminProfile(File image, String adminId, String agencyId);
 }

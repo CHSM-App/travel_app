@@ -48,8 +48,30 @@ class Drivers {
     this.agencyId,
   });
 
-  factory Drivers.fromJson(Map<String, dynamic> json) =>
-      _$DriversFromJson(json);
+  factory Drivers.fromJson(Map<String, dynamic> json) => Drivers(
+        driverId: (json['driverId'] as num?)?.toInt(),
+        name: json['name'] as String?,
+        phone: json['phone'] as String?,
+        address: json['address'] as String?,
+        licenceNo: json['LicenceNo'] as String?,
+        licenceExpiry: _dateFromJson(json['LicenceExpiry'] as String?),
+        vehicleId: (json['vehicleId'] as num?)?.toInt(),
+        photo: _readFirstString(json, const [
+          'photo',
+          'Photo',
+          'documents',
+          'Documents',
+          'document',
+          'Document',
+          'driverDocument',
+          'DriverDocument',
+          'licenceDocument',
+          'LicenceDocument',
+          'licenseDocument',
+          'LicenseDocument',
+        ]),
+        agencyId: (json['agency_id'] ?? json['agencyId'])?.toString(),
+      );
 
   Map<String, dynamic> toJson() =>
       _$DriversToJson(this);
@@ -61,5 +83,20 @@ class Drivers {
   /// ✅ Convert DateTime → String (SQL format)
   static String? _dateToJson(DateTime? date) =>
       date == null ? null : date.toIso8601String();
+
+  static String? _readFirstString(
+    Map<String, dynamic> json,
+    List<String> keys,
+  ) {
+    for (final key in keys) {
+      final value = json[key];
+      if (value == null) continue;
+      final text = value.toString().trim();
+      if (text.isNotEmpty && text.toLowerCase() != 'null') {
+        return text;
+      }
+    }
+    return null;
+  }
 
 }

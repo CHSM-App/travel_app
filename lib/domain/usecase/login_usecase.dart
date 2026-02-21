@@ -25,7 +25,7 @@ class LoginUseCase {
   Future<List<LoginInfo>> adminProfile(int adminId) {
     return loginRepo.adminProfile(adminId);
   }
-    Future<dynamic> updateAdminProfile(File image, int adminId, String agencyId) {
+    Future<dynamic> updateAdminProfile(File image, String adminId, String agencyId) {
     return loginRepo.updateAdminProfile(image, adminId, agencyId);
   }
 

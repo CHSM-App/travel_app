@@ -58,7 +58,7 @@ class LoginImpl implements LoginRepo {
 
 
   @override
-  Future updateAdminProfile(File image, int adminId, String agencyId) {
+  Future updateAdminProfile(File image, String adminId, String agencyId) {
      return apiService.updateAdminProfile(image,adminId, agencyId);
   }
 

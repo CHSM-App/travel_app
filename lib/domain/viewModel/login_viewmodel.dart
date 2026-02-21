@@ -227,10 +227,23 @@ class LoginViewModel extends StateNotifier<LoginState> {
 
   //Upload Admin Profile
 
+  // Future<dynamic> updateAdminProfile(File image, int adminId, String agencyId) async {
+  //   try {
+  //     state = state.copyWith(isLoading: true);
+  //     final response = await usecase.updateAdminProfile(image, adminId, agencyId);
+  //     state = state.copyWith(isLoading: false);
+  //     return response;
+  //   } catch (e) {
+  //     state = state.copyWith(isLoading: false, error: e.toString());
+  //     return null;
+  //   }
+  // }
+  
+
   Future<dynamic> updateAdminProfile(File image, int adminId, String agencyId) async {
     try {
       state = state.copyWith(isLoading: true);
-      final response = await usecase.updateAdminProfile(image, adminId, agencyId);
+      final response = await usecase.updateAdminProfile(image, adminId.toString(), agencyId);
       state = state.copyWith(isLoading: false);
       return response;
     } catch (e) {
@@ -238,7 +251,6 @@ class LoginViewModel extends StateNotifier<LoginState> {
       return null;
     }
   }
-
 
 
 }

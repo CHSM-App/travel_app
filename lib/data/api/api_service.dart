@@ -16,12 +16,13 @@ import 'package:travel_agency_app/domain/models/vehicletype.dart';
 import 'package:retrofit/retrofit.dart';
 
 part 'api_service.g.dart';
+
 abstract class ParseErrorLogger {
   void logError(
     Object error,
     StackTrace stackTrace,
     // RequestOptions requestOptions,
-     RequestOptions requestOptions, {
+    RequestOptions requestOptions, {
     Response? response,
   });
 }
@@ -30,9 +31,9 @@ abstract class ParseErrorLogger {
 abstract class ApiService {
   factory ApiService(Dio dio, {String baseUrl}) = _ApiService;
   @GET('/')
-  Future<HttpResponse> checkHealth(); 
+  Future<HttpResponse> checkHealth();
 
-//Login Api call
+  //-------------------------------------Login Api call---------------------------------------------
 
   @POST("login/CreateLogin")
   Future<TokenResponse> createLogin(@Body() TokenResponse tokenResponse);
@@ -45,14 +46,11 @@ abstract class ApiService {
 
   @POST("login/forgotPassword")
   Future<LoginResponse> forgotPassword(@Body() LoginInfo logininfo);
-  
 
-
-
-  //POST API CALL
+  //----------------------------POST API CALL----------------------------------------------
   @POST("insert/Addtripbooking")
-  Future<dynamic> addTripBooking(@Body() TripBooking tripBooking); 
- 
+  Future<dynamic> addTripBooking(@Body() TripBooking tripBooking);
+
   @POST("insert/Addvehicle")
   Future<dynamic> addVehicle(@Body() Vehicles vehicle);
 
@@ -61,7 +59,7 @@ abstract class ApiService {
 
   @POST("insert/addCustomer")
   Future<dynamic> addCustomer(@Body() Customer customer);
-  
+
   @POST("insert/AddCustomer")
   Future<dynamic> addcustomer(@Body() Customer customer);
 
@@ -73,35 +71,45 @@ abstract class ApiService {
 
   @POST("insert/updatePaymentStatus/")
   Future<dynamic> updatePaymentStatus(@Body() BookingInfo tripbooking);
-  
+
   @POST("insert/AddAdmin")
   Future<LoginResponse> addAdmin(@Body() LoginInfo logininfo);
 
-//---------------------UPLOAD PHOTOS AND DOCUMENTS
-   @MultiPart()
+  //---------------------UPLOAD PHOTOS AND DOCUMENTS----------------------------------------
+  @MultiPart()
   @POST("upload/AdminImage")
   Future<dynamic> updateAdminProfile(
-    @Part(name: "image_url") File imageUrl,
-    @Part(name: "admin_id") int adminId,
-    @Part(name: "agency_id") String agencyId, 
+    @Part(name: "image") File imageUrl,
+    @Part(name: "admin_id") String adminId,
+    @Part(name: "agency_id") String agencyId,
   );
-
   @MultiPart()
   @POST("upload/VehicleDocuments")
   Future<dynamic> uploadVehicleDocument(
-    @Part(name: "rcdocument") File rcDocument,
-    @Part(name: "vehicleId") int vehicleId,
-    @Part(name: "agency_id") String agencyId, 
+    @Part(name: "document") File rcDocument,
+    @Part(name: "vehicleId") String vehicleId,
+    @Part(name: "agency_id") String agencyId,
   );
 
+  @MultiPart()
+  @POST("upload/DriverDocuments")
+  Future<dynamic> uploadDriverDocument(
+    @Part(name: "document") File licenceDocument,
+    @Part(name: "driverId") String driverId,
+    @Part(name: "agency_id") String agencyId,
+  );
 
- //------------------------------------------------------------------------------------------/
- 
+  @MultiPart()
+  @POST("upload/CustomerDocuments")
+  Future<dynamic> uploadCustomerDocument(
+    @Part(name: "document") File document,
+    @Part(name: "CustomerId") String customerId,
+    @Part(name: "agency_id") String agencyId,
+  );
 
-  //GET API CALL
+  //------------------------------------------GET API CALL------------------------------
   @GET("users/driverList/{agency_id}")
   Future<List<Drivers>> driverList(@Path("agency_id") String agencyId);
-  
 
   @GET("users/VehicleList/{agency_id}")
   Future<List<Vehicles>> vehicleList(@Path("agency_id") String agencyId);
@@ -111,10 +119,10 @@ abstract class ApiService {
 
   @GET("users/VehicleTypeList")
   Future<List<VehicleType>> vehicleTypeList();
-  
+
   @GET("users/StatusList")
   Future<List<Status>> statusList();
-  
+
   @GET("users/FuelTypeList")
   Future<List<Fueltype>> fuelTypeList();
 
@@ -138,6 +146,4 @@ abstract class ApiService {
 
   @GET("users/AdminProfile/{admin_id}")
   Future<List<LoginInfo>> adminProfile(@Path("admin_id") int adminId);
-
-
-}  
+}

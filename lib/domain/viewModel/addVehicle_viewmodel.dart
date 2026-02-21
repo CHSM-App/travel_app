@@ -36,6 +36,8 @@ final bool isLoading;
        bool? isLoading,
     Map<String, dynamic>? data,
     String? error,
+        bool clearError = false,
+        bool clearData = false,
     AsyncValue<List<VehicleType>>? fetchVehicleTypeList,
     AsyncValue<List<Status>>? fetchstatusList,
     AsyncValue<List<Fueltype>>? fetchFuelTypeList,
@@ -60,35 +62,22 @@ class AddVehicleViewModel extends StateNotifier<AddVehicleState> {
   AddVehicleViewModel(this.ref, this.usecase)
       : super(const AddVehicleState());
 
-
-Future<void> addVehicle(Vehicles vehicle) async {
-  state = state.copyWith(isLoading: true, error: null);
-
+Future<int> addVehicle(Vehicles vehicle) async {
+  state = state.copyWith(isLoading: true, clearData: true, clearError: true);
   try {
     final result = await usecase.addVehicle(vehicle);
-
-    state = state.copyWith(
-      isLoading: false,
-      error: null, // success, so no error
-    );
-
+    final int vehicleId = result['VehicleId'] as int; 
+    state = state.copyWith(isLoading: false, data: result);
+    return vehicleId;
   } on DioException catch (e) {
     final serverMessage = e.response?.data?['message'];
-
-    state = state.copyWith(
-      isLoading: false,
-      error: serverMessage ?? 'Server error',
-    );
-
-    debugPrint("Server error: $serverMessage");
+    state = state.copyWith(isLoading: false, error: serverMessage ?? 'Server error');
+    rethrow;
   } catch (e) {
-    state = state.copyWith(
-      isLoading: false,
-      error: e.toString(),
-    );
+    state = state.copyWith(isLoading: false, error: e.toString());
+    rethrow;
   }
 }
-
 Future<void> updateVehicle(Vehicles vehicle) async {
   state = state.copyWith(isLoading: true, error: null);
 
@@ -135,7 +124,7 @@ Future<void> updateVehicle(Vehicles vehicle) async {
   Future<dynamic> uploadVehicleDocument(File rcDocuments, int vehicleId, String agencyId) async {
     try {
       state = state.copyWith(isLoading: true);
-      final response = await usecase.uploadVehicleDocument(rcDocuments, vehicleId, agencyId);
+      final response = await usecase.uploadVehicleDocument(rcDocuments, vehicleId.toString(), agencyId);
       state = state.copyWith(isLoading: false);
       return response;
     } catch (e) {

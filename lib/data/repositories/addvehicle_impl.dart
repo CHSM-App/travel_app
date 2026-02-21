@@ -38,7 +38,7 @@ class AddvehicleImpl implements Addvehiclerepository {
 
   
   @override
-  Future uploadVehicleDocument(File rcDocuments, int vehicleId, String agencyId) {
+  Future uploadVehicleDocument(File rcDocuments, String vehicleId, String agencyId) {
      return apiService.uploadVehicleDocument(rcDocuments,vehicleId, agencyId);
   }
 

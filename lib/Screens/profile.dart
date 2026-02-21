@@ -183,11 +183,88 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
     }
   }
 
-  void _saveProfile() async {
-    print("Save profile clicked");
+//   void _saveProfile() async {
+//     print("Save profile clicked");
+//   if (!_formKey.currentState!.validate()) return;
+
+//   final profileList = ref.read(loginViewModelProvider).adminProfile.value;
+//   int adminId = 0;
+//   String agencyId = '';
+
+//   if (profileList != null && profileList.isNotEmpty) {
+//     adminId = profileList.first.adminId ?? 0;
+//     agencyId = profileList.first.agencyId ?? '';
+//   }
+//   print('adminId: $adminId, agencyId: $agencyId');
+// if (_profileImage != null) {
+//   print('Uploading image for adminId: $adminId, agencyId: $agencyId');
+
+//   final imageResponse = await ref
+//       .read(loginViewModelProvider.notifier)
+//       .updateAdminProfile(_profileImage!, adminId, agencyId);
+// if (_profileImage != null) {
+//   final imageResponse =
+//       await ref.read(loginViewModelProvider.notifier)
+//           .updateAdminProfile(_profileImage!, adminId, agencyId);
+
+//   if (imageResponse['success'] != 1) {
+//     ScaffoldMessenger.of(context).showSnackBar(
+//       SnackBar(
+//         content: Text('Image upload failed: ${imageResponse['message']}'),
+//         backgroundColor: Colors.red,
+//       ),
+//     );
+//   } else {
+//     setState(() {
+//       _imageUrl = imageResponse['data']?['imageUrl'] ?? _imageUrl;
+//     });
+//     print('Image uploaded successfully: $_imageUrl');
+//   }
+// }
+// }
+
+//   // ✅ Save profile info regardless of image upload
+//   final loginInfo = LoginInfo(
+//     adminId: adminId,
+//     name: nameController.text,
+//     email: emailController.text,
+//     mobile: mobileController.text,
+//     address: addressController.text,
+//     agencyName: agencyController.text,
+//     city: cityController.text,
+//   );
+
+//   final response = await ref
+//       .read(loginViewModelProvider.notifier)
+//       .addAdmin(loginInfo);
+
+//   if (response?.success == 1) {
+//     // Reload profile
+//     await ref
+//         .read(loginViewModelProvider.notifier)
+//         .adminProfile(adminId);
+
+//     ScaffoldMessenger.of(context).showSnackBar(
+//       const SnackBar(
+//         content: Text("Profile Updated successfully"),
+//         backgroundColor: Colors.green,
+//       ),
+//     );
+//   } else {
+//     ScaffoldMessenger.of(context).showSnackBar(
+//       SnackBar(
+//         content: Text(response?.message ?? "Update failed"),
+//         backgroundColor: Colors.red,
+//       ),
+//     );
+//   }
+// }
+
+void _saveProfile() async {
   if (!_formKey.currentState!.validate()) return;
 
   final profileList = ref.read(loginViewModelProvider).adminProfile.value;
+
   int adminId = 0;
   String agencyId = '';
 
@@ -195,6 +272,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
     adminId = profileList.first.adminId ?? 0;
     agencyId = profileList.first.agencyId ?? '';
   }
+
   print('adminId: $adminId, agencyId: $agencyId');
 if (_profileImage != null) {
   print('Uploading image for adminId: $adminId, agencyId: $agencyId');
@@ -202,27 +280,35 @@ if (_profileImage != null) {
   final imageResponse = await ref
       .read(loginViewModelProvider.notifier)
       .updateAdminProfile(_profileImage!, adminId, agencyId);
-if (_profileImage != null) {
-  final imageResponse =
-      await ref.read(loginViewModelProvider.notifier)
-          .updateAdminProfile(_profileImage!, adminId, agencyId);
+
+  print("Image Response: $imageResponse");
+
+  if (imageResponse == null) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text("Image upload failed: No response from server"),
+        backgroundColor: Colors.red,
+      ),
+    );
+    return;
+  }
 
   if (imageResponse['success'] != 1) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('Image upload failed: ${imageResponse['message']}'),
+        content: Text(imageResponse['message'] ?? "Upload failed"),
         backgroundColor: Colors.red,
       ),
     );
   } else {
     setState(() {
-      _imageUrl = imageResponse['data']?['imageUrl'] ?? _imageUrl;
+      _imageUrl = imageResponse['data']?['imageUrl'];
     });
-    print('Image uploaded successfully: $_imageUrl');
+
+    print("Image uploaded successfully: $_imageUrl");
   }
 }
-}
-  // ✅ Save profile info regardless of image upload
+  // ✅ Save profile data
   final loginInfo = LoginInfo(
     adminId: adminId,
     name: nameController.text,
@@ -233,12 +319,10 @@ if (_profileImage != null) {
     city: cityController.text,
   );
 
-  final response = await ref
-      .read(loginViewModelProvider.notifier)
-      .addAdmin(loginInfo);
+  final response =
+      await ref.read(loginViewModelProvider.notifier).addAdmin(loginInfo);
 
   if (response?.success == 1) {
-    // Reload profile
     await ref
         .read(loginViewModelProvider.notifier)
         .adminProfile(adminId);

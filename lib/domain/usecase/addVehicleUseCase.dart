@@ -30,7 +30,7 @@ class AddVehicleUseCase {
      return addvehiclerepository.updateVehicle(vehicle);
   } 
   
-    Future<dynamic> uploadVehicleDocument(File rcDocuments, int vehicleId, String agencyId) {
+    Future<dynamic> uploadVehicleDocument(File rcDocuments, String vehicleId, String agencyId) {
     return addvehiclerepository.uploadVehicleDocument(rcDocuments, vehicleId, agencyId);
   }
 
