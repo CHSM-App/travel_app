@@ -14,7 +14,6 @@ abstract class Addvehiclerepository {
   Future<List<VehicleType>> getVehicleTypes();
   Future<List<Fueltype>> getVehicleFuelTypes();
   Future<List<Status>> getVehicleStatuses();
-  Future<dynamic> uploadVehicleDocument(File rcDocuments, int vehicleId, String agencyId);
 
   Future<List<BookingInfo>> getTripsByVehicle(int vehicleId);
   Future<dynamic> uploadVehicleDocument(File rcDocuments, String vehicleId, String agencyId);
