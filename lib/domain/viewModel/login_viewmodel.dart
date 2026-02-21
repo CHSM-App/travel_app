@@ -1,4 +1,6 @@
 // import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'dart:io';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:travel_agency_app/core/storage/token_storage.dart';
 import 'package:travel_agency_app/domain/models/login_info.dart';
@@ -88,9 +90,8 @@ class LoginViewModel extends StateNotifier<LoginState> {
     );
   }
 
-  //--------------------------------------------------
+
   // LOGIN
-  //--------------------------------------------------
 
   Future<LoginResponse?> login(LoginInfo loginInfo) async {
 
@@ -139,10 +140,8 @@ class LoginViewModel extends StateNotifier<LoginState> {
     }
   }
 
-  //--------------------------------------------------
-  // ADD ADMIN
-  //--------------------------------------------------
 
+  // ADD ADMIN
   Future<LoginResponse?> addAdmin(LoginInfo loginInfo) async {
 
     try {
@@ -218,16 +217,28 @@ class LoginViewModel extends StateNotifier<LoginState> {
       );
     }
   }
-
-  //--------------------------------------------------
-  // LOGOUT
-  //--------------------------------------------------
+//LOGOUT
 
   Future<void> logout() async {
-
     await TokenStorage.clear();
-
     state = const LoginState();
   }
+
+
+  //Upload Admin Profile
+
+  Future<dynamic> updateAdminProfile(File image, int adminId, String agencyId) async {
+    try {
+      state = state.copyWith(isLoading: true);
+      final response = await usecase.updateAdminProfile(image, adminId, agencyId);
+      state = state.copyWith(isLoading: false);
+      return response;
+    } catch (e) {
+      state = state.copyWith(isLoading: false, error: e.toString());
+      return null;
+    }
+  }
+
+
 
 }

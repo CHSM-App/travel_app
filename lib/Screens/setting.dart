@@ -288,35 +288,37 @@ Widget _buildProfileAvatar() {
   final loginState = ref.watch(loginViewModelProvider);
   final adminProfile = loginState.adminProfile;
 
-  String firstLetter = 'U'; // Default fallback
+  String? imageUrl;
+  String firstLetter = 'U'; // fallback
+
   if (adminProfile is AsyncData && adminProfile.value!.isNotEmpty) {
-    final name = adminProfile.value?.first.name;
-    if (name != null && name.isNotEmpty) {
-      firstLetter = name[0].toUpperCase();
+    final profile = adminProfile.value!.first;
+
+    // Set image URL if available
+    if (profile.imageUrl != null && profile.imageUrl!.isNotEmpty) {
+      imageUrl = profile.imageUrl;
+    }
+
+    // Set first letter from name if available
+    if (profile.name != null && profile.name!.isNotEmpty) {
+      firstLetter = profile.name![0].toUpperCase();
     }
   }
 
-  return Container(
-    width: 70,
-    height: 70,
-    decoration: BoxDecoration(
-      color: Colors.indigo.shade50,
-      borderRadius: BorderRadius.circular(35), // circle
-      border: Border.all(
-        color: Colors.white.withOpacity(0.3),
-        width: 3,
-      ),
-    ),
-    child: Center(
-      child: Text(
-        firstLetter,
-        style: TextStyle(
-          fontSize: 36,
-          fontWeight: FontWeight.bold,
-          color: Colors.indigo.shade600,
-        ),
-      ),
-    ),
+  return CircleAvatar(
+    radius: 35, // adjust size
+    backgroundColor: Colors.indigo.shade50,
+    backgroundImage: imageUrl != null ? NetworkImage(imageUrl) : null,
+    child: imageUrl == null
+        ? Text(
+            firstLetter,
+            style: TextStyle(
+              fontSize: 36,
+              fontWeight: FontWeight.bold,
+              color: Colors.indigo.shade600,
+            ),
+          )
+        : null,
   );
 }
 

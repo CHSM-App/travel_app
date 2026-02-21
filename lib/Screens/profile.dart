@@ -7,6 +7,7 @@ import 'package:travel_agency_app/domain/models/login_info.dart';
 import 'package:travel_agency_app/presentation/providers/viewmodel_provider.dart';
 
 class ProfilePage extends ConsumerStatefulWidget {
+  
   const ProfilePage({Key? key}) : super(key: key);
 
   @override
@@ -71,7 +72,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
     agencyController.text = profile.agencyName ?? '';
     cityController.text = profile.city ?? '';
   //  pincodeController.text = profile.pincode ?? '';
-  //  _imageUrl = profile.imageUrl;
+  _imageUrl = profile.imageUrl;
   }
 
   void _showImageOptions() {
@@ -181,18 +182,47 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
       });
     }
   }
-  void _saveProfile() async {
 
+  void _saveProfile() async {
+    print("Save profile clicked");
   if (!_formKey.currentState!.validate()) return;
 
   final profileList = ref.read(loginViewModelProvider).adminProfile.value;
-
   int adminId = 0;
+  String agencyId = '';
 
   if (profileList != null && profileList.isNotEmpty) {
     adminId = profileList.first.adminId ?? 0;
+    agencyId = profileList.first.agencyId ?? '';
   }
+  print('adminId: $adminId, agencyId: $agencyId');
+if (_profileImage != null) {
+  print('Uploading image for adminId: $adminId, agencyId: $agencyId');
 
+  final imageResponse = await ref
+      .read(loginViewModelProvider.notifier)
+      .updateAdminProfile(_profileImage!, adminId, agencyId);
+if (_profileImage != null) {
+  final imageResponse =
+      await ref.read(loginViewModelProvider.notifier)
+          .updateAdminProfile(_profileImage!, adminId, agencyId);
+
+  if (imageResponse['success'] != 1) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Image upload failed: ${imageResponse['message']}'),
+        backgroundColor: Colors.red,
+      ),
+    );
+  } else {
+    setState(() {
+      _imageUrl = imageResponse['data']?['imageUrl'] ?? _imageUrl;
+    });
+    print('Image uploaded successfully: $_imageUrl');
+  }
+}
+}
+  // ✅ Save profile info regardless of image upload
   final loginInfo = LoginInfo(
     adminId: adminId,
     name: nameController.text,
@@ -208,8 +238,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
       .addAdmin(loginInfo);
 
   if (response?.success == 1) {
-
-    // ✅ Reload profile (IMPORTANT)
+    // Reload profile
     await ref
         .read(loginViewModelProvider.notifier)
         .adminProfile(adminId);
@@ -220,9 +249,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
         backgroundColor: Colors.green,
       ),
     );
-
   } else {
-
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(response?.message ?? "Update failed"),
@@ -230,9 +257,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
       ),
     );
   }
-
 }
-
   Widget _buildTextField({
     required TextEditingController controller,
     required String label,
@@ -334,18 +359,18 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
                       // Profile Image
                       Stack(
                         children: [
-                         CircleAvatar(
+                       CircleAvatar(
   radius: 60,
   backgroundColor: Colors.indigo.shade100,
   backgroundImage: _profileImage != null
       ? FileImage(_profileImage!)
-      : _imageUrl != null
+      : (_imageUrl != null && _imageUrl!.isNotEmpty)
           ? NetworkImage(_imageUrl!) as ImageProvider
           : null,
-  child: (_profileImage == null && _imageUrl == null)
+  child: (_profileImage == null && (_imageUrl == null || _imageUrl!.isEmpty))
       ? Text(
           nameController.text.isNotEmpty
-              ? nameController.text[0].toUpperCase()
+              ? nameController.text[0].toUpperCase() // first letter of name
               : 'U', // fallback if name is empty
           style: const TextStyle(
             fontSize: 40,
@@ -355,7 +380,6 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
         )
       : null,
 ),
-
                           Positioned(
                             bottom: 0,
                             right: 0,

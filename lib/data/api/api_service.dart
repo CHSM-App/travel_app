@@ -77,12 +77,24 @@ abstract class ApiService {
   @POST("insert/AddAdmin")
   Future<LoginResponse> addAdmin(@Body() LoginInfo logininfo);
 
+//---------------------UPLOAD PHOTOS AND DOCUMENTS
    @MultiPart()
   @POST("upload/AdminImage")
-  Future<dynamic> AdminImage(
+  Future<dynamic> updateAdminProfile(
     @Part(name: "image_url") File imageUrl,
-    @Part(name: "admin_id") String adminId,
+    @Part(name: "admin_id") int adminId,
+    @Part(name: "agency_id") String agencyId, 
   );
+
+  @MultiPart()
+  @POST("upload/VehicleDocuments")
+  Future<dynamic> uploadVehicleDocument(
+    @Part(name: "rcdocument") File rcDocument,
+    @Part(name: "vehicleId") int vehicleId,
+    @Part(name: "agency_id") String agencyId, 
+  );
+
+
  //------------------------------------------------------------------------------------------/
  
 

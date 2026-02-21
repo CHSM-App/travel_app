@@ -1,4 +1,6 @@
 
+import 'dart:io';
+
 import 'package:travel_agency_app/domain/models/fueltype.dart';
 import 'package:travel_agency_app/domain/models/status.dart';
 import 'package:travel_agency_app/domain/models/vehicles.dart';
@@ -27,5 +29,9 @@ class AddVehicleUseCase {
   Future<dynamic> updateVehicle(Vehicles vehicle) {
      return addvehiclerepository.updateVehicle(vehicle);
   } 
+  
+    Future<dynamic> uploadVehicleDocument(File rcDocuments, int vehicleId, String agencyId) {
+    return addvehiclerepository.uploadVehicleDocument(rcDocuments, vehicleId, agencyId);
+  }
 
 }

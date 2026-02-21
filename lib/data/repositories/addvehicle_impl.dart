@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:travel_agency_app/data/api/api_service.dart';
 import 'package:travel_agency_app/domain/models/fueltype.dart';
 import 'package:travel_agency_app/domain/models/status.dart';
@@ -33,6 +35,15 @@ class AddvehicleImpl implements Addvehiclerepository {
   Future<dynamic> updateVehicle(Vehicles vehicle) {
     return apiService.updateVehicle(vehicle);
   }  
+
+  
+  @override
+  Future uploadVehicleDocument(File rcDocuments, int vehicleId, String agencyId) {
+     return apiService.uploadVehicleDocument(rcDocuments,vehicleId, agencyId);
+  }
+
+
+
 }
 
  

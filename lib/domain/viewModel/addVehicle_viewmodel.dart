@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -129,5 +131,17 @@ Future<void> updateVehicle(Vehicles vehicle) async {
     }
   }
   
+  
+  Future<dynamic> uploadVehicleDocument(File rcDocuments, int vehicleId, String agencyId) async {
+    try {
+      state = state.copyWith(isLoading: true);
+      final response = await usecase.uploadVehicleDocument(rcDocuments, vehicleId, agencyId);
+      state = state.copyWith(isLoading: false);
+      return response;
+    } catch (e) {
+      state = state.copyWith(isLoading: false, error: e.toString());
+      return null;
+    }
+  }
 
  }
