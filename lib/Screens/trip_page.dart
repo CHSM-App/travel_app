@@ -38,7 +38,7 @@ class _TripPageState extends ConsumerState<TripPage> {
       case 'upcoming':
         notifier.upcomingList();
         break;
-      case 'history':
+      case 'Paid':
         notifier.historyList();
         break;
       case 'unpaid':
@@ -129,7 +129,7 @@ class _TripPageState extends ConsumerState<TripPage> {
 
                   const SizedBox(width: 12),
 
-                  // Dropdown Filter 
+                  // Dropdown Filter
                   Container(
                     height: 48,
                     padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -171,8 +171,8 @@ class _TripPageState extends ConsumerState<TripPage> {
                             Icons.schedule_rounded,
                           ),
                           _buildDropdownItem(
-                            'history',
-                            'History',
+                            'Paid',
+                            'Paid',
                             Icons.history_rounded,
                           ),
                           _buildDropdownItem(
@@ -239,7 +239,7 @@ class _TripPageState extends ConsumerState<TripPage> {
       case 'upcoming':
         currentList = state.upcomingList;
         break;
-      case 'history':
+      case 'Paid':
         currentList = state.historyList;
         break;
       case 'unpaid':
@@ -253,11 +253,7 @@ class _TripPageState extends ConsumerState<TripPage> {
     }
 
     return _buildTripList(currentList, _selectedFilter);
-    
   }
-
-
-  
 
   Widget _buildTripList(AsyncValue<List<BookingInfo>> state, String type) {
     return state.when(
@@ -331,17 +327,16 @@ class _TripPageState extends ConsumerState<TripPage> {
         // Filter trips based on search query
         final filteredTrips = trips.where((trip) {
           if (_searchQuery.isEmpty) return true;
-          
+
           final customerName = trip.customer_name?.toLowerCase() ?? '';
           final vehicleNumber = trip.vehicle_info?.toLowerCase() ?? '';
           final driverName = trip.driver_name?.toLowerCase() ?? '';
           final startLocation = trip.pickupLocation?.toLowerCase() ?? '';
           final endLocation = trip.dropLocation?.toLowerCase() ?? '';
-          final paymentStatus = trip.payment_status?.toLowerCase()?? '';
-          
-          
+          final paymentStatus = trip.payment_status?.toLowerCase() ?? '';
+
           return customerName.contains(_searchQuery) ||
-               vehicleNumber.contains(_searchQuery) ||
+              vehicleNumber.contains(_searchQuery) ||
               driverName.contains(_searchQuery) ||
               startLocation.contains(_searchQuery) ||
               endLocation.contains(_searchQuery) ||
@@ -363,6 +358,7 @@ class _TripPageState extends ConsumerState<TripPage> {
               key: ValueKey(filteredTrips[i].tripId ?? i),
               bookinginfo: filteredTrips[i],
               ref: ref,
+              tripType: type, // ← pass the current tab type
             ),
           ),
         );
@@ -386,9 +382,9 @@ class _TripPageState extends ConsumerState<TripPage> {
         title = 'No Upcoming Trips';
         subtitle = 'No trips scheduled for the future';
         break;
-      case 'history':
-        icon = Icons.history_rounded;
-        title = 'No Trip History';
+      case 'Paid':
+        icon = Icons.payment_outlined;
+        title = 'No paid Trip ';
         subtitle = 'Your completed trips will appear here';
         break;
       case 'unpaid':

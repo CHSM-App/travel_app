@@ -17,6 +17,9 @@ BookingInfo _$BookingInfoFromJson(Map<String, dynamic> json) => BookingInfo(
   tollCharges: (json['toll_charges'] as num?)?.toDouble(),
   repairingCharges: (json['repairing_charges'] as num?)?.toDouble(),
   driverCharges: (json['driver_charges'] as num?)?.toDouble(),
+  bookingDate: json['booking_date'] == null
+      ? null
+      : DateTime.parse(json['booking_date'] as String),
   startDateTime: json['start_datetime'] == null
       ? null
       : DateTime.parse(json['start_datetime'] as String),
@@ -31,6 +34,7 @@ BookingInfo _$BookingInfoFromJson(Map<String, dynamic> json) => BookingInfo(
   vehicle_info: json['Vehicle_info'] as String?,
   customer_name: json['Customer_name'] as String?,
   customer_phone: json['customer_phone'] as String?,
+  customerAddress: json['Customer_address'] as String?,
   driver_name: json['Driver_name'] as String?,
   payment_status: json['payment_status'] as String?,
   tripStatus: json['TripStatus'] as String?,
@@ -53,6 +57,7 @@ Map<String, dynamic> _$BookingInfoToJson(BookingInfo instance) =>
       'toll_charges': instance.tollCharges,
       'repairing_charges': instance.repairingCharges,
       'driver_charges': instance.driverCharges,
+      'booking_date': instance.bookingDate?.toIso8601String(),
       'start_datetime': instance.startDateTime?.toIso8601String(),
       'end_datetime': instance.endDateTime?.toIso8601String(),
       'trip_status_id': instance.status,
@@ -63,6 +68,7 @@ Map<String, dynamic> _$BookingInfoToJson(BookingInfo instance) =>
       'Vehicle_info': instance.vehicle_info,
       'Customer_name': instance.customer_name,
       'customer_phone': instance.customer_phone,
+      'Customer_address': instance.customerAddress,
       'TripStatus': instance.tripStatus,
       'Driver_name': instance.driver_name,
       'driver_LicenceNo': instance.driverLicenceNo,
