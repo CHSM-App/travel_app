@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:travel_agency_app/domain/models/booking_info.dart';
 import 'package:travel_agency_app/domain/models/fueltype.dart';
 import 'package:travel_agency_app/domain/models/status.dart';
 import 'package:travel_agency_app/domain/models/vehicles.dart';
@@ -15,24 +16,27 @@ class AddVehicleState {
 final bool isLoading;
   final Map<String, dynamic>? data;
   final String? error;
+  final int? vehicleId;
 
 
   final AsyncValue<List<VehicleType>> fetchVehicleTypeList;
   final AsyncValue<List<Status>> fetchstatusList;
   final AsyncValue<List<Fueltype>> fetchFuelTypeList;
+  final AsyncValue<List<BookingInfo>> fetchTripsByVehicleId;
 
   const AddVehicleState({
      this.isLoading = false,
      this.data ,
     this.error,
-
+    this.vehicleId,
     this.fetchVehicleTypeList = const AsyncValue.loading(),
     this.fetchstatusList = const AsyncValue.loading(),
     this.fetchFuelTypeList = const AsyncValue.loading(),
+    this.fetchTripsByVehicleId = const AsyncValue.loading(),
       });
 
   AddVehicleState copyWith({
-
+        int? vehicleId,
        bool? isLoading,
     Map<String, dynamic>? data,
     String? error,
@@ -41,15 +45,18 @@ final bool isLoading;
     AsyncValue<List<VehicleType>>? fetchVehicleTypeList,
     AsyncValue<List<Status>>? fetchstatusList,
     AsyncValue<List<Fueltype>>? fetchFuelTypeList,
+    AsyncValue<List<BookingInfo>>? fetchTripsByVehicleId,
+
   }) {
     return AddVehicleState(
-    
+       vehicleId: vehicleId ?? this.vehicleId,
        isLoading: isLoading ?? this.isLoading,
       data: data ?? this.data,
       error: error ?? this.error,
       fetchVehicleTypeList: fetchVehicleTypeList ?? this.fetchVehicleTypeList,
       fetchstatusList: fetchstatusList ?? this.fetchstatusList,
-      fetchFuelTypeList: fetchFuelTypeList ?? this.fetchFuelTypeList
+      fetchFuelTypeList: fetchFuelTypeList ?? this.fetchFuelTypeList,
+      fetchTripsByVehicleId: fetchTripsByVehicleId ?? this.fetchTripsByVehicleId,
     );
   }
 }
@@ -99,6 +106,8 @@ Future<void> updateVehicle(Vehicles vehicle) async {
       state = state.copyWith(fetchVehicleTypeList: AsyncValue.error(e, st));
     }
   }
+
+
    Future<void> fetchVehicleFuelTypeList() async {
     state = state.copyWith(fetchFuelTypeList: const AsyncValue.loading());
     try {
@@ -130,6 +139,16 @@ Future<void> updateVehicle(Vehicles vehicle) async {
     } catch (e) {
       state = state.copyWith(isLoading: false, error: e.toString());
       return null;
+    }
+  }
+
+    Future<void> getTripsByVehicle(int vehicleId) async {
+    state = state.copyWith(fetchTripsByVehicleId: const AsyncValue.loading());
+    try {
+      final result = await usecase.getTripsByVehicle(vehicleId);
+      state = state.copyWith(fetchTripsByVehicleId: AsyncValue.data(result));
+    } catch (e, st) {
+      state = state.copyWith(fetchTripsByVehicleId: AsyncValue.error(e, st));
     }
   }
 

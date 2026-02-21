@@ -1,6 +1,7 @@
 
 import 'dart:io';
 
+import 'package:travel_agency_app/domain/models/booking_info.dart';
 import 'package:travel_agency_app/domain/models/fueltype.dart';
 import 'package:travel_agency_app/domain/models/status.dart';
 import 'package:travel_agency_app/domain/models/vehicles.dart';
@@ -34,4 +35,7 @@ class AddVehicleUseCase {
     return addvehiclerepository.uploadVehicleDocument(rcDocuments, vehicleId, agencyId);
   }
 
+  Future<List<BookingInfo>> getTripsByVehicle(int vehicleId) {
+       return addvehiclerepository.getTripsByVehicle(vehicleId);
+  }
 }
