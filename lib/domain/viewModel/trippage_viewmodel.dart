@@ -64,50 +64,50 @@ class TripPageViewModel extends StateNotifier<TripPageState> {
   TripPageViewModel(this.ref, this.usecase)
       : super(const TripPageState());
 
-    Future<void> upcomingList() async {
+    Future<void> upcomingList(String agencyId) async {
     state = state.copyWith(upcomingList: const AsyncValue.loading());
     try {
-      final result = await usecase.upcomingTrip();
+      final result = await usecase.upcomingTrip(agencyId);
       state = state.copyWith(upcomingList: AsyncValue.data(result));
     } catch (e, st) {
       state = state.copyWith(upcomingList: AsyncValue.error(e, st));
     }
   }
 
-  Future<void> historyList() async {
+  Future<void> historyList(String agencyId) async {
     state = state.copyWith(historyList: const AsyncValue.loading());
     try {
-      final result = await usecase.historyTrip();
+      final result = await usecase.historyTrip(agencyId);
       state = state.copyWith(historyList: AsyncValue.data(result));
     } catch (e, st) {
       state = state.copyWith(historyList: AsyncValue.error(e, st));
     }
   }
 
-  Future<void> unpaidList() async {
+  Future<void> unpaidList(String agencyId) async {
     state = state.copyWith(unpaidList: const AsyncValue.loading());
     try {
-      final result = await usecase.unpaidTrip();
+      final result = await usecase.unpaidTrip(agencyId);
       state = state.copyWith(unpaidList: AsyncValue.data(result));
     } catch (e, st) {
       state = state.copyWith(unpaidList: AsyncValue.error(e, st));
     }
   }
 
-    Future<void> activeList() async {
+    Future<void> activeList(String agencyId) async {
     state = state.copyWith(activeList: const AsyncValue.loading());
     try {
-      final result = await usecase.activeTrip();
+      final result = await usecase.activeTrip(agencyId);
       state = state.copyWith(activeList: AsyncValue.data(result));
     } catch (e, st) {
       state = state.copyWith(activeList: AsyncValue.error(e, st));
     }
   }
 
-  Future<void> cancelledList() async {
+  Future<void> cancelledList(String agencyId) async {
     state = state.copyWith(cancelledList: const AsyncValue.loading());
     try {
-      final result = await usecase.cancelledTrip();
+      final result = await usecase.cancelledTrip(agencyId);
       state = state.copyWith(cancelledList: AsyncValue.data(result));
     } catch (e, st) {
       state = state.copyWith(cancelledList: AsyncValue.error(e, st));

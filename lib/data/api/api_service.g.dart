@@ -726,7 +726,7 @@ class _ApiService implements ApiService {
   }
 
   @override
-  Future<List<BookingInfo>> upcomingTrip() async {
+  Future<List<BookingInfo>> upcomingTrip(String agencyId) async {
     final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
     final _headers = <String, dynamic>{};
@@ -735,7 +735,7 @@ class _ApiService implements ApiService {
       Options(method: 'GET', headers: _headers, extra: _extra)
           .compose(
             _dio.options,
-            'users/UpcomingTrip',
+            'users/UpcomingTrip/${agencyId}',
             queryParameters: queryParameters,
             data: _data,
           )
@@ -755,7 +755,7 @@ class _ApiService implements ApiService {
   }
 
   @override
-  Future<List<BookingInfo>> historyTrip() async {
+  Future<List<BookingInfo>> historyTrip(String agencyId) async {
     final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
     final _headers = <String, dynamic>{};
@@ -764,7 +764,7 @@ class _ApiService implements ApiService {
       Options(method: 'GET', headers: _headers, extra: _extra)
           .compose(
             _dio.options,
-            'users/HistoryTrip',
+            'users/HistoryTrip/${agencyId}',
             queryParameters: queryParameters,
             data: _data,
           )
@@ -784,7 +784,7 @@ class _ApiService implements ApiService {
   }
 
   @override
-  Future<List<BookingInfo>> unpaidtrip() async {
+  Future<List<BookingInfo>> unpaidtrip(String agencyId) async {
     final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
     final _headers = <String, dynamic>{};
@@ -793,7 +793,7 @@ class _ApiService implements ApiService {
       Options(method: 'GET', headers: _headers, extra: _extra)
           .compose(
             _dio.options,
-            'users/Unpaidtrip',
+            'users/Unpaidtrip/${agencyId}',
             queryParameters: queryParameters,
             data: _data,
           )
@@ -813,7 +813,7 @@ class _ApiService implements ApiService {
   }
 
   @override
-  Future<List<BookingInfo>> activeTrip() async {
+  Future<List<BookingInfo>> activeTrip(String agencyId) async {
     final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
     final _headers = <String, dynamic>{};
@@ -822,7 +822,7 @@ class _ApiService implements ApiService {
       Options(method: 'GET', headers: _headers, extra: _extra)
           .compose(
             _dio.options,
-            'users/activeTrip',
+            'users/activeTrip/${agencyId}',
             queryParameters: queryParameters,
             data: _data,
           )
@@ -842,7 +842,7 @@ class _ApiService implements ApiService {
   }
 
   @override
-  Future<List<BookingInfo>> cancelledTrip() async {
+  Future<List<BookingInfo>> cancelledTrip(String agencyId) async {
     final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
     final _headers = <String, dynamic>{};
@@ -851,7 +851,7 @@ class _ApiService implements ApiService {
       Options(method: 'GET', headers: _headers, extra: _extra)
           .compose(
             _dio.options,
-            'users/cancelledTrip',
+            'users/cancelledTrip/${agencyId}',
             queryParameters: queryParameters,
             data: _data,
           )
