@@ -13,15 +13,15 @@ abstract class Tripbookingrepository {
 
   Future<List<Customer>> customerList(String agencyId);
 
-  Future<List<BookingInfo>> upcomingTrip();
+  Future<List<BookingInfo>> upcomingTrip(String agencyId);
 
-  Future<List<BookingInfo>> historyTrip();
+  Future<List<BookingInfo>> historyTrip(String agencyId);
 
-  Future<List<BookingInfo>> unpaidTrip();
+  Future<List<BookingInfo>> unpaidTrip(String agencyId);
 
-  Future<List<BookingInfo>> activeTrip();
+  Future<List<BookingInfo>> activeTrip(String agencyId);
 
-  Future<List<BookingInfo>> cancelledTrip();
+  Future<List<BookingInfo>> cancelledTrip(String agencyId);
 
   Future<dynamic> updatePaymentStatus(BookingInfo tripbooking);
   

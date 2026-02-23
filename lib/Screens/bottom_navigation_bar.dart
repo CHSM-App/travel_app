@@ -35,9 +35,10 @@ class _MainBottomNavState extends ConsumerState<MainBottomNav>
     super.initState();
 
     /// Load profile once
-    Future.microtask(() {
+    Future.microtask(() async {
+      await ref.read(loginViewModelProvider.notifier).loadFromStorage();
       final adminId = ref.read(loginViewModelProvider).adminId;
-      if (adminId != null) {
+      if (adminId > 0) {
         ref.read(loginViewModelProvider.notifier).adminProfile(adminId);
       }
     });
@@ -255,3 +256,4 @@ class _MainBottomNavState extends ConsumerState<MainBottomNav>
     );
   }
 }
+

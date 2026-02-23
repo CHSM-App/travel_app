@@ -178,6 +178,12 @@ class _AddVehiclePageState extends ConsumerState<AddVehiclePage>
       return;
     }
 
+    final agencyId = ref.read(loginViewModelProvider).agencyId;
+    if (agencyId == null || agencyId.trim().isEmpty || agencyId.trim().toLowerCase() == 'null') {
+      _showSnack('Agency ID is missing. Please login again.', isError: true);
+      return;
+    }
+
     final vehicle = Vehicles(
       vehicleId: widget.isEdit ? widget.vehicle!.vehicleId : null,
       FuelTypeId: selectedFuelTypeId!,
@@ -188,7 +194,7 @@ class _AddVehiclePageState extends ConsumerState<AddVehiclePage>
       mileage: mileage.text.trim(),
       StatusId: selectedStatusId!,
       rcdocuments: (!_rcRemoved && _selectedRcFile == null) ? _existingRcUrl : null,
-      agencyId: ref.read(loginViewModelProvider).agencyId.toString(),
+      agencyId: agencyId,
     );
 
     _saveVehicle(vehicle);
@@ -213,13 +219,19 @@ class _AddVehiclePageState extends ConsumerState<AddVehiclePage>
       debugPrint("Vehicle saved with ID: $vehicleId");
 
       // Upload RC document if selected
+      final agencyId = ref.read(loginViewModelProvider).agencyId;
       if (_selectedRcFile != null) {
+        if (agencyId == null ||
+            agencyId.trim().isEmpty ||
+            agencyId.trim().toLowerCase() == 'null') {
+          throw Exception('Agency ID is missing. Please login again.');
+        }
         await ref
             .read(addVehicleViewModelProvider.notifier)
             .uploadVehicleDocument(
               _selectedRcFile!,
               vehicleId,
-              ref.read(loginViewModelProvider).agencyId.toString(),
+              agencyId,
             );
       }
 
@@ -1012,13 +1024,28 @@ class _AddVehiclePageState extends ConsumerState<AddVehiclePage>
   bool _isPdfUrl(String? url) {
     if (url == null || url.trim().isEmpty) return false;
     final parsed = Uri.tryParse(url.trim());
-    final path = (parsed?.path ?? url).toLowerCase();
+    final path = Uri.decodeFull((parsed?.path ?? url)).toLowerCase();
     return path.endsWith('.pdf');
   }
 
   String? _normalizeRcUrl(String? rawUrl) {
     if (rawUrl == null || rawUrl.trim().isEmpty) return null;
-    var cleaned = rawUrl.trim().replaceAll('\\', '/');
+    var cleaned = rawUrl.trim();
+
+    // API sometimes sends serialized list/string values like:
+    // ["uploads/VehicleDocuments/doc.pdf"] or "uploads/VehicleDocuments/doc.pdf"
+    if (cleaned.startsWith('[') && cleaned.endsWith(']')) {
+      cleaned = cleaned.substring(1, cleaned.length - 1);
+    }
+    cleaned = cleaned.replaceAll('"', '').replaceAll("'", '').trim();
+    if (cleaned.contains(',')) {
+      cleaned = cleaned
+          .split(',')
+          .map((e) => e.trim())
+          .firstWhere((e) => e.isNotEmpty, orElse: () => cleaned);
+    }
+
+    cleaned = Uri.decodeFull(cleaned).replaceAll('\\', '/');
 
     if (cleaned.startsWith('http://') || cleaned.startsWith('https://')) {
       return cleaned;

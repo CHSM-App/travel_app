@@ -26,22 +26,22 @@ class LoginImpl implements LoginRepo {
   print("agencyId: ${response.agencyId}");
 
     // LOGIN SUCCESS -> SAVE TOKEN + USER DATA
-    if (response.success == true) {
+    if (response.success == 1) {
 
       await TokenStorage.saveValue(
-          'admin_id', response.adminId.toString());
+          'admin_id', response.adminId?.toString() ?? "");
 
       await TokenStorage.saveValue(
-          'name', response.name.toString());
+          'name', response.name ?? "");
 
       await TokenStorage.saveValue(
-          'email', response.email.toString());
+          'email', response.email ?? "");
 
       await TokenStorage.saveValue(
-          'mobile', response.mobile.toString());
+          'mobile', response.mobile ?? "");
 
       await TokenStorage.saveValue(
-          'agency_id', response.agencyId.toString());
+          'agency_id', response.agencyId ?? "");
     }
 
     return response;

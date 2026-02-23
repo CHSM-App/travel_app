@@ -62,13 +62,20 @@ class Customer {
 
   Map<String, dynamic> toJson() => {
         'CustomerId': customerId,
+        'customerId': customerId,
+        'customer_id': customerId,
         'name': name,
         'phone': phone,
         'address': address,
         'LicenceNo': licenceNo,
-        'LicenceExpiry': licenceExpiry?.toIso8601String(),
+        'licenceNo': licenceNo,
+        'LicenseNo': licenceNo,
+        'LicenceExpiry': _dateToJson(licenceExpiry),
+        'licenceExpiry': _dateToJson(licenceExpiry),
+        'LicenseExpiry': _dateToJson(licenceExpiry),
         'documents': documents,
         'agency_id': agencyId,
+        'agencyId': agencyId,
       };
 
   static int? _readInt(Map<String, dynamic> json, List<String> keys) {
@@ -97,5 +104,13 @@ class Customer {
     final raw = _readString(json, keys);
     if (raw == null) return null;
     return DateTime.tryParse(raw);
+  }
+
+  static String? _dateToJson(DateTime? date) {
+    if (date == null) return null;
+    final y = date.year.toString().padLeft(4, '0');
+    final m = date.month.toString().padLeft(2, '0');
+    final d = date.day.toString().padLeft(2, '0');
+    return '$y-$m-$d';
   }
 }

@@ -583,7 +583,7 @@ class _VehiclePageState extends ConsumerState<VehiclePage>
                       ref
                           .read(tripBookingViewModelProvider.notifier)
                           .driverList(
-                            ref.read(tripBookingViewModelProvider).agencyId ??
+                            ref.read(loginViewModelProvider).agencyId ??
                                 '',
                           );
                     }
@@ -597,7 +597,7 @@ class _VehiclePageState extends ConsumerState<VehiclePage>
                         ref
                             .read(tripBookingViewModelProvider.notifier)
                             .driverList(
-                              ref.read(tripBookingViewModelProvider).agencyId ??
+                              ref.read(loginViewModelProvider).agencyId ??
                                   '',
                             );
                       },
@@ -1226,13 +1226,24 @@ class _VehiclePageState extends ConsumerState<VehiclePage>
         builder: (_, __) {
           final isVehicle = _tabController.index == 0;
           return FloatingActionButton.extended(
-            onPressed: () => Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) =>
-                    isVehicle ? const AddVehiclePage() : const AddDriverPage(),
-              ),
-            ),
+            onPressed: () async {
+              final result = await Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => isVehicle
+                      ? const AddVehiclePage()
+                      : const AddDriverPage(),
+                ),
+              );
+              if (result == true && mounted) {
+                final agencyId = ref.read(loginViewModelProvider).agencyId ?? '';
+                if (isVehicle) {
+                  ref.read(tripBookingViewModelProvider.notifier).vehicleList(agencyId);
+                } else {
+                  ref.read(tripBookingViewModelProvider.notifier).driverList(agencyId);
+                }
+              }
+            },
             backgroundColor: _C.accent,
             elevation: 0,
             shape: RoundedRectangleBorder(

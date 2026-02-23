@@ -21,11 +21,11 @@ class _TripPageState extends ConsumerState<TripPage> {
 
     Future.microtask(() {
       final notifier = ref.read(TripPageViewModelProvider.notifier);
-      notifier.activeList();
-      notifier.upcomingList();
-      notifier.historyList();
-      notifier.unpaidList();
-      notifier.cancelledList();
+      notifier.activeList(ref.read(loginViewModelProvider).agencyId??"");
+      notifier.upcomingList(ref.read(loginViewModelProvider).agencyId??"");
+      notifier.historyList(ref.read(loginViewModelProvider).agencyId??"");
+      notifier.unpaidList(ref.read(loginViewModelProvider).agencyId??"");
+      notifier.cancelledList(ref.read(loginViewModelProvider).agencyId??"");
     });
   }
 
@@ -33,19 +33,19 @@ class _TripPageState extends ConsumerState<TripPage> {
     final notifier = ref.read(TripPageViewModelProvider.notifier);
     switch (filter) {
       case 'active':
-        notifier.activeList();
+        notifier.activeList(ref.read(loginViewModelProvider).agencyId??"");
         break;
       case 'upcoming':
-        notifier.upcomingList();
+        notifier.upcomingList(ref.read(loginViewModelProvider).agencyId??"");
         break;
       case 'Paid':
-        notifier.historyList();
+        notifier.historyList(ref.read(loginViewModelProvider).agencyId??"");
         break;
       case 'unpaid':
-        notifier.unpaidList();
+        notifier.unpaidList(ref.read(loginViewModelProvider).agencyId??"");
         break;
       case 'cancelled':
-        notifier.cancelledList();
+        notifier.cancelledList(ref.read(loginViewModelProvider).agencyId??"");
         break;
     }
   }

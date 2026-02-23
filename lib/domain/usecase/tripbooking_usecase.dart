@@ -23,24 +23,24 @@ class TripbookingUsecase {
     return repository.customerList(agencyId);
   }
 
-  Future<List<BookingInfo>> upcomingTrip() {
-    return repository.upcomingTrip();
+  Future<List<BookingInfo>> upcomingTrip(String agencyId) {
+    return repository.upcomingTrip(agencyId);
   }
 
-  Future<List<BookingInfo>> historyTrip() {
-    return repository.historyTrip();
+  Future<List<BookingInfo>> historyTrip(String agencyId) {
+    return repository.historyTrip(agencyId);
   }
 
-  Future<List<BookingInfo>> unpaidTrip() {
-    return repository.unpaidTrip();
+  Future<List<BookingInfo>> unpaidTrip(String agencyId) {
+    return repository.unpaidTrip(agencyId);
   }
 
-  Future<List<BookingInfo>> activeTrip() {
-    return repository.activeTrip();
+  Future<List<BookingInfo>> activeTrip(String agencyId) {
+    return repository.activeTrip(agencyId);
   }
 
-  Future<List<BookingInfo>> cancelledTrip(){
-    return repository.cancelledTrip();
+  Future<List<BookingInfo>> cancelledTrip(String agencyId){
+    return repository.cancelledTrip(agencyId);
   }
 
   Future<dynamic> updatePaymentStatus(BookingInfo tripbooking){

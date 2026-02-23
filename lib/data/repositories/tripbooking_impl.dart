@@ -32,29 +32,29 @@ class TripBookingImpl implements Tripbookingrepository {
   }
     
   @override
-  Future<List<BookingInfo>> historyTrip() {
-    return apiService.historyTrip();
+  Future<List<BookingInfo>> historyTrip(String agencyId) {
+    return apiService.historyTrip(agencyId);
   }
   
   @override
-  Future<List<BookingInfo>> unpaidTrip() {
-    return apiService.unpaidtrip();
+  Future<List<BookingInfo>> unpaidTrip(String agencyId) {
+    return apiService.unpaidtrip(agencyId);
     
   }
   
   @override
-  Future<List<BookingInfo>> upcomingTrip() {
-    return apiService.upcomingTrip();
+  Future<List<BookingInfo>> upcomingTrip(String agencyId) {
+    return apiService.upcomingTrip(agencyId);
   }
 
   @override
-  Future<List<BookingInfo>> activeTrip() {
-    return apiService.activeTrip();
+  Future<List<BookingInfo>> activeTrip(String agencyId) {
+    return apiService.activeTrip(agencyId);
   }
 
   @override
-  Future<List<BookingInfo>> cancelledTrip() {
-    return apiService.cancelledTrip();
+  Future<List<BookingInfo>> cancelledTrip(String agencyId) {
+    return apiService.cancelledTrip(agencyId);
   }
   
    @override

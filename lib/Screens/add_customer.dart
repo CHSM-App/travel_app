@@ -212,6 +212,14 @@ class _AddCustomerPageState extends ConsumerState<AddCustomerPage>
       return;
     }
 
+    final agencyId = ref.read(loginViewModelProvider).agencyId;
+    if (agencyId == null ||
+        agencyId.trim().isEmpty ||
+        agencyId.trim().toLowerCase() == 'null') {
+      _showSnack('Agency ID is missing. Please login again.', isError: true);
+      return;
+    }
+
     final customer = Customer(
       customerId: widget.isEdit ? widget.customer?.customerId : 0,
       name: name.text.trim(),
@@ -220,7 +228,7 @@ class _AddCustomerPageState extends ConsumerState<AddCustomerPage>
       documents: (!_idProofRemoved && _selectedIdProofFile == null)
           ? _existingIdProofUrl
           : null,
-      agencyId: ref.read(loginViewModelProvider).agencyId?.toString(),
+      agencyId: agencyId,
     );
 
     try {
@@ -234,10 +242,13 @@ class _AddCustomerPageState extends ConsumerState<AddCustomerPage>
       }
 
       if (_selectedIdProofFile != null) {
+        if (agencyId.trim().isEmpty || agencyId.trim().toLowerCase() == 'null') {
+          throw Exception('Agency ID is missing. Please login again.');
+        }
         await vm.uploadCustomerDocument(
           _selectedIdProofFile!,
           customerId,
-          ref.read(loginViewModelProvider).agencyId.toString(),
+          agencyId,
         );
       }
 
@@ -776,7 +787,7 @@ class _AddCustomerPageState extends ConsumerState<AddCustomerPage>
     final customerId = widget.customer?.customerId;
     if (customerId == null) return;
 
-    final agencyId = ref.read(loginViewModelProvider).agencyId?.toString() ?? '';
+    final agencyId = ref.read(loginViewModelProvider).agencyId ?? '';
     if (agencyId.isEmpty) return;
 
     try {

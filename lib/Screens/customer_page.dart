@@ -55,11 +55,13 @@ class _CustomerListPageState extends ConsumerState<CustomerListPage>
     _searchFocus.addListener(() {
       setState(() => _searchFocused = _searchFocus.hasFocus);
     });
-    Future.microtask(
-      () => ref
-          .read(customerViewModelProvider.notifier)
-          .fetchCustomerslist(ref.read(loginViewModelProvider).agencyId ?? ''),
-    );
+    Future.microtask(() async {
+      await ref.read(loginViewModelProvider.notifier).loadFromStorage();
+      final agencyId = ref.read(loginViewModelProvider).agencyId ?? '';
+      if (agencyId.trim().isNotEmpty) {
+        ref.read(customerViewModelProvider.notifier).fetchCustomerslist(agencyId);
+      }
+    });
   }
 
   @override
@@ -69,9 +71,11 @@ class _CustomerListPageState extends ConsumerState<CustomerListPage>
     super.dispose();
   }
 
-  void _refresh() => ref
-      .read(customerViewModelProvider.notifier)
-      .fetchCustomerslist(ref.read(loginViewModelProvider).agencyId ?? '');
+  void _refresh() {
+    final agencyId = ref.read(loginViewModelProvider).agencyId ?? '';
+    if (agencyId.trim().isEmpty) return;
+    ref.read(customerViewModelProvider.notifier).fetchCustomerslist(agencyId);
+  }
 
   String _initials(String? name) {
     if (name == null || name.trim().isEmpty) return '?';

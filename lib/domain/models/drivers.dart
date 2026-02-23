@@ -49,13 +49,15 @@ class Drivers {
   });
 
   factory Drivers.fromJson(Map<String, dynamic> json) => Drivers(
-        driverId: (json['driverId'] as num?)?.toInt(),
+        driverId: _readFirstInt(json, const ['driverId', 'DriverId', 'driver_id', 'id']),
         name: json['name'] as String?,
         phone: json['phone'] as String?,
         address: json['address'] as String?,
-        licenceNo: json['LicenceNo'] as String?,
-        licenceExpiry: _dateFromJson(json['LicenceExpiry'] as String?),
-        vehicleId: (json['vehicleId'] as num?)?.toInt(),
+        licenceNo: _readFirstString(json, const ['LicenceNo', 'licenceNo', 'LicenseNo']),
+        licenceExpiry: _dateFromJson(
+          _readFirstString(json, const ['LicenceExpiry', 'licenceExpiry', 'LicenseExpiry']),
+        ),
+        vehicleId: _readFirstInt(json, const ['vehicleId', 'VehicleId', 'vehicle_id']),
         photo: _readFirstString(json, const [
           'photo',
           'Photo',
@@ -73,16 +75,61 @@ class Drivers {
         agencyId: (json['agency_id'] ?? json['agencyId'])?.toString(),
       );
 
-  Map<String, dynamic> toJson() =>
-      _$DriversToJson(this);
+  Map<String, dynamic> toJson() => <String, dynamic>{
+        'driverId': driverId,
+        'name': name,
+        'phone': phone,
+        'address': address,
+        'LicenceNo': licenceNo,
+        'licenceNo': licenceNo,
+        'LicenseNo': licenceNo,
+        'LicenceExpiry': _dateToJson(licenceExpiry),
+        'licenceExpiry': _dateToJson(licenceExpiry),
+        'LicenseExpiry': _dateToJson(licenceExpiry),
+        'vehicleId': vehicleId,
+        'photo': photo,
+        'agency_id': agencyId,
+        'agencyId': agencyId,
+      };
 
   /// ✅ Convert String → DateTime
-  static DateTime? _dateFromJson(String? date) =>
-      date == null ? null : DateTime.parse(date);
+  static DateTime? _dateFromJson(String? date) {
+    if (date == null) return null;
+    final value = date.trim();
+    if (value.isEmpty || value.toLowerCase() == 'null') return null;
+
+    final iso = DateTime.tryParse(value);
+    if (iso != null) return iso;
+
+    final dmy =
+        RegExp(r'^(\d{1,2})[-/](\d{1,2})[-/](\d{4})$').firstMatch(value);
+    if (dmy != null) {
+      final day = int.parse(dmy.group(1)!);
+      final month = int.parse(dmy.group(2)!);
+      final year = int.parse(dmy.group(3)!);
+      return DateTime(year, month, day);
+    }
+
+    final ymd =
+        RegExp(r'^(\d{4})[-/](\d{1,2})[-/](\d{1,2})$').firstMatch(value);
+    if (ymd != null) {
+      final year = int.parse(ymd.group(1)!);
+      final month = int.parse(ymd.group(2)!);
+      final day = int.parse(ymd.group(3)!);
+      return DateTime(year, month, day);
+    }
+
+    return null;
+  }
 
   /// ✅ Convert DateTime → String (SQL format)
-  static String? _dateToJson(DateTime? date) =>
-      date == null ? null : date.toIso8601String();
+  static String? _dateToJson(DateTime? date) {
+    if (date == null) return null;
+    final y = date.year.toString().padLeft(4, '0');
+    final m = date.month.toString().padLeft(2, '0');
+    final d = date.day.toString().padLeft(2, '0');
+    return '$y-$m-$d';
+  }
 
   static String? _readFirstString(
     Map<String, dynamic> json,
@@ -95,6 +142,21 @@ class Drivers {
       if (text.isNotEmpty && text.toLowerCase() != 'null') {
         return text;
       }
+    }
+    return null;
+  }
+
+  static int? _readFirstInt(
+    Map<String, dynamic> json,
+    List<String> keys,
+  ) {
+    for (final key in keys) {
+      final value = json[key];
+      if (value == null) continue;
+      if (value is int) return value;
+      if (value is num) return value.toInt();
+      final parsed = int.tryParse(value.toString().trim());
+      if (parsed != null) return parsed;
     }
     return null;
   }
