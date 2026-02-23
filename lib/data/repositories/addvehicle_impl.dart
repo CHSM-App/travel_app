@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:travel_agency_app/data/api/api_service.dart';
 import 'package:travel_agency_app/domain/models/booking_info.dart';
 import 'package:travel_agency_app/domain/models/fueltype.dart';
+import 'package:travel_agency_app/domain/models/services.dart';
 import 'package:travel_agency_app/domain/models/status.dart';
 import 'package:travel_agency_app/domain/models/vehicles.dart';
 import 'package:travel_agency_app/domain/models/vehicletype.dart';
@@ -13,11 +14,11 @@ class AddvehicleImpl implements Addvehiclerepository {
 
   AddvehicleImpl(this.apiService);
   @override
-
   Future<dynamic> addVehicle(Vehicles vehicle) {
     return apiService.addVehicle(vehicle);
   }
- @override
+
+  @override
   Future<List<VehicleType>> getVehicleTypes() {
     return apiService.vehicleTypeList();
   }
@@ -30,26 +31,34 @@ class AddvehicleImpl implements Addvehiclerepository {
   @override
   Future<List<Fueltype>> getVehicleFuelTypes() {
     return apiService.fuelTypeList();
-  }  
-
-   @override
-  Future<dynamic> updateVehicle(Vehicles vehicle) {
-    return apiService.updateVehicle(vehicle);
-  }  
-
-  
-  @override
-  Future uploadVehicleDocument(File rcDocuments, String vehicleId, String agencyId) {
-     return apiService.uploadVehicleDocument(rcDocuments,vehicleId, agencyId);
   }
 
-  
-@override
+  @override
+  Future<dynamic> updateVehicle(Vehicles vehicle) {
+    return apiService.updateVehicle(vehicle);
+  }
+
+  @override
+  Future uploadVehicleDocument(
+    File rcDocuments,
+    String vehicleId,
+    String agencyId,
+  ) {
+    return apiService.uploadVehicleDocument(rcDocuments, vehicleId, agencyId);
+  }
+
+  @override
   Future<List<BookingInfo>> getTripsByVehicle(int vehicleId) {
     return apiService.getTripsByVehicle(vehicleId);
-  }  
+  }
 
+  @override
+  Future<dynamic> addService(Services service) {
+    return apiService.addService(service);
+  }
+
+  @override
+  Future<List<Services>> getServiceRecords(String agencyId, int vehicleId) {
+    return apiService.getServiceRecords(agencyId, vehicleId);
+  }
 }
-
- 
-  

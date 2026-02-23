@@ -8,6 +8,7 @@ import 'package:travel_agency_app/domain/models/drivers.dart';
 import 'package:travel_agency_app/domain/models/fueltype.dart';
 import 'package:travel_agency_app/domain/models/login_info.dart';
 import 'package:travel_agency_app/domain/models/login_response.dart';
+import 'package:travel_agency_app/domain/models/services.dart';
 import 'package:travel_agency_app/domain/models/status.dart';
 import 'package:travel_agency_app/domain/models/token_response.dart';
 import 'package:travel_agency_app/domain/models/tripbooking_info.dart';
@@ -76,6 +77,11 @@ abstract class ApiService {
 
   @POST("insert/AddAdmin")
   Future<LoginResponse> addAdmin(@Body() LoginInfo logininfo);
+
+   @POST("insert/addService/")
+  Future<dynamic> addService(@Body() Services service);
+
+
 
   //---------------------UPLOAD PHOTOS AND DOCUMENTS----------------------------------------
   @MultiPart()
@@ -151,4 +157,10 @@ abstract class ApiService {
 
   @GET("users/VehicleHistory/{vehicle_id}")
   Future<List<BookingInfo>> getTripsByVehicle(@Path("vehicle_id") int vehicleid);
+
+  @GET("users/driverHistory/{driver_id}")
+  Future<List<BookingInfo>> fetchDriverHistory(@Path("driver_id") int driverId);
+
+  @GET("users/serviceRecord/{agency_id}/{vehicle_id}")
+  Future<List<Services>> getServiceRecords(@Path("agency_id") String agencyId, @Path("vehicle_id") int vehicleId);
 }  

@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:travel_agency_app/domain/models/booking_info.dart';
 import 'package:travel_agency_app/domain/models/fueltype.dart';
+import 'package:travel_agency_app/domain/models/services.dart';
 import 'package:travel_agency_app/domain/models/status.dart';
 import 'package:travel_agency_app/domain/models/vehicles.dart';
 import 'package:travel_agency_app/domain/models/vehicletype.dart';
@@ -17,12 +18,11 @@ final bool isLoading;
   final Map<String, dynamic>? data;
   final String? error;
   final int? vehicleId;
-
-
   final AsyncValue<List<VehicleType>> fetchVehicleTypeList;
   final AsyncValue<List<Status>> fetchstatusList;
   final AsyncValue<List<Fueltype>> fetchFuelTypeList;
   final AsyncValue<List<BookingInfo>> fetchTripsByVehicleId;
+   final AsyncValue<List<Services>> fetchServiceRecords;
 
   const AddVehicleState({
      this.isLoading = false,
@@ -33,6 +33,7 @@ final bool isLoading;
     this.fetchstatusList = const AsyncValue.loading(),
     this.fetchFuelTypeList = const AsyncValue.loading(),
     this.fetchTripsByVehicleId = const AsyncValue.loading(),
+    this.fetchServiceRecords = const AsyncValue.loading(),
       });
 
   AddVehicleState copyWith({
@@ -46,6 +47,7 @@ final bool isLoading;
     AsyncValue<List<Status>>? fetchstatusList,
     AsyncValue<List<Fueltype>>? fetchFuelTypeList,
     AsyncValue<List<BookingInfo>>? fetchTripsByVehicleId,
+     AsyncValue<List<Services>>? fetchServiceRecords,
 
   }) {
     return AddVehicleState(
@@ -57,6 +59,7 @@ final bool isLoading;
       fetchstatusList: fetchstatusList ?? this.fetchstatusList,
       fetchFuelTypeList: fetchFuelTypeList ?? this.fetchFuelTypeList,
       fetchTripsByVehicleId: fetchTripsByVehicleId ?? this.fetchTripsByVehicleId,
+      fetchServiceRecords: fetchServiceRecords ?? this.fetchServiceRecords,
     );
   }
 }
@@ -150,6 +153,31 @@ Future<void> updateVehicle(Vehicles vehicle) async {
       state = state.copyWith(fetchTripsByVehicleId: AsyncValue.data(result));
     } catch (e, st) {
       state = state.copyWith(fetchTripsByVehicleId: AsyncValue.error(e, st));
+    }
+  }
+
+   Future<void> getServiceRecords(String agencyId, int vehicleId) async {
+    state = state.copyWith(fetchServiceRecords: const AsyncValue.loading());
+    try {
+       print("Calling API...");
+      final result = await usecase.getServiceRecords(agencyId,vehicleId);
+      print("API RESULT: $result");
+      state = state.copyWith(fetchServiceRecords: AsyncValue.data(result));
+    } catch (e, st) {
+       print("API ERROR: $e");
+    print("STACK: $st");
+
+      state = state.copyWith(fetchServiceRecords: AsyncValue.error(e, st));
+    }
+  }
+
+  Future<void> addService(Services service) async {
+    state = state.copyWith(isLoading: true, error: null);
+    try {
+      final result = await usecase.addService(service );
+      state = state.copyWith(isLoading: false, data: result);
+    } catch (e) {
+      state = state.copyWith(isLoading: false, error: e.toString());
     }
   }
 
