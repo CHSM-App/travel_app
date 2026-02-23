@@ -270,6 +270,14 @@ class _AddDriverPageState extends ConsumerState<AddDriverPage>
       return;
     }
 
+    final agencyId = ref.read(loginViewModelProvider).agencyId;
+    if (agencyId == null ||
+        agencyId.trim().isEmpty ||
+        agencyId.trim().toLowerCase() == 'null') {
+      _showSnack('Agency ID is missing. Please login again.', isError: true);
+      return;
+    }
+
     final driver = Drivers(
       driverId: widget.isEdit ? widget.driver?.driverId : 0,
       name: nameController.text.trim(),
@@ -280,7 +288,7 @@ class _AddDriverPageState extends ConsumerState<AddDriverPage>
       photo: (!_licenceRemoved && _selectedLicenceFile == null)
           ? _existingLicenceUrl
           : null,
-      agencyId: ref.read(loginViewModelProvider).agencyId.toString(),
+      agencyId: agencyId,
     );
 
     try {
@@ -301,10 +309,13 @@ class _AddDriverPageState extends ConsumerState<AddDriverPage>
       }
 
       if (_selectedLicenceFile != null) {
+        if (agencyId.trim().isEmpty || agencyId.trim().toLowerCase() == 'null') {
+          throw Exception('Agency ID is missing. Please login again.');
+        }
         await vm.uploadDriverDocument(
           _selectedLicenceFile!,
           driverId,
-          ref.read(loginViewModelProvider).agencyId.toString(),
+          agencyId,
         );
       }
 

@@ -434,14 +434,14 @@ Widget _driverCard(Drivers d, int i) {
                             AddDriverPage(driver: d, isEdit: true)));
                 if (result == true) {
                   ref.read(tripBookingViewModelProvider.notifier).driverList(
-                      ref.read(tripBookingViewModelProvider).agencyId ?? '');
+                      ref.read(loginViewModelProvider).agencyId ?? '');
                 }
               } else if (val == 'delete') {
                 _deleteDialog('Delete Driver', d.name ?? 'driver',
                     Icons.person_rounded, () {
                   Navigator.pop(context);
                   ref.read(tripBookingViewModelProvider.notifier).driverList(
-                      ref.read(tripBookingViewModelProvider).agencyId ?? '');
+                      ref.read(loginViewModelProvider).agencyId ?? '');
                 });
               }
             },

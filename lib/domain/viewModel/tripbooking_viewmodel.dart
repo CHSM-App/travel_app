@@ -67,7 +67,10 @@ class TripBookingViewModel extends StateNotifier<TripBookingState> {
     state = state.copyWith(fetchDriverList: const AsyncValue.loading());
     try {
       final result = await usecase.driverList(agencyId);
-      state = state.copyWith(fetchDriverList: AsyncValue.data(result));
+      state = state.copyWith(
+        fetchDriverList: AsyncValue.data(result),
+        agencyId: agencyId,
+      );
     } catch (e, st) {
       state = state.copyWith(fetchDriverList: AsyncValue.error(e, st));
     }
@@ -81,6 +84,7 @@ class TripBookingViewModel extends StateNotifier<TripBookingState> {
       state = state.copyWith(
         isLoading: false,
         fetchVehicleList: AsyncValue.data(result),
+        agencyId: agencyId,
       );
     } catch (e, st) {
       state = state.copyWith(
@@ -98,6 +102,7 @@ class TripBookingViewModel extends StateNotifier<TripBookingState> {
       state = state.copyWith(
         isLoading: false,
         fetchCustomerList: AsyncValue.data(result),
+        agencyId: agencyId,
       );
     } catch (e, st) {
       state = state.copyWith(

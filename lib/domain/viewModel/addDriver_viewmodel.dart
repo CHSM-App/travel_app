@@ -47,7 +47,7 @@ class AdddriverViewmodel extends StateNotifier<AddDriverState> {
         isLoading: false,
         data: result is Map<String, dynamic>
             ? result
-            : <String, dynamic>{'driver6Id': driverId},
+            : <String, dynamic>{'driverId': driverId},
         error: null,
       );
       return driverId;
@@ -100,13 +100,66 @@ class AdddriverViewmodel extends StateNotifier<AddDriverState> {
 
 
   int _extractDriverId(dynamic result) {
-    if (result is Map<String, dynamic>) {
-      final raw =
-          result['driverId'] ?? result['DriverId'] ?? result['id'] ?? result['ID'];
-      if (raw is int) return raw;
-      final parsed = int.tryParse(raw?.toString() ?? '');
-      if (parsed != null) return parsed;
+    final id = _findIdRecursive(result);
+    if (id != null) return id;
+
+    throw Exception(
+      'Unable to extract driver ID from API response. '
+      'Response type: ${result.runtimeType}',
+    );
+  }
+
+  int? _findIdRecursive(dynamic node) {
+    if (node == null) return null;
+
+    if (node is int) return node;
+    if (node is num) return node.toInt();
+
+    if (node is String) {
+      final direct = int.tryParse(node.trim());
+      if (direct != null) return direct;
+      final firstDigits = RegExp(r'\d+').firstMatch(node)?.group(0);
+      if (firstDigits != null) return int.tryParse(firstDigits);
+      return null;
     }
-    throw Exception('Unable to extract driver ID from API response');
+
+    if (node is Map) {
+      const candidateKeys = <String>[
+        'driverId',
+        'DriverId',
+        'driver_id',
+        'DriverID',
+        'driverID',
+        'id',
+        'ID',
+        'insertId',
+        'InsertId',
+        'insertedId',
+        'InsertedId',
+      ];
+
+      for (final key in candidateKeys) {
+        if (node.containsKey(key)) {
+          final found = _findIdRecursive(node[key]);
+          if (found != null) return found;
+        }
+      }
+
+      for (final value in node.values) {
+        final found = _findIdRecursive(value);
+        if (found != null) return found;
+      }
+      return null;
+    }
+
+    if (node is Iterable) {
+      for (final item in node) {
+        final found = _findIdRecursive(item);
+        if (found != null) return found;
+      }
+      return null;
+    }
+
+    return null;
   }
 }

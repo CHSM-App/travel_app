@@ -40,6 +40,9 @@ abstract class ApiService {
 
   @POST("login/refreshAccessToken")
   Future<TokenResponse> refreshAccessToken(@Body() TokenResponse tokenResponse);
+  
+    @POST("login/logout")
+  Future<TokenResponse> logout(@Body() TokenResponse tokenResponse);
 
   @POST("login/Adminlogin")
   Future<LoginResponse> login(@Body() LoginInfo logininfo);

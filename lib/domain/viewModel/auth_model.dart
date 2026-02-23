@@ -6,61 +6,77 @@ import 'package:travel_agency_app/domain/usecase/auth_use_case.dart';
 
 @immutable
 class AuthState {
-
-final bool isLoading;
+  final bool isLoading;
   final Map<String, dynamic>? data;
   final String? error;
+
   const AuthState({
-   
-     this.isLoading = false,
+    this.isLoading = false,
     this.data,
     this.error,
   });
 
-
-
   AuthState copyWith({
-    AsyncValue<String>? transaction,
-       bool? isLoading,
+    bool? isLoading,
     Map<String, dynamic>? data,
     String? error,
   }) {
     return AuthState(
-    
-       isLoading: isLoading ?? this.isLoading,
+      isLoading: isLoading ?? this.isLoading,
       data: data ?? this.data,
       error: error ?? this.error,
     );
   }
 }
+
 class AuthViewModel extends StateNotifier<AuthState> {
   final Ref ref;
   final AuthUseCase usecase;
 
-  AuthViewModel(this.ref, this.usecase)
-      : super(const AuthState());
+  AuthViewModel(this.ref, this.usecase) : super(const AuthState());
 
- 
-  Future<String?> login(TokenResponse mobile) async {
-    state = state.copyWith(isLoading: true);
+  Future<String?> createLogin(TokenResponse mobile) async {
+    state = state.copyWith(isLoading: true, error: null);
 
     try {
-      // 🔹 Call API
-      final result = await usecase.login(mobile); 
-      // result should be TokenResponse
+      final result = await usecase.createLogin(mobile);
 
-      // ✅ Save tokens to Riverpod + SecureStorage
-      await ref
-          .read(tokenProvider.notifier)
-          .saveTokens(result.accessToken ?? "", result.refreshToken ?? "");
+      if ((result.accessToken ?? '').isEmpty ||
+          (result.refreshToken ?? '').isEmpty) {
+        throw Exception('Invalid token response');
+      }
 
-      state = state.copyWith(isLoading: false, data: {"message": "Login Successful"});
-      return "sucesss"; // Return TokenResponse for UI navigation
+      await ref.read(tokenProvider.notifier).saveTokens(
+            result.accessToken!,
+            result.refreshToken!,
+          );
+
+      state = state.copyWith(
+        isLoading: false,
+        data: {'message': 'Login Successful'},
+      );
+      return 'success';
     } catch (e) {
       state = state.copyWith(isLoading: false, error: e.toString());
       return null;
     }
   }
-  
-}
 
+  Future<bool> logout(TokenResponse refreshToken) async {
+    state = state.copyWith(isLoading: true, error: null);
+
+    try {
+      await usecase.logout(refreshToken);
+      await ref.read(tokenProvider.notifier).clearTokens();
+
+      state = state.copyWith(
+        isLoading: false,
+        data: {'message': 'Logout Successful'},
+      );
+      return true;
+    } catch (e) {
+      state = state.copyWith(isLoading: false, error: e.toString());
+      return false;
+    }
+  }
+}
