@@ -38,10 +38,8 @@ class _MainBottomNavState extends ConsumerState<MainBottomNav>
     /// Load profile once
     Future.microtask(() {
       final adminId = ref.read(loginViewModelProvider).adminId;
-      if (adminId != null) {
-        ref.read(loginViewModelProvider.notifier).adminProfile(adminId);
-      }
-    });
+      ref.read(loginViewModelProvider.notifier).adminProfile(adminId);
+        });
 
     _animationController = AnimationController(
       duration: const Duration(milliseconds: 300),

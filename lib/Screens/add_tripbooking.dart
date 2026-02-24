@@ -577,7 +577,7 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm> {
     loading: () => _loadingDropdown("Driver", Icons.person),
     error: (e, _) => _errorText("Driver error: $e"),
     data: (List<Drivers> drivers) => DropdownButtonFormField<int>(
-      value: selectedDriverId,
+      initialValue: selectedDriverId,
       items: drivers
           .map(
             (d) => DropdownMenuItem(
@@ -599,7 +599,7 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm> {
         loading: () => _loadingDropdown("Vehicle", Icons.directions_car),
         error: (e, _) => _errorText("Vehicle error: $e"),
         data: (List<Vehicles> vehicles) => DropdownButtonFormField<int>(
-          value: selectedVehicleId,
+          initialValue: selectedVehicleId,
           items: vehicles
               .map(
                 (v) => DropdownMenuItem(
@@ -657,7 +657,7 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm> {
         }
 
         return DropdownButtonFormField<int>(
-          value: selectedCustomerId,
+          initialValue: selectedCustomerId,
           items: uniqueCustomers
               .map(
                 (c) => DropdownMenuItem<int>(

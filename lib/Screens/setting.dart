@@ -397,7 +397,7 @@ Widget _buildEditButton(BuildContext context) {
             size: 24,
           ),
         ),
-        activeColor: Colors.indigo,
+        activeThumbColor: Colors.indigo,
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       ),
     );
@@ -440,7 +440,7 @@ Widget _buildEditButton(BuildContext context) {
             size: 24,
           ),
         ),
-        activeColor: Colors.indigo,
+        activeThumbColor: Colors.indigo,
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       ),
     );
@@ -483,7 +483,7 @@ Widget _buildEditButton(BuildContext context) {
             size: 24,
           ),
         ),
-        activeColor: Colors.indigo,
+        activeThumbColor: Colors.indigo,
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       ),
     );

@@ -1,7 +1,6 @@
 // ignore: file_names
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:travel_agency_app/domain/usecase/customerUseCase.dart';
 import 'package:travel_agency_app/domain/viewModel/AddCustomer_viewmodel.dart';
 import 'package:travel_agency_app/domain/viewModel/addDriver_viewmodel.dart';
 import 'package:travel_agency_app/domain/viewModel/addVehicle_viewmodel.dart';

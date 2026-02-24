@@ -683,7 +683,7 @@ class _AddVehiclePageState extends ConsumerState<AddVehiclePage>
           ),
         ),
         DropdownButtonFormField<T>(
-          value: value,
+          initialValue: value,
           items: items,
           selectedItemBuilder: selectedItemBuilder,
           onChanged: onChanged,

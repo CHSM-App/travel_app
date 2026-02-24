@@ -100,7 +100,7 @@ class LoginViewModel extends StateNotifier<LoginState> {
 
       final response = await usecase.login(loginInfo);
 
-      if (response != null && response.success == 1) {
+      if (response.success == 1) {
 
         // SAVE TOKEN
         await TokenStorage.saveValue(
