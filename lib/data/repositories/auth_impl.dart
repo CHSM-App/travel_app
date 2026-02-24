@@ -20,4 +20,10 @@ class AuthImpl implements AuthRepository {
     return apiService.refreshAccessToken(refreshToken);
   }
   
+    
+  @override
+  Future<TokenResponse> logout(TokenResponse refreshToken) {
+   return apiService.logout(refreshToken);
+  }
+
 }

@@ -1,3 +1,6 @@
+import 'dart:io';
+
+import 'package:travel_agency_app/domain/models/booking_info.dart';
 import 'package:travel_agency_app/domain/models/drivers.dart';
 import 'package:travel_agency_app/domain/repository/adddriverRepository.dart';
 
@@ -11,5 +14,21 @@ class AddDeiverUseCase {
 
   Future<dynamic> updateDriver(Drivers driver)  {
     return adddriverrepository.updateDriver(driver);
+  }
+
+  Future<dynamic> uploadDriverDocument(
+    File licenceDocument,
+    String driverId,
+    String agencyId,
+  ) {
+    return adddriverrepository.uploadDriverDocument(
+      licenceDocument,
+      driverId,
+      agencyId,
+    );
+  }
+
+  Future<List<BookingInfo>> fetchDriverHistory(int driverId) {
+    return adddriverrepository.fetchDriverHistory(driverId);
   }
 }

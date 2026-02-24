@@ -1,90 +1,182 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:travel_agency_app/domain/models/booking_info.dart';
 import 'package:travel_agency_app/domain/models/drivers.dart';
 import 'package:travel_agency_app/domain/usecase/adddriverUseCase.dart';
 
 @immutable
-
-class AddDriverState{
-
+class AddDriverState {
   final bool isLoading;
-  final Map<String,dynamic>? data;
+  final Map<String, dynamic>? data;
   final String? error;
+  final AsyncValue<List<BookingInfo>>? fetchTripsByDriverId;
 
-  AddDriverState({
-    
-  this.isLoading=false, 
-  this.data, 
-  this.error});
+  const AddDriverState({
+    this.fetchTripsByDriverId,
+    this.isLoading = false,
+    this.data,
+    this.error,
+  });
 
   AddDriverState copyWith({
-  bool? isLoading,
-  Map<String,dynamic>? data,
-  String? error
- }){
-  return AddDriverState(
-    isLoading: isLoading?? this.isLoading,
-    data: data?? this.data,
-    error: error?? this.error
+    bool? isLoading,
+    Map<String, dynamic>? data,
+    String? error,
+    AsyncValue<List<BookingInfo>>? fetchTripsByDriverId = const AsyncValue.loading(),
+
+  }) {
+    return AddDriverState(
+      isLoading: isLoading ?? this.isLoading,
+      data: data ?? this.data,
+      error: error ?? this.error,
+      fetchTripsByDriverId: fetchTripsByDriverId ?? this.fetchTripsByDriverId,
+
     );
- }
-  
+  }
 }
+
 class AdddriverViewmodel extends StateNotifier<AddDriverState> {
   final Ref ref;
   final AddDeiverUseCase usecase;
 
-  AdddriverViewmodel(this.ref, this.usecase)
-      : super(AddDriverState());
+  AdddriverViewmodel(this.ref, this.usecase) : super(const AddDriverState());
 
-  Future<void> addDriver(Drivers drivers) async {
-    state = state.copyWith(
-      isLoading: true,
-      error: null,
-      data: null, // reset old data
-    );
+  Future<int> addDriver(Drivers driver) async {
+    state = state.copyWith(isLoading: true, error: null, data: null);
 
     try {
-      final result = await usecase.addDriver(drivers);
+      final result = await usecase.addDriver(driver);
+      final driverId = _extractDriverId(result);
 
-      /// ✅ IMPORTANT: SET DATA ON SUCCESS
       state = state.copyWith(
         isLoading: false,
-        data: {
-          "success": true,
-          "message": "Driver added",
-        },
+        data: result is Map<String, dynamic>
+            ? result
+            : <String, dynamic>{'driverId': driverId},
         error: null,
       );
+      return driverId;
     } on DioException catch (e) {
       final serverMessage = e.response?.data?['message'];
-
       state = state.copyWith(
         isLoading: false,
         error: serverMessage ?? 'Server error',
       );
-
-      debugPrint("Server error: $serverMessage");
+      rethrow;
     } catch (e) {
-      state = state.copyWith(
-        isLoading: false,
-        error: e.toString(),
-      );
+      state = state.copyWith(isLoading: false, error: e.toString());
+      rethrow;
     }
   }
 
   Future<void> updateDriver(Drivers driver) async {
-  state = state.copyWith(isLoading: true, error: null);
+    state = state.copyWith(isLoading: true, error: null);
+    try {
+      final result = await usecase.updateDriver(driver);
+      state = state.copyWith(
+        isLoading: false,
+        data: result is Map<String, dynamic> ? result : null,
+      );
+    } catch (e) {
+      state = state.copyWith(isLoading: false, error: e.toString());
+      rethrow;
+    }
+  }
 
-  try {
-    final result = await usecase.updateDriver(driver);
-    state = state.copyWith(isLoading: false, data: result);
-  } catch (e) {
-    state = state.copyWith(isLoading: false, error: e.toString());
+  Future<dynamic> uploadDriverDocument(
+    File licenceDocument,
+    int driverId,
+    String agencyId,
+  ) async {
+    state = state.copyWith(isLoading: true, error: null);
+    try {
+      final response = await usecase.uploadDriverDocument(
+        licenceDocument,
+        driverId.toString(),
+        agencyId,
+      );
+      state = state.copyWith(isLoading: false);
+      return response;
+    } catch (e) {
+      state = state.copyWith(isLoading: false, error: e.toString());
+      rethrow;
+    }
+  }
+
+
+  int _extractDriverId(dynamic result) {
+    final id = _findIdRecursive(result);
+    if (id != null) return id;
+
+    throw Exception(
+      'Unable to extract driver ID from API response. '
+      'Response type: ${result.runtimeType}',
+    );
+  }
+
+  int? _findIdRecursive(dynamic node) {
+    if (node == null) return null;
+
+    if (node is int) return node;
+    if (node is num) return node.toInt();
+
+    if (node is String) {
+      final direct = int.tryParse(node.trim());
+      if (direct != null) return direct;
+      final firstDigits = RegExp(r'\d+').firstMatch(node)?.group(0);
+      if (firstDigits != null) return int.tryParse(firstDigits);
+      return null;
+    }
+
+    if (node is Map) {
+      const candidateKeys = <String>[
+        'driverId',
+        'DriverId',
+        'driver_id',
+        'DriverID',
+        'driverID',
+        'id',
+        'ID',
+        'insertId',
+        'InsertId',
+        'insertedId',
+        'InsertedId',
+      ];
+
+      for (final key in candidateKeys) {
+        if (node.containsKey(key)) {
+          final found = _findIdRecursive(node[key]);
+          if (found != null) return found;
+        }
+      }
+
+      for (final value in node.values) {
+        final found = _findIdRecursive(value);
+        if (found != null) return found;
+      }
+      return null;
+    }
+
+    if (node is Iterable) {
+      for (final item in node) {
+        final found = _findIdRecursive(item);
+        if (found != null) return found;
+      }
+      return null;
+    }
+
+    return null;
+  }
+
+  Future<void> fetchDriverHistory(int driverId) async {
+     state = state.copyWith(fetchTripsByDriverId: const AsyncValue.loading());
+    try {
+      final result = await usecase.fetchDriverHistory(driverId);
+      state = state.copyWith(fetchTripsByDriverId: AsyncValue.data(result));
+    } catch (e, st) {
+      state = state.copyWith(fetchTripsByDriverId: AsyncValue.error(e, st));
+    }
   }
 }
-
-}
-
-

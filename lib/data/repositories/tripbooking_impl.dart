@@ -15,50 +15,51 @@ class TripBookingImpl implements Tripbookingrepository {
   Future<dynamic> addTripBooking(TripBooking tripBooking) {
     return apiService.addTripBooking(tripBooking);
   }
+  
   @override
-  Future<List<Drivers>> driverList() {
-    return apiService.driverList();
+  Future<List<Drivers>> driverList(String agencyId) {
+    return apiService.driverList(agencyId);
   }
 
   @override
-  Future<List<Vehicles>> vehicleList() {
-    return apiService.vehicleList();
+  Future<List<Vehicles>> vehicleList(String agencyId) {
+    return apiService.vehicleList(agencyId);
   }
 
   @override
-  Future<List<Customer>> customerList() {
-    return apiService.customerList();
+  Future<List<Customer>> customerList(String agencyId) {
+    return apiService.customerList(agencyId);
   }
     
   @override
-  Future<List<BookingInfo>> historyTrip() {
-    return apiService.historyTrip();
+  Future<List<BookingInfo>> historyTrip(String agencyId) {
+    return apiService.historyTrip(agencyId);
   }
   
   @override
-  Future<List<BookingInfo>> unpaidTrip() {
-    return apiService.unpaidtrip();
+  Future<List<BookingInfo>> unpaidTrip(String agencyId) {
+    return apiService.unpaidtrip(agencyId);
     
   }
   
   @override
-  Future<List<BookingInfo>> upcomingTrip() {
-    return apiService.upcomingTrip();
+  Future<List<BookingInfo>> upcomingTrip(String agencyId) {
+    return apiService.upcomingTrip(agencyId);
   }
 
   @override
-  Future<List<BookingInfo>> activeTrip() {
-    return apiService.activeTrip();
+  Future<List<BookingInfo>> activeTrip(String agencyId) {
+    return apiService.activeTrip(agencyId);
   }
 
   @override
-  Future<List<BookingInfo>> cancelledTrip() {
-    return apiService.cancelledTrip();
+  Future<List<BookingInfo>> cancelledTrip(String agencyId) {
+    return apiService.cancelledTrip(agencyId);
   }
   
    @override
-  Future<dynamic> settleTrip(BookingInfo tripbooking) {
-    return apiService.settleTrip(tripbooking);
+  Future<dynamic> updatePaymentStatus(BookingInfo tripbooking) {
+    return apiService.updatePaymentStatus(tripbooking);
   }
   
   

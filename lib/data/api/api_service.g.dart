@@ -100,6 +100,34 @@ class _ApiService implements ApiService {
   }
 
   @override
+  Future<TokenResponse> logout(TokenResponse tokenResponse) async {
+    final _extra = <String, dynamic>{};
+    final queryParameters = <String, dynamic>{};
+    final _headers = <String, dynamic>{};
+    final _data = <String, dynamic>{};
+    _data.addAll(tokenResponse.toJson());
+    final _options = _setStreamType<TokenResponse>(
+      Options(method: 'POST', headers: _headers, extra: _extra)
+          .compose(
+            _dio.options,
+            'login/logout',
+            queryParameters: queryParameters,
+            data: _data,
+          )
+          .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
+    );
+    final _result = await _dio.fetch<Map<String, dynamic>>(_options);
+    late TokenResponse _value;
+    try {
+      _value = TokenResponse.fromJson(_result.data!);
+    } on Object catch (e, s) {
+      errorLogger?.logError(e, s, _options, response: _result);
+      rethrow;
+    }
+    return _value;
+  }
+
+  @override
   Future<LoginResponse> login(LoginInfo logininfo) async {
     final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
@@ -232,28 +260,6 @@ class _ApiService implements ApiService {
       Options(method: 'POST', headers: _headers, extra: _extra)
           .compose(
             _dio.options,
-            'insert/addCustomer',
-            queryParameters: queryParameters,
-            data: _data,
-          )
-          .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
-    );
-    final _result = await _dio.fetch(_options);
-    final _value = _result.data;
-    return _value;
-  }
-
-  @override
-  Future<dynamic> addcustomer(Customer customer) async {
-    final _extra = <String, dynamic>{};
-    final queryParameters = <String, dynamic>{};
-    final _headers = <String, dynamic>{};
-    final _data = <String, dynamic>{};
-    _data.addAll(customer.toJson());
-    final _options = _setStreamType<dynamic>(
-      Options(method: 'POST', headers: _headers, extra: _extra)
-          .compose(
-            _dio.options,
             'insert/AddCustomer',
             queryParameters: queryParameters,
             data: _data,
@@ -310,6 +316,50 @@ class _ApiService implements ApiService {
   }
 
   @override
+  Future<dynamic> updateCustomer(Customer customer) async {
+    final _extra = <String, dynamic>{};
+    final queryParameters = <String, dynamic>{};
+    final _headers = <String, dynamic>{};
+    final _data = <String, dynamic>{};
+    _data.addAll(customer.toJson());
+    final _options = _setStreamType<dynamic>(
+      Options(method: 'POST', headers: _headers, extra: _extra)
+          .compose(
+            _dio.options,
+            'insert/UpdateCustomer',
+            queryParameters: queryParameters,
+            data: _data,
+          )
+          .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
+    );
+    final _result = await _dio.fetch(_options);
+    final _value = _result.data;
+    return _value;
+  }
+
+  @override
+  Future<dynamic> updatePaymentStatus(BookingInfo tripbooking) async {
+    final _extra = <String, dynamic>{};
+    final queryParameters = <String, dynamic>{};
+    final _headers = <String, dynamic>{};
+    final _data = <String, dynamic>{};
+    _data.addAll(tripbooking.toJson());
+    final _options = _setStreamType<dynamic>(
+      Options(method: 'POST', headers: _headers, extra: _extra)
+          .compose(
+            _dio.options,
+            'insert/updatePaymentStatus/',
+            queryParameters: queryParameters,
+            data: _data,
+          )
+          .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
+    );
+    final _result = await _dio.fetch(_options);
+    final _value = _result.data;
+    return _value;
+  }
+
+  @override
   Future<LoginResponse> addAdmin(LoginInfo logininfo) async {
     final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
@@ -338,17 +388,17 @@ class _ApiService implements ApiService {
   }
 
   @override
-  Future<dynamic> settleTrip(BookingInfo tripbooking) async {
+  Future<dynamic> addService(Services service) async {
     final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
     final _headers = <String, dynamic>{};
     final _data = <String, dynamic>{};
-    _data.addAll(tripbooking.toJson());
+    _data.addAll(service.toJson());
     final _options = _setStreamType<dynamic>(
       Options(method: 'POST', headers: _headers, extra: _extra)
           .compose(
             _dio.options,
-            'insert/settleTrip/',
+            'insert/addService/',
             queryParameters: queryParameters,
             data: _data,
           )
@@ -360,7 +410,171 @@ class _ApiService implements ApiService {
   }
 
   @override
-  Future<List<Drivers>> driverList() async {
+  Future<dynamic> updateAdminProfile(
+    File imageUrl,
+    String adminId,
+    String agencyId,
+  ) async {
+    final _extra = <String, dynamic>{};
+    final queryParameters = <String, dynamic>{};
+    final _headers = <String, dynamic>{};
+    final _data = FormData();
+    _data.files.add(
+      MapEntry(
+        'image',
+        MultipartFile.fromFileSync(
+          imageUrl.path,
+          filename: imageUrl.path.split(Platform.pathSeparator).last,
+        ),
+      ),
+    );
+    _data.fields.add(MapEntry('admin_id', adminId));
+    _data.fields.add(MapEntry('agency_id', agencyId));
+    final _options = _setStreamType<dynamic>(
+      Options(
+            method: 'POST',
+            headers: _headers,
+            extra: _extra,
+            contentType: 'multipart/form-data',
+          )
+          .compose(
+            _dio.options,
+            'upload/AdminImage',
+            queryParameters: queryParameters,
+            data: _data,
+          )
+          .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
+    );
+    final _result = await _dio.fetch(_options);
+    final _value = _result.data;
+    return _value;
+  }
+
+  @override
+  Future<dynamic> uploadVehicleDocument(
+    File rcDocument,
+    String vehicleId,
+    String agencyId,
+  ) async {
+    final _extra = <String, dynamic>{};
+    final queryParameters = <String, dynamic>{};
+    final _headers = <String, dynamic>{};
+    final _data = FormData();
+    _data.files.add(
+      MapEntry(
+        'document',
+        MultipartFile.fromFileSync(
+          rcDocument.path,
+          filename: rcDocument.path.split(Platform.pathSeparator).last,
+        ),
+      ),
+    );
+    _data.fields.add(MapEntry('vehicleId', vehicleId));
+    _data.fields.add(MapEntry('agency_id', agencyId));
+    final _options = _setStreamType<dynamic>(
+      Options(
+            method: 'POST',
+            headers: _headers,
+            extra: _extra,
+            contentType: 'multipart/form-data',
+          )
+          .compose(
+            _dio.options,
+            'upload/VehicleDocuments',
+            queryParameters: queryParameters,
+            data: _data,
+          )
+          .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
+    );
+    final _result = await _dio.fetch(_options);
+    final _value = _result.data;
+    return _value;
+  }
+
+  @override
+  Future<dynamic> uploadDriverDocument(
+    File licenceDocument,
+    String driverId,
+    String agencyId,
+  ) async {
+    final _extra = <String, dynamic>{};
+    final queryParameters = <String, dynamic>{};
+    final _headers = <String, dynamic>{};
+    final _data = FormData();
+    _data.files.add(
+      MapEntry(
+        'document',
+        MultipartFile.fromFileSync(
+          licenceDocument.path,
+          filename: licenceDocument.path.split(Platform.pathSeparator).last,
+        ),
+      ),
+    );
+    _data.fields.add(MapEntry('driverId', driverId));
+    _data.fields.add(MapEntry('agency_id', agencyId));
+    final _options = _setStreamType<dynamic>(
+      Options(
+            method: 'POST',
+            headers: _headers,
+            extra: _extra,
+            contentType: 'multipart/form-data',
+          )
+          .compose(
+            _dio.options,
+            'upload/DriverDocuments',
+            queryParameters: queryParameters,
+            data: _data,
+          )
+          .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
+    );
+    final _result = await _dio.fetch(_options);
+    final _value = _result.data;
+    return _value;
+  }
+
+  @override
+  Future<dynamic> uploadCustomerDocument(
+    File document,
+    String customerId,
+    String agencyId,
+  ) async {
+    final _extra = <String, dynamic>{};
+    final queryParameters = <String, dynamic>{};
+    final _headers = <String, dynamic>{};
+    final _data = FormData();
+    _data.files.add(
+      MapEntry(
+        'document',
+        MultipartFile.fromFileSync(
+          document.path,
+          filename: document.path.split(Platform.pathSeparator).last,
+        ),
+      ),
+    );
+    _data.fields.add(MapEntry('CustomerId', customerId));
+    _data.fields.add(MapEntry('agency_id', agencyId));
+    final _options = _setStreamType<dynamic>(
+      Options(
+            method: 'POST',
+            headers: _headers,
+            extra: _extra,
+            contentType: 'multipart/form-data',
+          )
+          .compose(
+            _dio.options,
+            'upload/CustomerDocuments',
+            queryParameters: queryParameters,
+            data: _data,
+          )
+          .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
+    );
+    final _result = await _dio.fetch(_options);
+    final _value = _result.data;
+    return _value;
+  }
+
+  @override
+  Future<List<Drivers>> driverList(String agencyId) async {
     final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
     final _headers = <String, dynamic>{};
@@ -369,7 +583,7 @@ class _ApiService implements ApiService {
       Options(method: 'GET', headers: _headers, extra: _extra)
           .compose(
             _dio.options,
-            'users/driverList',
+            'users/driverList/${agencyId}',
             queryParameters: queryParameters,
             data: _data,
           )
@@ -389,7 +603,7 @@ class _ApiService implements ApiService {
   }
 
   @override
-  Future<List<Vehicles>> vehicleList() async {
+  Future<List<Vehicles>> vehicleList(String agencyId) async {
     final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
     final _headers = <String, dynamic>{};
@@ -398,7 +612,7 @@ class _ApiService implements ApiService {
       Options(method: 'GET', headers: _headers, extra: _extra)
           .compose(
             _dio.options,
-            'users/VehicleList',
+            'users/VehicleList/${agencyId}',
             queryParameters: queryParameters,
             data: _data,
           )
@@ -418,7 +632,7 @@ class _ApiService implements ApiService {
   }
 
   @override
-  Future<List<Customer>> customerList() async {
+  Future<List<Customer>> customerList(String agencyId) async {
     final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
     final _headers = <String, dynamic>{};
@@ -427,7 +641,7 @@ class _ApiService implements ApiService {
       Options(method: 'GET', headers: _headers, extra: _extra)
           .compose(
             _dio.options,
-            'users/customerList',
+            'users/customerList/${agencyId}',
             queryParameters: queryParameters,
             data: _data,
           )
@@ -534,7 +748,7 @@ class _ApiService implements ApiService {
   }
 
   @override
-  Future<List<BookingInfo>> upcomingTrip() async {
+  Future<List<BookingInfo>> upcomingTrip(String agencyId) async {
     final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
     final _headers = <String, dynamic>{};
@@ -543,7 +757,7 @@ class _ApiService implements ApiService {
       Options(method: 'GET', headers: _headers, extra: _extra)
           .compose(
             _dio.options,
-            'users/UpcomingTrip',
+            'users/UpcomingTrip/${agencyId}',
             queryParameters: queryParameters,
             data: _data,
           )
@@ -563,7 +777,7 @@ class _ApiService implements ApiService {
   }
 
   @override
-  Future<List<BookingInfo>> historyTrip() async {
+  Future<List<BookingInfo>> historyTrip(String agencyId) async {
     final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
     final _headers = <String, dynamic>{};
@@ -572,7 +786,7 @@ class _ApiService implements ApiService {
       Options(method: 'GET', headers: _headers, extra: _extra)
           .compose(
             _dio.options,
-            'users/HistoryTrip',
+            'users/HistoryTrip/${agencyId}',
             queryParameters: queryParameters,
             data: _data,
           )
@@ -592,7 +806,7 @@ class _ApiService implements ApiService {
   }
 
   @override
-  Future<List<BookingInfo>> unpaidtrip() async {
+  Future<List<BookingInfo>> unpaidtrip(String agencyId) async {
     final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
     final _headers = <String, dynamic>{};
@@ -601,7 +815,7 @@ class _ApiService implements ApiService {
       Options(method: 'GET', headers: _headers, extra: _extra)
           .compose(
             _dio.options,
-            'users/Unpaidtrip',
+            'users/Unpaidtrip/${agencyId}',
             queryParameters: queryParameters,
             data: _data,
           )
@@ -621,7 +835,7 @@ class _ApiService implements ApiService {
   }
 
   @override
-  Future<List<BookingInfo>> activeTrip() async {
+  Future<List<BookingInfo>> activeTrip(String agencyId) async {
     final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
     final _headers = <String, dynamic>{};
@@ -630,7 +844,7 @@ class _ApiService implements ApiService {
       Options(method: 'GET', headers: _headers, extra: _extra)
           .compose(
             _dio.options,
-            'users/activeTrip',
+            'users/activeTrip/${agencyId}',
             queryParameters: queryParameters,
             data: _data,
           )
@@ -650,7 +864,7 @@ class _ApiService implements ApiService {
   }
 
   @override
-  Future<List<BookingInfo>> cancelledTrip() async {
+  Future<List<BookingInfo>> cancelledTrip(String agencyId) async {
     final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
     final _headers = <String, dynamic>{};
@@ -659,7 +873,7 @@ class _ApiService implements ApiService {
       Options(method: 'GET', headers: _headers, extra: _extra)
           .compose(
             _dio.options,
-            'users/cancelledTrip',
+            'users/cancelledTrip/${agencyId}',
             queryParameters: queryParameters,
             data: _data,
           )
@@ -728,6 +942,96 @@ class _ApiService implements ApiService {
     try {
       _value = _result.data!
           .map((dynamic i) => LoginInfo.fromJson(i as Map<String, dynamic>))
+          .toList();
+    } on Object catch (e, s) {
+      errorLogger?.logError(e, s, _options, response: _result);
+      rethrow;
+    }
+    return _value;
+  }
+
+  @override
+  Future<List<BookingInfo>> getTripsByVehicle(int vehicleid) async {
+    final _extra = <String, dynamic>{};
+    final queryParameters = <String, dynamic>{};
+    final _headers = <String, dynamic>{};
+    const Map<String, dynamic>? _data = null;
+    final _options = _setStreamType<List<BookingInfo>>(
+      Options(method: 'GET', headers: _headers, extra: _extra)
+          .compose(
+            _dio.options,
+            'users/VehicleHistory/${vehicleid}',
+            queryParameters: queryParameters,
+            data: _data,
+          )
+          .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
+    );
+    final _result = await _dio.fetch<List<dynamic>>(_options);
+    late List<BookingInfo> _value;
+    try {
+      _value = _result.data!
+          .map((dynamic i) => BookingInfo.fromJson(i as Map<String, dynamic>))
+          .toList();
+    } on Object catch (e, s) {
+      errorLogger?.logError(e, s, _options, response: _result);
+      rethrow;
+    }
+    return _value;
+  }
+
+  @override
+  Future<List<BookingInfo>> fetchDriverHistory(int driverId) async {
+    final _extra = <String, dynamic>{};
+    final queryParameters = <String, dynamic>{};
+    final _headers = <String, dynamic>{};
+    const Map<String, dynamic>? _data = null;
+    final _options = _setStreamType<List<BookingInfo>>(
+      Options(method: 'GET', headers: _headers, extra: _extra)
+          .compose(
+            _dio.options,
+            'users/driverHistory/${driverId}',
+            queryParameters: queryParameters,
+            data: _data,
+          )
+          .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
+    );
+    final _result = await _dio.fetch<List<dynamic>>(_options);
+    late List<BookingInfo> _value;
+    try {
+      _value = _result.data!
+          .map((dynamic i) => BookingInfo.fromJson(i as Map<String, dynamic>))
+          .toList();
+    } on Object catch (e, s) {
+      errorLogger?.logError(e, s, _options, response: _result);
+      rethrow;
+    }
+    return _value;
+  }
+
+  @override
+  Future<List<Services>> getServiceRecords(
+    String agencyId,
+    int vehicleId,
+  ) async {
+    final _extra = <String, dynamic>{};
+    final queryParameters = <String, dynamic>{};
+    final _headers = <String, dynamic>{};
+    const Map<String, dynamic>? _data = null;
+    final _options = _setStreamType<List<Services>>(
+      Options(method: 'GET', headers: _headers, extra: _extra)
+          .compose(
+            _dio.options,
+            'users/serviceRecord/${agencyId}/${vehicleId}',
+            queryParameters: queryParameters,
+            data: _data,
+          )
+          .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
+    );
+    final _result = await _dio.fetch<List<dynamic>>(_options);
+    late List<Services> _value;
+    try {
+      _value = _result.data!
+          .map((dynamic i) => Services.fromJson(i as Map<String, dynamic>))
           .toList();
     } on Object catch (e, s) {
       errorLogger?.logError(e, s, _options, response: _result);

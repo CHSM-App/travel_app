@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:travel_agency_app/Screens/customer_page.dart';
 import 'package:travel_agency_app/Screens/dashbord.dart';
-import 'package:travel_agency_app/Screens/driver_page.dart';
 import 'package:travel_agency_app/Screens/setting.dart';
 import 'package:travel_agency_app/Screens/trip_page.dart';
 import 'package:travel_agency_app/Screens/vehicle_page.dart';
@@ -36,10 +35,13 @@ class _MainBottomNavState extends ConsumerState<MainBottomNav>
     super.initState();
 
     /// Load profile once
-    Future.microtask(() {
+    Future.microtask(() async {
+      await ref.read(loginViewModelProvider.notifier).loadFromStorage();
       final adminId = ref.read(loginViewModelProvider).adminId;
-      ref.read(loginViewModelProvider.notifier).adminProfile(adminId);
-        });
+      if (adminId > 0) {
+        ref.read(loginViewModelProvider.notifier).adminProfile(adminId);
+      }
+    });
 
     _animationController = AnimationController(
       duration: const Duration(milliseconds: 300),
@@ -254,3 +256,4 @@ class _MainBottomNavState extends ConsumerState<MainBottomNav>
     );
   }
 }
+

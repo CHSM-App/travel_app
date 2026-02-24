@@ -1,3 +1,7 @@
+import 'dart:io';
+
+import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:travel_agency_app/domain/models/booking_info.dart';
 import 'package:travel_agency_app/domain/models/customers.dart';
@@ -47,77 +51,12 @@ class CustomerViewModel extends StateNotifier<CustomerState> {
 
   CustomerViewModel(this.usecase) : super(const CustomerState());
 
-  /// Fetch customers
-  // Future<void> addcustomer(Customer customer) async {
-  //   state = state.copyWith(isLoading: true, error: null);
+ 
 
-  //   try {
-  //     final result = await usecase.addCustomer(customer);
-  //     state = state.copyWith(
-  //       isLoading: false,
-  //       data: {
-  //         'customers': result,
-  //       },
-  //     );
-  //   } on DioException catch (e) {
-  //     state = state.copyWith(
-  //       isLoading: false,
-  //       error: e.response?.data?['message'] ?? 'Server error',
-  //     );
-  //   } catch (e) {
-  //     state = state.copyWith(
-  //       isLoading: false,
-  //       error: e.toString(),
-  //     );
-  //   }
-  // }
-
-//     Future<int> addEmployee(Customer customer) async {
-//   state = state.copyWith(isLoading: true, error: null);
-//   try {
-    
-//     final response = await usecase.addCostomer(customer);
-//     // Extract CustomerId from response map
-//     final int newCustomerId = response['CustomerId'] as int;
-
-//     state = state.copyWith(isLoading: false);
-//     return newCustomerId;
-//   } catch (e) {
-//     state = state.copyWith(isLoading: false, error: e.toString());
-//     rethrow;
-//   }
-// }
-
-  Future<int> addCustomer(Customer customer) async {
-  state = state.copyWith(isLoading: true, error: null);
-
-  try {
-    final response = await usecase.addCustomer(customer);
-
-    // Extract customer_id from response
-    final int newCustomerId = response['customer_id'] as int;
-
-    // Refresh customer list (if needed)
-    await fetchCustomerslist();
-
-    state = state.copyWith(isLoading: false);
-
-    return newCustomerId;
-  } catch (e) {
-    state = state.copyWith(
-      isLoading: false,
-      error: e.toString(),
-    );
-    rethrow;
-  }
-}
-
-
-
-  Future<void> fetchCustomerslist() async {
+  Future<void> fetchCustomerslist(String agencyId) async {
     state = state.copyWith(CustomerList: const AsyncValue.loading());
     try {
-      final result = await usecase.customerList();
+      final result = await usecase.customerList(agencyId);
       state = state.copyWith(CustomerList: AsyncValue.data(result));
     } catch (e, st) {
       state = state.copyWith(CustomerList: AsyncValue.error(e, st));
@@ -133,6 +72,150 @@ class CustomerViewModel extends StateNotifier<CustomerState> {
       state = state.copyWith(Customerhist: AsyncValue.error(e, st));
     }
   }
+
+  
+  Future<int> addcustomer(Customer customer) async {
+    state=state.copyWith(
+      isLoading: true,
+      error: null,
+      data:null,
+    );
+
+   try{
+    final result=await usecase.addCustomer(customer);
+    final customerId = _extractCustomerId(result);
+    
+    state=state.copyWith(
+      isLoading: false,
+      data: result is Map<String, dynamic>
+          ? result
+          : <String, dynamic>{'CustomerId': customerId},
+      error: null,
+    );
+    return customerId;
+   }on DioException catch(e){
+    final serverMessage=e.response?.data?['message'];
+    state=state.copyWith(
+      isLoading: false,
+      error: serverMessage?? 'Server error',
+    );
+
+   debugPrint("Server Error: $serverMessage");
+   rethrow;
+   }catch(e){
+    state=state.copyWith(
+      isLoading: false,
+      error: e.toString(),
+    );
+    rethrow;
+   }
+
+   }
+
+   
+Future<void> updateCustomer(Customer customer) async {
+  state = state.copyWith(isLoading: true, error: null);
+
+  try {
+    final result = await usecase.updateCustomer(customer);
+    state = state.copyWith(isLoading: false, data: result);
+  } on DioException catch (e) {
+    final serverMessage = e.response?.data?['message']?.toString();
+    state = state.copyWith(
+      isLoading: false,
+      error: serverMessage ?? 'Server error',
+    );
+    rethrow;
+  } catch (e) {
+    state = state.copyWith(isLoading: false, error: e.toString());
+    rethrow;
+  }
+}
+
+
+  Future<dynamic> uploadCustomerDocument(
+    File document,
+    int customerId,
+    String agencyId,
+  ) async {
+    state = state.copyWith(isLoading: true, error: null);
+    try {
+      final response = await usecase.uploadCustomerDocument(
+        document,
+        customerId.toString(),
+        agencyId,
+      );
+      state = state.copyWith(isLoading: false);
+      return response;
+    } catch (e) {
+      state = state.copyWith(isLoading: false, error: e.toString());
+      rethrow;
+    }
+  }
+
+  int _extractCustomerId(dynamic result) {
+    final id = _findIdRecursive(result);
+    if (id != null) return id;
+    throw Exception(
+      'Unable to extract customer ID from API response. '
+      'Response type: ${result.runtimeType}',
+    );
+  }
+
+  int? _findIdRecursive(dynamic node) {
+    if (node == null) return null;
+
+    if (node is int) return node;
+    if (node is num) return node.toInt();
+
+    if (node is String) {
+      final direct = int.tryParse(node.trim());
+      if (direct != null) return direct;
+      final firstDigits = RegExp(r'\d+').firstMatch(node)?.group(0);
+      if (firstDigits != null) return int.tryParse(firstDigits);
+      return null;
+    }
+
+    if (node is Map) {
+      const candidateKeys = <String>[
+        'CustomerId',
+        'customerId',
+        'customer_id',
+        'CustomerID',
+        'id',
+        'ID',
+        'insertId',
+        'InsertId',
+        'insertedId',
+        'InsertedId',
+      ];
+
+      for (final key in candidateKeys) {
+        if (node.containsKey(key)) {
+          final found = _findIdRecursive(node[key]);
+          if (found != null) return found;
+        }
+      }
+
+      for (final value in node.values) {
+        final found = _findIdRecursive(value);
+        if (found != null) return found;
+      }
+      return null;
+    }
+
+    if (node is Iterable) {
+      for (final item in node) {
+        final found = _findIdRecursive(item);
+        if (found != null) return found;
+      }
+      return null;
+    }
+
+    return null;
+  }
+
+  
    
    
 

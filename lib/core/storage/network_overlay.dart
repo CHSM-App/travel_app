@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:travel_agency_app/presentation/providers/viewmodel_provider.dart';
+import 'package:travel_agency_app/core/network/network_state_notifier.dart';
 
 class NetworkOverlay extends ConsumerWidget {
   final Widget child;
@@ -17,7 +17,7 @@ class NetworkOverlay extends ConsumerWidget {
         // Show overlay when network is lost during runtime
         if (networkState.isInitialized && !networkState.isConnected)
           Container(
-            color: Colors.black.withOpacity(0.8),
+            color: Colors.black.withValues(alpha: 0.8),
             child: Center(
               child: Card(
                 margin: const EdgeInsets.all(32),
@@ -50,7 +50,7 @@ class NetworkOverlay extends ConsumerWidget {
                         width: double.infinity,
                         child: ElevatedButton.icon(
                           onPressed: () {
-                            ref.read(networkStateProvider.notifier).retryConnection(context);
+                            ref.read(networkStateProvider.notifier).retryConnection();
                           },
                           icon: const Icon(Icons.refresh),
                           label: const Text('Retry'),

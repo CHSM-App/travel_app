@@ -25,6 +25,8 @@ class LoginResponse {
 
   @JsonKey(name: 'agency_id')
   final String? agencyId;
+    @JsonKey(name: 'image_url')
+  final String? imageUrl;
 
   LoginResponse({
     required this.success,
@@ -34,10 +36,14 @@ class LoginResponse {
     this.email,
     this.mobile,
     this.agencyId,
+    this.imageUrl,
+    
   });
 
   factory LoginResponse.fromJson(Map<String, dynamic> json)
       => _$LoginResponseFromJson(json);
+
+  get data => null;
 
   Map<String, dynamic> toJson()
       => _$LoginResponseToJson(this);

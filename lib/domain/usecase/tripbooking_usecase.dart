@@ -12,39 +12,39 @@ class TripbookingUsecase {
   Future<dynamic> addTripBooking(TripBooking tripBooking) {
     return repository.addTripBooking(tripBooking);
   }
-  Future<List<Drivers>> driverList() {
-    return repository.driverList();
+  Future<List<Drivers>> driverList(String agencyId) {
+    return repository.driverList(agencyId);
   }
-  Future<List<Vehicles>> vehicleList() {
-    return repository.vehicleList();
-  }
-
-  Future<List<Customer>> customerList() {
-    return repository.customerList();
+  Future<List<Vehicles>> vehicleList(String agencyId) {
+    return repository.vehicleList(agencyId);
   }
 
-  Future<List<BookingInfo>> upcomingTrip() {
-    return repository.upcomingTrip();
+  Future<List<Customer>> customerList(String agencyId) {
+    return repository.customerList(agencyId);
   }
 
-  Future<List<BookingInfo>> historyTrip() {
-    return repository.historyTrip();
+  Future<List<BookingInfo>> upcomingTrip(String agencyId) {
+    return repository.upcomingTrip(agencyId);
   }
 
-  Future<List<BookingInfo>> unpaidTrip() {
-    return repository.unpaidTrip();
+  Future<List<BookingInfo>> historyTrip(String agencyId) {
+    return repository.historyTrip(agencyId);
   }
 
-  Future<List<BookingInfo>> activeTrip() {
-    return repository.activeTrip();
+  Future<List<BookingInfo>> unpaidTrip(String agencyId) {
+    return repository.unpaidTrip(agencyId);
   }
 
-  Future<List<BookingInfo>> cancelledTrip(){
-    return repository.cancelledTrip();
+  Future<List<BookingInfo>> activeTrip(String agencyId) {
+    return repository.activeTrip(agencyId);
   }
 
-  Future<dynamic> settleTrip(BookingInfo tripbooking){
-     return repository.settleTrip(tripbooking);
+  Future<List<BookingInfo>> cancelledTrip(String agencyId){
+    return repository.cancelledTrip(agencyId);
+  }
+
+  Future<dynamic> updatePaymentStatus(BookingInfo tripbooking){
+     return repository.updatePaymentStatus(tripbooking);
   }
 
 }

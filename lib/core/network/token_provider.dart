@@ -6,14 +6,18 @@ class TokenState {
   final String? refreshToken;
   final bool isLoading;
 
-  const TokenState({this.accessToken, this.refreshToken,this.isLoading=true});
+  const TokenState({this.accessToken, this.refreshToken, this.isLoading = true});
 
-  bool get isLoggedIn => accessToken != null && refreshToken != null;
+  bool get isLoggedIn =>
+      accessToken != null &&
+      accessToken!.isNotEmpty &&
+      refreshToken != null &&
+      refreshToken!.isNotEmpty;
 
   TokenState copyWith({
     String? accessToken,
     String? refreshToken,
-    bool?isLoading,
+    bool? isLoading,
   }) {
     return TokenState(
       accessToken: accessToken ?? this.accessToken,
@@ -26,30 +30,39 @@ class TokenState {
 class TokenNotifier extends StateNotifier<TokenState> {
   TokenNotifier() : super(const TokenState());
 
-  /// Load saved tokens at app start
   Future<void> loadTokens() async {
     final tokens = await TokenStorage.getTokens();
-    if (tokens != null) {
+
+    if (tokens != null &&
+        (tokens['accessToken'] ?? '').isNotEmpty &&
+        (tokens['refreshToken'] ?? '').isNotEmpty) {
       state = TokenState(
         accessToken: tokens['accessToken'],
         refreshToken: tokens['refreshToken'],
         isLoading: false,
       );
+      return;
     }
+
+    state = const TokenState(isLoading: false);
   }
 
-  /// Save new tokens
   Future<void> saveTokens(String accessToken, String refreshToken) async {
-    state = TokenState(accessToken: accessToken, refreshToken: refreshToken);
+    state = TokenState(
+      accessToken: accessToken,
+      refreshToken: refreshToken,
+      isLoading: false,
+    );
     await TokenStorage.saveTokens(accessToken, refreshToken);
   }
 
-  /// Clear tokens and trigger logout
   Future<void> clearTokens() async {
-    state = const TokenState();
+    state = const TokenState(isLoading: false);
     await TokenStorage.clear();
   }
 }
 
 final tokenProvider =
     StateNotifierProvider<TokenNotifier, TokenState>((ref) => TokenNotifier());
+
+

@@ -6,11 +6,14 @@ class AuthUseCase {
   final AuthRepository authRepository;
   AuthUseCase(this.authRepository);
 
-  Future<TokenResponse> login(TokenResponse token) {
+  Future<TokenResponse> createLogin(TokenResponse token) {
     return authRepository.createLogin(token);
   }
   Future<TokenResponse> refreshAccessToken(TokenResponse refreshToken) {
     return authRepository.refreshAccessToken(refreshToken);
   }
+   Future<TokenResponse> logout(TokenResponse refreshToken) {
+      return authRepository.logout(refreshToken);
+    }
     
 }

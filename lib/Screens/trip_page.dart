@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:travel_agency_app/Screens/trip_card.dart';
+import 'package:travel_agency_app/core/network/network_state_notifier.dart';
 import 'package:travel_agency_app/domain/models/booking_info.dart';
 import 'package:travel_agency_app/presentation/providers/viewmodel_provider.dart';
 
@@ -21,11 +23,11 @@ class _TripPageState extends ConsumerState<TripPage> {
 
     Future.microtask(() {
       final notifier = ref.read(TripPageViewModelProvider.notifier);
-      notifier.activeList();
-      notifier.upcomingList();
-      notifier.historyList();
-      notifier.unpaidList();
-      notifier.cancelledList();
+      notifier.activeList(ref.read(loginViewModelProvider).agencyId??"");
+      notifier.upcomingList(ref.read(loginViewModelProvider).agencyId??"");
+      notifier.historyList(ref.read(loginViewModelProvider).agencyId??"");
+      notifier.unpaidList(ref.read(loginViewModelProvider).agencyId??"");
+      notifier.cancelledList(ref.read(loginViewModelProvider).agencyId??"");
     });
   }
 
@@ -33,19 +35,19 @@ class _TripPageState extends ConsumerState<TripPage> {
     final notifier = ref.read(TripPageViewModelProvider.notifier);
     switch (filter) {
       case 'active':
-        notifier.activeList();
+        notifier.activeList(ref.read(loginViewModelProvider).agencyId??"");
         break;
       case 'upcoming':
-        notifier.upcomingList();
+        notifier.upcomingList(ref.read(loginViewModelProvider).agencyId??"");
         break;
-      case 'history':
-        notifier.historyList();
+      case 'Paid':
+        notifier.historyList(ref.read(loginViewModelProvider).agencyId??"");
         break;
       case 'unpaid':
-        notifier.unpaidList();
+        notifier.unpaidList(ref.read(loginViewModelProvider).agencyId??"");
         break;
       case 'cancelled':
-        notifier.cancelledList();
+        notifier.cancelledList(ref.read(loginViewModelProvider).agencyId??"");
         break;
     }
   }
@@ -66,7 +68,7 @@ class _TripPageState extends ConsumerState<TripPage> {
                 color: Colors.white,
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
+                    color: Colors.black.withValues(alpha: 0.05),
                     blurRadius: 10,
                     offset: const Offset(0, 3),
                   ),
@@ -129,7 +131,7 @@ class _TripPageState extends ConsumerState<TripPage> {
 
                   const SizedBox(width: 12),
 
-                  // Dropdown Filter 
+                  // Dropdown Filter
                   Container(
                     height: 48,
                     padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -138,7 +140,7 @@ class _TripPageState extends ConsumerState<TripPage> {
                       borderRadius: BorderRadius.circular(12),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.indigo.withOpacity(0.3),
+                          color: Colors.indigo.withValues(alpha: 0.3),
                           blurRadius: 8,
                           offset: const Offset(0, 4),
                         ),
@@ -171,8 +173,8 @@ class _TripPageState extends ConsumerState<TripPage> {
                             Icons.schedule_rounded,
                           ),
                           _buildDropdownItem(
-                            'history',
-                            'History',
+                            'Paid',
+                            'Paid',
                             Icons.history_rounded,
                           ),
                           _buildDropdownItem(
@@ -239,7 +241,7 @@ class _TripPageState extends ConsumerState<TripPage> {
       case 'upcoming':
         currentList = state.upcomingList;
         break;
-      case 'history':
+      case 'Paid':
         currentList = state.historyList;
         break;
       case 'unpaid':
@@ -253,11 +255,7 @@ class _TripPageState extends ConsumerState<TripPage> {
     }
 
     return _buildTripList(currentList, _selectedFilter);
-    
   }
-
-
-  
 
   Widget _buildTripList(AsyncValue<List<BookingInfo>> state, String type) {
     return state.when(
@@ -279,69 +277,81 @@ class _TripPageState extends ConsumerState<TripPage> {
           ],
         ),
       ),
-      error: (e, _) => Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.error_outline_rounded,
-              size: 64,
-              color: Colors.red.shade300,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'Error loading trips',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: Colors.grey.shade800,
+      error: (e, _) {
+        final isOffline = !ref.watch(networkStateProvider).isConnected;
+        final isNetworkError = e is DioException &&
+            (e.type == DioExceptionType.connectionError ||
+                e.type == DioExceptionType.connectionTimeout ||
+                e.type == DioExceptionType.sendTimeout ||
+                e.type == DioExceptionType.receiveTimeout);
+
+        if (isOffline || isNetworkError) {
+          return const SizedBox.shrink();
+        }
+
+        return Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.error_outline_rounded,
+                size: 64,
+                color: Colors.red.shade300,
               ),
-            ),
-            const SizedBox(height: 8),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 32),
-              child: Text(
-                e.toString(),
+              const SizedBox(height: 16),
+              Text(
+                'Error loading trips',
                 style: TextStyle(
-                  color: Colors.grey.shade600,
-                  fontSize: 13,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ),
-            const SizedBox(height: 16),
-            ElevatedButton.icon(
-              onPressed: () {
-                _loadListForFilter(type);
-              },
-              icon: const Icon(Icons.refresh_rounded, size: 18),
-              label: const Text('Retry'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.indigo.shade700,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.grey.shade800,
                 ),
               ),
-            ),
-          ],
-        ),
-      ),
+              const SizedBox(height: 8),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 32),
+                child: Text(
+                  e.toString(),
+                  style: TextStyle(
+                    color: Colors.grey.shade600,
+                    fontSize: 13,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton.icon(
+                onPressed: () {
+                  _loadListForFilter(type);
+                },
+                icon: const Icon(Icons.refresh_rounded, size: 18),
+                label: const Text('Retry'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.indigo.shade700,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
       data: (trips) {
         // Filter trips based on search query
         final filteredTrips = trips.where((trip) {
           if (_searchQuery.isEmpty) return true;
-          
+
           final customerName = trip.customer_name?.toLowerCase() ?? '';
           final vehicleNumber = trip.vehicle_info?.toLowerCase() ?? '';
           final driverName = trip.driver_name?.toLowerCase() ?? '';
           final startLocation = trip.pickupLocation?.toLowerCase() ?? '';
           final endLocation = trip.dropLocation?.toLowerCase() ?? '';
-          final paymentStatus = trip.payment_status?.toLowerCase()?? '';
-          
-          
+          final paymentStatus = trip.payment_status?.toLowerCase() ?? '';
+
           return customerName.contains(_searchQuery) ||
-               vehicleNumber.contains(_searchQuery) ||
+              vehicleNumber.contains(_searchQuery) ||
               driverName.contains(_searchQuery) ||
               startLocation.contains(_searchQuery) ||
               endLocation.contains(_searchQuery) ||
@@ -363,6 +373,7 @@ class _TripPageState extends ConsumerState<TripPage> {
               key: ValueKey(filteredTrips[i].tripId ?? i),
               bookinginfo: filteredTrips[i],
               ref: ref,
+              tripType: type, // ← pass the current tab type
             ),
           ),
         );
@@ -386,9 +397,9 @@ class _TripPageState extends ConsumerState<TripPage> {
         title = 'No Upcoming Trips';
         subtitle = 'No trips scheduled for the future';
         break;
-      case 'history':
-        icon = Icons.history_rounded;
-        title = 'No Trip History';
+      case 'Paid':
+        icon = Icons.payment_outlined;
+        title = 'No paid Trip ';
         subtitle = 'Your completed trips will appear here';
         break;
       case 'unpaid':

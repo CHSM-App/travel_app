@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:travel_agency_app/Screens/login.dart';
 import 'package:travel_agency_app/Screens/profile.dart';
+import 'package:travel_agency_app/core/network/token_provider.dart';
+import 'package:travel_agency_app/core/storage/token_storage.dart';
 import 'package:travel_agency_app/domain/models/login_info.dart';
+import 'package:travel_agency_app/domain/models/token_response.dart';
 import 'package:travel_agency_app/presentation/providers/viewmodel_provider.dart';
 class ModernSettingsPage extends ConsumerStatefulWidget {
  // final int adminId; // pass admin id here
@@ -288,35 +291,37 @@ Widget _buildProfileAvatar() {
   final loginState = ref.watch(loginViewModelProvider);
   final adminProfile = loginState.adminProfile;
 
-  String firstLetter = 'U'; // Default fallback
+  String? imageUrl;
+  String firstLetter = 'U'; // fallback
+
   if (adminProfile is AsyncData && adminProfile.value!.isNotEmpty) {
-    final name = adminProfile.value?.first.name;
-    if (name != null && name.isNotEmpty) {
-      firstLetter = name[0].toUpperCase();
+    final profile = adminProfile.value!.first;
+
+    // Set image URL if available
+    if (profile.imageUrl != null && profile.imageUrl!.isNotEmpty) {
+      imageUrl = profile.imageUrl;
+    }
+
+    // Set first letter from name if available
+    if (profile.name != null && profile.name!.isNotEmpty) {
+      firstLetter = profile.name![0].toUpperCase();
     }
   }
 
-  return Container(
-    width: 70,
-    height: 70,
-    decoration: BoxDecoration(
-      color: Colors.indigo.shade50,
-      borderRadius: BorderRadius.circular(35), // circle
-      border: Border.all(
-        color: Colors.white.withOpacity(0.3),
-        width: 3,
-      ),
-    ),
-    child: Center(
-      child: Text(
-        firstLetter,
-        style: TextStyle(
-          fontSize: 36,
-          fontWeight: FontWeight.bold,
-          color: Colors.indigo.shade600,
-        ),
-      ),
-    ),
+  return CircleAvatar(
+    radius: 35, // adjust size
+    backgroundColor: Colors.indigo.shade50,
+    backgroundImage: imageUrl != null ? NetworkImage(imageUrl) : null,
+    child: imageUrl == null
+        ? Text(
+            firstLetter,
+            style: TextStyle(
+              fontSize: 36,
+              fontWeight: FontWeight.bold,
+              color: Colors.indigo.shade600,
+            ),
+          )
+        : null,
   );
 }
 
@@ -640,7 +645,7 @@ Widget _buildLogoutButton() {
   return _buildAnimatedCard(
     child: InkWell(
       onTap: () {
-        _showLogoutDialog(context); // 👈 Call dialog here
+        _showLogoutDialog(context,ref); // 👈 Call dialog here
       },
       borderRadius: BorderRadius.circular(20),
       child: Container(
@@ -670,56 +675,118 @@ Widget _buildLogoutButton() {
     ),
   );
 }
-void _showLogoutDialog(BuildContext context) {
-  showDialog(
-    context: context,
-    barrierDismissible: false,
-    builder: (context) {
-      return AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
-        title: const Text(
-          "Confirm Logout",
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-        content: const Text(
-          "Are you sure you want to logout?",
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context); // Cancel
-            },
-            child: const Text("Cancel"),
+
+// void _showLogoutDialog(BuildContext context) {
+//   showDialog(
+//     context: context,
+//     barrierDismissible: false,
+//     builder: (context) {
+//       return AlertDialog(
+//         shape: RoundedRectangleBorder(
+//           borderRadius: BorderRadius.circular(20),
+//         ),
+//         title: const Text(
+//           "Confirm Logout",
+//           style: TextStyle(fontWeight: FontWeight.bold),
+//         ),
+//         content: const Text(
+//           "Are you sure you want to logout?",
+//         ),
+//         actions: [
+//           TextButton(
+//             onPressed: () {
+//               Navigator.pop(context); // Cancel
+//             },
+//             child: const Text("Cancel"),
+//           ),
+//           ElevatedButton(
+//             style: ElevatedButton.styleFrom(
+//               backgroundColor: Colors.red,
+//               foregroundColor: Colors.white,
+//             ),
+//             onPressed: () async {
+//               Navigator.pop(context);
+
+//               // 🔹 If using SharedPreferences (optional)
+//               // final prefs = await SharedPreferences.getInstance();
+//               // await prefs.clear();
+
+//               // 🔹 Redirect to Login Page
+//               Navigator.pushAndRemoveUntil(
+//                 context,
+//                 MaterialPageRoute(
+//                   builder: (context) => const LoginPage(),
+//                 ),
+//                 (route) => false,
+//               );
+//             },
+//             child: const Text("Logout"),
+//           ),
+//         ],
+//       );
+//     },
+//   );
+// }
+
+  void _showLogoutDialog(BuildContext context, WidgetRef ref) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
           ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
-              foregroundColor: Colors.white,
+          title: Text('Logout'),
+          content: Text('Are you sure you want to logout?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text('Cancel'),
             ),
-            onPressed: () async {
-              Navigator.pop(context);
+            ElevatedButton(
+           onPressed: () async {
 
-              // 🔹 If using SharedPreferences (optional)
-              // final prefs = await SharedPreferences.getInstance();
-              // await prefs.clear();
+  Navigator.pop(context); // close dialog
 
-              // 🔹 Redirect to Login Page
-              Navigator.pushAndRemoveUntil(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const LoginPage(),
-                ),
-                (route) => false,
-              );
-            },
-            child: const Text("Logout"),
-          ),
-        ],
+  final navigator = Navigator.of(context);
+
+  final tokenState = ref.read(tokenProvider);
+
+  final response = await ref
+      .read(authViewModelProvider.notifier)
+      .logout(
+        TokenResponse(
+          refreshToken: tokenState.refreshToken ?? "",
+        ),
       );
-    },
-  );
-}
+
+  if (response) {
+
+    // clear login state
+    await ref.read(loginViewModelProvider.notifier).logout();
+
+    // ❌ DO NOT CALL clearTokens again here
+
+    // ✅ Navigate using saved navigator
+    navigator.pushAndRemoveUntil(
+      MaterialPageRoute(
+        builder: (_) => const LoginPage(),
+      ),
+      (route) => false,
+    );
+  }
+},
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
+              ),
+              child: Text('Logout'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
 
 }

@@ -1,10 +1,10 @@
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:travel_agency_app/Screens/bottom_navigation_bar.dart';
 import 'package:travel_agency_app/Screens/forgot_password.dart';
 import 'package:travel_agency_app/Screens/signup_page.dart';
 import 'package:travel_agency_app/domain/models/login_info.dart';
+import 'package:travel_agency_app/domain/models/token_response.dart';
 import 'package:travel_agency_app/presentation/providers/viewmodel_provider.dart';
 
 class LoginPage extends ConsumerStatefulWidget {
@@ -17,46 +17,115 @@ class LoginPage extends ConsumerStatefulWidget {
 class _LoginPageState extends ConsumerState<LoginPage> {
   final TextEditingController _mobileController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-
+  //--------------------------------------------------
+  // LOGIN FUNCTION
+  //--------------------------------------------------
   Future<void> _login() async {
+
+    final mobile = _mobileController.text.trim();
+    final password = _passwordController.text.trim();
+
+    if (mobile.isEmpty || password.isEmpty) {
+      showMessage("Enter mobile and password");
+      return;
+    }
+
+    //--------------------------------------------------
+    // STEP 1: LOGIN API CALL
+    //--------------------------------------------------
+
     final loginInfo = LoginInfo(
-      mobile: _mobileController.text.trim(), // now using mobile
-      password: _passwordController.text.trim(),
+      mobile: mobile,
+      password: password,
     );
 
-    final response =
-        await ref.read(loginViewModelProvider.notifier).login(loginInfo);
+    final loginResponse =
+        await ref.read(loginViewModelProvider.notifier)
+            .login(loginInfo);
+    // CHECK LOGIN SUCCESS
+    //--------------------------------------------------
 
-    if (response != null && response.success == 1) {
-      if (mounted) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => const MainBottomNav()),
-        );
-      }
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(response?.message ?? "Login failed"),
+    if (loginResponse == null || loginResponse.success != 1) {
+
+      showMessage(loginResponse?.message ?? "Login Failed");
+
+      return;
+    }
+    // STEP 2: CREATE LOGIN API CALL (TOKEN GENERATE)
+    //--------------------------------------------------
+
+    final tokenRequest = TokenResponse(
+      mobile: loginResponse.mobile,
+    deviceDetails: ""
+    );
+
+    final tokenResult =
+        await ref.read(authViewModelProvider.notifier)
+            .createLogin(tokenRequest);
+
+    if (tokenResult == null) {
+
+      showMessage("Token generation failed");
+
+      return;
+    }
+
+    //--------------------------------------------------
+    // STEP 3: NAVIGATE TO DASHBOARD
+    //--------------------------------------------------
+
+    if (mounted) {
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) => const MainBottomNav(),
         ),
       );
     }
   }
 
+  //--------------------------------------------------
+  // SHOW MESSAGE
+  //--------------------------------------------------
+
+  void showMessage(String message) {
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
+  }
+
+  //--------------------------------------------------
+  // UI
+  //--------------------------------------------------
+
   @override
   Widget build(BuildContext context) {
+
     final loginState = ref.watch(loginViewModelProvider);
+    final authState = ref.watch(authViewModelProvider);
+
+    final isLoading =
+        loginState.isLoading || authState.isLoading;
 
     return Scaffold(
+
       backgroundColor: Colors.grey.shade50,
+
       body: Center(
         child: SingleChildScrollView(
+
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24.0),
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+
             child: Column(
+
               children: [
+
                 const SizedBox(height: 40),
-                CircleAvatar(
+
+                const CircleAvatar(
                   radius: 50,
                   backgroundColor: Colors.indigo,
                   child: Icon(
@@ -65,7 +134,9 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                     color: Colors.white,
                   ),
                 ),
+
                 const SizedBox(height: 30),
+
                 const Text(
                   "Welcome Back",
                   style: TextStyle(
@@ -74,136 +145,117 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                     color: Colors.indigo,
                   ),
                 ),
-                const SizedBox(height: 10),
-                const Text(
-                  "Login to your account",
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.indigoAccent,
-                  ),
-                ),
+
                 const SizedBox(height: 40),
+
                 Card(
                   elevation: 6,
                   shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16)),
-                  color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+
                   child: Padding(
-                    padding: const EdgeInsets.all(20.0),
+                    padding: const EdgeInsets.all(20),
+
                     child: Column(
+
                       children: [
-                        // Mobile Number Field
+
+                        //--------------------------------
+                        // MOBILE
+                        //--------------------------------
+
                         TextField(
                           controller: _mobileController,
                           keyboardType: TextInputType.phone,
                           decoration: InputDecoration(
                             labelText: "Mobile Number",
-                            prefixIcon: const Icon(
-                              Icons.phone,
-                              color: Colors.indigo,
-                            ),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide.none,
-                            ),
+                            prefixIcon: const Icon(Icons.phone),
                             filled: true,
-                            fillColor: Colors.grey.shade100,
                           ),
                         ),
+
                         const SizedBox(height: 20),
-                        // Password Field
+
+                        //--------------------------------
+                        // PASSWORD
+                        //--------------------------------
+
                         TextField(
                           controller: _passwordController,
                           obscureText: true,
                           decoration: InputDecoration(
                             labelText: "Password",
-                            prefixIcon: const Icon(
-                              Icons.lock,
-                              color: Colors.indigo,
-                            ),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide.none,
-                            ),
+                            prefixIcon: const Icon(Icons.lock),
                             filled: true,
-                            fillColor: Colors.grey.shade100,
                           ),
                         ),
+
                         const SizedBox(height: 30),
-                        ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.indigo,
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 100, vertical: 15),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
+
+                        //--------------------------------
+                        // LOGIN BUTTON
+                        //--------------------------------
+
+                        SizedBox(
+                          width: double.infinity,
+                          height: 50,
+
+                          child: ElevatedButton(
+
+                            onPressed:
+                                isLoading ? null : _login,
+
+                            child: isLoading
+                                ? const CircularProgressIndicator(
+                                    color: Colors.white)
+                                : const Text("Login"),
                           ),
-                          onPressed: loginState.isLoading ? null : _login,
-                          child: loginState.isLoading
-                              ? const SizedBox(
-                                  height: 20,
-                                  width: 20,
-                                  child: CircularProgressIndicator(
-                                    color: Colors.white,
-                                  ),
-                                )
-                              : const Text(
-                                  "Login",
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    color: Colors.white,
-                                  ),
-                                ),
                         ),
-                        const SizedBox(height: 15),
+
+                        const SizedBox(height: 10),
+
+                        //--------------------------------
+                        // FORGOT PASSWORD
+                        //--------------------------------
+
                         TextButton(
                           onPressed: () {
+
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (_) => const ForgotPasswordPage(),
+                                builder: (_) =>
+                                    const ForgotPasswordPage(),
                               ),
                             );
                           },
                           child: const Text(
-                            "Forgot Password?",
-                            style: TextStyle(
-                              color: Colors.indigo,
-                              decoration: TextDecoration.underline,
-                            ),
-                          ),
+                              "Forgot Password?"),
                         ),
                       ],
                     ),
                   ),
                 ),
+
                 const SizedBox(height: 20),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Text(
-                      "Don't have an account? ",
-                      style: TextStyle(color: Colors.black54),
-                    ),
-                    TextButton(
-                      onPressed: () {
-                        Navigator.pushReplacement(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const SignUpPage(),
-                          ),
-                        );
-                      },
-                      child: const Text(
-                        "Sign Up",
-                        style: TextStyle(
-                          color: Colors.indigo,
-                          fontWeight: FontWeight.bold,
-                        ),
+
+                //--------------------------------
+                // SIGNUP
+                //--------------------------------
+
+                TextButton(
+                  onPressed: () {
+
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) =>
+                            const SignUpPage(),
                       ),
-                    ),
-                  ],
+                    );
+                  },
+                  child: const Text("Sign Up"),
                 ),
               ],
             ),

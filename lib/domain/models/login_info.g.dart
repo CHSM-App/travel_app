@@ -16,6 +16,7 @@ LoginInfo _$LoginInfoFromJson(Map<String, dynamic> json) => LoginInfo(
   agencyName: json['agency_name'] as String?,
   city: json['city'] as String?,
   agencyId: json['agency_id'] as String?,
+  imageUrl: json['image_url'] as String?,
 );
 
 Map<String, dynamic> _$LoginInfoToJson(LoginInfo instance) => <String, dynamic>{
@@ -28,4 +29,5 @@ Map<String, dynamic> _$LoginInfoToJson(LoginInfo instance) => <String, dynamic>{
   'agency_name': instance.agencyName,
   'agency_id': instance.agencyId,
   'city': instance.city,
+  'image_url': instance.imageUrl,
 };

@@ -1,5 +1,9 @@
 
+import 'dart:io';
+
+import 'package:travel_agency_app/domain/models/booking_info.dart';
 import 'package:travel_agency_app/domain/models/fueltype.dart';
+import 'package:travel_agency_app/domain/models/services.dart';
 import 'package:travel_agency_app/domain/models/status.dart';
 import 'package:travel_agency_app/domain/models/vehicles.dart';
 import 'package:travel_agency_app/domain/models/vehicletype.dart';
@@ -27,5 +31,20 @@ class AddVehicleUseCase {
   Future<dynamic> updateVehicle(Vehicles vehicle) {
      return addvehiclerepository.updateVehicle(vehicle);
   } 
+  
+    Future<dynamic> uploadVehicleDocument(File rcDocuments, String vehicleId, String agencyId) {
+    return addvehiclerepository.uploadVehicleDocument(rcDocuments, vehicleId, agencyId);
+  }
 
+  Future<List<BookingInfo>> getTripsByVehicle(int vehicleId) {
+       return addvehiclerepository.getTripsByVehicle(vehicleId);
+  }
+
+  Future<dynamic> addService(Services service) async {
+     return addvehiclerepository.addService(service);
+  }
+
+  Future<List<Services>> getServiceRecords(String agencyId, int vehicleId) async {
+      return addvehiclerepository.getServiceRecords(agencyId, vehicleId);
+  }
 }
