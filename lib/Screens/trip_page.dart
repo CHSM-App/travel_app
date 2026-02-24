@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:travel_agency_app/Screens/trip_card.dart';
+import 'package:travel_agency_app/core/network/network_state_notifier.dart';
 import 'package:travel_agency_app/domain/models/booking_info.dart';
 import 'package:travel_agency_app/presentation/providers/viewmodel_provider.dart';
 
@@ -66,7 +68,7 @@ class _TripPageState extends ConsumerState<TripPage> {
                 color: Colors.white,
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
+                    color: Colors.black.withValues(alpha: 0.05),
                     blurRadius: 10,
                     offset: const Offset(0, 3),
                   ),
@@ -138,7 +140,7 @@ class _TripPageState extends ConsumerState<TripPage> {
                       borderRadius: BorderRadius.circular(12),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.indigo.withOpacity(0.3),
+                          color: Colors.indigo.withValues(alpha: 0.3),
                           blurRadius: 8,
                           offset: const Offset(0, 4),
                         ),
@@ -275,54 +277,67 @@ class _TripPageState extends ConsumerState<TripPage> {
           ],
         ),
       ),
-      error: (e, _) => Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.error_outline_rounded,
-              size: 64,
-              color: Colors.red.shade300,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'Error loading trips',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: Colors.grey.shade800,
+      error: (e, _) {
+        final isOffline = !ref.watch(networkStateProvider).isConnected;
+        final isNetworkError = e is DioException &&
+            (e.type == DioExceptionType.connectionError ||
+                e.type == DioExceptionType.connectionTimeout ||
+                e.type == DioExceptionType.sendTimeout ||
+                e.type == DioExceptionType.receiveTimeout);
+
+        if (isOffline || isNetworkError) {
+          return const SizedBox.shrink();
+        }
+
+        return Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.error_outline_rounded,
+                size: 64,
+                color: Colors.red.shade300,
               ),
-            ),
-            const SizedBox(height: 8),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 32),
-              child: Text(
-                e.toString(),
+              const SizedBox(height: 16),
+              Text(
+                'Error loading trips',
                 style: TextStyle(
-                  color: Colors.grey.shade600,
-                  fontSize: 13,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ),
-            const SizedBox(height: 16),
-            ElevatedButton.icon(
-              onPressed: () {
-                _loadListForFilter(type);
-              },
-              icon: const Icon(Icons.refresh_rounded, size: 18),
-              label: const Text('Retry'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.indigo.shade700,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.grey.shade800,
                 ),
               ),
-            ),
-          ],
-        ),
-      ),
+              const SizedBox(height: 8),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 32),
+                child: Text(
+                  e.toString(),
+                  style: TextStyle(
+                    color: Colors.grey.shade600,
+                    fontSize: 13,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton.icon(
+                onPressed: () {
+                  _loadListForFilter(type);
+                },
+                icon: const Icon(Icons.refresh_rounded, size: 18),
+                label: const Text('Retry'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.indigo.shade700,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
       data: (trips) {
         // Filter trips based on search query
         final filteredTrips = trips.where((trip) {
