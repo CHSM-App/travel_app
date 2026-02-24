@@ -39,6 +39,7 @@ class _AddDriverPageState extends ConsumerState<AddDriverPage>
 
   File? _selectedLicenceFile;
   String? _existingLicenceUrl;
+  String? _existingLicenceRaw;
   bool _licenceRemoved = false;
 
   late AnimationController _animController;
@@ -77,6 +78,7 @@ class _AddDriverPageState extends ConsumerState<AddDriverPage>
         selectedExpiryDate = d.licenceExpiry;
         licenceExpiryController.text = _formatDate(d.licenceExpiry!);
       }
+      _existingLicenceRaw = d.photo;
       _existingLicenceUrl = _normalizeDocUrl(d.photo);
       debugPrint(
         '[AddDriver][init] normalizedExistingDoc=$_existingLicenceUrl',
@@ -286,7 +288,7 @@ class _AddDriverPageState extends ConsumerState<AddDriverPage>
       licenceNo: licenceNoController.text.trim(),
       licenceExpiry: selectedExpiryDate,
       photo: (!_licenceRemoved && _selectedLicenceFile == null)
-          ? _existingLicenceUrl
+          ? _existingLicenceRaw
           : null,
       agencyId: agencyId,
     );
@@ -901,6 +903,7 @@ class _AddDriverPageState extends ConsumerState<AddDriverPage>
 
       if (fetchedNormalized != null && fetchedNormalized.isNotEmpty) {
         setState(() {
+          _existingLicenceRaw = fetchedRaw;
           _existingLicenceUrl = fetchedNormalized;
           _licenceRemoved = false;
         });

@@ -42,14 +42,11 @@ class AdddriverViewmodel extends StateNotifier<AddDriverState> {
   final AddDeiverUseCase usecase;
 
   AdddriverViewmodel(this.ref, this.usecase) : super(const AddDriverState());
-
   Future<int> addDriver(Drivers driver) async {
     state = state.copyWith(isLoading: true, error: null, data: null);
-
     try {
       final result = await usecase.addDriver(driver);
       final driverId = _extractDriverId(result);
-
       state = state.copyWith(
         isLoading: false,
         data: result is Map<String, dynamic>
@@ -179,4 +176,27 @@ class AdddriverViewmodel extends StateNotifier<AddDriverState> {
       state = state.copyWith(fetchTripsByDriverId: AsyncValue.error(e, st));
     }
   }
+  
+Future<Map<String, dynamic>> deleteDriver(int driverId) async {
+  state = state.copyWith(isLoading: true, error: null);
+  try {
+    final result = await usecase.deleteDriver(driverId);
+    state = state.copyWith(isLoading: false);
+    final status = result['status'];
+    final isSuccess = status == 1 || status == '1' || status == true;
+    if (isSuccess) {
+      return {'success': true, 'message': result['message'] ?? 'Deleted successfully'};
+    } else {
+      return {'success': false, 'message': result['message'] ?? 'Delete failed'};
+    }
+  } on DioException catch (e) {
+    final message = e.response?.data?['message'] ?? "Server error";
+    state = state.copyWith(isLoading: false, error: message);
+    return {'success': false, 'message': message};
+  } catch (e) {
+    final message = e.toString();
+    state = state.copyWith(isLoading: false, error: message);
+    return {'success': false, 'message': message};
+  }
+}
 }

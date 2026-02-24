@@ -34,4 +34,11 @@ class AddDriverImpl implements Adddriverrepository {
     return apiService.fetchDriverHistory(driverId);
   }
 
+   @override
+ Future<dynamic> deleteDriver(int driverId) {
+    return apiService.deleteDriver(driverId);
+  }
+
+
+
 }

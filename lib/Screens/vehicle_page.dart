@@ -125,19 +125,17 @@ class _VehiclePageState extends ConsumerState<VehiclePage>
 
     if (fuel.contains('ev') || fuel.contains('electric')) {
       bg = _C.greenSoft;
-      fg = _C.green;  
+      fg = _C.green;
       icon = Icons.bolt_rounded;
     } else if (fuel.contains('petrol')) {
       bg = _C.petrolSoft;
       fg = _C.petrol;
       icon = Icons.local_gas_station_rounded;
-    } 
-    else if (fuel.contains('CNG')) {
+    } else if (fuel.contains('CNG')) {
       bg = _C.greenSoft;
       fg = _C.green;
       icon = Icons.local_gas_station_rounded;
-    } 
-    else {
+    } else {
       bg = _C.dieselSoft;
       fg = _C.diesel;
       icon = Icons.opacity_rounded;
@@ -389,24 +387,75 @@ class _VehiclePageState extends ConsumerState<VehiclePage>
                                     );
                               }
                             } else if (val == 'delete') {
-                              _deleteDialog(
-                                'Delete Vehicle',
-                                v.name ?? 'vehicle',
-                                Icons.directions_car_rounded,
-                                () {
-                                  Navigator.pop(context);
-                                  ref
-                                      .read(
-                                        tripBookingViewModelProvider.notifier,
-                                      )
-                                      .vehicleList(
-                                        ref
-                                                .read(loginViewModelProvider)
-                                                .agencyId ??
-                                            '',
-                                      );
-                                },
-                              );
+                              // _deleteDialog(
+                              //   'Delete Vehicle',
+                              //   v.name ?? 'vehicle',
+                              //   Icons.directions_car_rounded,
+                              //   () {
+                              //     Navigator.pop(context);
+                              //     ref
+                              //         .read(
+                              //           tripBookingViewModelProvider.notifier,
+                              //         )
+                              //         .vehicleList(
+                              //           ref
+                              //                   .read(loginViewModelProvider)
+                              //                   .agencyId ??
+                              //               '',
+                              //         );
+                              //   },
+                              // );
+                                     _deleteDialog(
+  'Delete Vehicle',
+  v.name ?? 'vehicle',
+  Icons.directions_car_rounded,
+  () async {
+    Navigator.pop(context); // Close dialog
+
+    final agencyId = ref.read(loginViewModelProvider).agencyId ?? '';
+    final vehicleId = v.vehicleId;
+    if (vehicleId == null || vehicleId <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Cannot delete yet'),
+          backgroundColor: _C.red,
+        ),
+      );
+      return;
+    }
+    final result = await ref
+        .read(addVehicleViewModelProvider.notifier)
+        .deleteVehicle(vehicleId);
+
+    // Check if deletion succeeded
+    if (result['success'] == true) {
+      // Refresh driver list
+      ref.read(tripBookingViewModelProvider.notifier).vehicleList(agencyId);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            
+            result['message']?.toString() ?? '${v.name} deleted successfully',
+            
+          ),
+          backgroundColor: _C.green,
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            result['message']?.toString() ??
+                ref.read(addVehicleViewModelProvider).error ??
+                'Cannot delete yet',
+          ),
+          backgroundColor: _C.red,
+        ),
+      );
+    }
+  },
+);
                             }
                           },
                         ),
@@ -583,25 +632,62 @@ class _VehiclePageState extends ConsumerState<VehiclePage>
                       ref
                           .read(tripBookingViewModelProvider.notifier)
                           .driverList(
-                            ref.read(loginViewModelProvider).agencyId ??
-                                '',
+                            ref.read(loginViewModelProvider).agencyId ?? '',
                           );
                     }
                   } else if (val == 'delete') {
+                    // _deleteDialog(
+                    //   'Delete Driver',
+                    //   d.name ?? 'driver',
+                    //   Icons.person_rounded,
+                    //   () {
+                    //     Navigator.pop(context);
+                    //     ref
+                    //         .read(tripBookingViewModelProvider.notifier)
+                    //         .driverList(
+                    //           ref.read(loginViewModelProvider).agencyId ?? '',
+                    //         );
+                    //   },
+                    // );
                     _deleteDialog(
-                      'Delete Driver',
-                      d.name ?? 'driver',
-                      Icons.person_rounded,
-                      () {
-                        Navigator.pop(context);
-                        ref
-                            .read(tripBookingViewModelProvider.notifier)
-                            .driverList(
-                              ref.read(loginViewModelProvider).agencyId ??
-                                  '',
-                            );
-                      },
-                    );
+  'Delete Driver',
+  d.name ?? 'driver',
+  Icons.person_rounded,
+  () async {
+    Navigator.pop(context); // Close dialog
+
+    final agencyId = ref.read(loginViewModelProvider).agencyId ?? '';
+    final result = await ref
+        .read(addDriverViewModelProvider.notifier)
+        .deleteDriver(d.driverId ?? 0);
+
+    // Check if deletion succeeded
+    if (result['success'] == true) {
+      // Refresh driver list
+      ref.read(tripBookingViewModelProvider.notifier).driverList(agencyId);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            result['message']?.toString() ?? '${d.name} deleted successfully',
+          ),
+          backgroundColor: _C.green,
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            result['message']?.toString() ??
+                ref.read(addDriverViewModelProvider).error ??
+                'Cannot delete yet',
+          ),
+          backgroundColor: _C.red,
+        ),
+      );
+    }
+  },
+);
                   }
                 },
               ),
@@ -1236,11 +1322,16 @@ class _VehiclePageState extends ConsumerState<VehiclePage>
                 ),
               );
               if (result == true && mounted) {
-                final agencyId = ref.read(loginViewModelProvider).agencyId ?? '';
+                final agencyId =
+                    ref.read(loginViewModelProvider).agencyId ?? '';
                 if (isVehicle) {
-                  ref.read(tripBookingViewModelProvider.notifier).vehicleList(agencyId);
+                  ref
+                      .read(tripBookingViewModelProvider.notifier)
+                      .vehicleList(agencyId);
                 } else {
-                  ref.read(tripBookingViewModelProvider.notifier).driverList(agencyId);
+                  ref
+                      .read(tripBookingViewModelProvider.notifier)
+                      .driverList(agencyId);
                 }
               }
             },

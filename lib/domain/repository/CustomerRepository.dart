@@ -15,5 +15,9 @@ abstract class CustomerRepository {
     Future<dynamic> uploadCustomerDocument(
    File document, String customerId, String agencyId
   );
+  Future<dynamic> deleteCustomer(customerId);
+
+
+
 
 }

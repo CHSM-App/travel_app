@@ -9,6 +9,7 @@ part of 'vehicles.dart';
 Vehicles _$VehiclesFromJson(Map<String, dynamic> json) => Vehicles(
   Vehicle_info: json['Vehicle_info'] as String?,
   vehicleId: (json['vehicleId'] as num?)?.toInt(),
+  driverId: (json['driverId'] as num?)?.toInt(),
   name: json['name'] as String?,
   number: json['number'] as String?,
   TypeId: (json['TypeId'] as num?)?.toInt(),
@@ -26,6 +27,7 @@ Vehicles _$VehiclesFromJson(Map<String, dynamic> json) => Vehicles(
 Map<String, dynamic> _$VehiclesToJson(Vehicles instance) => <String, dynamic>{
   'Vehicle_info': instance.Vehicle_info,
   'vehicleId': instance.vehicleId,
+  'driverId': instance.driverId,
   'name': instance.name,
   'number': instance.number,
   'TypeId': instance.TypeId,
