@@ -7,11 +7,11 @@ import 'package:travel_agency_app/domain/models/vehicles.dart';
 import 'package:travel_agency_app/presentation/providers/viewmodel_provider.dart';
 
 class VehicleTripHistory extends ConsumerStatefulWidget {
-  // final BookingInfo vehicle;
-  final int vehicleId;
-final String vehicleName;
+  final Vehicles vehicle;
+//   final int vehicleId;
+// final String vehicleInfo;
 
-  const VehicleTripHistory({super.key, required this.vehicleId, required this.vehicleName, required Vehicles vehicle});
+  const VehicleTripHistory({super.key, required this.vehicle});
 
   @override
   ConsumerState<VehicleTripHistory> createState() =>
@@ -69,7 +69,7 @@ class _VehicleTripHistoryState
     Future.microtask(() {
       ref
           .read(addVehicleViewModelProvider.notifier)
-          .getTripsByVehicle(widget.vehicleId);
+          .getTripsByVehicle(widget.vehicle.vehicleId ?? 0);
     });
   }
 
@@ -105,115 +105,272 @@ class _VehicleTripHistoryState
   // HEADER
   // ────────────────────────────────────────────────────────────────
 
-  Widget _buildStaticHeader(AsyncValue<List<BookingInfo>> tripState) {
-    final vehicle = widget.vehicleName;
-    final topPad = MediaQuery.of(context).padding.top;
+ Widget _buildStaticHeader(AsyncValue<List<BookingInfo>> tripState) {
+  final topPad = MediaQuery.of(context).padding.top;
 
-    return Container(
-      padding: EdgeInsets.fromLTRB(20, topPad + 12, 20, 20),
-      decoration: BoxDecoration(
-        color: _surface,
-        borderRadius:
-            const BorderRadius.vertical(bottom: Radius.circular(28)),
-        boxShadow: [
-          BoxShadow(
-            color: _accent.withOpacity(0.08),
-            blurRadius: 24,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+  return Container(
+    padding: EdgeInsets.fromLTRB(20, topPad + 12, 20, 24),
+    decoration: BoxDecoration(
+      color: _surface,
+      borderRadius: const BorderRadius.vertical(bottom: Radius.circular(32)),
+      boxShadow: [
+        BoxShadow(
+          color: const Color(0xFF6378FF).withOpacity(0.08),
+          blurRadius: 24,
+          offset: const Offset(0, 8),
+        ),
+        BoxShadow(
+          color: Colors.black.withOpacity(0.04),
+          blurRadius: 8,
+          offset: const Offset(0, 2),
+        ),
+      ],
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
 
-          // BACK
-          Row(
-            children: [
-              GestureDetector(
-                onTap: () => Navigator.pop(context),
-                child: Container(
-                  width: 38,
-                  height: 38,
-                  decoration: BoxDecoration(
-                    color: _surfaceLight,
-                    borderRadius: BorderRadius.circular(11),
-                    border: Border.all(color: _divider),
-                  ),
-                  child: const Icon(
-                    Icons.arrow_back_ios_new_rounded,
-                    size: 15,
-                  ),
+        // ── TOP ROW — Back + Label ──
+        Row(
+          children: [
+            GestureDetector(
+              onTap: () => Navigator.pop(context),
+              child: Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: _surfaceLight,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: _divider, width: 1),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.04),
+                      blurRadius: 6,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Icon(
+                  Icons.arrow_back_ios_new_rounded,
+                  size: 14,
+                  color: _textPrimary,
                 ),
               ),
-              const SizedBox(width: 12),
-              const Text(
-                "Vehicle Trip History",
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                  color: _textSecondary,
-                  letterSpacing: 1.4,
-                ),
+            ),
+            const SizedBox(width: 14),
+            Text(
+              "Vehicle's History",
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                color: _accent,
+                letterSpacing: 2.2,
               ),
-            ],
-          ),
+            ),
+          ],
+        ),
 
-          const SizedBox(height: 20),
+        const SizedBox(height: 22),
 
-          // VEHICLE NAME
-          SlideTransition(
-            position: _slideUp,
-            child: FadeTransition(
-              opacity: _fadeIn,
-              child: Row(
-                children: [
-                  ScaleTransition(
-                    scale: _avatarScale,
-                    child: Container(
-                      width: 60,
-                      height: 60,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(16),
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFF6378FF), _accent],
+        // ── VEHICLE IDENTITY ROW ──
+        SlideTransition(
+          position: _slideUp,
+          child: FadeTransition(
+            opacity: _fadeIn,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+
+                // Avatar
+                ScaleTransition(
+                  scale: _avatarScale,
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      // Soft glow halo
+                      Container(
+                        width: 72,
+                        height: 72,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          gradient: RadialGradient(
+                            colors: [
+                              const Color(0xFF6378FF).withOpacity(0.15),
+                              Colors.transparent,
+                            ],
+                          ),
                         ),
                       ),
-                      child: const Icon(
-                        Icons.directions_car_rounded,
-                        color: Colors.white,
-                        size: 28,
+                      Container(
+                        width: 58,
+                        height: 58,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(18),
+                          gradient: const LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [Color(0xFF6378FF), Color(0xFF4A5BD4)],
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFF6378FF).withOpacity(0.30),
+                              blurRadius: 16,
+                              spreadRadius: -2,
+                              offset: const Offset(0, 6),
+                            ),
+                          ],
+                        ),
+                        child: const Icon(
+                          Icons.directions_car_rounded,
+                          color: Colors.white,
+                          size: 26,
+                        ),
                       ),
-                    ),
+                    ],
                   ),
-                  const SizedBox(width: 14),
-                  Column(
+                ),
+
+                const SizedBox(width: 14),
+
+                // Name + plate
+                Expanded(
+                  child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        vehicle ?? 'Vehicle',
-                        style: const TextStyle(
+                        widget.vehicle.name ?? 'Unknown Vehicle',
+                        style: TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.w800,
                           color: _textPrimary,
+                          letterSpacing: -0.5,
+                          height: 1.1,
                         ),
                       ),
-                     
-
+                      const SizedBox(height: 6),
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 10, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF6378FF).withOpacity(0.08),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(
+                                color: const Color(0xFF6378FF).withOpacity(0.20),
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.pin_outlined,
+                                  size: 11,
+                                  color: const Color(0xFF6378FF).withOpacity(0.7),
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  widget.vehicle.number ?? '—',
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w700,
+                                    color: Color(0xFF6378FF),
+                                    letterSpacing: 1.6,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
                     ],
                   ),
-                ],
-              ),
+                ),
+
+                // Status chip — adapts color by status
+                Builder(builder: (_) {
+                  final isEngaged = (widget.vehicle.StatusId ?? 0) == 1;
+                  final chipColor = isEngaged
+                      ? const Color(0xFFBE9C02)
+                      : const Color(0xFF22C55E);
+                  final chipBg = isEngaged
+                      ? const Color(0xFFFFFBEB)
+                      : const Color(0xFFF0FDF4);
+                  final chipBorder = isEngaged
+                      ? const Color(0xFFBE9C02)
+                      : const Color(0xFF22C55E);
+
+                  return Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 11, vertical: 7),
+                    decoration: BoxDecoration(
+                      color: chipBg,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: chipBorder.withOpacity(0.35),
+                        width: 1,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: chipColor.withOpacity(0.10),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          width: 6,
+                          height: 6,
+                          decoration: BoxDecoration(
+                            color: chipColor,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                        const SizedBox(width: 5),
+                        Text(
+                          isEngaged ? "Engaged" : "Available",
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            color: chipColor,
+                            letterSpacing: 0.2,
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }),
+              ],
             ),
           ),
+        ),
 
-          const SizedBox(height: 18),
+        // const SizedBox(height: 20),
 
-          _buildCompactStats(tripState),
-        ],
-      ),
-    );
-  }
+        // ── Divider ──
+        // Container(
+        //   height: 1,
+        //   decoration: BoxDecoration(
+        //     gradient: LinearGradient(
+        //       colors: [
+        //         Colors.transparent,
+        //         _divider,
+        //         Colors.transparent,
+        //       ],
+        //     ),
+        //   ),
+        // ),
+
+        const SizedBox(height: 16),
+
+        _buildCompactStats(tripState),
+      ],
+    ),
+  );
+}
 
   // ────────────────────────────────────────────────────────────────
   // STATS

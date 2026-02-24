@@ -119,6 +119,7 @@ class TripBookingViewModel extends StateNotifier<TripBookingState> {
     state = state.copyWith(fetchVehicleList: AsyncValue.data(updatedList));
   }
 
+
     Future<void> getTripsByVehicle(String agencyId) async {
     state = state.copyWith(isLoading: true);
     try {

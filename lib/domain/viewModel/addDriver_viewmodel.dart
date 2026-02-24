@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:travel_agency_app/domain/models/booking_info.dart';
 import 'package:travel_agency_app/domain/models/drivers.dart';
 import 'package:travel_agency_app/domain/usecase/adddriverUseCase.dart';
 
@@ -10,8 +11,10 @@ class AddDriverState {
   final bool isLoading;
   final Map<String, dynamic>? data;
   final String? error;
+  final AsyncValue<List<BookingInfo>>? fetchTripsByDriverId;
 
   const AddDriverState({
+    this.fetchTripsByDriverId,
     this.isLoading = false,
     this.data,
     this.error,
@@ -21,11 +24,15 @@ class AddDriverState {
     bool? isLoading,
     Map<String, dynamic>? data,
     String? error,
+    AsyncValue<List<BookingInfo>>? fetchTripsByDriverId = const AsyncValue.loading(),
+
   }) {
     return AddDriverState(
       isLoading: isLoading ?? this.isLoading,
       data: data ?? this.data,
       error: error ?? this.error,
+      fetchTripsByDriverId: fetchTripsByDriverId ?? this.fetchTripsByDriverId,
+
     );
   }
 }
@@ -161,5 +168,15 @@ class AdddriverViewmodel extends StateNotifier<AddDriverState> {
     }
 
     return null;
+  }
+
+  Future<void> fetchDriverHistory(int driverId) async {
+     state = state.copyWith(fetchTripsByDriverId: const AsyncValue.loading());
+    try {
+      final result = await usecase.fetchDriverHistory(driverId);
+      state = state.copyWith(fetchTripsByDriverId: AsyncValue.data(result));
+    } catch (e, st) {
+      state = state.copyWith(fetchTripsByDriverId: AsyncValue.error(e, st));
+    }
   }
 }

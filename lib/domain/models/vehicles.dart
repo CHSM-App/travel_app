@@ -3,6 +3,8 @@ part 'vehicles.g.dart';
 
 @JsonSerializable()
 class Vehicles {
+
+  final String? Vehicle_info;
   final int? vehicleId;
   final String? name;
   final String? number;
@@ -18,6 +20,7 @@ class Vehicles {
   final String? agencyId;
 
   Vehicles({
+    this.Vehicle_info,
     required this.vehicleId,
     required this.name,
     required this.number,
