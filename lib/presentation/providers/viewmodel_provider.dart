@@ -49,5 +49,5 @@ final TripPageViewModelProvider =
 final addDriverViewModelProvider =
     StateNotifierProvider<AdddriverViewmodel, AddDriverState>((ref) {
       final usecase = ref.watch(addDriverUseCaseProvider);
-      return AdddriverViewmodel(ref, usecase);
+      return AdddriverViewmodel(usecase);
     });
