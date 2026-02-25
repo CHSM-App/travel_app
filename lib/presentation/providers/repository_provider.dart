@@ -16,38 +16,38 @@ import '../../data/api/api_service.dart';
 
 
 final authRepositoryProvider = Provider<AuthRepository>((ref) {
-   final dio = ref.watch(dioProvider).value!;
+   final dio = ref.watch(dioProvider);
   final api = ApiService(dio);
   return AuthImpl(api);
 });
 
 
  final loginRepositoryProvider = Provider<LoginRepo>((ref) {
-   final dio = ref.watch(dioProvider).value!;
+   final dio = ref.watch(dioProvider);
   final api = ApiService(dio);
   return LoginImpl(api);
 });
 
 final tripBookingRepositoryProvider = Provider<Tripbookingrepository>((ref) {
-   final dio = ref.watch(dioProvider).value!;
+   final dio = ref.watch(dioProvider);
   final api = ApiService(dio);
   return TripBookingImpl(api);
 });
 
 final addVehicleRepositoryProvider = Provider<Addvehiclerepository>((ref) {
-   final dio = ref.watch(dioProvider).value!;
+   final dio = ref.watch(dioProvider);
   final api = ApiService(dio);
   return AddvehicleImpl(api);
 });
 
 final customerRepositoryProvider = Provider<CustomerRepository>((ref) {
-   final dio = ref.watch(dioProvider).value!;
+   final dio = ref.watch(dioProvider);
   final api = ApiService(dio);
   return CustomerImpl(api);
 });
 
 final AdddriverrepositoryProvider=Provider<Adddriverrepository>((ref){
-  final dio=ref.watch(dioProvider).value!;
+  final dio=ref.watch(dioProvider);
   final api=ApiService(dio);
   return AddDriverImpl(api);
 });

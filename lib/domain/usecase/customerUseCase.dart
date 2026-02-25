@@ -34,4 +34,8 @@ class customerUseCase {
       agencyId,
     );
   }
+  Future<dynamic> deleteCustomer(customerId) {
+    return customerrepository.deleteCustomer(customerId);
+  }
+
 } 

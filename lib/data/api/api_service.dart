@@ -82,7 +82,7 @@ abstract class ApiService {
   @POST("insert/updatePaymentStatus/")
   Future<dynamic> updatePaymentStatus(@Body() BookingInfo tripbooking);
 
-   @POST("insert/addService/")
+  @POST("insert/addService/")
   Future<dynamic> addService(@Body() Services service);
 
   @POST("insert/updateService/{service_id}")
@@ -171,5 +171,18 @@ abstract class ApiService {
   Future<List<BookingInfo>> fetchDriverHistory(@Path("driver_id") int driverId);
 
   @GET("users/serviceRecord/{agency_id}/{vehicle_id}")
-  Future<List<Services>> getServiceRecords(@Path("agency_id") String agencyId, @Path("vehicle_id") int vehicleId);
+  Future<List<Services>> getServiceRecords(
+    @Path("agency_id") String agencyId,
+    @Path("vehicle_id") int vehicleId,
+  );
+
+  //---------------------DELETE API ----------------------------------------
+  @DELETE("index/deleteVehicles/{vehicleid}")
+  Future<dynamic> deleteVehicle(@Path("vehicleid") int vehicleid);
+
+  @DELETE("index/deleteDrivers/{driverId}")
+Future<dynamic>  deleteDriver(@Path("driverId") int driverId);
+
+  @DELETE("index/deleteCustomers/{customer_id}")
+  Future<dynamic> deleteCustomer(@Path("customer_id") int customerId);
 }

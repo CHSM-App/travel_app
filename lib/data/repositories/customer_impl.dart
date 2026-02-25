@@ -36,4 +36,10 @@ class CustomerImpl implements CustomerRepository {
      return apiService.uploadCustomerDocument(document,customerId, agencyId);
   }
 
+
+   @override
+  Future<dynamic> deleteCustomer(customerId) {
+    return apiService.deleteCustomer(customerId);
+  }
+
 }
