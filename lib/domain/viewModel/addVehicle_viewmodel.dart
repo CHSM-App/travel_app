@@ -18,6 +18,7 @@ final bool isLoading;
   final Map<String, dynamic>? data;
   final String? error;
   final int? vehicleId;
+  final int? serviceId;
   final AsyncValue<List<VehicleType>> fetchVehicleTypeList;
   final AsyncValue<List<Status>> fetchstatusList;
   final AsyncValue<List<Fueltype>> fetchFuelTypeList;
@@ -29,6 +30,7 @@ final bool isLoading;
      this.data ,
     this.error,
     this.vehicleId,
+    this.serviceId,
     this.fetchVehicleTypeList = const AsyncValue.loading(),
     this.fetchstatusList = const AsyncValue.loading(),
     this.fetchFuelTypeList = const AsyncValue.loading(),
@@ -38,6 +40,7 @@ final bool isLoading;
 
   AddVehicleState copyWith({
         int? vehicleId,
+        int? serviceId,
        bool? isLoading,
     Map<String, dynamic>? data,
     String? error,
@@ -52,6 +55,7 @@ final bool isLoading;
   }) {
     return AddVehicleState(
        vehicleId: vehicleId ?? this.vehicleId,
+       serviceId: serviceId ?? this.serviceId,
        isLoading: isLoading ?? this.isLoading,
       data: data ?? this.data,
       error: error ?? this.error,
@@ -181,6 +185,27 @@ Future<void> updateVehicle(Vehicles vehicle) async {
       state = state.copyWith(isLoading: false, error: e.toString());
     }
   }
+
+  Future<void> updateService(int serviceId, Services services) async {
+     state = state.copyWith(isLoading: true, error: null);
+    try {
+      final result = await usecase.updateService(serviceId,services );
+      state = state.copyWith(isLoading: false, data: result);
+    } catch (e) {
+      state = state.copyWith(isLoading: false, error: e.toString());
+    }
+  }
+
+  Future<void> deleteService(int serviceId) async {
+  state = state.copyWith(isLoading: true, error: null);
+  try {
+    await usecase.deleteService(serviceId);
+    state = state.copyWith(isLoading: false);
+  } catch (e) {
+    state = state.copyWith(isLoading: false, error: e.toString());
+    rethrow;
+  }
+}
 
 
 

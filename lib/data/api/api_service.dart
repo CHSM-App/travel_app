@@ -85,6 +85,11 @@ abstract class ApiService {
   @POST("insert/addService/")
   Future<dynamic> addService(@Body() Services service);
 
+  @POST("insert/updateService/{service_id}")
+  Future<dynamic> updateService(@Path("service_id") int serviceId, @Body() Services service);
+
+
+
   //---------------------UPLOAD PHOTOS AND DOCUMENTS----------------------------------------
   @MultiPart()
   @POST("upload/AdminImage")
@@ -180,4 +185,7 @@ Future<dynamic>  deleteDriver(@Path("driverId") int driverId);
 
   @DELETE("index/deleteCustomers/{customer_id}")
   Future<dynamic> deleteCustomer(@Path("customer_id") int customerId);
+
+  @DELETE("index/deleteService/{service_id}")
+  Future<dynamic> deleteService(@Path("service_id") int serviceId);
 }

@@ -7,6 +7,7 @@ part of 'services.dart';
 // **************************************************************************
 
 Services _$ServicesFromJson(Map<String, dynamic> json) => Services(
+  serviceId: (json['service_id'] as num?)?.toInt(),
   vehicleId: (json['vehicle_id'] as num?)?.toInt(),
   serviceName: json['service_name'] as String?,
   serviceCost: (json['service_cost'] as num?)?.toDouble(),
@@ -18,6 +19,7 @@ Services _$ServicesFromJson(Map<String, dynamic> json) => Services(
 );
 
 Map<String, dynamic> _$ServicesToJson(Services instance) => <String, dynamic>{
+  'service_id': instance.serviceId,
   'vehicle_id': instance.vehicleId,
   'service_name': instance.serviceName,
   'service_cost': instance.serviceCost,

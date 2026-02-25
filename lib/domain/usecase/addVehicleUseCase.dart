@@ -59,7 +59,15 @@ class AddVehicleUseCase {
     return addvehiclerepository.getServiceRecords(agencyId, vehicleId);
   }
 
+  Future<dynamic> updateService(int serviceId, Services services) async {
+    return addvehiclerepository.updateService(serviceId, services);
+  }
+
   Future<dynamic> deleteVehicle(int vehicleid) {
     return addvehiclerepository.deleteVehicle(vehicleid);
+  }
+
+  Future<dynamic> deleteService(int serviceId) { 
+     return addvehiclerepository.deleteService(serviceId);
   }
 }
