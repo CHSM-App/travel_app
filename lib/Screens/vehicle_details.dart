@@ -1732,7 +1732,7 @@ class _TripsTabState extends ConsumerState<_TripsTab> {
                     key: ValueKey(trips[i].tripId),
                     bookinginfo: trips[i],
                     ref: ref,
-                    tripType: '',
+                    status: trips[i].status?? 0,
                   ),
                 ),
               ),
