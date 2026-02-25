@@ -61,4 +61,9 @@ class AddvehicleImpl implements Addvehiclerepository {
   Future<List<Services>> getServiceRecords(String agencyId, int vehicleId) {
     return apiService.getServiceRecords(agencyId, vehicleId);
   }
+
+  @override
+  Future<dynamic> updateService(int serviceId, Services service) {
+    return apiService.updateService(serviceId, service);
+  }
 }

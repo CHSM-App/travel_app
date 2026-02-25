@@ -1141,7 +1141,7 @@ class TripCard extends StatelessWidget {
             Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                const SizedBox(width: 38),
+                // const SizedBox(width: 38),
 
                 Expanded(
                   child: Row(

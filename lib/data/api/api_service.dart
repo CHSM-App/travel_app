@@ -85,6 +85,9 @@ abstract class ApiService {
    @POST("insert/addService/")
   Future<dynamic> addService(@Body() Services service);
 
+  @POST("insert/updateService/{service_id}")
+  Future<dynamic> updateService(@Body() int serviceId, @Body() Services service);
+
 
 
   //---------------------UPLOAD PHOTOS AND DOCUMENTS----------------------------------------

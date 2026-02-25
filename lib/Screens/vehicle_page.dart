@@ -80,42 +80,47 @@ class _VehiclePageState extends ConsumerState<VehiclePage>
 
   // ── Status Badge ──────────────────────────────────────────────────
   Widget _statusBadge(int? statusId) {
-    final isAvailable = statusId == 2;
-    final color = isAvailable ? _C.green : _C.orange;
-    final bg = isAvailable ? _C.greenSoft : _C.orangeSoft;
-    final label = isAvailable
-        ? 'Available'
-        : statusId == 1
-        ? 'Engaged'
-        : 'Unknown';
+  final isAvailable = statusId == 2;
+  final color = isAvailable ? _C.green : _C.orange;
+  final bg = isAvailable ? _C.greenSoft : _C.orangeSoft;
+  final label = isAvailable
+      ? 'Available'
+      : statusId == 1
+          ? 'Engaged'
+          : 'Unknown';
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: bg,
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 5,
-            height: 5,
-            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+  return Container(
+    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+    decoration: BoxDecoration(
+      color: bg,
+      borderRadius: BorderRadius.circular(20),
+    ),
+    child: Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 5,
+          height: 5,
+          decoration: BoxDecoration(
+            color: color,
+            shape: BoxShape.circle,
           ),
-          const SizedBox(width: 4),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 10,
-              fontWeight: FontWeight.w700,
-              color: color,
-            ),
+        ),
+        const SizedBox(width: 4),
+        Text(
+          label,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(
+            fontSize: 10,
+            fontWeight: FontWeight.w700,
+            color: color,
           ),
-        ],
-      ),
-    );
-  }
+        ),
+      ],
+    ),
+  );
+}
 
   // ── Fuel Badge ────────────────────────────────────────────────────
   Widget _fuelBadge(String? fuelType) {
@@ -246,202 +251,213 @@ class _VehiclePageState extends ConsumerState<VehiclePage>
   }
 
   // ── Vehicle Card ──────────────────────────────────────────────────
-  Widget _vehicleCard(Vehicles v, int i) {
-    return TweenAnimationBuilder<double>(
-      tween: Tween(begin: 0, end: 1),
-      duration: Duration(milliseconds: 200 + i * 40),
-      curve: Curves.easeOutCubic,
-      builder: (_, val, child) => Opacity(
-        opacity: val,
-        child: Transform.translate(
-          offset: Offset(0, 10 * (1 - val)),
-          child: child,
-        ),
+ Widget _vehicleCard(Vehicles v, int i) {
+  return TweenAnimationBuilder<double>(
+    tween: Tween(begin: 0, end: 1),
+    duration: Duration(milliseconds: 200 + i * 40),
+    curve: Curves.easeOutCubic,
+    builder: (_, val, child) => Opacity(
+      opacity: val,
+      child: Transform.translate(
+        offset: Offset(0, 10 * (1 - val)),
+        child: child,
       ),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(14),
-        onTap: () {
-          Navigator.push(
-            context,
-            // MaterialPageRoute(builder: (_) => VehicleTripHistory(vehicle: v)),
-            MaterialPageRoute(builder: (_) => VehicleManagePage(vehicle: v)),
-          );
-        },
-        child: Container(
-          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          decoration: BoxDecoration(
-            color: _C.surface,
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: _C.divider, width: 1),
-            boxShadow: [
-              BoxShadow(
-                color: _C.accent.withOpacity(0.05),
-                blurRadius: 8,
-                offset: const Offset(0, 3),
+    ),
+    child: InkWell(
+      borderRadius: BorderRadius.circular(14),
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => VehicleManagePage(vehicle: v)),
+        );
+      },
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        decoration: BoxDecoration(
+          color: _C.surface,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: _C.divider, width: 1),
+          boxShadow: [
+            BoxShadow(
+              color: _C.accent.withOpacity(0.05),
+              blurRadius: 8,
+              offset: const Offset(0, 3),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            // Icon
+            Container(
+              width: 38,
+              height: 38,
+              decoration: BoxDecoration(
+                color: _C.accentSoft,
+                borderRadius: BorderRadius.circular(10),
               ),
-            ],
-          ),
-          child: Row(
-            children: [
-              // Icon
-              Container(
-                width: 38,
-                height: 38,
-                decoration: BoxDecoration(
-                  color: _C.accentSoft,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: const Icon(
-                  Icons.directions_car_rounded,
-                  color: _C.accent,
-                  size: 18,
-                ),
+              child: const Icon(
+                Icons.directions_car_rounded,
+                color: _C.accent,
+                size: 18,
               ),
-              const SizedBox(width: 10),
+            ),
+            const SizedBox(width: 10),
 
-              // Content
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    // Row 1: Name + plate + menu
-                    // Row 1: Name + plate inline + status + menu
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Row(
-                            children: [
-                              Flexible(
+            // Content
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  /// ---------------- Row 1 ----------------
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Row(
+                          children: [
+                            Flexible(
+                              child: Text(
+                                v.name ?? 'Unknown',
+                                style: const TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w800,
+                                  color: _C.text1,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            if (v.number != null) ...[
+                              const SizedBox(width: 6),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 6,
+                                  vertical: 2,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: _C.surfaceLight,
+                                  borderRadius: BorderRadius.circular(5),
+                                  border: Border.all(color: _C.divider),
+                                ),
                                 child: Text(
-                                  v.name ?? 'Unknown',
+                                  v.number!,
                                   style: const TextStyle(
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w800,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w700,
                                     color: _C.text1,
+                                    letterSpacing: 0.8,
                                   ),
-                                  overflow: TextOverflow.ellipsis,
                                 ),
                               ),
-                              if (v.number != null) ...[
-                                const SizedBox(width: 6),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 6,
-                                    vertical: 2,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: _C.surfaceLight,
-                                    borderRadius: BorderRadius.circular(5),
-                                    border: Border.all(color: _C.divider),
-                                  ),
-                                  child: Text(
-                                    v.number!,
-                                    style: const TextStyle(
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.w700,
-                                      color: _C.text1,
-                                      letterSpacing: 0.8,
-                                    ),
-                                  ),
-                                ),
-                              ],
                             ],
-                          ),
-                        ),
-                        const SizedBox(width: 4),
-                        _menuBtn(
-                          items: [
-                            _menuItem(
-                              'edit',
-                              Icons.edit_rounded,
-                              'Edit',
-                              _C.accent,
-                              _C.accentSoft,
-                            ),
-                            const PopupMenuDivider(height: 0),
-                            _menuItem(
-                              'delete',
-                              Icons.delete_rounded,
-                              'Delete',
-                              _C.red,
-                              _C.redSoft,
-                            ),
                           ],
-                          onSelected: (val) async {
-                            if (val == 'edit') {
-                              final result = await Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) =>
-                                      AddVehiclePage(vehicle: v, isEdit: true),
-                                ),
-                              );
-                              if (result == true) {
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      _menuBtn(
+                        items: [
+                          _menuItem(
+                            'edit',
+                            Icons.edit_rounded,
+                            'Edit',
+                            _C.accent,
+                            _C.accentSoft,
+                          ),
+                          const PopupMenuDivider(height: 0),
+                          _menuItem(
+                            'delete',
+                            Icons.delete_rounded,
+                            'Delete',
+                            _C.red,
+                            _C.redSoft,
+                          ),
+                        ],
+                        onSelected: (val) async {
+                          if (val == 'edit') {
+                            final result = await Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) =>
+                                    AddVehiclePage(vehicle: v, isEdit: true),
+                              ),
+                            );
+                            if (result == true) {
+                              ref
+                                  .read(tripBookingViewModelProvider.notifier)
+                                  .vehicleList(
+                                    ref
+                                            .read(loginViewModelProvider)
+                                            .agencyId ??
+                                        '',
+                                  );
+                            }
+                          } else if (val == 'delete') {
+                            _deleteDialog(
+                              'Delete Vehicle',
+                              v.name ?? 'vehicle',
+                              Icons.directions_car_rounded,
+                              () {
+                                Navigator.pop(context);
                                 ref
-                                    .read(tripBookingViewModelProvider.notifier)
+                                    .read(
+                                      tripBookingViewModelProvider.notifier,
+                                    )
                                     .vehicleList(
                                       ref
                                               .read(loginViewModelProvider)
                                               .agencyId ??
                                           '',
                                     );
-                              }
-                            } else if (val == 'delete') {
-                              _deleteDialog(
-                                'Delete Vehicle',
-                                v.name ?? 'vehicle',
-                                Icons.directions_car_rounded,
-                                () {
-                                  Navigator.pop(context);
-                                  ref
-                                      .read(
-                                        tripBookingViewModelProvider.notifier,
-                                      )
-                                      .vehicleList(
-                                        ref
-                                                .read(loginViewModelProvider)
-                                                .agencyId ??
-                                            '',
-                                      );
-                                },
-                              );
-                            }
-                          },
-                        ),
-                      ],
-                    ),
+                              },
+                            );
+                          }
+                        },
+                      ),
+                    ],
+                  ),
 
-                    const SizedBox(height: 5),
+                  const SizedBox(height: 6),
 
-                    // Row 2: Stats
-                    Row(
-                      children: [
-                        _dot(
-                          Icons.people_rounded,
-                          '${v.capacity ?? "--"} Seats',
-                        ),
-                        const SizedBox(width: 10),
-                        _dot(
-                          Icons.speed_rounded,
-                          v.mileage != null ? '${v.mileage} km/l' : '--',
-                        ),
-                        const SizedBox(width: 8),
-                        _fuelBadge(v.FuelType),
-                        const Spacer(),
-                        _statusBadge(v.StatusId),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ],
+                  /// ---------------- Row 2 (FIXED OVERFLOW) ----------------
+                /// ---------------- Row 2 (Using Wrap - No Overflow Ever) ----------------
+Row(
+  crossAxisAlignment: CrossAxisAlignment.start,
+  children: [
+    /// Left side stats (auto wrap if needed)
+    Expanded(
+      child: Wrap(
+        spacing: 10,
+        runSpacing: 4,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        children: [
+          _dot(
+            Icons.people_rounded,
+            '${v.capacity ?? "--"} Seats',
           ),
+          _dot(
+            Icons.speed_rounded,
+            v.mileage != null ? '${v.mileage} km/l' : '--',
+          ),
+          _fuelBadge(v.FuelType),
+        ],
+      ),
+    ),
+
+    const SizedBox(width: 6),
+
+    /// Status badge (always right aligned)
+    _statusBadge(v.StatusId),
+  ],
+),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   // ── Driver Card ───────────────────────────────────────────────────
   Widget _driverCard(Drivers d, int i) {

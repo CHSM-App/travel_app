@@ -47,4 +47,8 @@ class AddVehicleUseCase {
   Future<List<Services>> getServiceRecords(String agencyId, int vehicleId) async {
       return addvehiclerepository.getServiceRecords(agencyId, vehicleId);
   }
+
+  Future<dynamic> updateService(int serviceId, Services services) async {
+    return addvehiclerepository.updateService(serviceId, services);
+  }
 }

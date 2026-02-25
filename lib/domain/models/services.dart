@@ -4,6 +4,9 @@ part 'services.g.dart';
 
 @JsonSerializable()
 class Services {
+  @JsonKey(name: 'service_id')
+  final int? serviceId;
+
   @JsonKey(name: 'vehicle_id')
   final int? vehicleId;
 
@@ -23,6 +26,7 @@ class Services {
   final String? agencyId;
 
   Services({
+    this.serviceId,
     this.vehicleId,
     this.serviceName,
     this.serviceCost,
