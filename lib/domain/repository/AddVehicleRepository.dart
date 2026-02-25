@@ -26,4 +26,6 @@ abstract class Addvehiclerepository {
 
   Future<dynamic> updateService(int serviceId, Services services);
 
+  Future<dynamic> deleteService(int serviceId);
+
 }

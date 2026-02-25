@@ -414,12 +414,13 @@ class _ApiService implements ApiService {
     final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
     final _headers = <String, dynamic>{};
-    final _data = serviceId;
+    final _data = <String, dynamic>{};
+    _data.addAll(service.toJson());
     final _options = _setStreamType<dynamic>(
       Options(method: 'POST', headers: _headers, extra: _extra)
           .compose(
             _dio.options,
-            'insert/updateService/{service_id}',
+            'insert/updateService/${serviceId}',
             queryParameters: queryParameters,
             data: _data,
           )
@@ -1114,6 +1115,27 @@ class _ApiService implements ApiService {
           .compose(
             _dio.options,
             'index/deleteCustomers/${customerId}',
+            queryParameters: queryParameters,
+            data: _data,
+          )
+          .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
+    );
+    final _result = await _dio.fetch(_options);
+    final _value = _result.data;
+    return _value;
+  }
+
+  @override
+  Future<dynamic> deleteService(int serviceId) async {
+    final _extra = <String, dynamic>{};
+    final queryParameters = <String, dynamic>{};
+    final _headers = <String, dynamic>{};
+    const Map<String, dynamic>? _data = null;
+    final _options = _setStreamType<dynamic>(
+      Options(method: 'DELETE', headers: _headers, extra: _extra)
+          .compose(
+            _dio.options,
+            'index/deleteService/${serviceId}',
             queryParameters: queryParameters,
             data: _data,
           )

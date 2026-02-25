@@ -80,7 +80,7 @@ class _VehicleManagePageState extends ConsumerState<VehicleManagePage>
   void initState() {
     super.initState();
 
-    _tab = TabController(length: 4, vsync: this)..addListener(_onTabChanged);
+    _tab = TabController(length: 3, vsync: this)..addListener(_onTabChanged);
 
     // Header entrance
     _headerAnim = AnimationController(
@@ -213,9 +213,9 @@ class _VehicleManagePageState extends ConsumerState<VehicleManagePage>
               fmt: _fmt,
               onMonth: (m) => setState(() => _month = m),
               onYear: (y) => setState(() => _year = y),
-              onEditService: (service) => _showAddServiceSheet(context,  service),
+              // FIX: pass null for new service, pass existing service for edit
+              onEditService: (service) => _showAddServiceSheet(context, service),
             ),
-            // _DocsTab(vehicle: widget.vehicle),
           ],
         ),
       ),
@@ -552,7 +552,8 @@ class _VehicleManagePageState extends ConsumerState<VehicleManagePage>
           ],
         ),
         child: FloatingActionButton.extended(
-          onPressed: () => _showAddServiceSheet(context,  Services() ),
+          // FIX: pass null to indicate a NEW service
+          onPressed: () => _showAddServiceSheet(context, null),
           backgroundColor: Colors.transparent,
           elevation: 0,
           shape: RoundedRectangleBorder(
@@ -584,24 +585,24 @@ class _VehicleManagePageState extends ConsumerState<VehicleManagePage>
     transitionDuration: const Duration(milliseconds: 400),
   );
 
-  void _showAddServiceSheet(BuildContext context,  Services? service) {
- final formKey = GlobalKey<FormState>();
+  // ─────────────────────────────────────────────────────────────────────────
+  // FIX: Accept nullable Services — null means ADD, non-null means EDIT
+  // ─────────────────────────────────────────────────────────────────────────
+  void _showAddServiceSheet(BuildContext context, Services? service) {
+    // Determine mode BEFORE building the sheet
+    final bool isEdit = service != null;
 
-final serviceController =
-    TextEditingController(text: service!.serviceName ?? "");
+    final formKey = GlobalKey<FormState>();
 
-final costController =
-    TextEditingController(text: service.serviceCost?.toString() ?? "");
+    final serviceController =
+        TextEditingController(text: isEdit ? (service.serviceName ?? '') : '');
+    final costController = TextEditingController(
+        text: isEdit ? (service.serviceCost?.toString() ?? '') : '');
+    final noteController =
+        TextEditingController(text: isEdit ? (service.description ?? '') : '');
 
-final noteController =
-    TextEditingController(text: service.description ?? "");
-
-DateTime selectedDate = service.serviceDate != null
-    ? DateTime.parse(service.serviceDate!.toIso8601String())
-    : DateTime.now();
-
-// ignore: unnecessary_null_comparison
-final bool isEdit = service != null;
+    DateTime selectedDate =
+        (isEdit && service.serviceDate != null) ? service.serviceDate! : DateTime.now();
 
     showModalBottomSheet(
       context: context,
@@ -609,7 +610,7 @@ final bool isEdit = service != null;
       backgroundColor: Colors.transparent,
       builder: (context) {
         return StatefulBuilder(
-          builder: (context, setState) {
+          builder: (context, setSheetState) {
             return Container(
               height: MediaQuery.of(context).size.height * 0.85,
               decoration: const BoxDecoration(
@@ -654,8 +655,9 @@ final bool isEdit = service != null;
                             ),
                             const SizedBox(width: 8),
                             Text(
+                              // FIX: correctly shows Edit or Add title
                               isEdit ? "Edit Service" : "Add Service",
-                              style: TextStyle(
+                              style: const TextStyle(
                                 fontSize: 20,
                                 fontWeight: FontWeight.w800,
                               ),
@@ -717,11 +719,10 @@ final bool isEdit = service != null;
                                       context: context,
                                       initialDate: selectedDate,
                                       firstDate: DateTime(2020),
-                                      lastDate:
-                                          DateTime.now(), // future blocked
+                                      lastDate: DateTime.now(),
                                     );
                                     if (picked != null) {
-                                      setState(() => selectedDate = picked);
+                                      setSheetState(() => selectedDate = picked);
                                     }
                                   },
                                   borderRadius: BorderRadius.circular(16),
@@ -803,54 +804,39 @@ final bool isEdit = service != null;
                             ),
                             onPressed: () async {
                               if (formKey.currentState!.validate()) {
-                                final body = {
-                                  "vehicle_id": widget.vehicle.vehicleId,
-                                  "service_name": serviceController.text,
-                                  "service_cost": double.parse(
-                                    costController.text,
-                                  ),
-                                  "service_date": selectedDate
-                                      .toIso8601String(),
-                                  "description": noteController.text,
-                                  "agency_id": ref
-                                      .read(loginViewModelProvider)
-                                      .agencyId,
-                                };
+                                // FIX: Build a proper Services object instead of a raw Map
+                                final Services serviceData = Services(
+                                  vehicleId: widget.vehicle.vehicleId,
+                                  serviceName: serviceController.text.trim(),
+                                  serviceCost: double.parse(costController.text.trim()),
+                                  serviceDate: selectedDate,
+                                  description: noteController.text.trim(),
+                                  agencyId: ref.read(loginViewModelProvider).agencyId,
+                                  // carry over the existing id when editing
+                                  serviceId: isEdit ? service.serviceId : null,
+                                );
 
                                 try {
                                   if (isEdit) {
-                                    // 🔹 UPDATE SERVICE
+                                    // 🔹 UPDATE SERVICE — use the existing service's id
                                     await ref
-                                        .read(
-                                          addVehicleViewModelProvider.notifier,
-                                        )
+                                        .read(addVehicleViewModelProvider.notifier)
                                         .updateService(
-                                          ref
-                                                  .read(
-                                                    addVehicleViewModelProvider,
-                                                  )
-                                                  .serviceId ??
-                                              0,
-                                          service,
+                                          service.serviceId ?? 0,
+                                          serviceData,
                                         );
                                   } else {
                                     // 🔹 ADD SERVICE
                                     await ref
-                                        .read(
-                                          addVehicleViewModelProvider.notifier,
-                                        )
-                                        .addService(service);
+                                        .read(addVehicleViewModelProvider.notifier)
+                                        .addService(serviceData);
                                   }
 
+                                  // Refresh the service list after save/update
                                   await ref
-                                      .read(
-                                        addVehicleViewModelProvider.notifier,
-                                      )
+                                      .read(addVehicleViewModelProvider.notifier)
                                       .getServiceRecords(
-                                        ref
-                                                .read(loginViewModelProvider)
-                                                .agencyId ??
-                                            '',
+                                        ref.read(loginViewModelProvider).agencyId ?? '',
                                         widget.vehicle.vehicleId ?? 0,
                                       );
 
@@ -867,23 +853,25 @@ final bool isEdit = service != null;
                                       ),
                                     );
                                   }
-                                } catch (_) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text(
-                                        isEdit
-                                            ? "Failed to update service "
-                                            : "Failed to add service",
+                                } catch (e) {
+                                  if (mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(
+                                          isEdit
+                                              ? "Failed to update service: $e"
+                                              : "Failed to add service: $e",
+                                        ),
+                                        backgroundColor: Colors.red,
                                       ),
-                                      backgroundColor: Colors.red,
-                                    ),
-                                  );
+                                    );
+                                  }
                                 }
                               }
                             },
                             child: Text(
                               isEdit ? "Update Service" : "Save Service",
-                              style: TextStyle(
+                              style: const TextStyle(
                                 fontSize: 15,
                                 fontWeight: FontWeight.w500,
                                 color: Colors.white,
@@ -1339,7 +1327,6 @@ class _PremiumTabBar extends SliverPersistentHeaderDelegate {
     Icons.dashboard_rounded,
     Icons.route_rounded,
     Icons.build_rounded,
-    Icons.folder_rounded,
   ];
 
   @override
@@ -1392,7 +1379,7 @@ class _PremiumTabBar extends SliverPersistentHeaderDelegate {
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8),
             child: Row(
-              mainAxisSize: MainAxisSize.max, // ✅ allow full width
+              mainAxisSize: MainAxisSize.max,
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Icon(_icons[i], size: 13),
@@ -1413,7 +1400,7 @@ class _PremiumTabBar extends SliverPersistentHeaderDelegate {
 }
 
 // ════════════════════════════════════════════════════════════════════════════
-// TAB 1 — OVERVIEW  (animated list items)
+// TAB 1 — OVERVIEW
 // ════════════════════════════════════════════════════════════════════════════
 class _OverviewTab extends StatelessWidget {
   final Vehicles vehicle;
@@ -1464,7 +1451,6 @@ class _OverviewTab extends StatelessWidget {
       physics: const BouncingScrollPhysics(),
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
       children: [
-        // Detail card — items animate in staggered
         Container(
           decoration: BoxDecoration(
             color: _C.surface,
@@ -1496,49 +1482,6 @@ class _OverviewTab extends StatelessWidget {
             }).toList(),
           ),
         ),
-
-        // const SizedBox(height: 16),
-
-        // _label('Compliance & Expiry'),
-        // const SizedBox(height: 10),
-
-        // Compliance grid — staggered cards
-        //     GridView.count(
-        //       crossAxisCount: 2,
-        //       shrinkWrap: true,
-        //       physics: const NeverScrollableScrollPhysics(),
-        //       crossAxisSpacing: 10,
-        //       mainAxisSpacing: 10,
-        //       childAspectRatio: 1.65,
-        //       children: [
-        //         _AnimatedListItem(
-        //           delay: const Duration(milliseconds: 200),
-        //           child: _compTile(
-        //             'Insurance',
-        //             null,
-        //             Icons.verified_rounded,
-        //             _C.green,
-        //           ),
-        //         ),
-        //         _AnimatedListItem(
-        //           delay: const Duration(milliseconds: 260),
-        //           child: _compTile(
-        //             'RC Book',
-        //             null,
-        //             Icons.article_rounded,
-        //             _C.indigo,
-        //           ),
-        //         ),
-        //         _AnimatedListItem(
-        //           delay: const Duration(milliseconds: 320),
-        //           child: _compTile('Pollution', null, Icons.air_rounded, _C.orange),
-        //         ),
-        //         _AnimatedListItem(
-        //           delay: const Duration(milliseconds: 380),
-        //           child: _compTile('Permit', null, Icons.badge_rounded, _C.violet),
-        //         ),
-        //       ],
-        //     ),
       ],
     );
   }
@@ -1594,97 +1537,6 @@ class _OverviewTab extends StatelessWidget {
       letterSpacing: 0.8,
     ),
   );
-
-  Widget _compTile(String label, DateTime? expiry, IconData icon, Color color) {
-    final days = expiry?.difference(DateTime.now()).inDays;
-    final warn = days != null && days < 30 && days >= 0;
-    final expired = days != null && days < 0;
-    final c = expired
-        ? _C.red
-        : warn
-        ? _C.orange
-        : color;
-
-    return Container(
-      padding: const EdgeInsets.all(13),
-      decoration: BoxDecoration(
-        color: _C.surface,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: (warn || expired) ? c.withOpacity(0.30) : _C.divider,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 30,
-                height: 30,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [c.withOpacity(0.16), c.withOpacity(0.06)],
-                  ),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Icon(icon, size: 14, color: c),
-              ),
-              const Spacer(),
-              if (warn || expired)
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 6,
-                    vertical: 2,
-                  ),
-                  decoration: BoxDecoration(
-                    color: c.withOpacity(0.12),
-                    borderRadius: BorderRadius.circular(5),
-                  ),
-                  child: Text(
-                    expired ? 'Expired' : '${days}d left',
-                    style: TextStyle(
-                      fontSize: 8,
-                      fontWeight: FontWeight.w800,
-                      color: c,
-                    ),
-                  ),
-                ),
-            ],
-          ),
-          const Spacer(),
-          Text(
-            label,
-            style: const TextStyle(
-              fontSize: 10,
-              fontWeight: FontWeight.w600,
-              color: _C.text2,
-            ),
-          ),
-          const SizedBox(height: 2),
-          Text(
-            expiry != null
-                ? '${expiry.day}/${expiry.month}/${expiry.year}'
-                : 'Not set',
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w800,
-              color: c,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 }
 
 class _RowData {
@@ -1783,13 +1635,6 @@ class _TripsTabState extends ConsumerState<_TripsTab> {
       error: (e, _) => _errState(e.toString()),
       data: (trips) {
         if (trips.isEmpty) {
-          // return _emptyState(
-          //   Icons.route_outlined,
-          //   'No trips yet',
-          //   'Trip history will appear here.',
-          //   _C.accent,
-          // );
-
           return LayoutBuilder(
             builder: (context, constraints) {
               return SingleChildScrollView(
@@ -1802,27 +1647,24 @@ class _TripsTabState extends ConsumerState<_TripsTab> {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Icon(
-                            Icons.build_outlined,
+                            Icons.route_outlined,
                             size: 70,
-                            color: Colors.orange.withOpacity(0.6),
+                            color: _C.accent.withOpacity(0.6),
                           ),
                           const SizedBox(height: 16),
                           const Text(
-                            "No records",
+                            "No trips yet",
                             style: TextStyle(
                               fontSize: 20,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
                           const SizedBox(height: 8),
-                          // Text(
-                          //   "No maintenance in ${widget.months[widget.month]} ${widget.year}.",
-                          //   textAlign: TextAlign.center,
-                          //   style: const TextStyle(
-                          //     fontSize: 14,
-                          //     color: Colors.grey,
-                          //   ),
-                          // ),
+                          const Text(
+                            "Trip history will appear here.",
+                            textAlign: TextAlign.center,
+                            style: TextStyle(fontSize: 14, color: Colors.grey),
+                          ),
                           const SizedBox(height: 30),
                         ],
                       ),
@@ -1849,7 +1691,6 @@ class _TripsTabState extends ConsumerState<_TripsTab> {
 
         return Column(
           children: [
-            // Stat strip with slide-down
             _AnimatedListItem(
               delay: const Duration(milliseconds: 0),
               child: Container(
@@ -1954,7 +1795,8 @@ class _MaintTab extends ConsumerStatefulWidget {
   final List<String> months;
   final String Function(double) fmt;
   final ValueChanged<int> onMonth, onYear;
-  final void Function(Services service) onEditService;
+  // FIX: callback now receives a Services object for edit, called with null for add
+  final void Function(Services? service) onEditService;
 
   const _MaintTab({
     required this.vehicle,
@@ -1999,10 +1841,80 @@ class _MaintTabState extends ConsumerState<_MaintTab>
     super.dispose();
   }
 
-  // Re-trigger animation on month/year change
   void _triggerListAnim() {
     _listAnim.forward(from: 0);
   }
+
+  void _confirmDelete(BuildContext context, Services service) {
+  showDialog(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      title: const Text(
+        "Delete Service",
+        style: TextStyle(fontWeight: FontWeight.w800),
+      ),
+      content: Text(
+        'Are you sure you want to delete "${service.serviceName}" permanently?',
+        style: const TextStyle(color: Colors.grey),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(ctx),
+          child: const Text("Cancel"),
+        ),
+        ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.red,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
+          onPressed: () async {
+            Navigator.pop(ctx);
+            try {
+              await ref
+                  .read(addVehicleViewModelProvider.notifier)
+                  .deleteService(service.serviceId ?? 0);
+
+              // Refresh list after delete
+              await ref
+                  .read(addVehicleViewModelProvider.notifier)
+                  .getServiceRecords(
+                    ref.read(loginViewModelProvider).agencyId ?? '',
+                    widget.vehicle.vehicleId ?? 0,
+                  );
+
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text("Service deleted successfully"),
+                    backgroundColor: Colors.green,
+                  ),
+                );
+              }
+            } catch (e) {
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text("Failed to delete service: $e"),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              }
+            }
+          },
+          child: const Text(
+            "Delete",
+            style: TextStyle(color: Colors.white),
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -2120,49 +2032,29 @@ class _MaintTabState extends ConsumerState<_MaintTab>
             data: (services) {
               final filteredServices = services.where((s) {
                 if (s.serviceDate == null) return false;
-
-                final date = s.serviceDate;
-
-                return date?.month == widget.month + 1 &&
-                    date?.year == widget.year;
+                return s.serviceDate!.month == widget.month + 1 &&
+                    s.serviceDate!.year == widget.year;
               }).toList();
 
-              // 🔵 Monthly Filter
-              final monthlyServices = services.where((s) {
-                if (s.serviceDate == null) return false;
-                final date = s.serviceDate!;
-                return date.month == widget.month + 1 &&
-                    date.year == widget.year;
-              }).toList();
-
-              // 🔵 Yearly Filter
-              final yearlyServices = services.where((s) {
-                if (s.serviceDate == null) return false;
-                final date = s.serviceDate!;
-                return date.year == widget.year;
-              }).toList();
-
-              // 🔵 Totals
-              final monthlyTotal = monthlyServices.fold<double>(
+              final monthlyTotal = filteredServices.fold<double>(
                 0.0,
                 (sum, s) => sum + (s.serviceCost ?? 0.0),
               );
 
-              final yearlyTotal = yearlyServices.fold<double>(
-                0.0,
-                (sum, s) => sum + (s.serviceCost ?? 0.0),
-              );
+              final yearlyTotal = services
+                  .where((s) =>
+                      s.serviceDate != null &&
+                      s.serviceDate!.year == widget.year)
+                  .fold<double>(0.0, (sum, s) => sum + (s.serviceCost ?? 0.0));
 
               return ListView(
                 padding: const EdgeInsets.fromLTRB(16, 14, 16, 100),
                 children: [
-                  // 🔵 TOTAL CARD (ALWAYS VISIBLE)
-                  // 🔵 SUMMARY SECTION
+                  // Summary cards
                   Container(
                     margin: const EdgeInsets.only(bottom: 16),
                     child: Row(
                       children: [
-                        // Monthly Card
                         Expanded(
                           child: Container(
                             padding: const EdgeInsets.all(14),
@@ -2195,7 +2087,6 @@ class _MaintTabState extends ConsumerState<_MaintTab>
 
                         const SizedBox(width: 12),
 
-                        // Yearly Card
                         Expanded(
                           child: Container(
                             padding: const EdgeInsets.all(14),
@@ -2229,7 +2120,7 @@ class _MaintTabState extends ConsumerState<_MaintTab>
                     ),
                   ),
 
-                  // 🔵 IF NO RECORDS
+                  // Empty state
                   if (filteredServices.isEmpty)
                     Padding(
                       padding: const EdgeInsets.only(top: 40),
@@ -2258,7 +2149,7 @@ class _MaintTabState extends ConsumerState<_MaintTab>
                       ),
                     ),
 
-                  // 🔵 SERVICE LIST
+                  // Service list
                   ...filteredServices.map((s) {
                     final formattedDate =
                         "${s.serviceDate!.day.toString().padLeft(2, '0')}/"
@@ -2268,13 +2159,12 @@ class _MaintTabState extends ConsumerState<_MaintTab>
                       _MR(
                         s.serviceName ?? '',
                         s.description ?? '',
-                        formattedDate.toString() ?? '', // date separately
-                        // description separately
-                        (s.serviceCost ?? 0).toDouble(), // ensure double
+                        formattedDate,
+                        (s.serviceCost ?? 0).toDouble(),
                         true,
                         Icons.build_rounded,
                       ),
-                       s,
+                      s,
                     );
                   }).toList(),
                 ],
@@ -2300,16 +2190,12 @@ class _MaintTabState extends ConsumerState<_MaintTab>
     ),
   );
 
-
-  //===================Maintenance card==============================//
   Widget _mCard(_MR r, Services service) {
     final bool isDone = r.done;
-    final Color accentColor = isDone
-        ? const Color(0xFF2A7A4B)
-        : const Color(0xFFC8622A);
-    final Color accentLight = isDone
-        ? const Color(0xFFDFF0E8)
-        : const Color(0xFFF5E8DF);
+    final Color accentColor =
+        isDone ? const Color(0xFF2A7A4B) : const Color(0xFFC8622A);
+    final Color accentLight =
+        isDone ? const Color(0xFFDFF0E8) : const Color(0xFFF5E8DF);
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 0, vertical: 5),
@@ -2335,69 +2221,59 @@ class _MaintTabState extends ConsumerState<_MaintTab>
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            /// Top Row — Title + Menu
-          Row(
-  crossAxisAlignment: CrossAxisAlignment.start,
-  children: [
-    Expanded(
-      child: Text(
-        r.type,
-        style: const TextStyle(
-          fontSize: 15,
-          fontWeight: FontWeight.w700,
-          color: Color(0xFF1A1612),
-          height: 1.3,
-        ),
-        overflow: TextOverflow.ellipsis,
-        maxLines: 2,
-      ),
-    ),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Text(
+                    r.type,
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF1A1612),
+                      height: 1.3,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 2,
+                  ),
+                ),
 
-    // Edit Icon
-    InkWell(
-      onTap: () {
-        widget.onEditService(service);
-      },
-      borderRadius: BorderRadius.circular(20),
-      child: const Padding(
-        padding: EdgeInsets.all(6.0),
-        child: Icon(
-          Icons.edit_outlined,
-          size: 15,
-          color: Color.fromARGB(255, 114, 107, 107),
-        ),
-      ),
-    ),
+                // FIX: Pass the actual service object to edit
+                InkWell(
+                  onTap: () => widget.onEditService(service),
+                  borderRadius: BorderRadius.circular(20),
+                  child: const Padding(
+                    padding: EdgeInsets.all(6.0),
+                    child: Icon(
+                      Icons.edit_outlined,
+                      size: 15,
+                      color: Color.fromARGB(255, 114, 107, 107),
+                    ),
+                  ),
+                ),
 
-    // Delete Icon
-    InkWell(
-      onTap: () {
-        // TODO: Delete logic here
-      },
-      borderRadius: BorderRadius.circular(20),
-      child: const Padding(
-        padding: EdgeInsets.all(6.0),
-        child: Icon(
-          Icons.delete_outline,
-          size: 15,
-          color: Color.fromARGB(255, 114, 107, 107),
-        ),
-      ),
-    ),
-  ],
-),
+                InkWell(
+                  onTap: () => _confirmDelete(context, service),
+                  borderRadius: BorderRadius.circular(20),
+                  child: const Padding(
+                    padding: EdgeInsets.all(6.0),
+                    child: Icon(
+                      Icons.delete_outline,
+                      size: 15,
+                      color: Color.fromARGB(255, 114, 107, 107),
+                    ),
+                  ),
+                ),
+              ],
+            ),
 
             const SizedBox(height: 12),
 
-            /// Cost + Date Row
             Row(
               children: [
-                /// Cost Badge
                 Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
-                  ),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
                     color: accentLight,
                     borderRadius: BorderRadius.circular(20),
@@ -2416,36 +2292,31 @@ class _MaintTabState extends ConsumerState<_MaintTab>
                 const SizedBox(width: 10),
 
                 Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
-                  ),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
                     color: const Color.fromARGB(255, 255, 239, 183),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
                     r.date,
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
-                      color: const Color.fromARGB(255, 155, 104, 27),
+                      color: Color.fromARGB(255, 155, 104, 27),
                       letterSpacing: 0.2,
                     ),
                   ),
                 ),
-                const SizedBox(width: 10),
               ],
             ),
 
             const SizedBox(height: 14),
 
-            /// Divider
             const Divider(height: 1, color: Color(0xFFE8E2DA)),
 
             const SizedBox(height: 14),
 
-            /// Description
             Text(
               r.notes,
               style: const TextStyle(
@@ -2503,8 +2374,7 @@ class _TapScaleButtonState extends State<_TapScaleButton> {
   }
 }
 
-// TAB 4 — DOCUMENTS
-
+// ── Error State ────────────────────────────────────────────────────────────
 Widget _errState(String msg) => Center(
   child: Padding(
     padding: const EdgeInsets.all(48),
@@ -2523,7 +2393,8 @@ Widget _errState(String msg) => Center(
               shape: BoxShape.circle,
               border: Border.all(color: _C.red.withOpacity(0.20)),
             ),
-            child: const Icon(Icons.cloud_off_rounded, color: _C.red, size: 26),
+            child: const Icon(
+                Icons.cloud_off_rounded, color: _C.red, size: 26),
           ),
           const SizedBox(height: 14),
           const Text(
@@ -2538,7 +2409,8 @@ Widget _errState(String msg) => Center(
           Text(
             msg,
             textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: 11, color: _C.text2, height: 1.5),
+            style:
+                const TextStyle(fontSize: 11, color: _C.text2, height: 1.5),
           ),
         ],
       ),

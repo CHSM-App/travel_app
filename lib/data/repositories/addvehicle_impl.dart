@@ -72,4 +72,9 @@ class AddvehicleImpl implements Addvehiclerepository {
   Future<dynamic> updateService(int serviceId, Services service) {
     return apiService.updateService(serviceId, service);
   }
+
+    @override
+  Future<dynamic> deleteService(int serviceId) {
+    return apiService.deleteService(serviceId);
+  }
 }

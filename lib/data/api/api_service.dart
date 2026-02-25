@@ -86,7 +86,7 @@ abstract class ApiService {
   Future<dynamic> addService(@Body() Services service);
 
   @POST("insert/updateService/{service_id}")
-  Future<dynamic> updateService(@Body() int serviceId, @Body() Services service);
+  Future<dynamic> updateService(@Path("service_id") int serviceId, @Body() Services service);
 
 
 
@@ -185,4 +185,7 @@ Future<dynamic>  deleteDriver(@Path("driverId") int driverId);
 
   @DELETE("index/deleteCustomers/{customer_id}")
   Future<dynamic> deleteCustomer(@Path("customer_id") int customerId);
+
+  @DELETE("index/deleteService/{service_id}")
+  Future<dynamic> deleteService(@Path("service_id") int serviceId);
 }

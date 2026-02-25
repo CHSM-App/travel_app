@@ -196,6 +196,17 @@ Future<void> updateVehicle(Vehicles vehicle) async {
     }
   }
 
+  Future<void> deleteService(int serviceId) async {
+  state = state.copyWith(isLoading: true, error: null);
+  try {
+    await usecase.deleteService(serviceId);
+    state = state.copyWith(isLoading: false);
+  } catch (e) {
+    state = state.copyWith(isLoading: false, error: e.toString());
+    rethrow;
+  }
+}
+
 
 
 Future<Map<String, dynamic>> deleteVehicle(int vehicleid) async {
