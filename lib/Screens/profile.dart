@@ -31,6 +31,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
   File?   _profileImage;
   String? _imageUrl;
   bool    _isSaving = false;
+  bool    _didPopulateInitialProfile = false;
 
   // ── Design tokens ─────────────────────────────────
   static const _primary   = Color(0xFF5B6EF5);
@@ -68,32 +69,87 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
   }
 
   void _populateProfile(LoginInfo p) {
+    if (_didPopulateInitialProfile) return;
+
     if (nameController.text.isEmpty)    nameController.text    = p.name       ?? '';
     if (mobileController.text.isEmpty)  mobileController.text  = p.mobile     ?? '';
     if (emailController.text.isEmpty)   emailController.text   = p.email      ?? '';
     if (addressController.text.isEmpty) addressController.text = p.address    ?? '';
     if (agencyController.text.isEmpty)  agencyController.text  = p.agencyName ?? '';
     if (cityController.text.isEmpty)    cityController.text    = p.city       ?? '';
-    if (_imageUrl == null) setState(() => _imageUrl = p.imageUrl);
+
+    setState(() {
+      _imageUrl = p.imageUrl;
+      _didPopulateInitialProfile = true;
+    });
   }
 
-  void _showImageOptions() {
-    HapticFeedback.lightImpact();
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (_) => _ImagePickerSheet(
-        hasImage:  _profileImage != null || (_imageUrl?.isNotEmpty == true),
-        onCamera:  () { Navigator.pop(context); _pickImage(ImageSource.camera); },
-        onGallery: () { Navigator.pop(context); _pickImage(ImageSource.gallery); },
-        onRemove:  () {
-          Navigator.pop(context);
-          setState(() { _profileImage = null; _imageUrl = null; });
-        },
-      ),
-    );
-  }
+  // void _showImageOptions() {
+  //   HapticFeedback.lightImpact();
+  //   showModalBottomSheet(
+  //     context: context,
+  //     backgroundColor: Colors.transparent,
+  //     builder: (_) => _ImagePickerSheet(
+  //       hasImage:  _profileImage != null || (_imageUrl?.isNotEmpty == true),
+  //       onCamera:  () { Navigator.pop(context); _pickImage(ImageSource.camera); },
+  //       onGallery: () { Navigator.pop(context); _pickImage(ImageSource.gallery); },
+  //       onRemove:  () {
+  //         Navigator.pop(context);
+  //         setState(() { _profileImage = null; _imageUrl = null; });
+  //       },
+  //     ),
+  //   );
+  // }
+void _showImageOptions() {
+  HapticFeedback.lightImpact();
+  showModalBottomSheet(
+    context: context,
+    backgroundColor: Colors.transparent,
+    builder: (_) => _ImagePickerSheet(
+      hasImage:  _profileImage != null || (_imageUrl?.isNotEmpty == true),
+      onCamera:  () { Navigator.pop(context); _pickImage(ImageSource.camera); },
+      onGallery: () { Navigator.pop(context); _pickImage(ImageSource.gallery); },
+      onRemove:  () async {
+        Navigator.pop(context);
+        final list    = ref.read(loginViewModelProvider).adminProfile.value;
+        final adminId = list?.firstOrNull?.adminId  ?? 0;
+        final agId    = list?.firstOrNull?.agencyId ?? '';
+        final previousLocalImage = _profileImage;
+        final previousImageUrl = _imageUrl;
 
+        if (adminId == 0 || agId.isEmpty) {
+          _snack('Admin not found', error: true);
+          return;
+        }
+
+        setState(() {
+          _isSaving = true;
+          _profileImage = null;
+          _imageUrl = null;
+        });
+
+        final res = await ref.read(loginViewModelProvider.notifier)
+            .deleteAdminProfile({
+          'admin_id': adminId.toString(),
+          'agency_id': agId,
+        });
+
+        if (res != null && res['success'] == 1) {
+          await ref.read(loginViewModelProvider.notifier).adminProfile(adminId);
+          setState(() => _isSaving = false);
+          _snack('Profile image removed successfully');
+        } else {
+          setState(() {
+            _isSaving = false;
+            _profileImage = previousLocalImage;
+            _imageUrl = previousImageUrl;
+          });
+          _snack(res?['message'] ?? 'Failed to remove image', error: true);
+        }
+      },
+    ),
+  );
+}
   Future<void> _pickImage(ImageSource src) async {
     final f = await _picker.pickImage(source: src, imageQuality: 85);
     if (f != null) setState(() { _profileImage = File(f.path); _imageUrl = null; });
@@ -226,12 +282,28 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
   Widget _buildHeader() {
     final initial = nameController.text.isNotEmpty
         ? nameController.text[0].toUpperCase() : 'A';
+    final imageUrl = _imageUrl?.trim();
+    final hasValidNetworkImage = imageUrl != null &&
+        imageUrl.isNotEmpty &&
+        imageUrl.toLowerCase() != 'null';
 
-    ImageProvider? imgProv;
-    if (_profileImage != null) {
-      imgProv = FileImage(_profileImage!);
-    } else if (_imageUrl?.isNotEmpty == true) {
-      imgProv = NetworkImage(_imageUrl!);
+    Widget avatarFallback() {
+      return Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Colors.white.withOpacity(0.3), Colors.white.withOpacity(0.15)],
+          ),
+        ),
+        alignment: Alignment.center,
+        child: Text(
+          initial,
+          style: const TextStyle(
+            fontSize: 32,
+            fontWeight: FontWeight.w800,
+            color: Colors.white,
+          ),
+        ),
+      );
     }
 
     return Container(
@@ -288,20 +360,24 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
                           boxShadow: [BoxShadow(
                               color: Colors.black.withOpacity(0.2),
                               blurRadius: 16, offset: const Offset(0, 6))],
-                          gradient: imgProv == null
-                              ? LinearGradient(colors: [
-                                  Colors.white.withOpacity(0.3),
-                                  Colors.white.withOpacity(0.15),
-                                ]) : null,
-                          image: imgProv != null
-                              ? DecorationImage(image: imgProv, fit: BoxFit.cover)
-                              : null,
                         ),
-                        child: imgProv == null
-                            ? Center(child: Text(initial,
-                                style: const TextStyle(fontSize: 32,
-                                    fontWeight: FontWeight.w800, color: Colors.white)))
-                            : null,
+                        child: ClipOval(
+                          child: SizedBox.expand(
+                            child: _profileImage != null
+                                ? Image.file(
+                                    _profileImage!,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (_, __, ___) => avatarFallback(),
+                                  )
+                                : hasValidNetworkImage
+                                    ? Image.network(
+                                        imageUrl,
+                                        fit: BoxFit.cover,
+                                        errorBuilder: (_, __, ___) => avatarFallback(),
+                                      )
+                                    : avatarFallback(),
+                          ),
+                        ),
                       ),
                       Positioned(
                         bottom: 0, right: 0,

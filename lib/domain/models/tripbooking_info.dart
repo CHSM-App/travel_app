@@ -96,5 +96,4 @@ static DateTime? _dateFromJson(String? date) {
   if (date == null) return null;
   return DateTime.parse(date);
 }
-
 }

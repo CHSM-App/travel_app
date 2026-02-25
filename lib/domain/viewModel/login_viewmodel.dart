@@ -237,5 +237,16 @@ class LoginViewModel extends StateNotifier<LoginState> {
     }
   }
 
-
+Future<dynamic> deleteAdminProfile(Map<String, String> body) async {
+    try {
+      state = state.copyWith(isLoading: true);
+      final response = await usecase.deleteAdminProfile(body);
+      state = state.copyWith(isLoading: false);
+      return response;
+    }
+catch (e) {
+      state = state.copyWith(isLoading: false, error: e.toString());
+      return null;
+    }
+  }
 }
