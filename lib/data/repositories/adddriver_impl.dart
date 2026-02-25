@@ -34,4 +34,20 @@ class AddDriverImpl implements Adddriverrepository {
     return apiService.fetchDriverHistory(driverId);
   }
 
+   @override
+ Future<Map<String, dynamic>> deleteDriver(int driverId) async {
+    final response = await apiService.deleteDriver(driverId);
+    if (response is Map<String, dynamic>) {
+      return response;
+    }
+    if (response is Map) {
+      return response.map(
+        (key, value) => MapEntry(key.toString(), value),
+      );
+    }
+    throw Exception('Invalid delete driver response type: ${response.runtimeType}');
+  }
+
+
+
 }

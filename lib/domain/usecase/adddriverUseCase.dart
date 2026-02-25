@@ -12,7 +12,7 @@ class AddDeiverUseCase {
     return adddriverrepository.addDriver(driver);
   }
 
-  Future<dynamic> updateDriver(Drivers driver)  {
+  Future<dynamic> updateDriver(Drivers driver) {
     return adddriverrepository.updateDriver(driver);
   }
 
@@ -30,5 +30,8 @@ class AddDeiverUseCase {
 
   Future<List<BookingInfo>> fetchDriverHistory(int driverId) {
     return adddriverrepository.fetchDriverHistory(driverId);
+  }
+Future<Map<String, dynamic>> deleteDriver(int driverId) {
+    return adddriverrepository.deleteDriver(driverId);
   }
 }

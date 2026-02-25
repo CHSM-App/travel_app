@@ -346,7 +346,7 @@ class _CustomerHistState extends ConsumerState<CustomerHist>
               _compactDivider(),
               _compactStat(
                 formatted,
-                "Total Value",
+                "Revenue",
                 Icons.currency_rupee_rounded,
                 const Color(0xFFE67E22),
                 const Color(0xFFFEF0E6),
@@ -358,35 +358,39 @@ class _CustomerHistState extends ConsumerState<CustomerHist>
     );
   }
 
-  Widget _compactStat(
-    String value,
-    String label,
-    IconData icon,
-    Color color,
-    Color bgColor,
-  ) {
-    return Expanded(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 11, horizontal: 8),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(6),
-              decoration: BoxDecoration(
-                color: bgColor,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Icon(icon, size: 13, color: color),
+Widget _compactStat(
+  String value,
+  String label,
+  IconData icon,
+  Color color,
+  Color bgColor,
+) {
+  return Expanded(
+    child: Padding(
+      padding: const EdgeInsets.symmetric(vertical: 11, horizontal: 8),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              color: bgColor,
+              borderRadius: BorderRadius.circular(8),
             ),
-            const SizedBox(width: 8),
-            Column(
+            child: Icon(icon, size: 13, color: color),
+          ),
+          const SizedBox(width: 6),
+
+          /// 👇 THIS FIXES OVERFLOW
+          Expanded(
+            child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
                   value,
-                  style: TextStyle(
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w800,
                     color: _textPrimary,
@@ -395,6 +399,8 @@ class _CustomerHistState extends ConsumerState<CustomerHist>
                 ),
                 Text(
                   label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                     fontSize: 10,
                     color: _textSecondary,
@@ -403,11 +409,12 @@ class _CustomerHistState extends ConsumerState<CustomerHist>
                 ),
               ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _compactDivider() {
     return Container(

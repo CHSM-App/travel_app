@@ -90,7 +90,7 @@ class _DriverHistoryPageState
       backgroundColor: _bg,
       body: Column(
         children: [
-          _buildHeader(state!),
+          _buildHeader(state),
           Expanded(child: _buildTripList(state)),
         ],
       ),

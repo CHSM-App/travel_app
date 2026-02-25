@@ -52,6 +52,7 @@ class TripBookingImpl implements Tripbookingrepository {
     return apiService.activeTrip(agencyId);
   }
 
+
   @override
   Future<List<BookingInfo>> cancelledTrip(String agencyId) {
     return apiService.cancelledTrip(agencyId);

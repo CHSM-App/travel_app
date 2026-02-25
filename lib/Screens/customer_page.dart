@@ -384,23 +384,55 @@ class _CustomerListPageState extends ConsumerState<CustomerListPage>
                   const SizedBox(width: 12),
                   Expanded(
                     child: FilledButton(
-                      onPressed: () {
+                      onPressed: () async {
                         Navigator.pop(ctx);
-                        _refresh();
-                        if (mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                            content: const Row(children: [
-                              Icon(Icons.check_circle_rounded,
-                                  color: Colors.white, size: 18),
-                              SizedBox(width: 10),
-                              Text('Customer deleted'),
-                            ]),
-                            backgroundColor: _C.success,
-                            behavior: SnackBarBehavior.floating,
-                            shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12)),
-                            margin: const EdgeInsets.all(16),
-                          ));
+                        final result = await ref
+                            .read(customerViewModelProvider.notifier)
+                            .deleteCustomer(customer.customerId ?? 0);
+
+                        if (!mounted) return;
+
+                        if (result['success'] == true) {
+                          _refresh();
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Row(
+                                children: [
+                                  const Icon(
+                                    Icons.check_circle_rounded,
+                                    color: Colors.white,
+                                    size: 18,
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Text(
+                                    result['message']?.toString() ??
+                                        'Customer deleted',
+                                  ),
+                                ],
+                              ),
+                              backgroundColor: _C.success,
+                              behavior: SnackBarBehavior.floating,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              margin: const EdgeInsets.all(16),
+                            ),
+                          );
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                result['message']?.toString() ??
+                                    ref.read(customerViewModelProvider).error ??
+                                    'Delete failed',
+                              ),
+                              behavior: SnackBarBehavior.floating,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              margin: const EdgeInsets.all(16),
+                            ),
+                          );
                         }
                       },
                       style: FilledButton.styleFrom(
@@ -683,24 +715,24 @@ class _CustomerListPageState extends ConsumerState<CustomerListPage>
       ),
 
       // ── FAB ─────────────────────────────────────────────────────────────────
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () async {
-          final result = await Navigator.push(context,
-              MaterialPageRoute(builder: (_) => const AddCustomerPage()));
-          if (result != null && mounted) _refresh();
-        },
-        backgroundColor: _C.indigo,
-        elevation: 0,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-        icon: const Icon(Icons.person_add_rounded, color: Colors.white, size: 20),
-        label: const Text(
-          'Add Customer',
-          style: TextStyle(
-            color: Colors.white, fontWeight: FontWeight.w700,
-            fontSize: 14, letterSpacing: 0.2,
-          ),
-        ),
-      ),
+      // floatingActionButton: FloatingActionButton.extended(
+      //   onPressed: () async {
+      //     final result = await Navigator.push(context,
+      //         MaterialPageRoute(builder: (_) => const AddCustomerPage()));
+      //     if (result != null && mounted) _refresh();
+      //   },
+      //   backgroundColor: _C.indigo,
+      //   elevation: 0,
+      //   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+      //   icon: const Icon(Icons.person_add_rounded, color: Colors.white, size: 20),
+      //   label: const Text(
+      //     'Add Customer',
+      //     style: TextStyle(
+      //       color: Colors.white, fontWeight: FontWeight.w700,
+      //       fontSize: 14, letterSpacing: 0.2,
+      //     ),
+      //   ),
+      // ),
     );
   }
 }

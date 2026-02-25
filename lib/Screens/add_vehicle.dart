@@ -39,6 +39,7 @@ class _AddVehiclePageState extends ConsumerState<AddVehiclePage>
   // ── RC Document State ──
   File? _selectedRcFile;
   String? _existingRcUrl;
+  String? _existingRcRaw;
   bool _rcRemoved = false;
 
   int? selectedTypeId;
@@ -75,6 +76,7 @@ class _AddVehiclePageState extends ConsumerState<AddVehiclePage>
       mileage.text = v.mileage ?? '';
 
       // ── FIX: Properly set existing RC URL for image display ──
+      _existingRcRaw = v.rcdocuments;
       _existingRcUrl = _normalizeRcUrl(v.rcdocuments);
       debugPrint(
         'RC raw: ${v.rcdocuments} | normalized: $_existingRcUrl | vehicleId: ${v.vehicleId}',
@@ -193,7 +195,7 @@ class _AddVehiclePageState extends ConsumerState<AddVehiclePage>
       capacity: parsedCapacity,
       mileage: mileage.text.trim(),
       StatusId: selectedStatusId!,
-      rcdocuments: (!_rcRemoved && _selectedRcFile == null) ? _existingRcUrl : null,
+      rcdocuments: (!_rcRemoved && _selectedRcFile == null) ? _existingRcRaw : null,
       agencyId: agencyId,
     );
 
@@ -1109,6 +1111,7 @@ class _AddVehiclePageState extends ConsumerState<AddVehiclePage>
       if (!mounted) return;
       if (fetchedNormalized != null && fetchedNormalized.isNotEmpty) {
         setState(() {
+          _existingRcRaw = fetchedRaw;
           _existingRcUrl = fetchedNormalized;
           _rcRemoved = false;
         });

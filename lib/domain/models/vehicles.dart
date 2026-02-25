@@ -6,6 +6,7 @@ class Vehicles {
 
   final String? Vehicle_info;
   final int? vehicleId;
+  final int ?driverId;
   final String? name;
   final String? number;
   final int? TypeId;
@@ -22,6 +23,7 @@ class Vehicles {
   Vehicles({
     this.Vehicle_info,
     required this.vehicleId,
+    this.driverId,
     required this.name,
     required this.number,
     this.TypeId,
@@ -37,7 +39,14 @@ class Vehicles {
   });
 
   factory Vehicles.fromJson(Map<String, dynamic> json) => Vehicles(
-        vehicleId: _readInt(json, const ['vehicleId', 'VehicleId', 'id']),
+        vehicleId: _readInt(
+          json,
+          const ['vehicleId', 'VehicleId', 'vehicle_id', 'vehicleID', 'id'],
+        ),
+        driverId: _readInt(
+          json,
+          const ['driverId', 'DriverId', 'driver_id', 'driverID'],
+        ),
         name: _readString(json, const ['name', 'Name']),
         number: _readString(
             json, const ['number', 'Number', 'vehicleNo', 'VehicleNo']),
@@ -72,18 +81,37 @@ class Vehicles {
 
   Map<String, dynamic> toJson() => <String, dynamic>{
         'vehicleId': vehicleId,
+        'VehicleId': vehicleId,
+        'vehicle_id': vehicleId,
         'name': name,
+        'Name': name,
         'number': number,
+        'Number': number,
+        'vehicleNo': number,
+        'VehicleNo': number,
         'TypeId': TypeId,
+        'typeId': TypeId,
+        'VehicleTypeId': TypeId,
         'capacity': capacity,
+        'Capacity': capacity,
+        'seats': capacity,
         'FuelTypeId': FuelTypeId,
+        'fuelTypeId': FuelTypeId,
         'mileage': mileage,
+        'Mileage': mileage,
         'StatusId': StatusId,
+        'statusId': StatusId,
         'rcdocuments': rcdocuments,
+        'rcDocuments': rcdocuments,
+        'document': rcdocuments,
+        'documents': rcdocuments,
+        'vehicleDocument': rcdocuments,
+        'photo': rcdocuments,
         'FuelType': FuelType,
         'Type': Type,
         'StatusName': StatusName,
         'agency_id': agencyId,
+        'agencyId': agencyId,
       };
 
   static int? _readInt(Map<String, dynamic> json, List<String> keys) {

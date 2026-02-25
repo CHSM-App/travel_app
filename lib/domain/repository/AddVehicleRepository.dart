@@ -22,5 +22,10 @@ abstract class Addvehiclerepository {
   Future<dynamic> addService(Services service);
 
   Future<List<Services>> getServiceRecords(String agencyId, int vehicleId);
+    Future<dynamic> deleteVehicle(int vehicleid);
+
+  Future<dynamic> updateService(int serviceId, Services services);
+
+  Future<dynamic> deleteService(int serviceId);
 
 }

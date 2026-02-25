@@ -77,9 +77,14 @@ class Drivers {
 
   Map<String, dynamic> toJson() => <String, dynamic>{
         'driverId': driverId,
+        'DriverId': driverId,
+        'driver_id': driverId,
         'name': name,
+        'Name': name,
         'phone': phone,
+        'Phone': phone,
         'address': address,
+        'Address': address,
         'LicenceNo': licenceNo,
         'licenceNo': licenceNo,
         'LicenseNo': licenceNo,
@@ -87,7 +92,13 @@ class Drivers {
         'licenceExpiry': _dateToJson(licenceExpiry),
         'LicenseExpiry': _dateToJson(licenceExpiry),
         'vehicleId': vehicleId,
+        'VehicleId': vehicleId,
+        'vehicle_id': vehicleId,
         'photo': photo,
+        'Photo': photo,
+        'document': photo,
+        'documents': photo,
+        'driverDocument': photo,
         'agency_id': agencyId,
         'agencyId': agencyId,
       };
