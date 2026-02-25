@@ -108,8 +108,13 @@ class _ModernSettingsPageState extends ConsumerState<ModernSettingsPage>
                       _sectionLabel('Account'),
                       const SizedBox(height: 10),
                       _buildMenuGroup(items: [
-                        _MenuItem(Icons.person_outline_rounded, 'Edit Profile', 'Update your personal info', onTap: () {
-                          Navigator.push(context, MaterialPageRoute(builder: (_) => ProfilePage()));
+                        _MenuItem(Icons.person_outline_rounded, 'Edit Profile', 'Update your personal info', onTap: () async {
+                          await Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfilePage()));
+                          if (!mounted) return;
+                          final adminId = ref.read(loginViewModelProvider).adminId;
+                          if (adminId > 0) {
+                            await ref.read(loginViewModelProvider.notifier).adminProfile(adminId);
+                          }
                         }),
                         _MenuItem(Icons.lock_outline_rounded, 'Privacy & Security', 'Manage your security settings'),
                         _MenuItem(Icons.language_rounded, 'Language', 'English (US)'),
@@ -284,7 +289,14 @@ class _ModernSettingsPageState extends ConsumerState<ModernSettingsPage>
 
           // Edit button
           GestureDetector(
-            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ProfilePage())),
+            onTap: () async {
+              await Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfilePage()));
+              if (!mounted) return;
+              final adminId = ref.read(loginViewModelProvider).adminId;
+              if (adminId > 0) {
+                await ref.read(loginViewModelProvider.notifier).adminProfile(adminId);
+              }
+            },
             child: Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(

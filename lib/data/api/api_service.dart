@@ -70,6 +70,9 @@ abstract class ApiService {
 
   @POST("insert/AddAdmin")
   Future<LoginResponse> addAdmin(@Body() LoginInfo logininfo);
+  
+  @POST("insert/addService/")
+  Future<dynamic> addService(@Body() Services service);
 
   //Update
 
@@ -85,12 +88,11 @@ abstract class ApiService {
   @POST("insert/updatePaymentStatus/")
   Future<dynamic> updatePaymentStatus(@Body() BookingInfo tripbooking);
 
-  @POST("insert/addService/")
-  Future<dynamic> addService(@Body() Services service);
-
   @POST("insert/updateService/{service_id}")
   Future<dynamic> updateService(@Path("service_id") int serviceId, @Body() Services service);
-
+  
+  @POST("insert/DeleteAdminProfile")
+  Future<dynamic> deleteAdminProfile(@Body() Map<String, String> body);
 
 
   //---------------------UPLOAD PHOTOS AND DOCUMENTS----------------------------------------
