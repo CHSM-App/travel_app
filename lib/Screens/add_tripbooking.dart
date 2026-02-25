@@ -118,51 +118,56 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
     });
   }
 
-  Future<void> _saveTrip() async {
-    if (!_formKey.currentState!.validate()) return;
-    if (startDateValue == null || endDateValue == null) {
-      _showSnack("Please select start and end date & time");
-      return;
-    }
-    if (selectedVehicleId == null || selectedDriverId == null || selectedCustomerId == null) {
-      _showSnack("Please select vehicle, driver and customer");
-      return;
-    }
+ Future<void> _saveTrip() async {
+  if (!_formKey.currentState!.validate()) return;
 
-    setState(() => _isSaving = true);
+  if (startDateValue == null || endDateValue == null) {
+    _showSnack("Please select start and end date & time");
+    return;
+  }
 
-    final booking = TripBooking(
-      vehicleid: selectedVehicleId!,
-      driverid: selectedDriverId!,
-      customerid: selectedCustomerId!,
-      pickuplocation: pickup.text,
-      droplocation: drop.text,
-      distance: double.parse(distance.text),
-      fuelrequired: double.parse(fuelRequired.text),
-      tripcharges: double.parse(tripCharges.text),
-      startDateTime: startDateValue,
-      endDateTime: endDateValue,
-      status: widget.booking?.status ?? 3,
-      bookingdate: widget.booking?.bookingDate ?? DateTime.now(),
-      agencyId: ref.read(loginViewModelProvider).agencyId??"");
+  if (selectedVehicleId == null ||
+      selectedDriverId == null ||
+      selectedCustomerId == null) {
+    _showSnack("Please select vehicle, driver and customer");
+    return;
+  }
 
-    final notifier = ref.read(tripBookingViewModelProvider.notifier);
+  setState(() => _isSaving = true);
+
+  final booking = TripBooking(
+    tripId: widget.booking?.tripId,   // 🔥 IMPORTANT  
+    vehicleid: selectedVehicleId!,
+    driverid: selectedDriverId!,
+    customerid: selectedCustomerId!,
+    pickuplocation: pickup.text,
+    droplocation: drop.text,
+    distance: double.parse(distance.text),
+    fuelrequired: double.parse(fuelRequired.text),
+    tripcharges: double.parse(tripCharges.text),
+    startDateTime: startDateValue,
+    endDateTime: endDateValue,
+    status: widget.booking?.status ?? 3,
+    bookingdate:
+        widget.booking?.bookingDate ?? DateTime.now(),
+    agencyId: ref.read(loginViewModelProvider).agencyId ?? "",
+  );
+
+  final notifier =
+      ref.read(tripBookingViewModelProvider.notifier);
+
+  if (widget.booking != null) {
+    // 🔥 EDIT MODE
+    await notifier.updateTripBooking(widget.booking?.tripId ?? 0 , booking);
+  } else {
+    // ADD MODEj
     await notifier.addTripBooking(booking);
-
-    setState(() => _isSaving = false);
-    if (mounted) Navigator.pop(context);
   }
 
-  void _showSnack(String msg) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(msg),
-        behavior: SnackBarBehavior.floating,
-        backgroundColor: _primaryDark,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      ),
-    );
-  }
+  setState(() => _isSaving = false);
+
+  if (mounted) Navigator.pop(context);
+}
 
   // ── Shared input decoration ──────────────────────────────────────────────────
   InputDecoration _inputDeco(String label, IconData icon, {String? prefix}) {
@@ -659,24 +664,47 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
                           const SizedBox(height: 12),
 
                           // Customer
-                          state.fetchCustomerList.when(
-                            data: (customers) => _dropdown<int>(
-                              label: "Customer",
-                              icon: Icons.person_outline_rounded,
-                              color: const Color(0xFF06D6A0),
-                              value: selectedCustomerId,
-                              items: customers
-                                  .map((e) => DropdownMenuItem<int>(
-                                        value: e.customerId,
-                                        child: Text(e.name ?? ""),
-                                      ))
-                                  .toList(),
-                              onChanged: (v) =>
-                                  setState(() => selectedCustomerId = v),
-                            ),
-                            loading: () => _loadingField("Loading customers..."),
-                            error: (e, _) => _errorField("Failed to load customers"),
-                          ),
+                      state.fetchCustomerList.when(
+  data: (customers) {
+
+    // 🔥 FORCE MATCH AFTER API LOAD
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (widget.booking != null && selectedCustomerId != null) {
+        final exists = customers.any(
+          (c) => c.customerId == selectedCustomerId,
+        );
+
+        if (!exists) {
+          setState(() {
+            selectedCustomerId = null;
+          });
+        } else {
+          setState(() {}); // 🔥 Force rebuild
+        }
+      }
+    });
+
+    return _dropdown<int>(
+      label: "Customer",
+      icon: Icons.person_outline_rounded,
+      color: const Color(0xFF06D6A0),
+      value: customers.any(
+              (c) => c.customerId == selectedCustomerId)
+          ? selectedCustomerId
+          : null,
+      items: customers
+          .map((e) => DropdownMenuItem<int>(
+                value: e.customerId,
+                child: Text(e.name ?? ""),
+              ))
+          .toList(),
+      onChanged: (v) =>
+          setState(() => selectedCustomerId = v),
+    );
+  },
+  loading: () => _loadingField("Loading customers..."),
+  error: (e, _) => _errorField("Failed to load customers"),
+),
                         ],
                       ),
                     ],
@@ -764,6 +792,18 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  void _showSnack(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: const Color(0xFFE63946),
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.all(16),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       ),
     );
   }

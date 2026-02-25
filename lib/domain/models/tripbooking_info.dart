@@ -5,6 +5,7 @@ part 'tripbooking_info.g.dart';
 
 @JsonSerializable()
 class TripBooking {
+  final int? tripId;
   final int? vehicleid;
   final int? driverid;
   final String? pickuplocation;
@@ -58,6 +59,7 @@ final DateTime? bookingdate;
   // final DateTime? bookingdate;
 
   TripBooking({
+    this.tripId,
     this.vehicleid,
     this.driverid,
     this.pickuplocation,

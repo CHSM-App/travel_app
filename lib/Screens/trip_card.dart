@@ -663,7 +663,7 @@ class TripCard extends StatelessWidget {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (_) => TripBookingForm(),
+                                  builder: (_) => TripBookingForm(booking:bookinginfo ),
                                 ),
                               );
                             },
@@ -1087,7 +1087,7 @@ class TripCard extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // ── ROW 1: Vehicle · Route · Amount ───────────────────
+            // ─ ROW 1: Vehicle · Route · Amount ───────────────────
             Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [

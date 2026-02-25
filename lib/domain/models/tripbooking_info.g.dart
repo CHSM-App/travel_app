@@ -7,6 +7,7 @@ part of 'tripbooking_info.dart';
 // **************************************************************************
 
 TripBooking _$TripBookingFromJson(Map<String, dynamic> json) => TripBooking(
+  tripId: (json['tripId'] as num?)?.toInt(),
   vehicleid: (json['vehicleid'] as num?)?.toInt(),
   driverid: (json['driverid'] as num?)?.toInt(),
   pickuplocation: json['pickuplocation'] as String?,
@@ -27,6 +28,7 @@ TripBooking _$TripBookingFromJson(Map<String, dynamic> json) => TripBooking(
 
 Map<String, dynamic> _$TripBookingToJson(TripBooking instance) =>
     <String, dynamic>{
+      'tripId': instance.tripId,
       'vehicleid': instance.vehicleid,
       'driverid': instance.driverid,
       'pickuplocation': instance.pickuplocation,
