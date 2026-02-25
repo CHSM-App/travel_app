@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:travel_agency_app/Screens/login.dart';
 import 'package:travel_agency_app/Screens/profile.dart';
 import 'package:travel_agency_app/core/network/token_provider.dart';
-import 'package:travel_agency_app/core/storage/token_storage.dart';
 import 'package:travel_agency_app/domain/models/login_info.dart';
 import 'package:travel_agency_app/domain/models/token_response.dart';
 import 'package:travel_agency_app/presentation/providers/viewmodel_provider.dart';
@@ -55,7 +54,7 @@ class _ModernSettingsPageState extends ConsumerState<ModernSettingsPage>
 
     // fetch admin profile
     Future.microtask(() {
-      ref.read(loginViewModelProvider.notifier).adminProfile(ref.read(loginViewModelProvider).adminId);
+      // ref.read(loginViewModelProvider.notifier).adminProfile(ref.read(loginViewModelProvider).adminId);
     });
 
     _animationController.forward();

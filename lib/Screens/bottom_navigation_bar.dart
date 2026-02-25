@@ -36,7 +36,7 @@ class _MainBottomNavState extends ConsumerState<MainBottomNav>
 
     /// Load profile once
     Future.microtask(() async {
-      await ref.read(loginViewModelProvider.notifier).loadFromStorage();
+      // await ref.read(loginViewModelProvider.notifier).loadFromStorage();
       final adminId = ref.read(loginViewModelProvider).adminId;
       if (adminId > 0) {
         ref.read(loginViewModelProvider.notifier).adminProfile(adminId);

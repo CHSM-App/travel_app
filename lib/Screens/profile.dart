@@ -47,7 +47,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
 
     // Fetch profile from API
     Future.microtask(() {
-      ref.read(loginViewModelProvider.notifier).adminProfile(ref.read(loginViewModelProvider).adminId);
+     // ref.read(loginViewModelProvider.notifier).adminProfile(ref.read(loginViewModelProvider).adminId);
     });
   }
 
@@ -323,9 +323,9 @@ if (_profileImage != null) {
       await ref.read(loginViewModelProvider.notifier).addAdmin(loginInfo);
 
   if (response?.success == 1) {
-    await ref
-        .read(loginViewModelProvider.notifier)
-        .adminProfile(adminId);
+    // await ref
+    //     .read(loginViewModelProvider.notifier)
+    //     .adminProfile(adminId);
 
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
