@@ -715,24 +715,24 @@ class _CustomerListPageState extends ConsumerState<CustomerListPage>
       ),
 
       // ── FAB ─────────────────────────────────────────────────────────────────
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () async {
-          final result = await Navigator.push(context,
-              MaterialPageRoute(builder: (_) => const AddCustomerPage()));
-          if (result != null && mounted) _refresh();
-        },
-        backgroundColor: _C.indigo,
-        elevation: 0,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-        icon: const Icon(Icons.person_add_rounded, color: Colors.white, size: 20),
-        label: const Text(
-          'Add Customer',
-          style: TextStyle(
-            color: Colors.white, fontWeight: FontWeight.w700,
-            fontSize: 14, letterSpacing: 0.2,
-          ),
-        ),
-      ),
+      // floatingActionButton: FloatingActionButton.extended(
+      //   onPressed: () async {
+      //     final result = await Navigator.push(context,
+      //         MaterialPageRoute(builder: (_) => const AddCustomerPage()));
+      //     if (result != null && mounted) _refresh();
+      //   },
+      //   backgroundColor: _C.indigo,
+      //   elevation: 0,
+      //   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+      //   icon: const Icon(Icons.person_add_rounded, color: Colors.white, size: 20),
+      //   label: const Text(
+      //     'Add Customer',
+      //     style: TextStyle(
+      //       color: Colors.white, fontWeight: FontWeight.w700,
+      //       fontSize: 14, letterSpacing: 0.2,
+      //     ),
+      //   ),
+      // ),
     );
   }
 }

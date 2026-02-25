@@ -22,6 +22,7 @@ TripBooking _$TripBookingFromJson(Map<String, dynamic> json) => TripBooking(
   customerid: (json['Customerid'] as num?)?.toInt(),
   tripcharges: (json['tripcharges'] as num?)?.toDouble(),
   bookingdate: TripBooking._dateFromJson(json['bookingdate'] as String?),
+  agencyId: json['agency_id'] as String?,
 );
 
 Map<String, dynamic> _$TripBookingToJson(TripBooking instance) =>
@@ -41,4 +42,5 @@ Map<String, dynamic> _$TripBookingToJson(TripBooking instance) =>
       'status': instance.status,
       'Customerid': instance.customerid,
       'tripcharges': instance.tripcharges,
+      'agency_id': instance.agencyId,
     };
