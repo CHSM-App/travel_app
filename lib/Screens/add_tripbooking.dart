@@ -144,6 +144,7 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
       endDateTime: endDateValue,
       status: widget.booking?.status ?? 3,
       bookingdate: widget.booking?.bookingDate ?? DateTime.now(),
+      agencyId: ref.read(loginViewModelProvider).agencyId
     );
 
     final notifier = ref.read(tripBookingViewModelProvider.notifier);

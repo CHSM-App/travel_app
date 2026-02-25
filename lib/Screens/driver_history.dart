@@ -304,7 +304,7 @@ Widget _buildStats(AsyncValue<List<BookingInfo>> tripState) {
             key: ValueKey(trips[i].tripId),
             bookinginfo: trips[i],
             ref: ref,
-            tripType: '',
+            status: trips[i].status ?? 0,
           ),
         );
       },

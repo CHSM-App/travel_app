@@ -101,6 +101,8 @@ final DateTime? bookingdate;
 
   final double? tripcharges;
 
+   @JsonKey(name: 'agency_id')
+final String? agencyId;
   // @JsonKey(name: 'bookingdate')
   // final DateTime? bookingdate;
 
@@ -120,6 +122,7 @@ final DateTime? bookingdate;
     this.customerid,
     this.tripcharges,
     this.bookingdate,
+    this.agencyId
   });
 
   factory TripBooking.fromJson(Map<String, dynamic> json) =>
