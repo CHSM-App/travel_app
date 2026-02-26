@@ -62,7 +62,10 @@ class LoginImpl implements LoginRepo {
      return apiService.updateAdminProfile(image,adminId, agencyId);
   }
 
-
+@override
+  Future deleteAdminProfile(Map<String, String> body) {
+    return apiService.deleteAdminProfile(body);
+  }
 
 
 }

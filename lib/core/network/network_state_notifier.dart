@@ -2,9 +2,11 @@ import 'dart:async';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:dio/dio.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:travel_agency_app/core/storage/constant.dart';
 import 'package:travel_agency_app/data/api/api_service.dart';
+
+const _noValue = Object();
 
 class NetworkState {
   final bool isConnected;
@@ -27,7 +29,7 @@ class NetworkState {
     bool? isConnected,
     bool? isInitialized,
     bool? isRetrying,
-    String? errorMessage,
+    Object? errorMessage = _noValue,
     DateTime? lastChecked,
     ConnectivityResult? connectionType,
   }) {
@@ -35,7 +37,9 @@ class NetworkState {
       isConnected: isConnected ?? this.isConnected,
       isInitialized: isInitialized ?? this.isInitialized,
       isRetrying: isRetrying ?? this.isRetrying,
-      errorMessage: errorMessage,
+      errorMessage: identical(errorMessage, _noValue)
+          ? this.errorMessage
+          : errorMessage as String?,
       lastChecked: lastChecked ?? this.lastChecked,
       connectionType: connectionType ?? this.connectionType,
     );
@@ -57,13 +61,15 @@ class ApiState {
 
   ApiState copyWith({
     bool? isApiAvailable,
-    String? errorMessage,
+    Object? errorMessage = _noValue,
     DateTime? lastChecked,
     bool? isChecking,
   }) {
     return ApiState(
       isApiAvailable: isApiAvailable ?? this.isApiAvailable,
-      errorMessage: errorMessage,
+      errorMessage: identical(errorMessage, _noValue)
+          ? this.errorMessage
+          : errorMessage as String?,
       lastChecked: lastChecked ?? this.lastChecked,
       isChecking: isChecking ?? this.isChecking,
     );
@@ -74,8 +80,14 @@ class EnhancedNetworkStateNotifier extends StateNotifier<NetworkState> {
   final Connectivity _connectivity = Connectivity();
   StreamSubscription<List<ConnectivityResult>>? _subscription;
   Timer? _probeTimer;
+  AppLifecycleListener? _appLifecycleListener;
   bool _isChecking = false;
   DateTime? _lastTransportFailureAt;
+  static final List<Uri> _internetProbeUris = [
+    Uri.parse('https://clients3.google.com/generate_204'),
+    Uri.parse('https://cloudflare.com/cdn-cgi/trace'),
+    Uri.parse('https://example.com'),
+  ];
 
   EnhancedNetworkStateNotifier()
     : super(const NetworkState(isConnected: true, isInitialized: false)) {
@@ -85,6 +97,13 @@ class EnhancedNetworkStateNotifier extends StateNotifier<NetworkState> {
   Future<void> _init() async {
     try {
       await _performConnectivityCheck();
+
+      _appLifecycleListener = AppLifecycleListener(
+        onResume: () {
+          if (!mounted) return;
+          unawaited(_performConnectivityCheck());
+        },
+      );
 
       _subscription = _connectivity.onConnectivityChanged.listen((_) async {
         await _performConnectivityCheck();
@@ -139,16 +158,27 @@ class EnhancedNetworkStateNotifier extends StateNotifier<NetworkState> {
         connectTimeout: const Duration(seconds: 4),
         receiveTimeout: const Duration(seconds: 4),
         sendTimeout: const Duration(seconds: 4),
+        followRedirects: false,
+        validateStatus: (status) => status != null && status < 500,
       ),
     );
 
     try {
-      await probeDio.get(baseUrl);
-      return true;
-    } on DioException catch (e) {
-      if (e.type == DioExceptionType.badResponse && e.response != null) {
-        return true;
+      for (final uri in _internetProbeUris) {
+        try {
+          final response = await probeDio.getUri<dynamic>(uri);
+          if (response.statusCode != null) {
+            return true;
+          }
+        } on DioException catch (e) {
+          if (e.type == DioExceptionType.badResponse && e.response != null) {
+            return true;
+          }
+        } catch (_) {
+          // Try next probe endpoint before declaring offline.
+        }
       }
+
       return false;
     } catch (_) {
       return false;
@@ -217,6 +247,7 @@ class EnhancedNetworkStateNotifier extends StateNotifier<NetworkState> {
   void dispose() {
     _subscription?.cancel();
     _probeTimer?.cancel();
+    _appLifecycleListener?.dispose();
     super.dispose();
   }
 }

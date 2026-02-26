@@ -628,7 +628,7 @@ Widget _compactStat(
             itemBuilder: (_, i) => TripCard(
               key: ValueKey(trips[i].tripId),
               bookinginfo: trips[i],
-              ref: ref, tripType: '',
+              ref: ref, status: trips[i].status ?? 0,
             ),
           ),
         ),

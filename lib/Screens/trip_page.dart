@@ -373,7 +373,7 @@ class _TripPageState extends ConsumerState<TripPage> {
               key: ValueKey(filteredTrips[i].tripId ?? i),
               bookinginfo: filteredTrips[i],
               ref: ref,
-              tripType: type, // ← pass the current tab type
+              status: filteredTrips[i].status ?? 0, // ← pass the current tab type
             ),
           ),
         );

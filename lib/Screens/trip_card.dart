@@ -8,13 +8,13 @@ import 'package:travel_agency_app/presentation/providers/viewmodel_provider.dart
 class TripCard extends StatelessWidget {
   final BookingInfo bookinginfo;
   final WidgetRef ref;
-  final String tripType; // 'active', 'upcoming', 'Paid', 'unpaid', 'cancelled'
+  final int status; // 'active', 'upcoming', 'Paid', 'unpaid', 'cancelled'
 
   const TripCard({
     super.key,
     required this.bookinginfo,
     required this.ref,
-    required this.tripType,
+    required this.status,
   });
 
   // ── Palette (matches CustomerHist light theme) ─────────────────────
@@ -47,7 +47,7 @@ class TripCard extends StatelessWidget {
     final approved = bookinginfo.amountApprove ?? 0;
     final received = bookinginfo.amountReceived ?? 0;
     if (received == 0) return "Unpaid";
-    if (received < approved) return "Partial";
+    if (received < approved) return "Unpaid";
     return "Paid";
   }
 
@@ -70,8 +70,8 @@ class TripCard extends StatelessWidget {
         return _successSoft;
       case 'unpaid':
         return _dangerSoft;
-      case 'partial':
-        return _warningSoft;
+      // case 'partial':
+      //   return _warningSoft;
       default:
         return _accentSoft;
     }
@@ -83,8 +83,8 @@ class TripCard extends StatelessWidget {
         return Icons.check_circle_rounded;
       case 'unpaid':
         return Icons.cancel_rounded;
-      case 'partial':
-        return Icons.timelapse_rounded;
+      // case 'partial':
+      //   return Icons.timelapse_rounded;
       default:
         return Icons.info_rounded;
     }
@@ -94,17 +94,18 @@ class TripCard extends StatelessWidget {
     final approved = bookinginfo.amountApprove ?? 0;
     final received = bookinginfo.amountReceived ?? 0;
     if (received == 0) return "Unpaid";
-    if (received < approved) return "Partial";
+    if (received < approved) return "Unpaid";
     return "Paid";
   }
 
   void _showTripDetail(BuildContext context) {
-
-    final bool isEditable = paymentStatus.toLowerCase() == "unpaid" && bookinginfo.status == 2;
+       print("DEBUG status: ${bookinginfo.status} | type: ${bookinginfo.status.runtimeType}");
+    final bool isEditable = bookinginfo.status==2  ;
 
     // Use tripType passed from the tab — same logic as active tab, no API status guessing
     final bool isActiveOrUpcoming =
-        tripType == 'active' || tripType == 'upcoming';
+    bookinginfo.status == 1 || // Active
+    bookinginfo.status == 3;   // Upcoming
 
     final tollController = TextEditingController(
       text: bookinginfo.tollCharges?.toString() ?? "",
@@ -582,53 +583,78 @@ class TripCard extends StatelessWidget {
                           ),
 
                           // ── Status pill: hidden for active/upcoming unpaid ──
-                          if (!isActiveOrUpcoming) ...[
-                            Container(
-                              padding: EdgeInsets.symmetric(
-                                horizontal: isSmall ? 8 : 10,
-                                vertical: 5,
-                              ),
-                              decoration: BoxDecoration(
-                                color: isEditable
-                                    ? const Color(0xFFFFBE0B).withOpacity(0.18)
-                                    : Colors.green.withOpacity(0.18),
-                                borderRadius: BorderRadius.circular(20),
-                                border: Border.all(
-                                  color: isEditable
-                                      ? const Color(0xFFFFBE0B).withOpacity(0.55)
-                                      : Colors.greenAccent.withOpacity(0.55),
+                          // ── Status pill: based on bookinginfo.status ──
+                          Builder(
+                            builder: (_) {
+                              Color pillColor;
+                              IconData pillIcon;
+                              String pillLabel;
+
+                              switch (bookinginfo.status) {
+                                case 1:
+                                  pillColor = Colors.greenAccent;
+                                  pillIcon = Icons.directions_car;
+                                  pillLabel = "Active";
+                                  break;
+                                case 2:
+                                  pillColor = const Color(0xFFFFBE0B);
+                                  pillIcon = Icons.schedule;
+                                  pillLabel = "Unpaid";
+                                  break;
+                                case 3:
+                                  pillColor = Colors.orange;
+                                  pillIcon = Icons.upcoming_outlined;
+                                  pillLabel = "Upcoming";
+                                  break;
+                                case 4:
+                                  pillColor = Colors.greenAccent;
+                                  pillIcon = Icons.check_circle;
+                                  pillLabel = "Complete";
+                                  break;
+                                case 5:
+                                  pillColor = Colors.redAccent;
+                                  pillIcon = Icons.cancel_outlined;
+                                  pillLabel = "Cancelled";
+                                  break;
+                                default:
+                                  pillColor = Colors.grey;
+                                  pillIcon = Icons.info_outline;
+                                  pillLabel = "Unknown";
+                              }
+
+                              return Container(
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: isSmall ? 8 : 10,
+                                  vertical: 5,
                                 ),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    isEditable
-                                        ? Icons.schedule
-                                        : Icons.check_circle,
-                                    size: 11,
-                                    color: isEditable
-                                        ? const Color(0xFFFFBE0B)
-                                        : Colors.greenAccent,
+                                decoration: BoxDecoration(
+                                  color: pillColor.withOpacity(0.18),
+                                  borderRadius: BorderRadius.circular(20),
+                                  border: Border.all(
+                                    color: pillColor.withOpacity(0.55),
                                   ),
-                                  if (!isSmall) ...[
-                                    const SizedBox(width: 4),
-                                    Text(
-                                      isEditable ? "Unpaid" : "Paid",
-                                      style: TextStyle(
-                                        color: isEditable
-                                            ? const Color(0xFFFFBE0B)
-                                            : Colors.greenAccent,
-                                        fontWeight: FontWeight.w600,
-                                        fontSize: 11,
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(pillIcon, size: 11, color: pillColor),
+                                    if (!isSmall) ...[
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        pillLabel,
+                                        style: TextStyle(
+                                          color: pillColor,
+                                          fontWeight: FontWeight.w600,
+                                          fontSize: 11,
+                                        ),
                                       ),
-                                    ),
+                                    ],
                                   ],
-                                ],
-                              ),
-                            ),
-                            const SizedBox(width: 6),
-                          ],
+                                ),
+                              );
+                            },
+                          ),
+                          const SizedBox(width: 6),
 
                           // ✏️ Edit Button
                           GestureDetector(
@@ -637,7 +663,7 @@ class TripCard extends StatelessWidget {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (_) => TripBookingForm(),
+                                  builder: (_) => TripBookingForm(booking:bookinginfo ),
                                 ),
                               );
                             },
@@ -844,7 +870,9 @@ class TripCard extends StatelessWidget {
                                               Color(0xFFB7E4C7),
                                             ],
                                           ),
-                                          borderRadius: BorderRadius.circular(12),
+                                          borderRadius: BorderRadius.circular(
+                                            12,
+                                          ),
                                         ),
                                         child: Row(
                                           children: [
@@ -858,7 +886,9 @@ class TripCard extends StatelessWidget {
                                               child: Text(
                                                 "Approved Amount",
                                                 style: TextStyle(
-                                                  color: const Color(0xFF2D6A4F),
+                                                  color: const Color(
+                                                    0xFF2D6A4F,
+                                                  ),
                                                   fontWeight: FontWeight.w600,
                                                   fontSize: isSmall ? 12 : 13,
                                                 ),
@@ -897,13 +927,23 @@ class TripCard extends StatelessWidget {
                                   final updated = BookingInfo(
                                     tripId: bookinginfo.tripId,
                                     tollCharges:
-                                        double.tryParse(tollController.text) ?? 0,
+                                        double.tryParse(tollController.text) ??
+                                        0,
                                     repairingCharges:
-                                        double.tryParse(repairController.text) ?? 0,
+                                        double.tryParse(
+                                          repairController.text,
+                                        ) ??
+                                        0,
                                     driverCharges:
-                                        double.tryParse(driverController.text) ?? 0,
+                                        double.tryParse(
+                                          driverController.text,
+                                        ) ??
+                                        0,
                                     amountReceived:
-                                        double.tryParse(receivedController.text) ?? 0,
+                                        double.tryParse(
+                                          receivedController.text,
+                                        ) ??
+                                        0,
                                   );
                                   await ref
                                       .read(TripPageViewModelProvider.notifier)
@@ -936,7 +976,9 @@ class TripCard extends StatelessWidget {
                                     borderRadius: BorderRadius.circular(16),
                                     boxShadow: [
                                       BoxShadow(
-                                        color: const Color(0xFF4361EE).withOpacity(0.4),
+                                        color: const Color(
+                                          0xFF4361EE,
+                                        ).withOpacity(0.4),
                                         blurRadius: 14,
                                         offset: const Offset(0, 5),
                                       ),
@@ -964,41 +1006,41 @@ class TripCard extends StatelessWidget {
                                   ),
                                 ),
                               )
-                            else
-                              Center(
-                                child: Container(
-                                  padding: EdgeInsets.symmetric(
-                                    horizontal: isSmall ? 18 : 24,
-                                    vertical: isSmall ? 10 : 12,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: Colors.green.shade50,
-                                    borderRadius: BorderRadius.circular(30),
-                                    border: Border.all(
-                                      color: Colors.green.shade200,
-                                    ),
-                                  ),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Icon(
-                                        Icons.verified_rounded,
-                                        color: Colors.green.shade600,
-                                        size: isSmall ? 15 : 18,
-                                      ),
-                                      SizedBox(width: isSmall ? 6 : 8),
-                                      Text(
-                                        "Payment Already done",
-                                        style: TextStyle(
-                                          color: Colors.green.shade700,
-                                          fontWeight: FontWeight.w600,
-                                          fontSize: isSmall ? 12 : 14,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
+                            // else
+                            //   Center(
+                            //     child: Container(
+                            //       padding: EdgeInsets.symmetric(
+                            //         horizontal: isSmall ? 18 : 24,
+                            //         vertical: isSmall ? 10 : 12,
+                            //       ),
+                            //       decoration: BoxDecoration(
+                            //         color: Colors.green.shade50,
+                            //         borderRadius: BorderRadius.circular(30),
+                            //         border: Border.all(
+                            //           color: Colors.green.shade200,
+                            //         ),
+                            //       ),
+                            //       child: Row(
+                            //         mainAxisSize: MainAxisSize.min,
+                            //         children: [
+                            //           Icon(
+                            //             Icons.verified_rounded,
+                            //             color: Colors.green.shade600,
+                            //             size: isSmall ? 15 : 18,
+                            //           ),
+                            //           SizedBox(width: isSmall ? 6 : 8),
+                            //           Text(
+                            //             "Payment done",
+                            //             style: TextStyle(
+                            //               color: Colors.green.shade700,
+                            //               fontWeight: FontWeight.w600,
+                            //               fontSize: isSmall ? 12 : 14,
+                            //             ),
+                            //           ),
+                            //         ],
+                            //       ),
+                            //     ),
+                            //   ),
                           ],
                         ],
                       ),
@@ -1045,7 +1087,7 @@ class TripCard extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // ── ROW 1: Vehicle · Route · Amount ───────────────────
+            // ─ ROW 1: Vehicle · Route · Amount ───────────────────
             Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
@@ -1142,7 +1184,6 @@ class TripCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 // const SizedBox(width: 38),
-
                 Expanded(
                   child: Row(
                     children: [

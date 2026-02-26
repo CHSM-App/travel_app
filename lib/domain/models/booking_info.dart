@@ -54,7 +54,7 @@ class BookingInfo {
   @JsonKey(name: 'amount_received')
   final double? amountReceived;
 
-  @JsonKey(name: 'customer_id')
+  @JsonKey(name: 'CustomerId')
   final int? customerId;
 
   @JsonKey(name: 'Vehicle_info')

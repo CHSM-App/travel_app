@@ -136,5 +136,15 @@ class TripBookingViewModel extends StateNotifier<TripBookingState> {
       );
     }
   }
+
+  Future<void> updateTripBooking(int tripId, TripBooking booking) async {
+     state = state.copyWith(isLoading: true, error: null);
+    try {
+      final result = await usecase.updateTripBooking(tripId, booking);
+      state = state.copyWith(isLoading: false, data: result);
+    } catch (e) {
+      state = state.copyWith(isLoading: false, error: e.toString());
+    }
+  }
   
 }

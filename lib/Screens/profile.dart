@@ -32,6 +32,18 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
 
   File? _profileImage;
   String? _imageUrl;
+  bool    _isSaving = false;
+  bool    _didPopulateInitialProfile = false;
+
+  // ── Design tokens ─────────────────────────────────
+  static const _primary   = Color(0xFF5B6EF5);
+  static const _primaryDk = Color(0xFF3D50E0);
+  static const _primaryLt = Color(0xFFEEF0FE);
+  static const _surface   = Color(0xFFF4F5FF);
+  static const _textDark  = Color(0xFF1A1D3B);
+  static const _textMid   = Color(0xFF6B7280);
+  static const _green     = Color(0xFF10B981);
+  static const _red       = Color(0xFFEF4444);
 
   @override
   void initState() {
@@ -64,260 +76,119 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
     super.dispose();
   }
 
-  void _populateProfile(LoginInfo profile) {
-    nameController.text = profile.name ?? '';
-    mobileController.text = profile.mobile ?? '';
-    emailController.text = profile.email ?? '';
-    addressController.text = profile.address ?? '';
-    agencyController.text = profile.agencyName ?? '';
-    cityController.text = profile.city ?? '';
-  //  pincodeController.text = profile.pincode ?? '';
-  _imageUrl = profile.imageUrl;
-  }
+  void _populateProfile(LoginInfo p) {
+    if (_didPopulateInitialProfile) return;
 
-  void _showImageOptions() {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(25),
-            topRight: Radius.circular(25),
-          ),
-        ),
-        child: SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const SizedBox(height: 15),
-              Container(
-                width: 50,
-                height: 5,
-                decoration: BoxDecoration(
-                  color: Colors.grey[300],
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              ),
-              const SizedBox(height: 20),
-              const Text(
-                'Profile Photo',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 20),
-              ListTile(
-                leading: Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: Colors.indigo.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Icon(Icons.photo_camera, color: Colors.indigo),
-                ),
-                title: const Text(
-                  'Camera',
-                  style: TextStyle(fontWeight: FontWeight.w500),
-                ),
-                onTap: () {
-                  Navigator.pop(context);
-                  _pickImage(ImageSource.camera);
-                },
-              ),
-              ListTile(
-                leading: Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: Colors.indigo.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Icon(Icons.photo_library, color: Colors.indigo),
-                ),
-                title: const Text(
-                  'Gallery',
-                  style: TextStyle(fontWeight: FontWeight.w500),
-                ),
-                onTap: () {
-                  Navigator.pop(context);
-                  _pickImage(ImageSource.gallery);
-                },
-              ),
-              if (_profileImage != null || _imageUrl != null)
-                ListTile(
-                  leading: Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: Colors.red.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: const Icon(Icons.delete, color: Colors.red),
-                  ),
-                  title: const Text(
-                    'Remove',
-                    style: TextStyle(color: Colors.red, fontWeight: FontWeight.w500),
-                  ),
-                  onTap: () {
-                    Navigator.pop(context);
-                    setState(() {
-                      _profileImage = null;
-                      _imageUrl = null;
-                    });
-                  },
-                ),
-              const SizedBox(height: 20),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
+    if (nameController.text.isEmpty)    nameController.text    = p.name       ?? '';
+    if (mobileController.text.isEmpty)  mobileController.text  = p.mobile     ?? '';
+    if (emailController.text.isEmpty)   emailController.text   = p.email      ?? '';
+    if (addressController.text.isEmpty) addressController.text = p.address    ?? '';
+    if (agencyController.text.isEmpty)  agencyController.text  = p.agencyName ?? '';
+    if (cityController.text.isEmpty)    cityController.text    = p.city       ?? '';
 
-  Future<void> _pickImage(ImageSource source) async {
-    final XFile? pickedFile = await _picker.pickImage(source: source);
-
-    if (pickedFile != null) {
-      setState(() {
-        _profileImage = File(pickedFile.path);
-        _imageUrl = null;
-      });
-    }
-  }
-
-//   void _saveProfile() async {
-//     print("Save profile clicked");
-//   if (!_formKey.currentState!.validate()) return;
-
-//   final profileList = ref.read(loginViewModelProvider).adminProfile.value;
-//   int adminId = 0;
-//   String agencyId = '';
-
-//   if (profileList != null && profileList.isNotEmpty) {
-//     adminId = profileList.first.adminId ?? 0;
-//     agencyId = profileList.first.agencyId ?? '';
-//   }
-//   print('adminId: $adminId, agencyId: $agencyId');
-// if (_profileImage != null) {
-//   print('Uploading image for adminId: $adminId, agencyId: $agencyId');
-
-//   final imageResponse = await ref
-//       .read(loginViewModelProvider.notifier)
-//       .updateAdminProfile(_profileImage!, adminId, agencyId);
-// if (_profileImage != null) {
-//   final imageResponse =
-//       await ref.read(loginViewModelProvider.notifier)
-//           .updateAdminProfile(_profileImage!, adminId, agencyId);
-
-//   if (imageResponse['success'] != 1) {
-//     ScaffoldMessenger.of(context).showSnackBar(
-//       SnackBar(
-//         content: Text('Image upload failed: ${imageResponse['message']}'),
-//         backgroundColor: Colors.red,
-//       ),
-//     );
-//   } else {
-//     setState(() {
-//       _imageUrl = imageResponse['data']?['imageUrl'] ?? _imageUrl;
-//     });
-//     print('Image uploaded successfully: $_imageUrl');
-//   }
-// }
-// }
-
-//   // ✅ Save profile info regardless of image upload
-//   final loginInfo = LoginInfo(
-//     adminId: adminId,
-//     name: nameController.text,
-//     email: emailController.text,
-//     mobile: mobileController.text,
-//     address: addressController.text,
-//     agencyName: agencyController.text,
-//     city: cityController.text,
-//   );
-
-//   final response = await ref
-//       .read(loginViewModelProvider.notifier)
-//       .addAdmin(loginInfo);
-
-//   if (response?.success == 1) {
-//     // Reload profile
-//     await ref
-//         .read(loginViewModelProvider.notifier)
-//         .adminProfile(adminId);
-
-//     ScaffoldMessenger.of(context).showSnackBar(
-//       const SnackBar(
-//         content: Text("Profile Updated successfully"),
-//         backgroundColor: Colors.green,
-//       ),
-//     );
-//   } else {
-//     ScaffoldMessenger.of(context).showSnackBar(
-//       SnackBar(
-//         content: Text(response?.message ?? "Update failed"),
-//         backgroundColor: Colors.red,
-//       ),
-//     );
-//   }
-// }
-
-void _saveProfile() async {
-  if (!_formKey.currentState!.validate()) return;
-
-  final profileList = ref.read(loginViewModelProvider).adminProfile.value;
-
-  int adminId = 0;
-  String agencyId = '';
-
-  if (profileList != null && profileList.isNotEmpty) {
-    adminId = profileList.first.adminId ?? 0;
-    agencyId = profileList.first.agencyId ?? '';
-  }
-
-  print('adminId: $adminId, agencyId: $agencyId');
-if (_profileImage != null) {
-  print('Uploading image for adminId: $adminId, agencyId: $agencyId');
-
-  final imageResponse = await ref
-      .read(loginViewModelProvider.notifier)
-      .updateAdminProfile(_profileImage!, adminId, agencyId);
-
-  print("Image Response: $imageResponse");
-
-  if (imageResponse == null) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text("Image upload failed: No response from server"),
-        backgroundColor: Colors.red,
-      ),
-    );
-    return;
-  }
-
-  if (imageResponse['success'] != 1) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(imageResponse['message'] ?? "Upload failed"),
-        backgroundColor: Colors.red,
-      ),
-    );
-  } else {
     setState(() {
-      _imageUrl = imageResponse['data']?['imageUrl'];
+      _imageUrl = p.imageUrl;
+      _didPopulateInitialProfile = true;
     });
-
-    print("Image uploaded successfully: $_imageUrl");
   }
-}
-  // ✅ Save profile data
-  final loginInfo = LoginInfo(
-    adminId: adminId,
-    name: nameController.text,
-    email: emailController.text,
-    mobile: mobileController.text,
-    address: addressController.text,
-    agencyName: agencyController.text,
-    city: cityController.text,
+
+  // void _showImageOptions() {
+  //   HapticFeedback.lightImpact();
+  //   showModalBottomSheet(
+  //     context: context,
+  //     backgroundColor: Colors.transparent,
+  //     builder: (_) => _ImagePickerSheet(
+  //       hasImage:  _profileImage != null || (_imageUrl?.isNotEmpty == true),
+  //       onCamera:  () { Navigator.pop(context); _pickImage(ImageSource.camera); },
+  //       onGallery: () { Navigator.pop(context); _pickImage(ImageSource.gallery); },
+  //       onRemove:  () {
+  //         Navigator.pop(context);
+  //         setState(() { _profileImage = null; _imageUrl = null; });
+  //       },
+  //     ),
+  //   );
+  // }
+void _showImageOptions() {
+  HapticFeedback.lightImpact();
+  showModalBottomSheet(
+    context: context,
+    backgroundColor: Colors.transparent,
+    builder: (_) => _ImagePickerSheet(
+      hasImage:  _profileImage != null || (_imageUrl?.isNotEmpty == true),
+      onCamera:  () { Navigator.pop(context); _pickImage(ImageSource.camera); },
+      onGallery: () { Navigator.pop(context); _pickImage(ImageSource.gallery); },
+      onRemove:  () async {
+        Navigator.pop(context);
+        final list    = ref.read(loginViewModelProvider).adminProfile.value;
+        final adminId = list?.firstOrNull?.adminId  ?? 0;
+        final agId    = list?.firstOrNull?.agencyId ?? '';
+        final previousLocalImage = _profileImage;
+        final previousImageUrl = _imageUrl;
+
+        if (adminId == 0 || agId.isEmpty) {
+          _snack('Admin not found', error: true);
+          return;
+        }
+
+        setState(() {
+          _isSaving = true;
+          _profileImage = null;
+          _imageUrl = null;
+        });
+
+        final res = await ref.read(loginViewModelProvider.notifier)
+            .deleteAdminProfile({
+          'admin_id': adminId.toString(),
+          'agency_id': agId,
+        });
+
+        if (res != null && res['success'] == 1) {
+          await ref.read(loginViewModelProvider.notifier).adminProfile(adminId);
+          setState(() => _isSaving = false);
+          _snack('Profile image removed successfully');
+        } else {
+          setState(() {
+            _isSaving = false;
+            _profileImage = previousLocalImage;
+            _imageUrl = previousImageUrl;
+          });
+          _snack(res?['message'] ?? 'Failed to remove image', error: true);
+        }
+      },
+    ),
   );
+}
+  Future<void> _pickImage(ImageSource src) async {
+    final f = await _picker.pickImage(source: src, imageQuality: 85);
+    if (f != null) setState(() { _profileImage = File(f.path); _imageUrl = null; });
+  }
+
+  Future<void> _saveProfile() async {
+    if (!_formKey.currentState!.validate()) return;
+    HapticFeedback.mediumImpact();
+    setState(() => _isSaving = true);
+
+    final list    = ref.read(loginViewModelProvider).adminProfile.value;
+    final adminId = list?.firstOrNull?.adminId  ?? 0;
+    final agId    = list?.firstOrNull?.agencyId ?? '';
+
+    if (_profileImage != null) {
+      final res = await ref.read(loginViewModelProvider.notifier)
+          .updateAdminProfile(_profileImage!, adminId, agId);
+      if (res == null || res['success'] != 1) {
+        _snack(res?['message'] ?? 'Image upload failed', error: true);
+        setState(() => _isSaving = false);
+        return;
+      }
+      setState(() => _imageUrl = res['data']?['imageUrl']);
+    }
+
+    final info = LoginInfo(
+      adminId: adminId, name: nameController.text,
+      email: emailController.text, mobile: mobileController.text,
+      address: addressController.text, agencyName: agencyController.text,
+      city: cityController.text,
+    );
 
   final response =
       await ref.read(loginViewModelProvider.notifier).addAdmin(loginInfo);
@@ -397,129 +268,204 @@ if (_profileImage != null) {
     final loginState = ref.watch(loginViewModelProvider);
 
     return Scaffold(
-      backgroundColor: Colors.grey[50],
-      body: SafeArea(
-        child: loginState.adminProfile.when(
-          loading: () => const Center(child: CircularProgressIndicator()),
-          error: (err, st) => Center(child: Text('Error: $err')),
-          data: (profileList) {
-            if (profileList.isNotEmpty) {
-              final profile = profileList.first;
-              WidgetsBinding.instance.addPostFrameCallback((_) {
-                _populateProfile(profile);
-              });
-            }
+      backgroundColor: _surface,
+      body: loginState.adminProfile.when(
+        loading: () => const Center(child: CircularProgressIndicator(color: _primary)),
+        error:   (e, _) => Center(child: Text('Error: $e', style: const TextStyle(color: _red))),
+        data: (list) {
+          if (list.isNotEmpty) {
+            WidgetsBinding.instance.addPostFrameCallback((_) => _populateProfile(list.first));
+          }
+          return FadeTransition(
+            opacity: _fadeAnim,
+            child: Column(
+              children: [
+                // ── TOP HEADER with avatar INSIDE ──
+                _buildHeader(),
 
-            // Scrollable form (design unchanged)
-            return SingleChildScrollView(
-              physics: const BouncingScrollPhysics(),
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-              child: FadeTransition(
-                opacity: _fadeAnimation,
-                child: Form(
-                  key: _formKey,
-                  child: Column(
-                    children: [
-                      // AppBar
-                      Row(
-                        children: [
-                          IconButton(
-                            icon: const Icon(Icons.arrow_back, color: Colors.indigo),
-                            onPressed: () => Navigator.pop(context),
-                          ),
-                          const SizedBox(width: 10),
-                          const Text(
-                            'My Profile',
-                            style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.indigo,
-                            ),
-                          ),
-                        ],
+                // ── FORM BODY (fills remaining space) ──
+                Expanded(
+                  child: SingleChildScrollView(
+                    physics: const NeverScrollableScrollPhysics(),
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+                      child: Form(
+                        key: _formKey,
+                        child: Column(
+                          children: [
+                            _section('Personal Info', [
+                              _FieldItem(nameController,   'Full Name',     Icons.person_outline_rounded),
+                              _FieldItem(mobileController, 'Mobile',        Icons.phone_outlined,
+                                  type: TextInputType.phone, max: 10,
+                                  validate: (v) {
+                                    if (v == null || v.isEmpty) return 'Required';
+                                    if (v.length != 10) return '10 digits required';
+                                    return null;
+                                  }),
+                              _FieldItem(emailController,  'Email',         Icons.email_outlined,
+                                  type: TextInputType.emailAddress,
+                                  validate: (v) {
+                                    if (v == null || v.isEmpty) return 'Required';
+                                    if (!v.contains('@')) return 'Invalid email';
+                                    return null;
+                                  }),
+                            ]),
+                            const SizedBox(height: 14),
+                            _section('Agency & Location', [
+                              _FieldItem(agencyController,  'Agency Name', Icons.business_outlined),
+                              _FieldItem(cityController,    'City',        Icons.location_city_outlined),
+                              _FieldItem(addressController, 'Address',     Icons.home_outlined),
+                            ]),
+                            const SizedBox(height: 20),
+                            _saveButton(),
+                          ],
+                        ),
                       ),
-                      const SizedBox(height: 20),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
 
-                      // Profile Image
-                      Stack(
-                        children: [
-                       CircleAvatar(
-  radius: 60,
-  backgroundColor: Colors.indigo.shade100,
-  backgroundImage: _profileImage != null
-      ? FileImage(_profileImage!)
-      : (_imageUrl != null && _imageUrl!.isNotEmpty)
-          ? NetworkImage(_imageUrl!) as ImageProvider
-          : null,
-  child: (_profileImage == null && (_imageUrl == null || _imageUrl!.isEmpty))
-      ? Text(
-          nameController.text.isNotEmpty
-              ? nameController.text[0].toUpperCase() // first letter of name
-              : 'U', // fallback if name is empty
-          style: const TextStyle(
-            fontSize: 40,
-            color: Colors.indigo,
-            fontWeight: FontWeight.bold,
+  // ── Header: gradient + avatar fully inside ────────────────────
+
+  Widget _buildHeader() {
+    final initial = nameController.text.isNotEmpty
+        ? nameController.text[0].toUpperCase() : 'A';
+    final imageUrl = _imageUrl?.trim();
+    final hasValidNetworkImage = imageUrl != null &&
+        imageUrl.isNotEmpty &&
+        imageUrl.toLowerCase() != 'null';
+
+    Widget avatarFallback() {
+      return Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Colors.white.withOpacity(0.3), Colors.white.withOpacity(0.15)],
           ),
-        )
-      : null,
-),
-                          Positioned(
-                            bottom: 0,
-                            right: 0,
-                            child: GestureDetector(
-                              onTap: _showImageOptions,
-                              child: Container(
-                                padding: const EdgeInsets.all(12),
-                                decoration: BoxDecoration(
-                                  color: Colors.indigo,
-                                  shape: BoxShape.circle,
-                                ),
-                                child: const Icon(Icons.camera_alt, color: Colors.white),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 15),
-                      const Text(
-                        'Upload Profile Photo',
-                        style: TextStyle(color: Colors.grey, fontSize: 14),
-                      ),
-                      const SizedBox(height: 30),
+        ),
+        alignment: Alignment.center,
+        child: Text(
+          initial,
+          style: const TextStyle(
+            fontSize: 32,
+            fontWeight: FontWeight.w800,
+            color: Colors.white,
+          ),
+        ),
+      );
+    }
 
-                      // Form Fields
-                      _buildTextField(
-                        controller: nameController,
-                        label: 'Full Name',
-                        icon: Icons.person_outline,
-                        validator: (value) =>
-                            value == null || value.isEmpty ? 'Enter name' : null,
+    return Container(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF5B6EF5), Color(0xFF3340C8)],
+        ),
+        borderRadius: BorderRadius.vertical(bottom: Radius.circular(30)),
+      ),
+      child: SafeArea(
+        bottom: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(8, 8, 16, 20),
+          child: Column(
+            children: [
+              // Back + Title row
+              Row(
+                children: [
+                  IconButton(
+                    icon: Container(
+                      padding: const EdgeInsets.all(7),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.18),
+                        borderRadius: BorderRadius.circular(11),
                       ),
-                      const SizedBox(height: 20),
-                      _buildTextField(
-                        controller: mobileController,
-                        label: 'Mobile Number',
-                        icon: Icons.phone_outlined,
-                        keyboardType: TextInputType.phone,
-                        maxLength: 10,
-                        validator: (value) {
-                          if (value == null || value.isEmpty) return 'Enter mobile';
-                          if (value.length != 10) return '10 digits required';
-                          return null;
-                        },
+                      child: const Icon(Icons.arrow_back_ios_new_rounded,
+                          color: Colors.white, size: 15),
+                    ),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                  const Text(
+                    'Edit Profile',
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800,
+                        color: Colors.white, letterSpacing: -0.4),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
+
+              // Avatar row — fully inside header
+              Row(
+                children: [
+                  const SizedBox(width: 16),
+                  // Avatar
+                  Stack(
+                    children: [
+                      Container(
+                        width: 80, height: 80,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.white, width: 3),
+                          boxShadow: [BoxShadow(
+                              color: Colors.black.withOpacity(0.2),
+                              blurRadius: 16, offset: const Offset(0, 6))],
+                        ),
+                        child: ClipOval(
+                          child: SizedBox.expand(
+                            child: _profileImage != null
+                                ? Image.file(
+                                    _profileImage!,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (_, __, ___) => avatarFallback(),
+                                  )
+                                : hasValidNetworkImage
+                                    ? Image.network(
+                                        imageUrl,
+                                        fit: BoxFit.cover,
+                                        errorBuilder: (_, __, ___) => avatarFallback(),
+                                      )
+                                    : avatarFallback(),
+                          ),
+                        ),
                       ),
-                      const SizedBox(height: 20),
-                      _buildTextField(
-                        controller: emailController,
-                        label: 'Email Address',
-                        icon: Icons.email_outlined,
-                        keyboardType: TextInputType.emailAddress,
-                        validator: (value) {
-                          if (value == null || value.isEmpty) return 'Enter email';
-                          if (!value.contains('@')) return 'Enter valid email';
-                          return null;
-                        },
+                      Positioned(
+                        bottom: 0, right: 0,
+                        child: GestureDetector(
+                          onTap: _showImageOptions,
+                          child: Container(
+                            width: 26, height: 26,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: Colors.white,
+                              border: Border.all(color: _primary, width: 1.5),
+                              boxShadow: [BoxShadow(
+                                  color: Colors.black.withOpacity(0.15),
+                                  blurRadius: 6)],
+                            ),
+                            child: const Icon(Icons.camera_alt_rounded,
+                                color: _primary, size: 13),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(width: 16),
+
+                  // Name + tap hint
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        nameController.text.isNotEmpty
+                            ? nameController.text : 'Your Name',
+                        style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700,
+                            color: Colors.white, letterSpacing: -0.3),
                       ),
                       const SizedBox(height: 20),
                       _buildTextField(
