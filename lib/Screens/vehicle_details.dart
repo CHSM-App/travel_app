@@ -226,7 +226,7 @@ class _VehicleManagePageState extends ConsumerState<VehicleManagePage>
   // ── PREMIUM HEADER ────────────────────────────────────────────────
   Widget _buildHeader() {
     final top = MediaQuery.of(context).padding.top;
-    final isEngaged = (widget.vehicle.StatusId ?? 0) == 1;
+    final isEngaged = (widget.vehicle.StatusId ?? 0) == 2;
 
     return Container(
       decoration: const BoxDecoration(

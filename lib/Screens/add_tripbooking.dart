@@ -627,8 +627,10 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
                               color: const Color(0xFF06D6A0),
                               value: selectedVehicleId,
                               items: vehicles
+                                   .where((v) => v.StatusId == 1)
                                   .map((e) => DropdownMenuItem<int>(
                                         value: e.vehicleId,
+                                        
                                         child: Text(e.name ?? ""),
                                       ))
                                   .toList(),

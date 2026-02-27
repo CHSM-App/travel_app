@@ -23,11 +23,11 @@ class _TripPageState extends ConsumerState<TripPage> {
 
     Future.microtask(() {
       final notifier = ref.read(TripPageViewModelProvider.notifier);
-      notifier.activeList(ref.read(loginViewModelProvider).agencyId??"");
-      notifier.upcomingList(ref.read(loginViewModelProvider).agencyId??"");
-      notifier.historyList(ref.read(loginViewModelProvider).agencyId??"");
-      notifier.unpaidList(ref.read(loginViewModelProvider).agencyId??"");
-      notifier.cancelledList(ref.read(loginViewModelProvider).agencyId??"");
+      notifier.activeList(ref.read(loginViewModelProvider).agencyId ?? '');
+      // notifier.upcomingList(ref.read(loginViewModelProvider).agencyId ?? '');
+      // notifier.historyList(ref.read(loginViewModelProvider).agencyId ?? '');
+      // notifier.unpaidList(ref.read(loginViewModelProvider).agencyId ?? '');
+      // notifier.cancelledList(ref.read(loginViewModelProvider).agencyId ?? '');
     });
   }
 
@@ -234,6 +234,7 @@ class _TripPageState extends ConsumerState<TripPage> {
   Widget _getCurrentList(dynamic state) {
     AsyncValue<List<BookingInfo>> currentList;
 
+    final state = ref.watch(TripPageViewModelProvider);
     switch (_selectedFilter) {
       case 'active':
         currentList = state.activeList;
