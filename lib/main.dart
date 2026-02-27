@@ -22,7 +22,7 @@ class MyApp extends StatelessWidget {
       navigatorKey: navigatorKey,
       scaffoldMessengerKey: rootScaffoldMessengerKey,
       debugShowCheckedModeBanner: false,
-      title: 'Red Login Page',
+      title: 'Travel App',
       theme: ThemeData(
         primarySwatch: Colors.red,
       ),
@@ -31,6 +31,7 @@ class MyApp extends StatelessWidget {
     );
   }
 }
+
 
 class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});

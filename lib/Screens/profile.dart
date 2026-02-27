@@ -21,14 +21,14 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
   late AnimationController _animCtrl;
   late Animation<double> _fadeAnim;
 
-  final nameController = TextEditingController();
-  final mobileController = TextEditingController();
-  final emailController = TextEditingController();
+  final nameController    = TextEditingController();
+  final mobileController  = TextEditingController();
+  final emailController   = TextEditingController();
   final addressController = TextEditingController();
-  final agencyController = TextEditingController();
-  final cityController = TextEditingController();
+  final agencyController  = TextEditingController();
+  final cityController    = TextEditingController();
 
-  File? _profileImage;
+  File?   _profileImage;
   String? _imageUrl;
   bool _isSaving = false;
   bool _didPopulateInitialProfile = false;
@@ -46,15 +46,11 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
   @override
   void initState() {
     super.initState();
-    _animCtrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 600),
-    );
+    _animCtrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 600));
     _fadeAnim = CurvedAnimation(parent: _animCtrl, curve: Curves.easeOut);
 
     Future.microtask(() {
-      ref
-          .read(loginViewModelProvider.notifier)
+      ref.read(loginViewModelProvider.notifier)
           .adminProfile(ref.read(loginViewModelProvider).adminId);
     });
     _animCtrl.forward();
@@ -217,34 +213,19 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
   }
 
   void _snack(String msg, {bool error = false}) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            Icon(
-              error ? Icons.error_outline_rounded : Icons.check_circle_rounded,
-              color: Colors.white,
-              size: 18,
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                msg,
-                style: const TextStyle(
-                  fontWeight: FontWeight.w600,
-                  fontSize: 13,
-                ),
-              ),
-            ),
-          ],
-        ),
-        backgroundColor: error ? _red : _green,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-        margin: const EdgeInsets.all(14),
-        elevation: 0,
-      ),
-    );
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Row(children: [
+        Icon(error ? Icons.error_outline_rounded : Icons.check_circle_rounded,
+            color: Colors.white, size: 18),
+        const SizedBox(width: 8),
+        Expanded(child: Text(msg, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13))),
+      ]),
+      backgroundColor: error ? _red : _green,
+      behavior: SnackBarBehavior.floating,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+      margin: const EdgeInsets.all(14),
+      elevation: 0,
+    ));
   }
 
   @override
@@ -518,10 +499,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
                       GestureDetector(
                         onTap: _showImageOptions,
                         child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 4,
-                          ),
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                           decoration: BoxDecoration(
                             color: Colors.white.withOpacity(0.2),
                             borderRadius: BorderRadius.circular(20),
@@ -529,20 +507,11 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
                           child: const Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Icon(
-                                Icons.camera_alt_outlined,
-                                color: Colors.white,
-                                size: 12,
-                              ),
+                              Icon(Icons.camera_alt_outlined, color: Colors.white, size: 12),
                               SizedBox(width: 4),
-                              Text(
-                                'Change photo',
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
+                              Text('Change photo',
+                                  style: TextStyle(fontSize: 11, color: Colors.white,
+                                      fontWeight: FontWeight.w600)),
                             ],
                           ),
                         ),
@@ -566,49 +535,33 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
       children: [
         Padding(
           padding: const EdgeInsets.only(left: 4, bottom: 8),
-          child: Text(
-            title.toUpperCase(),
-            style: const TextStyle(
-              fontSize: 10,
-              fontWeight: FontWeight.w700,
-              color: _textMid,
-              letterSpacing: 1.3,
-            ),
-          ),
+          child: Text(title.toUpperCase(),
+              style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700,
+                  color: _textMid, letterSpacing: 1.3)),
         ),
         Container(
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(20),
-            boxShadow: [
-              BoxShadow(
-                color: _primary.withOpacity(0.07),
-                blurRadius: 16,
-                offset: const Offset(0, 4),
-              ),
-            ],
+            boxShadow: [BoxShadow(
+                color: _primary.withOpacity(0.07), blurRadius: 16, offset: const Offset(0, 4))],
           ),
           child: Column(
             children: List.generate(fields.length, (i) {
               final isFirst = i == 0;
-              final isLast = i == fields.length - 1;
+              final isLast  = i == fields.length - 1;
               return Column(
                 children: [
                   ClipRRect(
                     borderRadius: BorderRadius.vertical(
-                      top: isFirst ? const Radius.circular(20) : Radius.zero,
-                      bottom: isLast ? const Radius.circular(20) : Radius.zero,
+                      top:    isFirst ? const Radius.circular(20) : Radius.zero,
+                      bottom: isLast  ? const Radius.circular(20) : Radius.zero,
                     ),
                     child: _buildField(fields[i]),
                   ),
                   if (!isLast)
-                    Divider(
-                      height: 1,
-                      thickness: 1,
-                      color: _surface,
-                      indent: 56,
-                      endIndent: 0,
-                    ),
+                    Divider(height: 1, thickness: 1,
+                        color: _surface, indent: 56, endIndent: 0),
                 ],
               );
             }),
@@ -623,16 +576,9 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
       controller: f.ctrl,
       keyboardType: f.type,
       maxLines: 1,
-      inputFormatters: f.max != null
-          ? [LengthLimitingTextInputFormatter(f.max!)]
-          : null,
-      validator:
-          f.validate ?? (v) => (v == null || v.isEmpty) ? 'Required' : null,
-      style: const TextStyle(
-        fontSize: 14,
-        color: _textDark,
-        fontWeight: FontWeight.w500,
-      ),
+      inputFormatters: f.max != null ? [LengthLimitingTextInputFormatter(f.max!)] : null,
+      validator: f.validate ?? (v) => (v == null || v.isEmpty) ? 'Required' : null,
+      style: const TextStyle(fontSize: 14, color: _textDark, fontWeight: FontWeight.w500),
       decoration: InputDecoration(
         labelText: f.label,
         labelStyle: const TextStyle(fontSize: 12, color: _textMid),
@@ -640,24 +586,18 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           child: Container(
             padding: const EdgeInsets.all(7),
-            decoration: BoxDecoration(
-              color: _primaryLt,
-              borderRadius: BorderRadius.circular(9),
-            ),
+            decoration: BoxDecoration(color: _primaryLt, borderRadius: BorderRadius.circular(9)),
             child: Icon(f.icon, color: _primary, size: 15),
           ),
         ),
-        border: InputBorder.none,
+        border:        InputBorder.none,
         focusedBorder: InputBorder.none,
         enabledBorder: InputBorder.none,
-        errorBorder: InputBorder.none,
+        errorBorder:   InputBorder.none,
         filled: true,
         fillColor: Colors.white,
         // Compact vertical padding so fields fit on screen
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 14,
-          vertical: 12,
-        ),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         errorStyle: const TextStyle(fontSize: 10, color: _red),
       ),
     );
@@ -676,15 +616,9 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
               : [_primary, _primaryDk],
         ),
         borderRadius: BorderRadius.circular(18),
-        boxShadow: _isSaving
-            ? []
-            : [
-                BoxShadow(
-                  color: _primary.withOpacity(0.38),
-                  blurRadius: 16,
-                  offset: const Offset(0, 7),
-                ),
-              ],
+        boxShadow: _isSaving ? [] : [
+          BoxShadow(color: _primary.withOpacity(0.38), blurRadius: 16, offset: const Offset(0, 7)),
+        ],
       ),
       child: Material(
         color: Colors.transparent,
@@ -693,28 +627,16 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
           onTap: _isSaving ? null : _saveProfile,
           child: Center(
             child: _isSaving
-                ? const SizedBox(
-                    width: 22,
-                    height: 22,
-                    child: CircularProgressIndicator(
-                      color: Colors.white,
-                      strokeWidth: 2.5,
-                    ),
-                  )
+                ? const SizedBox(width: 22, height: 22,
+                    child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5))
                 : const Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Icon(Icons.check_rounded, color: Colors.white, size: 20),
                       SizedBox(width: 8),
-                      Text(
-                        'Save Changes',
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w700,
-                          color: Colors.white,
-                          letterSpacing: -0.2,
-                        ),
-                      ),
+                      Text('Save Changes',
+                          style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700,
+                              color: Colors.white, letterSpacing: -0.2)),
                     ],
                   ),
           ),
@@ -734,14 +656,8 @@ class _FieldItem {
   final int? max;
   final String? Function(String?)? validate;
 
-  const _FieldItem(
-    this.ctrl,
-    this.label,
-    this.icon, {
-    this.type,
-    this.max,
-    this.validate,
-  });
+  const _FieldItem(this.ctrl, this.label, this.icon,
+      {this.type, this.max, this.validate});
 }
 
 // ── Image picker sheet ────────────────────────────────────────────
@@ -757,8 +673,8 @@ class _ImagePickerSheet extends StatelessWidget {
     required this.onRemove,
   });
 
-  static const _primary = Color(0xFF5B6EF5);
-  static const _red = Color(0xFFEF4444);
+  static const _primary  = Color(0xFF5B6EF5);
+  static const _red      = Color(0xFFEF4444);
   static const _textDark = Color(0xFF1A1D3B);
 
   @override
@@ -775,52 +691,25 @@ class _ImagePickerSheet extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               const SizedBox(height: 12),
-              Container(
-                width: 38,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade200,
-                  borderRadius: BorderRadius.circular(4),
-                ),
-              ),
+              Container(width: 38, height: 4,
+                  decoration: BoxDecoration(
+                      color: Colors.grey.shade200,
+                      borderRadius: BorderRadius.circular(4))),
               const SizedBox(height: 18),
-              const Text(
-                'Profile Photo',
-                style: TextStyle(
-                  fontSize: 17,
-                  fontWeight: FontWeight.w800,
-                  color: _textDark,
-                ),
-              ),
+              const Text('Profile Photo',
+                  style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: _textDark)),
               const SizedBox(height: 4),
-              Text(
-                'Choose an option',
-                style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
-              ),
+              Text('Choose an option',
+                  style: TextStyle(fontSize: 12, color: Colors.grey.shade500)),
               const SizedBox(height: 18),
               Row(
                 children: [
-                  _tile(
-                    Icons.camera_alt_outlined,
-                    'Camera',
-                    _primary,
-                    onCamera,
-                  ),
+                  _tile(Icons.camera_alt_outlined,    'Camera',  _primary, onCamera),
                   const SizedBox(width: 10),
-                  _tile(
-                    Icons.photo_library_outlined,
-                    'Gallery',
-                    _primary,
-                    onGallery,
-                  ),
+                  _tile(Icons.photo_library_outlined, 'Gallery', _primary, onGallery),
                   if (hasImage) ...[
                     const SizedBox(width: 10),
-                    _tile(
-                      Icons.delete_outline_rounded,
-                      'Remove',
-                      _red,
-                      onRemove,
-                    ),
+                    _tile(Icons.delete_outline_rounded, 'Remove', _red, onRemove),
                   ],
                 ],
               ),
@@ -847,14 +736,8 @@ class _ImagePickerSheet extends StatelessWidget {
             children: [
               Icon(icon, color: color, size: 26),
               const SizedBox(height: 6),
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                  color: color,
-                ),
-              ),
+              Text(label,
+                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: color)),
             ],
           ),
         ),

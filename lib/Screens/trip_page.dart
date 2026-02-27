@@ -23,11 +23,11 @@ class _TripPageState extends ConsumerState<TripPage> {
 
     Future.microtask(() {
       final notifier = ref.read(TripPageViewModelProvider.notifier);
-      notifier.activeList(ref.read(loginViewModelProvider).agencyId??"");
-      notifier.upcomingList(ref.read(loginViewModelProvider).agencyId??"");
-      notifier.historyList(ref.read(loginViewModelProvider).agencyId??"");
-      notifier.unpaidList(ref.read(loginViewModelProvider).agencyId??"");
-      notifier.cancelledList(ref.read(loginViewModelProvider).agencyId??"");
+      notifier.activeList(ref.read(loginViewModelProvider).agencyId ?? '');
+      // notifier.upcomingList(ref.read(loginViewModelProvider).agencyId ?? '');
+      // notifier.historyList(ref.read(loginViewModelProvider).agencyId ?? '');
+      // notifier.unpaidList(ref.read(loginViewModelProvider).agencyId ?? '');
+      // notifier.cancelledList(ref.read(loginViewModelProvider).agencyId ?? '');
     });
   }
 
@@ -136,11 +136,11 @@ class _TripPageState extends ConsumerState<TripPage> {
                     height: 48,
                     padding: const EdgeInsets.symmetric(horizontal: 12),
                     decoration: BoxDecoration(
-                      color: Colors.indigo.shade700,
+                      color: const Color.fromARGB(255, 62, 120, 246),
                       borderRadius: BorderRadius.circular(12),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.indigo.withValues(alpha: 0.3),
+                          color: const Color.fromARGB(255, 62, 120, 246).withValues(alpha: 0.3),
                           blurRadius: 8,
                           offset: const Offset(0, 4),
                         ),
@@ -154,7 +154,7 @@ class _TripPageState extends ConsumerState<TripPage> {
                           color: Colors.white,
                           size: 22,
                         ),
-                        dropdownColor: Colors.indigo.shade700,
+                        dropdownColor:  const Color.fromARGB(255, 62, 120, 246),
                         borderRadius: BorderRadius.circular(12),
                         style: const TextStyle(
                           color: Colors.white,
@@ -234,6 +234,7 @@ class _TripPageState extends ConsumerState<TripPage> {
   Widget _getCurrentList(dynamic state) {
     AsyncValue<List<BookingInfo>> currentList;
 
+    final state = ref.watch(TripPageViewModelProvider);
     switch (_selectedFilter) {
       case 'active':
         currentList = state.activeList;
@@ -264,7 +265,7 @@ class _TripPageState extends ConsumerState<TripPage> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             CircularProgressIndicator(
-              color: Colors.indigo.shade700,
+              color:  const Color.fromARGB(255, 62, 120, 246),
             ),
             const SizedBox(height: 16),
             Text(
@@ -327,7 +328,7 @@ class _TripPageState extends ConsumerState<TripPage> {
                 icon: const Icon(Icons.refresh_rounded, size: 18),
                 label: const Text('Retry'),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.indigo.shade700,
+                  backgroundColor:  const Color.fromARGB(255, 62, 120, 246),
                   foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),

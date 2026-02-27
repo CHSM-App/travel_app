@@ -302,131 +302,68 @@ class TripCard extends StatelessWidget {
         }
 
         Widget customerDriverRow() {
-          if (isSmall) {
-            return Column(
-              children: [
-                infoBlock(
-                  label: "CUSTOMER",
-                  icon: Icons.person_outline_rounded,
-                  color: const Color(0xFF7209B7),
-                  rows: [
-                    detailRow(
-                      "Name",
-                      bookinginfo.customer_name ?? "--",
-                      Icons.badge_outlined,
-                      const Color(0xFF7209B7),
-                    ),
-                    rowDivider(),
-                    detailRow(
-                      "Phone",
-                      bookinginfo.customer_phone ?? "--",
-                      Icons.phone_outlined,
-                      const Color(0xFF7209B7),
-                    ),
-                    detailRow(
-                      "Address",
-                      bookinginfo.customerAddress ?? "--",
-                      Icons.home,
-                      const Color(0xFF7209B7),
-                    ),
-                  ],
-                ),
-                SizedBox(height: sectionGap),
-                infoBlock(
-                  label: "DRIVER",
-                  icon: Icons.drive_eta_outlined,
-                  color: const Color(0xFF3A86FF),
-                  rows: [
-                    detailRow(
-                      "Name",
-                      bookinginfo.driver_name ?? "--",
-                      Icons.badge_outlined,
-                      const Color(0xFF3A86FF),
-                    ),
-                    rowDivider(),
-                    detailRow(
-                      "Phone",
-                      bookinginfo.driverPhone ?? "--",
-                      Icons.phone_outlined,
-                      const Color(0xFF3A86FF),
-                    ),
-                    rowDivider(),
-                    detailRow(
-                      "Licence",
-                      bookinginfo.driverLicenceNo ?? "--",
-                      Icons.credit_card_outlined,
-                      const Color(0xFF3A86FF),
-                    ),
-                  ],
-                ),
-              ],
-            );
-          }
+  return Column(
+    children: [
+      infoBlock(
+        label: "CUSTOMER",
+        icon: Icons.person_outline_rounded,
+        color: const Color(0xFF7209B7),
+        rows: [
+          detailRow(
+            "Name",
+            bookinginfo.customer_name ?? "--",
+            Icons.badge_outlined,
+            const Color(0xFF7209B7),
+          ),
+          rowDivider(),
+          detailRow(
+            "Phone",
+            bookinginfo.customer_phone ?? "--",
+            Icons.phone_outlined,
+            const Color(0xFF7209B7),
+          ),
+          rowDivider(),
+          detailRow(
+            "Address",
+            bookinginfo.customerAddress ?? "--",
+            Icons.home,
+            const Color(0xFF7209B7),
+          ),
+        ],
+      ),
 
-          return Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: infoBlock(
-                  label: "CUSTOMER",
-                  icon: Icons.person_outline_rounded,
-                  color: const Color(0xFF7209B7),
-                  rows: [
-                    detailRow(
-                      "Name",
-                      bookinginfo.customer_name ?? "--",
-                      Icons.badge_outlined,
-                      const Color(0xFF7209B7),
-                    ),
-                    rowDivider(),
-                    detailRow(
-                      "Phone",
-                      bookinginfo.customer_phone ?? "--",
-                      Icons.phone_outlined,
-                      const Color(0xFF7209B7),
-                    ),
-                    detailRow(
-                      "Address",
-                      bookinginfo.customerAddress ?? "--",
-                      Icons.home,
-                      const Color(0xFF7209B7),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: infoBlock(
-                  label: "DRIVER",
-                  icon: Icons.drive_eta_outlined,
-                  color: const Color(0xFF3A86FF),
-                  rows: [
-                    detailRow(
-                      "Name",
-                      bookinginfo.driver_name ?? "--",
-                      Icons.badge_outlined,
-                      const Color(0xFF3A86FF),
-                    ),
-                    rowDivider(),
-                    detailRow(
-                      "Phone",
-                      bookinginfo.driverPhone ?? "--",
-                      Icons.phone_outlined,
-                      const Color(0xFF3A86FF),
-                    ),
-                    rowDivider(),
-                    detailRow(
-                      "Licence",
-                      bookinginfo.driverLicenceNo ?? "--",
-                      Icons.credit_card_outlined,
-                      const Color(0xFF3A86FF),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          );
-        }
+      SizedBox(height: sectionGap),
+
+      infoBlock(
+        label: "DRIVER",
+        icon: Icons.drive_eta_outlined,
+        color: const Color(0xFF3A86FF),
+        rows: [
+          detailRow(
+            "Name",
+            bookinginfo.driver_name ?? "--",
+            Icons.badge_outlined,
+            const Color(0xFF3A86FF),
+          ),
+          rowDivider(),
+          detailRow(
+            "Phone",
+            bookinginfo.driverPhone ?? "--",
+            Icons.phone_outlined,
+            const Color(0xFF3A86FF),
+          ),
+          rowDivider(),
+          detailRow(
+            "Licence",
+            bookinginfo.driverLicenceNo ?? "--",
+            Icons.credit_card_outlined,
+            const Color(0xFF3A86FF),
+          ),
+        ],
+      ),
+    ],
+  );
+}
 
         Widget paymentFields() {
           if (isLarge) {
@@ -1006,41 +943,41 @@ class TripCard extends StatelessWidget {
                                   ),
                                 ),
                               )
-                            // else
-                            //   Center(
-                            //     child: Container(
-                            //       padding: EdgeInsets.symmetric(
-                            //         horizontal: isSmall ? 18 : 24,
-                            //         vertical: isSmall ? 10 : 12,
-                            //       ),
-                            //       decoration: BoxDecoration(
-                            //         color: Colors.green.shade50,
-                            //         borderRadius: BorderRadius.circular(30),
-                            //         border: Border.all(
-                            //           color: Colors.green.shade200,
-                            //         ),
-                            //       ),
-                            //       child: Row(
-                            //         mainAxisSize: MainAxisSize.min,
-                            //         children: [
-                            //           Icon(
-                            //             Icons.verified_rounded,
-                            //             color: Colors.green.shade600,
-                            //             size: isSmall ? 15 : 18,
-                            //           ),
-                            //           SizedBox(width: isSmall ? 6 : 8),
-                            //           Text(
-                            //             "Payment done",
-                            //             style: TextStyle(
-                            //               color: Colors.green.shade700,
-                            //               fontWeight: FontWeight.w600,
-                            //               fontSize: isSmall ? 12 : 14,
-                            //             ),
-                            //           ),
-                            //         ],
-                            //       ),
-                            //     ),
-                            //   ),
+                            else
+                              Center(
+                                child: Container(
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: isSmall ? 18 : 24,
+                                    vertical: isSmall ? 10 : 12,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.green.shade50,
+                                    borderRadius: BorderRadius.circular(30),
+                                    border: Border.all(
+                                      color: Colors.green.shade200,
+                                    ),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        Icons.verified_rounded,
+                                        color: Colors.green.shade600,
+                                        size: isSmall ? 15 : 18,
+                                      ),
+                                      SizedBox(width: isSmall ? 6 : 8),
+                                      Text(
+                                        "Payment done",
+                                        style: TextStyle(
+                                          color: Colors.green.shade700,
+                                          fontWeight: FontWeight.w600,
+                                          fontSize: isSmall ? 12 : 14,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
                           ],
                         ],
                       ),
