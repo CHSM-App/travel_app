@@ -1480,7 +1480,7 @@ class _AddVehiclePageState extends ConsumerState<AddVehiclePage>
                   color: Colors.grey.shade700)),
         ),
         DropdownButtonFormField<T>(
-          value: value,
+          initialValue: value,
           items: items,
           selectedItemBuilder: selectedItemBuilder,
           onChanged: onChanged,

@@ -298,7 +298,7 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
     required ValueChanged<T?> onChanged,
   }) {
     return DropdownButtonFormField<T>(
-      value: value,
+      initialValue: value,
       items: items,
       onChanged: onChanged,
       validator: (v) => v == null ? "Please select an option" : null,

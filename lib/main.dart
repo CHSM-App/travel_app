@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:travel_agency_app/Screens/bottom_navigation_bar.dart';
 import 'package:travel_agency_app/Screens/login.dart';
 import 'package:travel_agency_app/core/network/token_provider.dart';
-import 'package:travel_agency_app/core/storage/global_network_wrapper.dart';
 import 'package:travel_agency_app/presentation/providers/viewmodel_provider.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
@@ -27,11 +26,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.red,
       ),
-      builder: (context, child) {
-        return GlobalNetworkWrapper(
-          child: child ?? const SizedBox.shrink(),
-        );
-      },
+
       home: const SplashScreen(),
     );
   }

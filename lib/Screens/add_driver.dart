@@ -15,11 +15,7 @@ class AddDriverPage extends ConsumerStatefulWidget {
   final Drivers? driver;
   final bool isEdit;
 
-  const AddDriverPage({
-    super.key,
-    this.driver,
-    this.isEdit = false,
-  });
+  const AddDriverPage({super.key, this.driver, this.isEdit = false});
 
   @override
   ConsumerState<AddDriverPage> createState() => _AddDriverPageState();
@@ -67,9 +63,7 @@ class _AddDriverPageState extends ConsumerState<AddDriverPage>
 
     if (widget.isEdit && widget.driver != null) {
       final d = widget.driver!;
-      debugPrint(
-        '[AddDriver][init] driverId=${d.driverId}, rawDoc=${d.photo}',
-      );
+      debugPrint('[AddDriver][init] driverId=${d.driverId}, rawDoc=${d.photo}');
       nameController.text = d.name ?? '';
       phoneController.text = d.phone ?? '';
       addressController.text = d.address ?? '';
@@ -248,7 +242,9 @@ class _AddDriverPageState extends ConsumerState<AddDriverPage>
                     width: 22,
                     height: 22,
                     child: CircularProgressIndicator(
-                        strokeWidth: 2.5, color: Colors.white),
+                      strokeWidth: 2.5,
+                      color: Colors.white,
+                    ),
                   )
                 : Text(widget.isEdit ? 'Update Driver' : 'Save Driver'),
           ),
@@ -311,7 +307,8 @@ class _AddDriverPageState extends ConsumerState<AddDriverPage>
       }
 
       if (_selectedLicenceFile != null) {
-        if (agencyId.trim().isEmpty || agencyId.trim().toLowerCase() == 'null') {
+        if (agencyId.trim().isEmpty ||
+            agencyId.trim().toLowerCase() == 'null') {
           throw Exception('Agency ID is missing. Please login again.');
         }
         await vm.uploadDriverDocument(
@@ -321,9 +318,11 @@ class _AddDriverPageState extends ConsumerState<AddDriverPage>
         );
       }
 
-      _showSnack(widget.isEdit
-          ? 'Driver updated successfully'
-          : 'Driver added successfully');
+      _showSnack(
+        widget.isEdit
+            ? 'Driver updated successfully'
+            : 'Driver added successfully',
+      );
 
       if (mounted) Navigator.pop(context, true);
     } catch (e) {
@@ -332,41 +331,45 @@ class _AddDriverPageState extends ConsumerState<AddDriverPage>
   }
 
   Widget _buildHeader() => Container(
-        color: _cardBg,
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
-        child: Row(
-          children: [
-            Container(
-              margin: const EdgeInsets.only(left: 8),
-              decoration: BoxDecoration(
-                color: _surface,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: IconButton(
-                icon: const Icon(Icons.arrow_back_ios_new_rounded,
-                    size: 18, color: _textDark),
-                onPressed: () => Navigator.pop(context),
-              ),
+    color: _cardBg,
+    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+    child: Row(
+      children: [
+        Container(
+          margin: const EdgeInsets.only(left: 8),
+          decoration: BoxDecoration(
+            color: _surface,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: IconButton(
+            icon: const Icon(
+              Icons.arrow_back_ios_new_rounded,
+              size: 18,
+              color: _textDark,
             ),
-            Expanded(
-              child: Text(
-                widget.isEdit ? 'Edit Driver' : 'Add Driver',
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w800,
-                  color: _textDark,
-                ),
-              ),
-            ),
-            const SizedBox(width: 56),
-          ],
+            onPressed: () => Navigator.pop(context),
+          ),
         ),
-      );
+        Expanded(
+          child: Text(
+            widget.isEdit ? 'Edit Driver' : 'Add Driver',
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w800,
+              color: _textDark,
+            ),
+          ),
+        ),
+        const SizedBox(width: 56),
+      ],
+    ),
+  );
 
   Widget _buildDocumentPicker() {
     final bool hasNewFile = _selectedLicenceFile != null;
-    final bool hasExistingDoc = !_licenceRemoved &&
+    final bool hasExistingDoc =
+        !_licenceRemoved &&
         _existingLicenceUrl != null &&
         _existingLicenceUrl!.isNotEmpty &&
         !hasNewFile;
@@ -377,23 +380,31 @@ class _AddDriverPageState extends ConsumerState<AddDriverPage>
       children: [
         Row(
           children: [
-            Text('Licence Document',
-                style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.grey.shade700)),
+            Text(
+              'Licence Document',
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: Colors.grey.shade700,
+              ),
+            ),
             const SizedBox(width: 6),
             if (!widget.isEdit)
-              Text('*',
-                  style: TextStyle(
-                      color: Colors.red.shade500, fontWeight: FontWeight.w700))
+              Text(
+                '*',
+                style: TextStyle(
+                  color: Colors.red.shade500,
+                  fontWeight: FontWeight.w700,
+                ),
+              )
             else
               Text(
                 '(Optional)',
                 style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey.shade400,
-                    fontWeight: FontWeight.w400),
+                  fontSize: 12,
+                  color: Colors.grey.shade400,
+                  fontWeight: FontWeight.w400,
+                ),
               ),
           ],
         ),
@@ -406,11 +417,12 @@ class _AddDriverPageState extends ConsumerState<AddDriverPage>
           GestureDetector(
             onTap: _showPickerOptions,
             child: Container(
-              padding:
-                  const EdgeInsets.symmetric(vertical: 10, horizontal: 14),
+              padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 14),
               decoration: BoxDecoration(
-                border:
-                    Border.all(color: _primary.withOpacity(0.4), width: 1.2),
+                border: Border.all(
+                  color: _primary.withOpacity(0.4),
+                  width: 1.2,
+                ),
                 borderRadius: BorderRadius.circular(10),
                 color: _primary.withOpacity(0.04),
               ),
@@ -537,7 +549,10 @@ class _AddDriverPageState extends ConsumerState<AddDriverPage>
           Text(
             isPdf ? 'Tap to Open PDF' : 'Tap to View Document',
             style: const TextStyle(
-                fontSize: 12, fontWeight: FontWeight.w600, color: _textDark),
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: _textDark,
+            ),
           ),
         ],
       ),
@@ -551,7 +566,9 @@ class _AddDriverPageState extends ConsumerState<AddDriverPage>
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(
-            isPdf ? Icons.picture_as_pdf_rounded : Icons.insert_drive_file_rounded,
+            isPdf
+                ? Icons.picture_as_pdf_rounded
+                : Icons.insert_drive_file_rounded,
             size: 36,
             color: _primary,
           ),
@@ -559,7 +576,10 @@ class _AddDriverPageState extends ConsumerState<AddDriverPage>
           Text(
             isPdf ? 'Tap to Open PDF' : 'Document Selected',
             style: const TextStyle(
-                fontSize: 12, fontWeight: FontWeight.w600, color: _textDark),
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: _textDark,
+            ),
           ),
         ],
       ),
@@ -581,63 +601,70 @@ class _AddDriverPageState extends ConsumerState<AddDriverPage>
   }
 
   Widget _pickerArea() => GestureDetector(
-        onTap: _showPickerOptions,
-        child: Container(
-          width: double.infinity,
-          height: 130,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(
-              color: (!widget.isEdit)
-                  ? _primary.withOpacity(0.4)
-                  : Colors.grey.shade300,
-              width: 1.5,
-              style: BorderStyle.solid,
+    onTap: _showPickerOptions,
+    child: Container(
+      width: double.infinity,
+      height: 130,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: (!widget.isEdit)
+              ? _primary.withOpacity(0.4)
+              : Colors.grey.shade300,
+          width: 1.5,
+          style: BorderStyle.solid,
+        ),
+        color: (!widget.isEdit) ? _primary.withOpacity(0.02) : _surface,
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: _primary.withOpacity(0.08),
+              shape: BoxShape.circle,
             ),
-            color: (!widget.isEdit) ? _primary.withOpacity(0.02) : _surface,
+            child: const Icon(
+              Icons.upload_file_rounded,
+              size: 28,
+              color: _primary,
+            ),
           ),
-          child: Column(
+          const SizedBox(height: 10),
+          Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: _primary.withOpacity(0.08),
-                  shape: BoxShape.circle,
+              const Text(
+                'Upload Licence Document',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: _textDark,
                 ),
-                child: const Icon(Icons.upload_file_rounded,
-                    size: 28, color: _primary),
               ),
-              const SizedBox(height: 10),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Text(
-                    'Upload Licence Document',
-                    style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: _textDark),
+              if (!widget.isEdit) ...[
+                const SizedBox(width: 4),
+                Text(
+                  '*',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.red.shade500,
+                    fontWeight: FontWeight.w700,
                   ),
-                  if (!widget.isEdit) ...[
-                    const SizedBox(width: 4),
-                    Text('*',
-                        style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.red.shade500,
-                            fontWeight: FontWeight.w700)),
-                  ],
-                ],
-              ),
-              const SizedBox(height: 4),
-              Text(
-                'Camera • Gallery • File',
-                style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
-              ),
+                ),
+              ],
             ],
           ),
-        ),
-      );
+          const SizedBox(height: 4),
+          Text(
+            'Camera • Gallery • File',
+            style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
+          ),
+        ],
+      ),
+    ),
+  );
 
   void _showPickerOptions() {
     showModalBottomSheet(
@@ -664,9 +691,10 @@ class _AddDriverPageState extends ConsumerState<AddDriverPage>
             const Text(
               'Select Licence Document',
               style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                  color: _textDark),
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+                color: _textDark,
+              ),
             ),
             const SizedBox(height: 20),
             Row(
@@ -733,9 +761,14 @@ class _AddDriverPageState extends ConsumerState<AddDriverPage>
           children: [
             Icon(icon, size: 28, color: color),
             const SizedBox(height: 8),
-            Text(label,
-                style: TextStyle(
-                    fontSize: 13, fontWeight: FontWeight.w600, color: color)),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: color,
+              ),
+            ),
           ],
         ),
       ),
@@ -743,8 +776,10 @@ class _AddDriverPageState extends ConsumerState<AddDriverPage>
   }
 
   Future<void> _pickCamera() async {
-    final file = await ImagePicker()
-        .pickImage(source: ImageSource.camera, imageQuality: 85);
+    final file = await ImagePicker().pickImage(
+      source: ImageSource.camera,
+      imageQuality: 85,
+    );
     if (file != null) {
       setState(() {
         _selectedLicenceFile = File(file.path);
@@ -754,8 +789,10 @@ class _AddDriverPageState extends ConsumerState<AddDriverPage>
   }
 
   Future<void> _pickGallery() async {
-    final file = await ImagePicker()
-        .pickImage(source: ImageSource.gallery, imageQuality: 85);
+    final file = await ImagePicker().pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 85,
+    );
     if (file != null) {
       setState(() {
         _selectedLicenceFile = File(file.path);
@@ -785,7 +822,10 @@ class _AddDriverPageState extends ConsumerState<AddDriverPage>
         _showSnack('Invalid document URL', isError: true);
         return;
       }
-      final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
+      final launched = await launchUrl(
+        uri,
+        mode: LaunchMode.externalApplication,
+      );
       if (!launched) {
         debugPrint(
           '[AddDriver][openRemote] external launch failed, trying platformDefault',
@@ -828,9 +868,12 @@ class _AddDriverPageState extends ConsumerState<AddDriverPage>
       return cleaned;
     }
 
-    final isFileNameOnly = !cleaned.contains('/') &&
-        RegExp(r'\.(jpg|jpeg|png|webp|heic|pdf)$', caseSensitive: false)
-            .hasMatch(cleaned);
+    final isFileNameOnly =
+        !cleaned.contains('/') &&
+        RegExp(
+          r'\.(jpg|jpeg|png|webp|heic|pdf)$',
+          caseSensitive: false,
+        ).hasMatch(cleaned);
 
     final uploadIdx = cleaned.toLowerCase().indexOf('upload/');
     if (uploadIdx != -1) {
@@ -846,8 +889,9 @@ class _AddDriverPageState extends ConsumerState<AddDriverPage>
       cleaned = cleaned.substring(2);
     }
 
-    final base =
-        baseUrl.endsWith('/') ? baseUrl.substring(0, baseUrl.length - 1) : baseUrl;
+    final base = baseUrl.endsWith('/')
+        ? baseUrl.substring(0, baseUrl.length - 1)
+        : baseUrl;
 
     if (isFileNameOnly) {
       final normalized = '$base/upload/DriverDocuments/$cleaned';
@@ -882,12 +926,14 @@ class _AddDriverPageState extends ConsumerState<AddDriverPage>
     if (agencyId.isEmpty) return;
 
     try {
-      debugPrint(
-        '[AddDriver][refreshDoc] fetching driver list for agencyId=$agencyId driverId=$targetDriverId',
-      );
-      await ref.read(tripBookingViewModelProvider.notifier).driverList(agencyId);
-      final drivers =
-          ref.read(tripBookingViewModelProvider).fetchDriverList.asData?.value;
+      await ref
+          .read(tripBookingViewModelProvider.notifier)
+          .driverList(agencyId);
+      final drivers = ref
+          .read(tripBookingViewModelProvider)
+          .fetchDriverList
+          .asData
+          ?.value;
 
       if (drivers == null || drivers.isEmpty) return;
 
@@ -896,9 +942,7 @@ class _AddDriverPageState extends ConsumerState<AddDriverPage>
 
       final fetchedRaw = matched.first.photo;
       final fetchedNormalized = _normalizeDocUrl(fetchedRaw);
-      debugPrint(
-        '[AddDriver][refreshDoc] fetchedRaw=$fetchedRaw normalized=$fetchedNormalized',
-      );
+
       if (!mounted) return;
 
       if (fetchedNormalized != null && fetchedNormalized.isNotEmpty) {
@@ -915,31 +959,37 @@ class _AddDriverPageState extends ConsumerState<AddDriverPage>
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => _FullscreenImagePage(file: file, networkUrl: networkUrl),
+        builder: (_) =>
+            _FullscreenImagePage(file: file, networkUrl: networkUrl),
       ),
     );
   }
 
   Widget _sectionLabel(String text) => Row(
-        children: [
-          Container(
-            width: 4,
-            height: 18,
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [_primary, _accent],
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-              ),
-              borderRadius: BorderRadius.circular(4),
-            ),
+    children: [
+      Container(
+        width: 4,
+        height: 18,
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [_primary, _accent],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
           ),
-          const SizedBox(width: 10),
-          Text(text,
-              style: const TextStyle(
-                  fontSize: 14, fontWeight: FontWeight.w700, color: _textDark)),
-        ],
-      );
+          borderRadius: BorderRadius.circular(4),
+        ),
+      ),
+      const SizedBox(width: 10),
+      Text(
+        text,
+        style: const TextStyle(
+          fontSize: 14,
+          fontWeight: FontWeight.w700,
+          color: _textDark,
+        ),
+      ),
+    ],
+  );
 
   Widget _buildField({
     required String label,
@@ -957,11 +1007,14 @@ class _AddDriverPageState extends ConsumerState<AddDriverPage>
       children: [
         Padding(
           padding: const EdgeInsets.only(left: 4, bottom: 6),
-          child: Text(label,
-              style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.grey.shade700)),
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: Colors.grey.shade700,
+            ),
+          ),
         ),
         TextFormField(
           controller: controller,
@@ -969,7 +1022,8 @@ class _AddDriverPageState extends ConsumerState<AddDriverPage>
           maxLines: maxLines,
           inputFormatters: inputFormatters,
           textCapitalization: textCapitalization,
-          validator: validator ??
+          validator:
+              validator ??
               (v) => v == null || v.isEmpty ? 'This field is required' : null,
           decoration: InputDecoration(
             prefixIcon: Icon(icon),

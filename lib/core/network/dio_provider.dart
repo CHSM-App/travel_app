@@ -26,8 +26,8 @@ final dioProvider = Provider<Dio>((ref) {
     ),
   );
 
-  dio.interceptors.add(LogInterceptor(requestBody: true, responseBody: true));
-  
+    dio.interceptors.add(LogInterceptor(requestBody: true, responseBody: true));
+
   dio.interceptors.add(
     TokenInterceptor(
       dio: dio,
