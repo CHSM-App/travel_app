@@ -8,7 +8,6 @@ import 'package:travel_agency_app/domain/models/login_response.dart';
 import 'package:travel_agency_app/domain/usecase/login_usecase.dart';
 
 class LoginState {
-
   final bool isLoading;
   final String? error;
 
@@ -18,18 +17,17 @@ class LoginState {
   final String? mobile;
   final String? agencyId;
 
-
   final AsyncValue<List<LoginInfo>> adminProfile;
 
   const LoginState({
     this.isLoading = false,
     this.error,
-    this.adminId=0,
+    this.adminId = 0,
     this.name,
     this.email,
     this.mobile,
     this.agencyId,
- 
+
     this.adminProfile = const AsyncValue.loading(),
   });
 
@@ -41,7 +39,7 @@ class LoginState {
     String? email,
     String? mobile,
     String? agencyId,
-  
+
     AsyncValue<List<LoginInfo>>? adminProfile,
   }) {
     return LoginState(
@@ -52,14 +50,13 @@ class LoginState {
       email: email ?? this.email,
       mobile: mobile ?? this.mobile,
       agencyId: agencyId ?? this.agencyId,
-  
+
       adminProfile: adminProfile ?? this.adminProfile,
     );
   }
 }
 
 class LoginViewModel extends StateNotifier<LoginState> {
-
   final LoginUseCase usecase;
 
   LoginViewModel(this.usecase) : super(const LoginState()) {
@@ -71,14 +68,13 @@ class LoginViewModel extends StateNotifier<LoginState> {
   //--------------------------------------------------
 
   Future<void> loadFromStorage() async {
- final adminIdStr = await TokenStorage.getValue('admin_id');
+    final adminIdStr = await TokenStorage.getValue('admin_id');
     final adminId = int.tryParse(adminIdStr ?? '0') ?? 0;
 
     final name = await TokenStorage.getValue('name');
     final email = await TokenStorage.getValue('email');
     final mobile = await TokenStorage.getValue('mobile');
     final agencyId = await TokenStorage.getValue('agency_id');
-   
 
     state = state.copyWith(
       adminId: adminId,
@@ -86,38 +82,28 @@ class LoginViewModel extends StateNotifier<LoginState> {
       name: name,
       email: email,
       mobile: mobile,
-  
     );
   }
-
 
   // LOGIN
 
   Future<LoginResponse?> login(LoginInfo loginInfo) async {
-
     try {
-
       state = state.copyWith(isLoading: true, error: null);
 
       final response = await usecase.login(loginInfo);
 
-      if (response != null && response.success == 1) {
-
+      if (response.success == 1) {
         // SAVE TOKEN
-        await TokenStorage.saveValue(
-            'admin_id', response.adminId.toString());
+        await TokenStorage.saveValue('admin_id', response.adminId.toString());
 
-        await TokenStorage.saveValue(
-            'name', response.name ?? "");
+        await TokenStorage.saveValue('name', response.name ?? "");
 
-        await TokenStorage.saveValue(
-            'email', response.email ?? "");
+        await TokenStorage.saveValue('email', response.email ?? "");
 
-        await TokenStorage.saveValue(
-            'mobile', response.mobile ?? "");
+        await TokenStorage.saveValue('mobile', response.mobile ?? "");
 
-        await TokenStorage.saveValue(
-            'agency_id', response.agencyId ?? "");
+        await TokenStorage.saveValue('agency_id', response.agencyId ?? "");
         // LOAD INTO STATE
         await loadFromStorage();
       }
@@ -125,27 +111,16 @@ class LoginViewModel extends StateNotifier<LoginState> {
       state = state.copyWith(isLoading: false);
 
       return response;
-
     } catch (e) {
+      state = state.copyWith(isLoading: false, error: e.toString());
 
-      state = state.copyWith(
-        isLoading: false,
-        error: e.toString(),
-      );
-
-      return LoginResponse(
-        success: 0,
-        message: e.toString(),
-      );
+      return LoginResponse(success: 0, message: e.toString());
     }
   }
 
-
   // ADD ADMIN
   Future<LoginResponse?> addAdmin(LoginInfo loginInfo) async {
-
     try {
-
       state = state.copyWith(isLoading: true);
 
       final response = await usecase.addAdmin(loginInfo);
@@ -153,13 +128,8 @@ class LoginViewModel extends StateNotifier<LoginState> {
       state = state.copyWith(isLoading: false);
 
       return response;
-
     } catch (e) {
-
-      state = state.copyWith(
-        isLoading: false,
-        error: e.toString(),
-      );
+      state = state.copyWith(isLoading: false, error: e.toString());
 
       return LoginResponse(success: 0, message: e.toString());
     }
@@ -170,9 +140,7 @@ class LoginViewModel extends StateNotifier<LoginState> {
   //--------------------------------------------------
 
   Future<LoginResponse?> forgotPassword(LoginInfo loginInfo) async {
-
     try {
-
       state = state.copyWith(isLoading: true);
 
       final response = await usecase.forgotPassword(loginInfo);
@@ -180,13 +148,8 @@ class LoginViewModel extends StateNotifier<LoginState> {
       state = state.copyWith(isLoading: false);
 
       return response;
-
     } catch (e) {
-
-      state = state.copyWith(
-        isLoading: false,
-        error: e.toString(),
-      );
+      state = state.copyWith(isLoading: false, error: e.toString());
 
       return LoginResponse(success: 0, message: e.toString());
     }
@@ -197,38 +160,35 @@ class LoginViewModel extends StateNotifier<LoginState> {
   //--------------------------------------------------
 
   Future<void> adminProfile(int adminId) async {
-
-    state = state.copyWith(
-        adminProfile: const AsyncValue.loading());
+    state = state.copyWith(adminProfile: const AsyncValue.loading());
 
     try {
+      final result = await usecase.adminProfile(adminId);
 
-      final result =
-          await usecase.adminProfile(adminId);
-
-      state = state.copyWith(
-        adminProfile: AsyncValue.data(result),
-      );
-
+      state = state.copyWith(adminProfile: AsyncValue.data(result));
     } catch (e, st) {
-
-      state = state.copyWith(
-        adminProfile: AsyncValue.error(e, st),
-      );
+      state = state.copyWith(adminProfile: AsyncValue.error(e, st));
     }
   }
-//LOGOUT
+  //LOGOUT
 
   Future<void> logout() async {
     await TokenStorage.clear();
     state = const LoginState();
   }
-  
 
-  Future<dynamic> updateAdminProfile(File image, int adminId, String agencyId) async {
+  Future<dynamic> updateAdminProfile(
+    File image,
+    int adminId,
+    String agencyId,
+  ) async {
     try {
       state = state.copyWith(isLoading: true);
-      final response = await usecase.updateAdminProfile(image, adminId.toString(), agencyId);
+      final response = await usecase.updateAdminProfile(
+        image,
+        adminId.toString(),
+        agencyId,
+      );
       state = state.copyWith(isLoading: false);
       return response;
     } catch (e) {

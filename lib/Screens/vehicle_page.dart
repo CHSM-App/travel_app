@@ -5,7 +5,6 @@ import 'package:travel_agency_app/Screens/add_vehicle.dart';
 import 'package:travel_agency_app/Screens/add_driver.dart';
 import 'package:travel_agency_app/Screens/driver_history.dart';
 import 'package:travel_agency_app/Screens/vehicle_details.dart';
-import 'package:travel_agency_app/Screens/vehicle_history.dart';
 import 'package:travel_agency_app/domain/models/vehicles.dart';
 import 'package:travel_agency_app/domain/models/drivers.dart';
 import 'package:travel_agency_app/presentation/providers/viewmodel_provider.dart';
@@ -86,12 +85,12 @@ class _VehiclePageState extends ConsumerState<VehiclePage>
 
   // ── Status Badge ──────────────────────────────────────────────────
   Widget _statusBadge(int? statusId) {
-    final isAvailable = statusId == 2;
+    final isAvailable = statusId == 1;
     final color = isAvailable ? _C.green : _C.orange;
     final bg = isAvailable ? _C.greenSoft : _C.orangeSoft;
     final label = isAvailable
         ? 'Available'
-        : statusId == 1
+        : statusId == 2
             ? 'Engaged'
             : 'Unknown';
 
@@ -751,8 +750,8 @@ class _VehiclePageState extends ConsumerState<VehiclePage>
   Widget _statsStrip(List items, bool isVehicle) {
     if (isVehicle) {
       final vehicles = items.cast<Vehicles>();
-      final available = vehicles.where((v) => v.StatusId == 2).length;
-      final engaged = vehicles.where((v) => v.StatusId == 1).length;
+      final available = vehicles.where((v) => v.StatusId == 1).length;
+      final engaged = vehicles.where((v) => v.StatusId == 2).length;
       return _strip([
         _stripItem('${items.length}', 'Total', Icons.inventory_2_rounded,
             _C.accent, _C.accentSoft),

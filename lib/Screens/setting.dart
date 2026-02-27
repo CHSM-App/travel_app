@@ -49,13 +49,7 @@ class _ModernSettingsPageState extends ConsumerState<ModernSettingsPage>
     );
 
     Future.microtask(() {
-      final state = ref.read(loginViewModelProvider);
-      final shouldFetchProfile =
-          state.adminId > 0 && !state.adminProfile.hasValue;
-
-      if (shouldFetchProfile) {
-        ref.read(loginViewModelProvider.notifier).adminProfile(state.adminId);
-      }
+      // ref.read(loginViewModelProvider.notifier).adminProfile(ref.read(loginViewModelProvider).adminId);
     });
 
     _animationController.forward();

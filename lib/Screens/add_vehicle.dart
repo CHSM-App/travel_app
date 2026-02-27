@@ -44,7 +44,7 @@ class _AddVehiclePageState extends ConsumerState<AddVehiclePage>
 
   int? selectedTypeId;
   int? selectedFuelTypeId;
-  int? selectedStatusId;
+  // int? selectedStatusId;
 
   late AnimationController _animController;
   late Animation<double> _fadeAnim;
@@ -86,14 +86,14 @@ class _AddVehiclePageState extends ConsumerState<AddVehiclePage>
 
       selectedTypeId = v.TypeId;
       selectedFuelTypeId = v.FuelTypeId;
-      selectedStatusId = v.StatusId;
+      // selectedStatusId = v.StatusId;
     }
 
     Future.microtask(() {
       final n = ref.read(addVehicleViewModelProvider.notifier);
       n.fetchVehicleFuelTypeList();
       n.fetchVehicleTypeList();
-      n.fetchstatusList();
+      // n.fetchstatusList();
       _refreshExistingRcDocumentFromApi();
     });
   }
@@ -158,10 +158,10 @@ class _AddVehiclePageState extends ConsumerState<AddVehiclePage>
       _showSnack('Please select fuel type', isError: true);
       return;
     }
-    if (selectedStatusId == null) {
-      _showSnack('Please select status', isError: true);
-      return;
-    }
+    // if (selectedStatusId == null) {
+    //   _showSnack('Please select status', isError: true);
+    //   return;
+    // }
     final int? parsedCapacity = int.tryParse(capacity.text.trim());
     if (parsedCapacity == null) {
       _showSnack('Enter valid capacity', isError: true);
@@ -194,7 +194,7 @@ class _AddVehiclePageState extends ConsumerState<AddVehiclePage>
       TypeId: selectedTypeId!,
       capacity: parsedCapacity,
       mileage: mileage.text.trim(),
-      StatusId: selectedStatusId!,
+      StatusId: 1,
       rcdocuments: (!_rcRemoved && _selectedRcFile == null) ? _existingRcRaw : null,
       agencyId: agencyId,
     );
@@ -236,6 +236,8 @@ class _AddVehiclePageState extends ConsumerState<AddVehiclePage>
               agencyId,
             );
       }
+
+      await ref.read(tripBookingViewModelProvider.notifier).vehicleList(ref.read(loginViewModelProvider).agencyId?? '');
 
       _showSnack(widget.isEdit
           ? 'Vehicle updated successfully'
@@ -305,7 +307,7 @@ class _AddVehiclePageState extends ConsumerState<AddVehiclePage>
         const SizedBox(height: 16),
         _FuelTypeDropdown(state),
         const SizedBox(height: 16),
-        _StatusDropdown(state),
+        // _StatusDropdown(state),
       ],
     );
   }
@@ -1425,37 +1427,37 @@ class _AddVehiclePageState extends ConsumerState<AddVehiclePage>
         },
       );
 
-  Widget _StatusDropdown(AddVehicleState state) =>
-      state.fetchstatusList.when(
-        loading: () => _dropdownLoading('Status', Icons.info_rounded),
-        error: (e, _) => _dropdownError(
-            'Status', Icons.info_rounded, 'fetchstatusList', e),
-        data: (List<Status> statuses) {
-          if (statuses.isEmpty) {
-            return _dropdownEmpty('Status', Icons.info_rounded);
-          }
-          return _styledDropdown<int>(
-            label: 'Status',
-            icon: Icons.info_rounded,
-            value: selectedStatusId,
-            items: statuses
-                .map((s) => DropdownMenuItem(
-                      value: s.StatusId,
-                      child: _dropdownItem(
-                          s.StatusName ?? 'Unknown',
-                          _getStatusIcon(s.StatusName ?? ''),
-                          color: _getStatusColor(s.StatusName ?? ''),
-                          selected: selectedStatusId == s.StatusId),
-                    ))
-                .toList(),
-            selectedItemBuilder: (_) => statuses
-                .map((s) => _selectedItemText(s.StatusName ?? 'Unknown'))
-                .toList(),
-            onChanged: (v) => setState(() => selectedStatusId = v),
-            validator: (v) => v == null ? 'Please select status' : null,
-          );
-        },
-      );
+  // Widget _StatusDropdown(AddVehicleState state) =>
+  //     state.fetchstatusList.when(
+  //       loading: () => _dropdownLoading('Status', Icons.info_rounded),
+  //       error: (e, _) => _dropdownError(
+  //           'Status', Icons.info_rounded, 'fetchstatusList', e),
+  //       data: (List<Status> statuses) {
+  //         if (statuses.isEmpty) {
+  //           return _dropdownEmpty('Status', Icons.info_rounded);
+  //         }
+  //         return _styledDropdown<int>(
+  //           label: 'Status',
+  //           icon: Icons.info_rounded,
+  //           value: selectedStatusId,
+  //           items: statuses
+  //               .map((s) => DropdownMenuItem(
+  //                     value: s.StatusId,
+  //                     child: _dropdownItem(
+  //                         s.StatusName ?? 'Unknown',
+  //                         _getStatusIcon(s.StatusName ?? ''),
+  //                         color: _getStatusColor(s.StatusName ?? ''),
+  //                         selected: selectedStatusId == s.StatusId),
+  //                   ))
+  //               .toList(),
+  //           selectedItemBuilder: (_) => statuses
+  //               .map((s) => _selectedItemText(s.StatusName ?? 'Unknown'))
+  //               .toList(),
+  //           onChanged: (v) => setState(() => selectedStatusId = v),
+  //           validator: (v) => v == null ? 'Please select status' : null,
+  //         );
+  //       },
+  //     );
 
   Widget _styledDropdown<T>({
     required String label,
@@ -1478,7 +1480,7 @@ class _AddVehiclePageState extends ConsumerState<AddVehiclePage>
                   color: Colors.grey.shade700)),
         ),
         DropdownButtonFormField<T>(
-          value: value,
+          initialValue: value,
           items: items,
           selectedItemBuilder: selectedItemBuilder,
           onChanged: onChanged,
@@ -1608,7 +1610,7 @@ class _AddVehiclePageState extends ConsumerState<AddVehiclePage>
               } else if (fetchKey == 'fetchVehicleFuelTypeList') {
                 n.fetchVehicleFuelTypeList();
               } else {
-                n.fetchstatusList();
+                // n.fetchstatusList();
               }
             },
             style: TextButton.styleFrom(

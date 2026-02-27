@@ -335,3 +335,5 @@ final networkStateProvider =
     StateNotifierProvider<EnhancedNetworkStateNotifier, NetworkState>(
   (ref) => EnhancedNetworkStateNotifier(),
 );
+
+

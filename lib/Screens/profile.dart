@@ -1,12 +1,13 @@
+
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:travel_agency_app/domain/models/login_info.dart';
 import 'package:travel_agency_app/presentation/providers/viewmodel_provider.dart';
 
 class ProfilePage extends ConsumerStatefulWidget {
+  
   const ProfilePage({Key? key}) : super(key: key);
 
   @override
@@ -17,18 +18,19 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
     with SingleTickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
   final ImagePicker _picker = ImagePicker();
+  late AnimationController _animationController;
+  late Animation<double> _fadeAnimation;
 
-  late AnimationController _animCtrl;
-  late Animation<double> _fadeAnim;
+  // Controllers
+  TextEditingController nameController = TextEditingController();
+  TextEditingController mobileController = TextEditingController();
+  TextEditingController emailController = TextEditingController();
+  TextEditingController addressController = TextEditingController();
+  TextEditingController agencyController = TextEditingController();
+  TextEditingController cityController = TextEditingController();
+  TextEditingController pincodeController = TextEditingController();
 
-  final nameController    = TextEditingController();
-  final mobileController  = TextEditingController();
-  final emailController   = TextEditingController();
-  final addressController = TextEditingController();
-  final agencyController  = TextEditingController();
-  final cityController    = TextEditingController();
-
-  File?   _profileImage;
+  File? _profileImage;
   String? _imageUrl;
   bool    _isSaving = false;
   bool    _didPopulateInitialProfile = false;
@@ -46,25 +48,31 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
   @override
   void initState() {
     super.initState();
-    _animCtrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 600));
-    _fadeAnim = CurvedAnimation(parent: _animCtrl, curve: Curves.easeOut);
 
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 800),
+      vsync: this,
+    );
+    _fadeAnimation =
+        CurvedAnimation(parent: _animationController, curve: Curves.easeInOut);
+    _animationController.forward();
+
+    // Fetch profile from API
     Future.microtask(() {
-      ref.read(loginViewModelProvider.notifier)
-          .adminProfile(ref.read(loginViewModelProvider).adminId);
+     // ref.read(loginViewModelProvider.notifier).adminProfile(ref.read(loginViewModelProvider).adminId);
     });
-    _animCtrl.forward();
   }
 
   @override
   void dispose() {
-    _animCtrl.dispose();
+    _animationController.dispose();
     nameController.dispose();
     mobileController.dispose();
     emailController.dispose();
     addressController.dispose();
     agencyController.dispose();
     cityController.dispose();
+    pincodeController.dispose();
     super.dispose();
   }
 
@@ -182,30 +190,77 @@ void _showImageOptions() {
       city: cityController.text,
     );
 
-    final res = await ref.read(loginViewModelProvider.notifier).addAdmin(info);
-    if (res?.success == 1) {
-      await ref.read(loginViewModelProvider.notifier).adminProfile(adminId);
-      _snack('Profile updated successfully');
-    } else {
-      _snack(res?.message ?? 'Update failed', error: true);
-    }
-    setState(() => _isSaving = false);
-  }
+  final response =
+      await ref.read(loginViewModelProvider.notifier).addAdmin(loginInfo);
 
-  void _snack(String msg, {bool error = false}) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Row(children: [
-        Icon(error ? Icons.error_outline_rounded : Icons.check_circle_rounded,
-            color: Colors.white, size: 18),
-        const SizedBox(width: 8),
-        Expanded(child: Text(msg, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13))),
-      ]),
-      backgroundColor: error ? _red : _green,
-      behavior: SnackBarBehavior.floating,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-      margin: const EdgeInsets.all(14),
-      elevation: 0,
-    ));
+  if (response?.success == 1) {
+    // await ref
+    //     .read(loginViewModelProvider.notifier)
+    //     .adminProfile(adminId);
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text("Profile Updated successfully"),
+        backgroundColor: Colors.green,
+      ),
+    );
+  } else {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(response?.message ?? "Update failed"),
+        backgroundColor: Colors.red,
+      ),
+    );
+  }
+}
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String label,
+    required IconData icon,
+    TextInputType? keyboardType,
+    int? maxLength,
+    int maxLines = 1,
+    String? Function(String?)? validator,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(15),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: TextFormField(
+        controller: controller,
+        keyboardType: keyboardType,
+        maxLength: maxLength,
+        maxLines: maxLines,
+        decoration: InputDecoration(
+          labelText: label,
+          prefixIcon: Container(
+            margin: const EdgeInsets.all(12),
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.indigo,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, color: Colors.white, size: 20),
+          ),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(15),
+            borderSide: BorderSide.none,
+          ),
+          filled: true,
+          fillColor: Colors.white,
+          counterText: '',
+        ),
+        validator: validator,
+      ),
+    );
   }
 
   @override
@@ -412,251 +467,87 @@ void _showImageOptions() {
                         style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700,
                             color: Colors.white, letterSpacing: -0.3),
                       ),
-                      const SizedBox(height: 4),
-                      GestureDetector(
-                        onTap: _showImageOptions,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.2),
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: const Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(Icons.camera_alt_outlined, color: Colors.white, size: 12),
-                              SizedBox(width: 4),
-                              Text('Change photo',
-                                  style: TextStyle(fontSize: 11, color: Colors.white,
-                                      fontWeight: FontWeight.w600)),
-                            ],
-                          ),
-                        ),
+                      const SizedBox(height: 20),
+                      _buildTextField(
+                        controller: addressController,
+                        label: 'Address',
+                        icon: Icons.home_outlined,
+                        maxLines: 2,
+                        validator: (value) =>
+                            value == null || value.isEmpty ? 'Enter address' : null,
                       ),
+                      const SizedBox(height: 20),
+                      _buildTextField(
+                        controller: agencyController,
+                        label: 'Agency Name',
+                        icon: Icons.business_outlined,
+                        validator: (value) =>
+                            value == null || value.isEmpty ? 'Enter agency' : null,
+                      ),
+                      const SizedBox(height: 20),
+                      Row(
+                        children: [
+                          Expanded(
+                            flex: 2,
+                            child: _buildTextField(
+                              controller: cityController,
+                              label: 'City',
+                              icon: Icons.location_city_outlined,
+                              validator: (value) =>
+                                  value == null || value.isEmpty ? 'Enter city' : null,
+                            ),
+                          ),
+                          const SizedBox(width: 15),
+                          // Expanded(
+                          //   flex: 1,
+                          //   child: _buildTextField(
+                          //     controller: pincodeController,
+                          //     label: 'Pincode',
+                          //     icon: Icons.pin_drop_outlined,
+                          //     keyboardType: TextInputType.number,
+                          //     maxLength: 6,
+                          //     validator: (value) {
+                          //       if (value == null || value.isEmpty) return 'Required';
+                          //       if (value.length != 6) return '6 digits';
+                          //       return null;
+                          //     },
+                          //   ),
+                          // ),
+                        ],
+                      ),
+                      const SizedBox(height: 35),
+
+                      // Save Button
+                   SizedBox(
+  width: double.infinity,
+  height: 56,
+  child: ElevatedButton.icon(
+    icon: const Icon(Icons.save_outlined),
+    label: const Text(
+      'Save Profile',
+      style: TextStyle(
+        fontSize: 18,
+        color: Colors.white, // 👈 text white
+      ),
+    ),
+    style: ElevatedButton.styleFrom(
+      backgroundColor: Colors.indigo,
+      foregroundColor: Colors.white, // 👈 icon + text white
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(15),
+      ),
+    ),
+    onPressed: _saveProfile,
+  ),
+),
+
+                      const SizedBox(height: 30),
                     ],
                   ),
-                ],
+                ),
               ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  // ── Section card ─────────────────────────────────────────────
-
-  Widget _section(String title, List<_FieldItem> fields) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.only(left: 4, bottom: 8),
-          child: Text(title.toUpperCase(),
-              style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700,
-                  color: _textMid, letterSpacing: 1.3)),
-        ),
-        Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: [BoxShadow(
-                color: _primary.withOpacity(0.07), blurRadius: 16, offset: const Offset(0, 4))],
-          ),
-          child: Column(
-            children: List.generate(fields.length, (i) {
-              final isFirst = i == 0;
-              final isLast  = i == fields.length - 1;
-              return Column(
-                children: [
-                  ClipRRect(
-                    borderRadius: BorderRadius.vertical(
-                      top:    isFirst ? const Radius.circular(20) : Radius.zero,
-                      bottom: isLast  ? const Radius.circular(20) : Radius.zero,
-                    ),
-                    child: _buildField(fields[i]),
-                  ),
-                  if (!isLast)
-                    Divider(height: 1, thickness: 1,
-                        color: _surface, indent: 56, endIndent: 0),
-                ],
-              );
-            }),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildField(_FieldItem f) {
-    return TextFormField(
-      controller: f.ctrl,
-      keyboardType: f.type,
-      maxLines: 1,
-      inputFormatters: f.max != null ? [LengthLimitingTextInputFormatter(f.max!)] : null,
-      validator: f.validate ?? (v) => (v == null || v.isEmpty) ? 'Required' : null,
-      style: const TextStyle(fontSize: 14, color: _textDark, fontWeight: FontWeight.w500),
-      decoration: InputDecoration(
-        labelText: f.label,
-        labelStyle: const TextStyle(fontSize: 12, color: _textMid),
-        prefixIcon: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          child: Container(
-            padding: const EdgeInsets.all(7),
-            decoration: BoxDecoration(color: _primaryLt, borderRadius: BorderRadius.circular(9)),
-            child: Icon(f.icon, color: _primary, size: 15),
-          ),
-        ),
-        border:        InputBorder.none,
-        focusedBorder: InputBorder.none,
-        enabledBorder: InputBorder.none,
-        errorBorder:   InputBorder.none,
-        filled: true,
-        fillColor: Colors.white,
-        // Compact vertical padding so fields fit on screen
-        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-        errorStyle: const TextStyle(fontSize: 10, color: _red),
-      ),
-    );
-  }
-
-  // ── Save button ───────────────────────────────────────────────
-
-  Widget _saveButton() {
-    return Container(
-      width: double.infinity,
-      height: 52,
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: _isSaving
-              ? [_primary.withOpacity(0.6), _primaryDk.withOpacity(0.6)]
-              : [_primary, _primaryDk],
-        ),
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: _isSaving ? [] : [
-          BoxShadow(color: _primary.withOpacity(0.38), blurRadius: 16, offset: const Offset(0, 7)),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(18),
-          onTap: _isSaving ? null : _saveProfile,
-          child: Center(
-            child: _isSaving
-                ? const SizedBox(width: 22, height: 22,
-                    child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5))
-                : const Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.check_rounded, color: Colors.white, size: 20),
-                      SizedBox(width: 8),
-                      Text('Save Changes',
-                          style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700,
-                              color: Colors.white, letterSpacing: -0.2)),
-                    ],
-                  ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-// ── Field data ────────────────────────────────────────────────────
-
-class _FieldItem {
-  final TextEditingController ctrl;
-  final String label;
-  final IconData icon;
-  final TextInputType? type;
-  final int? max;
-  final String? Function(String?)? validate;
-
-  const _FieldItem(this.ctrl, this.label, this.icon,
-      {this.type, this.max, this.validate});
-}
-
-// ── Image picker sheet ────────────────────────────────────────────
-
-class _ImagePickerSheet extends StatelessWidget {
-  final bool hasImage;
-  final VoidCallback onCamera, onGallery, onRemove;
-
-  const _ImagePickerSheet({
-    required this.hasImage,
-    required this.onCamera,
-    required this.onGallery,
-    required this.onRemove,
-  });
-
-  static const _primary  = Color(0xFF5B6EF5);
-  static const _red      = Color(0xFFEF4444);
-  static const _textDark = Color(0xFF1A1D3B);
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(26)),
-      ),
-      child: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const SizedBox(height: 12),
-              Container(width: 38, height: 4,
-                  decoration: BoxDecoration(
-                      color: Colors.grey.shade200,
-                      borderRadius: BorderRadius.circular(4))),
-              const SizedBox(height: 18),
-              const Text('Profile Photo',
-                  style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: _textDark)),
-              const SizedBox(height: 4),
-              Text('Choose an option',
-                  style: TextStyle(fontSize: 12, color: Colors.grey.shade500)),
-              const SizedBox(height: 18),
-              Row(
-                children: [
-                  _tile(Icons.camera_alt_outlined,    'Camera',  _primary, onCamera),
-                  const SizedBox(width: 10),
-                  _tile(Icons.photo_library_outlined, 'Gallery', _primary, onGallery),
-                  if (hasImage) ...[
-                    const SizedBox(width: 10),
-                    _tile(Icons.delete_outline_rounded, 'Remove', _red, onRemove),
-                  ],
-                ],
-              ),
-              const SizedBox(height: 24),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _tile(IconData icon, String label, Color color, VoidCallback onTap) {
-    return Expanded(
-      child: GestureDetector(
-        onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          decoration: BoxDecoration(
-            color: color.withOpacity(0.07),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: color.withOpacity(0.15)),
-          ),
-          child: Column(
-            children: [
-              Icon(icon, color: color, size: 26),
-              const SizedBox(height: 6),
-              Text(label,
-                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: color)),
-            ],
-          ),
+            );
+          },
         ),
       ),
     );

@@ -298,7 +298,7 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
     required ValueChanged<T?> onChanged,
   }) {
     return DropdownButtonFormField<T>(
-      value: value,
+      initialValue: value,
       items: items,
       onChanged: onChanged,
       validator: (v) => v == null ? "Please select an option" : null,
@@ -627,8 +627,10 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
                               color: const Color(0xFF06D6A0),
                               value: selectedVehicleId,
                               items: vehicles
+                                   .where((v) => v.StatusId == 1)
                                   .map((e) => DropdownMenuItem<int>(
                                         value: e.vehicleId,
+                                        
                                         child: Text(e.name ?? ""),
                                       ))
                                   .toList(),
