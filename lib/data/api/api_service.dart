@@ -74,6 +74,9 @@ abstract class ApiService {
   @POST("insert/addService/")
   Future<dynamic> addService(@Body() Services service);
 
+  @POST("insert/cancelTrip/{trip_id}")
+  Future<dynamic> cancelTrip(@Path("trip_id") int trip_id);
+
   //Update
 
   @POST("insert/Updatevehicle")

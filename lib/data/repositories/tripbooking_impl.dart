@@ -67,6 +67,11 @@ class TripBookingImpl implements Tripbookingrepository {
   Future<dynamic> updateTripBooking(int tripId, TripBooking booking) {
     return apiService.updateTripBooking(tripId, booking);
   }
+
+     @override
+  Future<dynamic> cancelTrip(int trip_id) {
+    return apiService.cancelTrip(trip_id);
+  }
   
 
 }

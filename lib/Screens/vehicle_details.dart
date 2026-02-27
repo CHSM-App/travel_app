@@ -39,6 +39,7 @@ class VehicleManagePage extends ConsumerStatefulWidget {
 class _VehicleManagePageState extends ConsumerState<VehicleManagePage>
     with TickerProviderStateMixin {
   late final TabController _tab;
+  late int _currentStatus;
 
   // ── Animation Controllers ──────────────────────────────────────────────
   late final AnimationController _headerAnim;
@@ -79,6 +80,8 @@ class _VehicleManagePageState extends ConsumerState<VehicleManagePage>
   @override
   void initState() {
     super.initState();
+
+    _currentStatus = widget.vehicle.StatusId ?? 1;
 
     _tab = TabController(length: 3, vsync: this)..addListener(_onTabChanged);
 
@@ -166,6 +169,51 @@ class _VehicleManagePageState extends ConsumerState<VehicleManagePage>
     _prevTabIndex = _tab.index;
   }
 
+Future<void> _toggleVehicleStatus() async {
+  try {
+    int newStatus;
+
+    if (_currentStatus == 3) {
+      newStatus = 1; // Maintenance -> Available
+    } else {
+      newStatus = 3; // Available -> Maintenance
+    }
+
+    // await ref.read(addVehicleViewModelProvider.notifier)
+    //     .updateVehicleStatus(
+    //   widget.vehicle.vehicleId ?? 0,
+    //   newStatus,
+    // );
+
+    setState(() {
+      _currentStatus = newStatus;
+    });
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            newStatus == 3
+                ? "Vehicle moved to Maintenance"
+                : "Vehicle is now Available",
+          ),
+          backgroundColor:
+              newStatus == 3 ? Colors.orange : Colors.green,
+        ),
+      );
+    }
+  } catch (e) {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Failed to update status: $e"),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+}
+  
   @override
   void dispose() {
     _tab.dispose();
@@ -223,246 +271,308 @@ class _VehicleManagePageState extends ConsumerState<VehicleManagePage>
     );
   }
 
-  // ── PREMIUM HEADER ────────────────────────────────────────────────
-  Widget _buildHeader() {
-    final top = MediaQuery.of(context).padding.top;
-    final isEngaged = (widget.vehicle.StatusId ?? 0) == 2;
 
-    return Container(
-      decoration: const BoxDecoration(
+  Widget _maintenanceToggleButton() {
+  final bool isMaintenance = _currentStatus == 3;
+
+  final Color primaryColor =
+      isMaintenance ? const Color(0xFF16A34A) : const Color(0xFFEA580C);
+
+  final Color glowColor =
+      isMaintenance ? Colors.greenAccent : Colors.orangeAccent;
+
+  return GestureDetector(
+    onTap: _toggleVehicleStatus,
+    child: AnimatedContainer(
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeOutCubic,
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [_C.g1, _C.g2, _C.g3],
-          stops: [0.0, 0.5, 1.0],
+          colors: [
+            primaryColor.withOpacity(0.9),
+            primaryColor.withOpacity(0.7),
+          ],
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: glowColor.withOpacity(0.5),
+            blurRadius: 20,
+            spreadRadius: -4,
+            offset: const Offset(0, 8),
+          ),
+        ],
+        border: Border.all(
+          color: Colors.white.withOpacity(0.25),
+          width: 1.2,
         ),
       ),
-      child: Stack(
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          // Animated decorative circles
-          _AnimatedDecoCircle(
-            size: 180,
-            color: Colors.white,
-            opacity: 0.04,
-            right: -30,
-            top: -20,
-            delay: const Duration(milliseconds: 0),
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 300),
+            transitionBuilder: (child, anim) =>
+                ScaleTransition(scale: anim, child: child),
+            child: Icon(
+              isMaintenance
+                  ? Icons.check_circle_rounded
+                  : Icons.build_circle_rounded,
+              key: ValueKey(isMaintenance),
+              color: Colors.white,
+              size: 20,
+            ),
           ),
-          _AnimatedDecoCircle(
-            size: 80,
-            color: _C.accent,
-            opacity: 0.15,
-            right: 60,
-            top: 60,
-            delay: const Duration(milliseconds: 100),
-          ),
-          _AnimatedDecoCircle(
-            size: 140,
-            color: _C.indigo,
-            opacity: 0.12,
-            left: -40,
-            bottom: 10,
-            delay: const Duration(milliseconds: 200),
-          ),
-
-          SafeArea(
-            bottom: false,
-            child: Padding(
-              padding: EdgeInsets.fromLTRB(18, top > 0 ? 2 : 10, 18, 22),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Nav row
-                  FadeTransition(
-                    opacity: _headerFade,
-                    child: Row(
-                      children: [
-                        _AnimatedGlassBtn(
-                          icon: Icons.arrow_back_ios_new_rounded,
-                          onTap: () => Navigator.pop(context),
-                          delay: const Duration(milliseconds: 100),
-                        ),
-                        const Spacer(),
-                        _AnimatedGlassBtn(
-                          icon: Icons.edit_rounded,
-                          onTap: () async {
-                            final r = await Navigator.push(
-                              context,
-                              _slidePageRoute(
-                                AddVehiclePage(
-                                  vehicle: widget.vehicle,
-                                  isEdit: true,
-                                ),
-                              ),
-                            );
-                            if (r == true && mounted) setState(() {});
-                          },
-                          delay: const Duration(milliseconds: 200),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  const SizedBox(height: 20),
-
-                  // Identity row
-                  FadeTransition(
-                    opacity: _headerFade,
-                    child: SlideTransition(
-                      position: _headerSlide,
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Avatar with spring + rotate animation
-                          AnimatedBuilder(
-                            animation: _avatarAnim,
-                            builder: (_, child) => Transform.rotate(
-                              angle: _avatarRotate.value,
-                              child: Transform.scale(
-                                scale: _avatarScale.value,
-                                child: child,
-                              ),
-                            ),
-                            child: Container(
-                              width: 62,
-                              height: 62,
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(20),
-                                gradient: const LinearGradient(
-                                  begin: Alignment.topLeft,
-                                  end: Alignment.bottomRight,
-                                  colors: [
-                                    Color(0xFF6B83FF),
-                                    Color(0xFF3D5AFE),
-                                  ],
-                                ),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: _C.accent.withOpacity(0.5),
-                                    blurRadius: 20,
-                                    spreadRadius: -4,
-                                    offset: const Offset(0, 8),
-                                  ),
-                                ],
-                                border: Border.all(
-                                  color: Colors.white.withOpacity(0.25),
-                                  width: 1.5,
-                                ),
-                              ),
-                              child: const Icon(
-                                Icons.directions_car_rounded,
-                                color: Colors.white,
-                                size: 28,
-                              ),
-                            ),
-                          ),
-
-                          const SizedBox(width: 14),
-
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const SizedBox(height: 2),
-                                // Vehicle name shimmer-in
-                                _StaggeredText(
-                                  text:
-                                      widget.vehicle.name ?? 'Unknown Vehicle',
-                                  style: const TextStyle(
-                                    fontSize: 22,
-                                    fontWeight: FontWeight.w800,
-                                    color: Colors.white,
-                                    letterSpacing: -0.6,
-                                    height: 1.1,
-                                  ),
-                                  delay: const Duration(milliseconds: 300),
-                                ),
-                                const SizedBox(height: 6),
-                                Row(
-                                  children: [
-                                    if (widget.vehicle.number != null)
-                                      _glassBadge(
-                                        Icons.pin_outlined,
-                                        widget.vehicle.number ?? '',
-                                        isGold: true,
-                                      ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
-
-                          const SizedBox(width: 8),
-
-                          // Animated status badge
-                          AnimatedBuilder(
-                            animation: _pulseAnim1,
-                            builder: (_, __) => _StatusBadge(
-                              isEngaged: isEngaged,
-                              pulseValue: _pulseAnim1.value,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 20),
-
-                  // Stats strip with slide-up
-                  FadeTransition(
-                    opacity: _statsFade,
-                    child: SlideTransition(
-                      position: _statsSlide,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          vertical: 14,
-                          horizontal: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.08),
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(
-                            color: Colors.white.withOpacity(0.12),
-                          ),
-                        ),
-                        child: IntrinsicHeight(
-                          child: Row(
-                            children: [
-                              _hStat(
-                                '${widget.vehicle.capacity ?? "--"}',
-                                'Seats',
-                                Icons.people_rounded,
-                              ),
-                              _hStatDivider(),
-                              _hStat(
-                                widget.vehicle.mileage != null
-                                    ? '${widget.vehicle.mileage}'
-                                    : '--',
-                                'km / l',
-                                Icons.speed_rounded,
-                              ),
-                              _hStatDivider(),
-                              _hStat(
-                                widget.vehicle.FuelType ?? '--',
-                                'Fuel',
-                                Icons.local_gas_station_rounded,
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
+          const SizedBox(width: 10),
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 300),
+            child: Text(
+              isMaintenance ? "Mark Available" : "In Maintenance",
+              key: ValueKey(isMaintenance.toString()),
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0.3,
               ),
             ),
           ),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
 
+  // ── PREMIUM HEADER ────────────────────────────────────────────────
+Widget _buildHeader() {
+  final top = MediaQuery.of(context).padding.top;
+  final isEngaged = (_currentStatus) == 2;
+
+  return Container(
+    decoration: const BoxDecoration(
+      gradient: LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [_C.g1, _C.g2, _C.g3],
+        stops: [0.0, 0.5, 1.0],
+      ),
+    ),
+    child: Stack(
+      children: [
+        _AnimatedDecoCircle(
+          size: 180,
+          color: Colors.white,
+          opacity: 0.04,
+          right: -30,
+          top: -20,
+          delay: const Duration(milliseconds: 0),
+        ),
+        _AnimatedDecoCircle(
+          size: 80,
+          color: _C.accent,
+          opacity: 0.15,
+          right: 60,
+          top: 60,
+          delay: const Duration(milliseconds: 100),
+        ),
+        _AnimatedDecoCircle(
+          size: 140,
+          color: _C.indigo,
+          opacity: 0.12,
+          left: -40,
+          bottom: 10,
+          delay: const Duration(milliseconds: 200),
+        ),
+
+        SafeArea(
+          bottom: false,
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(18, top > 0 ? 2 : 10, 18, 22),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+
+                /// NAV ROW
+                FadeTransition(
+                  opacity: _headerFade,
+                  child: Row(
+                    children: [
+                      _AnimatedGlassBtn(
+                        icon: Icons.arrow_back_ios_new_rounded,
+                        onTap: () => Navigator.pop(context),
+                        delay: const Duration(milliseconds: 100),
+                      ),
+                      const Spacer(),
+                      _AnimatedGlassBtn(
+                        icon: Icons.edit_rounded,
+                        onTap: () async {
+                          final r = await Navigator.push(
+                            context,
+                            _slidePageRoute(
+                              AddVehiclePage(
+                                vehicle: widget.vehicle,
+                                isEdit: true,
+                              ),
+                            ),
+                          );
+                          if (r == true && mounted) setState(() {});
+                        },
+                        delay: const Duration(milliseconds: 200),
+                      ),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 20),
+
+                /// IDENTITY ROW
+                FadeTransition(
+                  opacity: _headerFade,
+                  child: SlideTransition(
+                    position: _headerSlide,
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        AnimatedBuilder(
+                          animation: _avatarAnim,
+                          builder: (_, child) => Transform.rotate(
+                            angle: _avatarRotate.value,
+                            child: Transform.scale(
+                              scale: _avatarScale.value,
+                              child: child,
+                            ),
+                          ),
+                          child: Container(
+                            width: 62,
+                            height: 62,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(20),
+                              gradient: const LinearGradient(
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                                colors: [
+                                  Color(0xFF6B83FF),
+                                  Color(0xFF3D5AFE),
+                                ],
+                              ),
+                            ),
+                            child: const Icon(
+                              Icons.directions_car_rounded,
+                              color: Colors.white,
+                              size: 28,
+                            ),
+                          ),
+                        ),
+
+                        const SizedBox(width: 14),
+
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const SizedBox(height: 2),
+                              _StaggeredText(
+                                text: widget.vehicle.name ?? 'Unknown Vehicle',
+                                style: const TextStyle(
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.w800,
+                                  color: Colors.white,
+                                ),
+                                delay: const Duration(milliseconds: 300),
+                              ),
+                              const SizedBox(height: 6),
+                              Row(
+                                children: [
+                                  if (widget.vehicle.number != null)
+                                    _glassBadge(
+                                      Icons.pin_outlined,
+                                      widget.vehicle.number ?? '',
+                                      isGold: true,
+                                    ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        const SizedBox(width: 8),
+
+                        AnimatedBuilder(
+                          animation: _pulseAnim1,
+                          builder: (_, __) => _StatusBadge(
+                            isEngaged: isEngaged,
+                            pulseValue: _pulseAnim1.value,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 18),
+
+                /// 🔥 VEHICLE MAINTENANCE TOGGLE BUTTON
+                const SizedBox(height: 18),
+FadeTransition(
+  opacity: _headerFade,
+  child: _maintenanceToggleButton(),
+),
+const SizedBox(height: 20),
+
+                const SizedBox(height: 20),
+
+                /// STATS STRIP (UNCHANGED)
+                FadeTransition(
+                  opacity: _statsFade,
+                  child: SlideTransition(
+                    position: _statsSlide,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 14,
+                        horizontal: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.08),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: IntrinsicHeight(
+                        child: Row(
+                          children: [
+                            _hStat(
+                              '${widget.vehicle.capacity ?? "--"}',
+                              'Seats',
+                              Icons.people_rounded,
+                            ),
+                            _hStatDivider(),
+                            _hStat(
+                              widget.vehicle.mileage != null
+                                  ? '${widget.vehicle.mileage}'
+                                  : '--',
+                              'km / l',
+                              Icons.speed_rounded,
+                            ),
+                            _hStatDivider(),
+                            _hStat(
+                              widget.vehicle.FuelType ?? '--',
+                              'Fuel',
+                              Icons.local_gas_station_rounded,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    ),
+  );
+}
   Widget _glassBadge(IconData icon, String label, {bool isGold = false}) =>
       Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),

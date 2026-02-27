@@ -125,6 +125,17 @@ class TripPageViewModel extends StateNotifier<TripPageState> {
     }
   }
 
+
+  Future<void> cancelTrip(int trip_id) async {
+     state = state.copyWith(isLoading: true, error: null);
+    try {
+      final result = await usecase.cancelTrip(trip_id);
+      state = state.copyWith(isLoading: false, data: result);
+    } catch (e) {
+      state = state.copyWith(isLoading: false, error: e.toString());
+    }
+  }
+
   
 }
 
