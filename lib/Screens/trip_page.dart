@@ -136,7 +136,6 @@ class _TripPageState extends ConsumerState<TripPage> {
                     height: 48,
                     padding: const EdgeInsets.symmetric(horizontal: 12),
                     decoration: BoxDecoration(
-                      color: const Color.fromARGB(255, 62, 120, 246),
                       color: Color(0xFF3D5AFE),
                       borderRadius: BorderRadius.circular(12),
                       boxShadow: [
