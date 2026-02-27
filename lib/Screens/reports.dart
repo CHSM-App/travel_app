@@ -6,9 +6,9 @@ import 'package:path_provider/path_provider.dart';
 import 'package:open_file/open_file.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
+import 'package:share_plus/share_plus.dart' as share_plus;
 import 'package:travel_agency_app/domain/models/reports_data.dart';
 import 'package:travel_agency_app/presentation/providers/viewmodel_provider.dart';
-import 'package:share_plus/share_plus.dart' as share_plus;
 
 // ─────────────────────────────────────────────────────────────
 //  DESIGN TOKENS
