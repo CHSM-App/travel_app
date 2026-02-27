@@ -5,6 +5,8 @@ import 'package:travel_agency_app/Screens/add_driver.dart';
 import 'package:travel_agency_app/Screens/add_tripbooking.dart';
 import 'package:travel_agency_app/Screens/add_vehicle.dart';
 import 'package:travel_agency_app/Screens/reports.dart';
+import 'package:travel_agency_app/domain/models/booking_info.dart';
+import 'package:travel_agency_app/domain/viewModel/trippage_viewmodel.dart';
 import 'package:travel_agency_app/presentation/providers/viewmodel_provider.dart';
 
 class TravelAdminDashboard extends ConsumerStatefulWidget {
@@ -20,7 +22,89 @@ class TravelAdminDashboard extends ConsumerStatefulWidget {
 
 class _TravelAdminDashboardState extends ConsumerState<TravelAdminDashboard> {
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final agencyId = ref.read(loginViewModelProvider).agencyId ?? '';
+      if (agencyId.trim().isEmpty) return;
+      final notifier = ref.read(TripPageViewModelProvider.notifier);
+      notifier.activeList(agencyId);
+      notifier.upcomingList(agencyId);
+      notifier.historyList(agencyId);
+      notifier.unpaidList(agencyId);
+      notifier.cancelledList(agencyId);
+    });
+  }
+
+  bool _isSameDay(DateTime a, DateTime b) =>
+      a.year == b.year && a.month == b.month && a.day == b.day;
+  List<BookingInfo> _getData(AsyncValue<List<BookingInfo>> value) {
+    return value.when(
+      data: (rows) => rows,
+      loading: () => const <BookingInfo>[],
+      error: (_, __) => const <BookingInfo>[],
+    );
+  }
+
+  List<BookingInfo> _mergedTrips(TripPageState state) {
+    final all = <BookingInfo>[
+      ..._getData(state.activeList),
+      ..._getData(state.upcomingList),
+      ..._getData(state.historyList),
+      ..._getData(state.unpaidList),
+      ..._getData(state.cancelledList),
+    ];
+
+    final unique = <String, BookingInfo>{};
+    for (final trip in all) {
+      final key = trip.tripId?.toString() ??
+          '${trip.bookingDate?.toIso8601String() ?? ''}-${trip.customerId ?? ''}-${trip.vehicleId ?? ''}-${trip.driverId ?? ''}';
+      unique[key] = trip;
+    }
+    return unique.values.toList();
+  }
+
+  _DashboardStats _todayStats(List<BookingInfo> rows) {
+    final now = DateTime.now();
+    var bookings = 0;
+    var revenue = 0.0;
+    var expenditure = 0.0;
+
+    for (final row in rows) {
+      final date = row.bookingDate;
+      if (date == null || !_isSameDay(date, now)) continue;
+      bookings += 1;
+      revenue += row.amountReceived ?? row.amountApprove ?? 0.0;
+      expenditure += (row.tollCharges ?? 0.0) +
+          (row.repairingCharges ?? 0.0) +
+          (row.driverCharges ?? 0.0);
+    }
+
+    return _DashboardStats(
+      bookings: bookings,
+      revenue: revenue,
+      expenditure: expenditure,
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final tripState = ref.watch(TripPageViewModelProvider);
+    final mergedTrips = _mergedTrips(tripState);
+    final anyLoading = tripState.activeList.isLoading ||
+        tripState.upcomingList.isLoading ||
+        tripState.historyList.isLoading ||
+        tripState.unpaidList.isLoading ||
+        tripState.cancelledList.isLoading;
+    final anyError = tripState.activeList.hasError ||
+        tripState.upcomingList.hasError ||
+        tripState.historyList.hasError ||
+        tripState.unpaidList.hasError ||
+        tripState.cancelledList.hasError;
+    final todayStats = mergedTrips.isNotEmpty
+        ? _todayStats(mergedTrips)
+        : _DashboardStats(isLoading: anyLoading, hasError: anyError);
+
     final sw = MediaQuery.of(context).size.width;
     final isSmall = sw < 340;
     final hPad = isSmall ? 12.0 : 20.0;
@@ -68,7 +152,7 @@ class _TravelAdminDashboardState extends ConsumerState<TravelAdminDashboard> {
                 children: [
                   _PageTitle(isSmall: isSmall),
                   SizedBox(height: sectionGap - 6),
-                  _StatsRow(isSmall: isSmall),
+                  _StatsRow(isSmall: isSmall, stats: todayStats),
                   SizedBox(height: sectionGap),
                   _SectionTitle(title: "Quick Actions", isSmall: isSmall),
                   SizedBox(height: isSmall ? 10 : 14),
@@ -78,9 +162,9 @@ class _TravelAdminDashboardState extends ConsumerState<TravelAdminDashboard> {
                   SizedBox(height: isSmall ? 10 : 14),
                   _BookingReportBanner(isSmall: isSmall),
                   SizedBox(height: sectionGap),
-                  _SectionTitle(title: "Recent Activity", isSmall: isSmall),
-                  SizedBox(height: isSmall ? 10 : 14),
-                  _RecentActivity(isSmall: isSmall),
+                  // _SectionTitle(title: "Recent Activity", isSmall: isSmall),
+                  // SizedBox(height: isSmall ? 10 : 14),
+                  // _ReycentActivity(isSmall: isSmall),
                 ],
               ),
             ),
@@ -148,7 +232,7 @@ class _BookingReportBanner extends ConsumerWidget {
                   ],
                 ),
                 child: Icon(
-                  Icons.confirmation_number_rounded,
+                  Icons.bar_chart_outlined,
                   color: Colors.white,
                   size: isSmall ? 24 : 30,
                 ),
@@ -195,7 +279,8 @@ class _BookingReportBanner extends ConsumerWidget {
 
                     // Subtitle
                     Text(
-                      "Bookings, revenue, drivers,\nvehicles & customers",
+                      
+                       "Bookings, drivers, vehicles,\ncustomers & revenue",
                       style: TextStyle(
                         fontSize: isSmall ? 10 : 11,
                         color: Colors.grey.shade500,
@@ -464,22 +549,39 @@ class _SectionTitle extends StatelessWidget {
 // ─────────────────────────────────────────────────────────
 class _StatsRow extends StatelessWidget {
   final bool isSmall;
-  const _StatsRow({required this.isSmall});
+  final _DashboardStats stats;
+  const _StatsRow({required this.isSmall, required this.stats});
 
   @override
   Widget build(BuildContext context) {
-    final stats = [
-      _StatData("Bookings", "25K", Icons.confirmation_number_outlined,
+    final bookingsVal = stats.isLoading
+        ? '...'
+        : stats.hasError
+            ? '--'
+            : stats.bookings.toString();
+    final revenueVal = stats.isLoading
+        ? '...'
+        : stats.hasError
+            ? '--'
+            : '₹${_formatCompact(stats.revenue)}';
+    final expenditureVal = stats.isLoading
+        ? '...'
+        : stats.hasError
+            ? '--'
+            : '₹${_formatCompact(stats.expenditure)}';
+
+    final statItems = [
+      _StatData('Today Bookings', bookingsVal, Icons.confirmation_number_outlined,
           const Color(0xFF00BFA5), const Color(0xFFE0F7F4)),
-      _StatData("Revenue", "₹12K", Icons.currency_rupee_rounded,
+      _StatData('Today Revenue', revenueVal, Icons.currency_rupee_rounded,
           const Color(0xFFFF6D00), const Color(0xFFFFF3E0)),
-      _StatData("Expenditure", "₹45K", Icons.trending_down_rounded,
+      _StatData('Today Expenditure', expenditureVal, Icons.trending_down_rounded,
           TravelAdminDashboard.primaryColor, const Color(0xFFE8EAFF)),
     ];
 
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: stats.asMap().entries.map((entry) {
+      children: statItems.asMap().entries.map((entry) {
         final i = entry.key;
         final s = entry.value;
         return Expanded(
@@ -492,7 +594,6 @@ class _StatsRow extends StatelessWidget {
     );
   }
 }
-
 class _StatCard extends StatelessWidget {
   final _StatData data;
   final bool isSmall;
@@ -800,4 +901,27 @@ class _ActivityData {
   final String title, subtitle;
   const _ActivityData(
       this.icon, this.iconColor, this.iconBg, this.title, this.subtitle);
+}
+
+class _DashboardStats {
+  final int bookings;
+  final double revenue;
+  final double expenditure;
+  final bool isLoading;
+  final bool hasError;
+
+  const _DashboardStats({
+    this.bookings = 0,
+    this.revenue = 0,
+    this.expenditure = 0,
+    this.isLoading = false,
+    this.hasError = false,
+  });
+}
+
+String _formatCompact(double v) {
+  if (v >= 1e7) return '${(v / 1e7).toStringAsFixed(2)}Cr';
+  if (v >= 1e5) return '${(v / 1e5).toStringAsFixed(2)}L';
+  if (v >= 1e3) return '${(v / 1e3).toStringAsFixed(2)}K';
+  return v.toStringAsFixed(0);
 }
