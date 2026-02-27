@@ -4,6 +4,7 @@ import 'package:travel_agency_app/domain/usecase/adddriverUseCase.dart';
 import 'package:travel_agency_app/domain/usecase/auth_use_case.dart';
 import 'package:travel_agency_app/domain/usecase/customerUseCase.dart';
 import 'package:travel_agency_app/domain/usecase/login_usecase.dart';
+import 'package:travel_agency_app/domain/usecase/report_usecase.dart';
 import 'package:travel_agency_app/domain/usecase/tripbooking_usecase.dart';
 
 import 'repository_provider.dart';
@@ -39,5 +40,10 @@ final customerUseCaseProvider= Provider<customerUseCase>((ref) {
 final addDriverUseCaseProvider= Provider<AddDeiverUseCase>((ref) {
   final repository = ref.watch(AdddriverrepositoryProvider);
   return AddDeiverUseCase(repository);
+}) ;
+
+final reportUseCaseProvider= Provider<ReportUsecase>((ref) {
+  final repository = ref.watch(reportRepositoryProvider);
+  return ReportUsecase(repository);
 }) ;
 

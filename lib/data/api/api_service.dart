@@ -8,6 +8,7 @@ import 'package:travel_agency_app/domain/models/drivers.dart';
 import 'package:travel_agency_app/domain/models/fueltype.dart';
 import 'package:travel_agency_app/domain/models/login_info.dart';
 import 'package:travel_agency_app/domain/models/login_response.dart';
+import 'package:travel_agency_app/domain/models/reports_data.dart';
 import 'package:travel_agency_app/domain/models/services.dart';
 import 'package:travel_agency_app/domain/models/status.dart';
 import 'package:travel_agency_app/domain/models/token_response.dart';
@@ -181,6 +182,13 @@ abstract class ApiService {
     @Path("vehicle_id") int vehicleId,
   );
 
+
+  @GET("users/report/{agency_id}/{report_type}")
+  Future<List<ReportData>> getReport(
+    @Path("agency_id") String agencyId,
+    @Path("report_type") String reportType,
+  );
+
   //---------------------DELETE API ----------------------------------------
   @DELETE("index/deleteVehicles/{vehicleid}")
   Future<dynamic> deleteVehicle(@Path("vehicleid") int vehicleid);
@@ -193,4 +201,5 @@ Future<dynamic>  deleteDriver(@Path("driverId") int driverId);
 
   @DELETE("index/deleteService/{service_id}")
   Future<dynamic> deleteService(@Path("service_id") int serviceId);
+  
 }

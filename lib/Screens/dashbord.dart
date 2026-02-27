@@ -1,20 +1,28 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:travel_agency_app/Screens/add_customer.dart';
 import 'package:travel_agency_app/Screens/add_driver.dart';
 import 'package:travel_agency_app/Screens/add_tripbooking.dart';
 import 'package:travel_agency_app/Screens/add_vehicle.dart';
+import 'package:travel_agency_app/Screens/reports.dart';
+import 'package:travel_agency_app/presentation/providers/viewmodel_provider.dart';
 
-class TravelAdminDashboard extends StatelessWidget {
+class TravelAdminDashboard extends ConsumerStatefulWidget {
   const TravelAdminDashboard({super.key});
 
   static const primaryColor = Color(0xFF3D5AFE);
   static const darkBlue = Color(0xFF1A237E);
 
   @override
+  ConsumerState<TravelAdminDashboard> createState() =>
+      _TravelAdminDashboardState();
+}
+
+class _TravelAdminDashboardState extends ConsumerState<TravelAdminDashboard> {
+  @override
   Widget build(BuildContext context) {
-    // ── Responsive values based on screen width ──────────
     final sw = MediaQuery.of(context).size.width;
-    final isSmall = sw < 340;          // very small screens
+    final isSmall = sw < 340;
     final hPad = isSmall ? 12.0 : 20.0;
     final sectionGap = isSmall ? 18.0 : 28.0;
 
@@ -22,7 +30,6 @@ class TravelAdminDashboard extends StatelessWidget {
       backgroundColor: const Color(0xFFF0F4FF),
       body: Stack(
         children: [
-          // ── Decorative blobs (scaled for screen) ──────
           Positioned(
             top: -60,
             right: -50,
@@ -31,7 +38,7 @@ class TravelAdminDashboard extends StatelessWidget {
               height: sw * 0.55,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: primaryColor.withOpacity(0.09),
+                color: TravelAdminDashboard.primaryColor.withOpacity(0.09),
               ),
             ),
           ),
@@ -47,7 +54,6 @@ class TravelAdminDashboard extends StatelessWidget {
               ),
             ),
           ),
-
           SafeArea(
             child: SingleChildScrollView(
               physics: const BouncingScrollPhysics(),
@@ -60,32 +66,270 @@ class TravelAdminDashboard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // ── Page Title ─────────────────────────
                   _PageTitle(isSmall: isSmall),
                   SizedBox(height: sectionGap - 6),
-
-                  // ── Stats ──────────────────────────────
                   _StatsRow(isSmall: isSmall),
                   SizedBox(height: sectionGap),
-
-                  // ── Quick Actions ──────────────────────
                   _SectionTitle(title: "Quick Actions", isSmall: isSmall),
                   SizedBox(height: isSmall ? 10 : 14),
                   _QuickActionsGrid(isSmall: isSmall),
                   SizedBox(height: sectionGap),
-
-                  // ── Reports ────────────────────────────
                   _SectionTitle(title: "Reports", isSmall: isSmall),
                   SizedBox(height: isSmall ? 10 : 14),
-                  _ReportsGrid(isSmall: isSmall),
+                  _BookingReportBanner(isSmall: isSmall),
                   SizedBox(height: sectionGap),
-
-                  // ── Recent Activity ────────────────────
                   _SectionTitle(title: "Recent Activity", isSmall: isSmall),
                   SizedBox(height: isSmall ? 10 : 14),
                   _RecentActivity(isSmall: isSmall),
                 ],
               ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+// ─────────────────────────────────────────────────────────
+// BOOKING REPORT BANNER
+// ─────────────────────────────────────────────────────────
+class _BookingReportBanner extends ConsumerWidget {
+  final bool isSmall;
+  const _BookingReportBanner({required this.isSmall});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => TravelReportPage(
+              agencyId: ref.read(loginViewModelProvider).agencyId ?? "",
+            ),
+          ),
+        );
+      },
+      child: Container(
+        width: double.infinity,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(isSmall ? 18 : 22),
+          boxShadow: [
+            BoxShadow(
+              color: TravelAdminDashboard.primaryColor.withOpacity(0.10),
+              blurRadius: 20,
+              offset: const Offset(0, 7),
+            ),
+          ],
+        ),
+        child: Padding(
+          padding: EdgeInsets.all(isSmall ? 14 : 18),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              // Left: gradient icon box
+              Container(
+                width: isSmall ? 52 : 64,
+                height: isSmall ? 52 : 64,
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF3D5AFE), Color(0xFF7986CB)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(isSmall ? 13 : 16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: TravelAdminDashboard.primaryColor.withOpacity(0.30),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Icon(
+                  Icons.confirmation_number_rounded,
+                  color: Colors.white,
+                  size: isSmall ? 24 : 30,
+                ),
+              ),
+              SizedBox(width: isSmall ? 12 : 16),
+
+              // Middle: text content
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Badge
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFE8EAFF),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        "REPORTS",
+                        style: TextStyle(
+                          fontSize: isSmall ? 8 : 9,
+                          fontWeight: FontWeight.w800,
+                          color: TravelAdminDashboard.primaryColor,
+                          letterSpacing: 1.5,
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: isSmall ? 5 : 7),
+
+                    // Title
+                    Text(
+                      "Booking Report",
+                      style: TextStyle(
+                        fontSize: isSmall ? 16 : 20,
+                        fontWeight: FontWeight.w900,
+                        color: TravelAdminDashboard.darkBlue,
+                        letterSpacing: -0.4,
+                        height: 1.1,
+                      ),
+                    ),
+                    SizedBox(height: isSmall ? 4 : 5),
+
+                    // Subtitle
+                    Text(
+                      "Bookings, revenue, drivers,\nvehicles & customers",
+                      style: TextStyle(
+                        fontSize: isSmall ? 10 : 11,
+                        color: Colors.grey.shade500,
+                        height: 1.45,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    SizedBox(height: isSmall ? 10 : 14),
+
+                    // Chips
+                    Row(
+                      children: [
+                        _ReportChip(
+                          icon: Icons.bar_chart_rounded,
+                          label: "Analytics",
+                          color: TravelAdminDashboard.primaryColor,
+                          bg: const Color(0xFFE8EAFF),
+                          isSmall: isSmall,
+                        ),
+                        SizedBox(width: isSmall ? 6 : 8),
+                        _ReportChip(
+                          icon: Icons.download_rounded,
+                          label: "Export",
+                          color: const Color(0xFF00897B),
+                          bg: const Color(0xFFE0F7F4),
+                          isSmall: isSmall,
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              SizedBox(width: isSmall ? 10 : 14),
+
+              // Right: arrow button
+              Container(
+                width: isSmall ? 34 : 40,
+                height: isSmall ? 34 : 40,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFE8EAFF),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.arrow_forward_rounded,
+                  color: TravelAdminDashboard.primaryColor,
+                  size: isSmall ? 16 : 20,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────
+// REPORT CHIP (replaces _StatChip for this widget)
+// ─────────────────────────────────────────────────────────
+class _ReportChip extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final Color color;
+  final Color bg;
+  final bool isSmall;
+
+  const _ReportChip({
+    required this.icon,
+    required this.label,
+    required this.color,
+    required this.bg,
+    required this.isSmall,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: isSmall ? 8 : 10,
+        vertical: isSmall ? 4 : 5,
+      ),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, color: color, size: isSmall ? 10 : 12),
+          const SizedBox(width: 4),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: isSmall ? 9 : 10,
+              color: color,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _StatChip extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final bool isSmall;
+  const _StatChip(
+      {required this.icon, required this.label, required this.isSmall});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: isSmall ? 8 : 10,
+        vertical: isSmall ? 4 : 5,
+      ),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.18),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.white.withOpacity(0.25), width: 1),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, color: Colors.white, size: isSmall ? 10 : 12),
+          const SizedBox(width: 4),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: isSmall ? 9 : 10,
+              color: Colors.white,
+              fontWeight: FontWeight.w600,
             ),
           ),
         ],
@@ -105,8 +349,8 @@ class _PageTitle extends StatelessWidget {
   Widget build(BuildContext context) {
     final now = DateTime.now();
     const months = [
-      'Jan','Feb','Mar','Apr','May','Jun',
-      'Jul','Aug','Sep','Oct','Nov','Dec'
+      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
     ];
     final dateStr = "${now.day} ${months[now.month - 1]}";
 
@@ -216,7 +460,7 @@ class _SectionTitle extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────
-// STATS ROW — uses IntrinsicHeight + Flexible to avoid overflow
+// STATS ROW
 // ─────────────────────────────────────────────────────────
 class _StatsRow extends StatelessWidget {
   final bool isSmall;
@@ -225,9 +469,12 @@ class _StatsRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final stats = [
-      _StatData("Bookings",    "25K",    Icons.confirmation_number_outlined, const Color(0xFF00BFA5), const Color(0xFFE0F7F4)),
-      _StatData("Revenue",     "₹12K",   Icons.currency_rupee_rounded,       const Color(0xFFFF6D00), const Color(0xFFFFF3E0)),
-      _StatData("Expenditure", "₹45K",   Icons.trending_down_rounded,        TravelAdminDashboard.primaryColor, const Color(0xFFE8EAFF)),
+      _StatData("Bookings", "25K", Icons.confirmation_number_outlined,
+          const Color(0xFF00BFA5), const Color(0xFFE0F7F4)),
+      _StatData("Revenue", "₹12K", Icons.currency_rupee_rounded,
+          const Color(0xFFFF6D00), const Color(0xFFFFF3E0)),
+      _StatData("Expenditure", "₹45K", Icons.trending_down_rounded,
+          TravelAdminDashboard.primaryColor, const Color(0xFFE8EAFF)),
     ];
 
     return Row(
@@ -237,9 +484,7 @@ class _StatsRow extends StatelessWidget {
         final s = entry.value;
         return Expanded(
           child: Padding(
-            padding: EdgeInsets.only(
-              left: i == 0 ? 0 : (isSmall ? 6 : 12),
-            ),
+            padding: EdgeInsets.only(left: i == 0 ? 0 : (isSmall ? 6 : 12)),
             child: _StatCard(data: s, isSmall: isSmall),
           ),
         );
@@ -318,13 +563,16 @@ class _QuickActionsGrid extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final actions = [
-      _ActionData("New Booking",  Icons.add_card_rounded,       const Color(0xFF00BFA5), const Color(0xFFE0F7F4)),
-      _ActionData("New Vehicle",  Icons.directions_car_rounded,  const Color(0xFFFF6D00), const Color(0xFFFFF3E0)),
-      _ActionData("New Driver",   Icons.person_pin_rounded,      TravelAdminDashboard.primaryColor, const Color(0xFFE8EAFF)),
-      _ActionData("New Customer", Icons.people_alt_rounded,      const Color(0xFFAB47BC), const Color(0xFFF3E5F5)),
+      _ActionData("New Booking", Icons.add_card_rounded,
+          const Color(0xFF00BFA5), const Color(0xFFE0F7F4)),
+      _ActionData("New Vehicle", Icons.directions_car_rounded,
+          const Color(0xFFFF6D00), const Color(0xFFFFF3E0)),
+      _ActionData("New Driver", Icons.person_pin_rounded,
+          TravelAdminDashboard.primaryColor, const Color(0xFFE8EAFF)),
+      _ActionData("New Customer", Icons.people_alt_rounded,
+          const Color(0xFFAB47BC), const Color(0xFFF3E5F5)),
     ];
 
-    // Build 2×2 manually to avoid GridView childAspectRatio overflow
     return Column(
       children: [
         Row(
@@ -355,16 +603,20 @@ class _ActionCard extends StatelessWidget {
   void _navigate(BuildContext context) {
     switch (data.title) {
       case 'New Booking':
-        Navigator.push(context, MaterialPageRoute(builder: (_) => TripBookingForm()));
+        Navigator.push(
+            context, MaterialPageRoute(builder: (_) => TripBookingForm()));
         break;
       case 'New Vehicle':
-        Navigator.push(context, MaterialPageRoute(builder: (_) => AddVehiclePage()));
+        Navigator.push(
+            context, MaterialPageRoute(builder: (_) => AddVehiclePage()));
         break;
       case 'New Driver':
-        Navigator.push(context, MaterialPageRoute(builder: (_) => AddDriverPage()));
+        Navigator.push(
+            context, MaterialPageRoute(builder: (_) => AddDriverPage()));
         break;
       case 'New Customer':
-        Navigator.push(context, MaterialPageRoute(builder: (_) => AddCustomerPage()));
+        Navigator.push(
+            context, MaterialPageRoute(builder: (_) => AddCustomerPage()));
         break;
     }
   }
@@ -424,167 +676,6 @@ class _ActionCard extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────
-// REPORTS GRID
-// ─────────────────────────────────────────────────────────
-class _ReportsGrid extends StatelessWidget {
-  final bool isSmall;
-  const _ReportsGrid({required this.isSmall});
-
-  @override
-  Widget build(BuildContext context) {
-    final reports = [
-      _ReportData("Booking\nReport",  "Trip bookings summary",     Icons.confirmation_number_rounded, const Color(0xFF00BFA5), const Color(0xFFE0F7F4), [const Color(0xFF00BFA5), const Color(0xFF00E5CC)]),
-      _ReportData("Revenue\nReport",  "Income & payments",          Icons.currency_rupee_rounded,       const Color(0xFFFF6D00), const Color(0xFFFFF3E0), [const Color(0xFFFF6D00), const Color(0xFFFFAB40)]),
-      _ReportData("Vehicle\nReport",  "Fleet usage & status",       Icons.directions_car_rounded,        TravelAdminDashboard.primaryColor, const Color(0xFFE8EAFF), [TravelAdminDashboard.primaryColor, const Color(0xFF7986CB)]),
-      _ReportData("Driver\nReport",   "Driver activity & trips",    Icons.person_pin_rounded,            const Color(0xFFAB47BC), const Color(0xFFF3E5F5), [const Color(0xFFAB47BC), const Color(0xFFCE93D8)]),
-    ];
-
-    return Column(
-      children: [
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(child: _ReportCard(data: reports[0], isSmall: isSmall)),
-            SizedBox(width: isSmall ? 8 : 14),
-            Expanded(child: _ReportCard(data: reports[1], isSmall: isSmall)),
-          ],
-        ),
-        SizedBox(height: isSmall ? 8 : 14),
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(child: _ReportCard(data: reports[2], isSmall: isSmall)),
-            SizedBox(width: isSmall ? 8 : 14),
-            Expanded(child: _ReportCard(data: reports[3], isSmall: isSmall)),
-          ],
-        ),
-      ],
-    );
-  }
-}
-
-class _ReportCard extends StatelessWidget {
-  final _ReportData data;
-  final bool isSmall;
-  const _ReportCard({required this.data, required this.isSmall});
-
-  @override
-  Widget build(BuildContext context) {
-    final iconSize = isSmall ? 38.0 : 46.0;
-    final iconInner = isSmall ? 17.0 : 22.0;
-    final pad = isSmall ? 12.0 : 16.0;
-
-    return InkWell(
-      onTap: () {
-        // TODO: Navigate to respective report page
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-                "${data.title.replaceAll('\n', ' ')} opening..."),
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12)),
-            margin: const EdgeInsets.all(16),
-          ),
-        );
-      },
-      borderRadius: BorderRadius.circular(isSmall ? 14 : 20),
-      child: Container(
-        padding: EdgeInsets.all(pad),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(isSmall ? 14 : 20),
-          boxShadow: [
-            BoxShadow(
-              color: data.color.withOpacity(0.13),
-              blurRadius: 16,
-              offset: const Offset(0, 6),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Gradient icon
-            Container(
-              width: iconSize,
-              height: iconSize,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: data.gradientColors,
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.circular(isSmall ? 11 : 14),
-                boxShadow: [
-                  BoxShadow(
-                    color: data.color.withOpacity(0.32),
-                    blurRadius: 8,
-                    offset: const Offset(0, 3),
-                  ),
-                ],
-              ),
-              child: Icon(data.icon, color: Colors.white, size: iconInner),
-            ),
-
-            SizedBox(height: isSmall ? 10 : 14),
-
-            // Title
-            Text(
-              data.title,
-              style: TextStyle(
-                fontSize: isSmall ? 12 : 14,
-                fontWeight: FontWeight.w800,
-                color: TravelAdminDashboard.darkBlue,
-                height: 1.2,
-              ),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-            ),
-
-            SizedBox(height: isSmall ? 4 : 6),
-
-            // Subtitle + arrow
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Expanded(
-                  child: Text(
-                    data.subtitle,
-                    style: TextStyle(
-                      fontSize: isSmall ? 9 : 11,
-                      color: Colors.grey.shade500,
-                      fontWeight: FontWeight.w500,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-                const SizedBox(width: 4),
-                Container(
-                  width: isSmall ? 20 : 24,
-                  height: isSmall ? 20 : 24,
-                  decoration: BoxDecoration(
-                    color: data.bgColor,
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    Icons.arrow_forward_rounded,
-                    size: isSmall ? 11 : 13,
-                    color: data.color,
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// ─────────────────────────────────────────────────────────
 // RECENT ACTIVITY
 // ─────────────────────────────────────────────────────────
 class _RecentActivity extends StatelessWidget {
@@ -594,9 +685,12 @@ class _RecentActivity extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final activities = [
-      _ActivityData(Icons.check_circle_rounded, const Color(0xFF00BFA5), const Color(0xFFE0F7F4), "Invoice #1021 Paid",   "2 hours ago"),
-      _ActivityData(Icons.shopping_bag_rounded,  TravelAdminDashboard.primaryColor, const Color(0xFFE8EAFF), "New Order Received",    "Today, 10:30 AM"),
-      _ActivityData(Icons.directions_car_rounded, const Color(0xFFFF6D00), const Color(0xFFFFF3E0), "Vehicle Added",        "Yesterday"),
+      _ActivityData(Icons.check_circle_rounded, const Color(0xFF00BFA5),
+          const Color(0xFFE0F7F4), "Invoice #1021 Paid", "2 hours ago"),
+      _ActivityData(Icons.shopping_bag_rounded, TravelAdminDashboard.primaryColor,
+          const Color(0xFFE8EAFF), "New Order Received", "Today, 10:30 AM"),
+      _ActivityData(Icons.directions_car_rounded, const Color(0xFFFF6D00),
+          const Color(0xFFFFF3E0), "Vehicle Added", "Yesterday"),
     ];
 
     return Container(
@@ -698,15 +792,6 @@ class _ActionData {
   final IconData icon;
   final Color color, bgColor;
   const _ActionData(this.title, this.icon, this.color, this.bgColor);
-}
-
-class _ReportData {
-  final String title, subtitle;
-  final IconData icon;
-  final Color color, bgColor;
-  final List<Color> gradientColors;
-  const _ReportData(this.title, this.subtitle, this.icon, this.color,
-      this.bgColor, this.gradientColors);
 }
 
 class _ActivityData {

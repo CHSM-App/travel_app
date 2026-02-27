@@ -426,6 +426,7 @@ class _CustomerListPageState extends ConsumerState<CustomerListPage>
                                     ref.read(customerViewModelProvider).error ??
                                     'Delete failed',
                               ),
+                              backgroundColor: _C.error,
                               behavior: SnackBarBehavior.floating,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12),
