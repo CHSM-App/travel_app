@@ -89,7 +89,7 @@ abstract class ApiService {
   @POST("insert/UpdateCustomer")
   Future<dynamic> updateCustomer(@Body() Customer customer);
 
-  @POST("insert/updatePaymentStatus/")
+  @POST("insert/updatePaymentStatus")
   Future<dynamic> updatePaymentStatus(@Body() BookingInfo tripbooking);
 
   @POST("insert/updateService/{service_id}")
