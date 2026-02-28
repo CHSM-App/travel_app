@@ -56,4 +56,12 @@ class TripbookingUsecase {
   Future<dynamic> cancelTrip(int trip_id) {
     return repository.cancelTrip(trip_id);
   }
+
+  Future<List<Vehicles>> fetchAvailableVehicles(String agencyId, DateTime start, DateTime end, int? tripId){
+    return repository.fetchAvailableVehicles(agencyId, start, end, tripId);
+  }
+
+  Future<List<Drivers>> fetchAvailableDrivers(String agencyId, DateTime start, DateTime end, int? tripId){
+    return repository.fetchAvailableDrivers(agencyId, start, end, tripId);
+  }
 }

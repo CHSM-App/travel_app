@@ -28,5 +28,9 @@ abstract class Tripbookingrepository {
   Future<dynamic> updateTripBooking(int tripId, TripBooking booking);
 
   Future<dynamic> cancelTrip(int trip_id);
+
+  Future<List<Vehicles>> fetchAvailableVehicles(String agencyId, DateTime start, DateTime end, int? tripId);
+
+  Future<List<Drivers>> fetchAvailableDrivers(String agencyId, DateTime start, DateTime end, int? tripId);
   
 }

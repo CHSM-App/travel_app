@@ -192,6 +192,24 @@ abstract class ApiService {
     @Path("report_type") String reportType,
   );
 
+  @GET("users/fetchAvailableVehicles/{agency_id}/{start_datetime}/{end_datetime}/{trip_id}")
+  Future<List<Vehicles>> fetchAvailableVehicles(
+    @Path("agency_id") String agencyId,
+    @Path("start_datetime") DateTime start,
+    @Path('end_datetime') DateTime end,
+    @Path("trip_id") int? tripId
+  );
+
+    @GET("users/fetchAvailableDrivers/{agency_id}/{start_datetime}/{end_datetime}/{trip_id}")
+  Future<List<Drivers>> fetchAvailableDrivers(
+    @Path("agency_id") String agencyId,
+    @Path("start_datetime") DateTime start,
+    @Path('end_datetime') DateTime end,
+    @Path('trip_id') int?tripId
+  );
+
+
+
   //---------------------DELETE API ----------------------------------------
   @DELETE("index/deleteVehicles/{vehicleid}")
   Future<dynamic> deleteVehicle(@Path("vehicleid") int vehicleid);
@@ -204,5 +222,6 @@ Future<dynamic>  deleteDriver(@Path("driverId") int driverId);
 
   @DELETE("index/deleteService/{service_id}")
   Future<dynamic> deleteService(@Path("service_id") int serviceId);
+
   
 }
