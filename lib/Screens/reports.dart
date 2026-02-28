@@ -350,6 +350,400 @@ class _TravelReportPageState extends ConsumerState<TravelReportPage>
 
 
 
+  // ─────────────────────────────────────────────────────────
+  //  DOWNLOAD SHEET  — Simple accordion, nothing pre-selected
+  // ─────────────────────────────────────────────────────────
+  Future<void> _showDownloadSheet(
+    Map<ReportTabType, List<ReportData>> filteredByTab,
+  ) async {
+    if (_pdfLoading) return;
+
+    // Pre-compute all names per section (cached, not recomputed on rebuild)
+    final allNames = <ReportTabType, List<String>>{
+      for (final t in ReportTabType.values)
+        t: _namesFor(t, filteredByTab[t] ?? const []),
+    };
+    // Pre-compute income+trips map for fast subtitle rendering
+    final aggCache = <ReportTabType, Map<String, _Agg>>{};
+    for (final t in ReportTabType.values) {
+      final tabData = filteredByTab[t] ?? const <ReportData>[];
+      List<_Agg> aggs;
+      switch (t) {
+        case ReportTabType.driver:   aggs = _aggregateDriver(tabData);   break;
+        case ReportTabType.vehicle:  aggs = _aggregateVehicle(tabData);  break;
+        case ReportTabType.customer: aggs = _aggregateCustomer(tabData); break;
+        case ReportTabType.revenue:  aggs = _aggregateRevenue(tabData);  break;
+        case ReportTabType.booking:
+          // booking: one item per trip
+          aggs = tabData.map((row) {
+            final a = _Agg(
+              key: _bookingLabel(row),
+              name: _bookingLabel(row),
+              sub: row.driverName ?? '-',
+            );
+            a.add(row);
+            return a;
+          }).toList();
+          break;
+      }
+      aggCache[t] = {for (final a in aggs) a.name: a};
+    }
+
+    final st = _SheetState(); // empty by default
+
+    await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: _white,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      builder: (ctx) => StatefulBuilder(builder: (ctx, ss) {
+
+        // ── helper chips: which sections have selections ──
+        final activeSections = ReportTabType.values.where((t) => st.sel[t]!.isNotEmpty).toList();
+
+        return DraggableScrollableSheet(
+          expand: false,
+          initialChildSize: 0.88, minChildSize: 0.5, maxChildSize: 0.95,
+          builder: (_, ctrl) => Column(children: [
+
+            // ── TOP HANDLE + HEADER ───────────────────────
+            Container(
+              padding: const EdgeInsets.fromLTRB(20, 14, 20, 12),
+              decoration: const BoxDecoration(
+                color: _white,
+                border: Border(bottom: BorderSide(color: _divLine)),
+              ),
+              child: Column(children: [
+                Center(child: Container(width: 40, height: 4,
+                    decoration: BoxDecoration(color: _divLine, borderRadius: BorderRadius.circular(2)))),
+                const SizedBox(height: 14),
+                Row(children: [
+                  // PDF icon
+                  Container(padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(color: const Color(0xFFE8EAFF), borderRadius: BorderRadius.circular(12)),
+                      child: const Icon(Icons.picture_as_pdf_rounded, color: _primary, size: 20)),
+                  const SizedBox(width: 12),
+                  Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    const Text('Download Report', style: TextStyle(color: _textDark, fontSize: 15, fontWeight: FontWeight.w800)),
+                    Text(
+                      st.totalSelected == 0
+                          ? 'Select sections & items below'
+                          : '${st.totalSelected} item${st.totalSelected == 1 ? '' : 's'} selected',
+                      style: TextStyle(
+                        color: st.totalSelected == 0 ? _textGrey : _primary,
+                        fontSize: 11, fontWeight: FontWeight.w500),
+                    ),
+                  ])),
+                  // Select All button
+                  GestureDetector(
+                    onTap: () => ss(() {
+                      for (final t in ReportTabType.values) {
+                        st.sel[t]!..clear()..addAll(allNames[t]!);
+                      }
+                      // open no section after select all — just show badges
+                      st.openSection = null;
+                    }),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                      decoration: BoxDecoration(
+                          color: const Color(0xFFE8EAFF),
+                          borderRadius: BorderRadius.circular(20)),
+                      child: const Text('Select All', style: TextStyle(color: _primary, fontSize: 11, fontWeight: FontWeight.w700)),
+                    ),
+                  ),
+                ]),
+
+                // ── Selected section badges (shown only when something selected) ──
+                if (activeSections.isNotEmpty) ...[
+                  const SizedBox(height: 10),
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(children: activeSections.map((t) {
+                      final cnt  = st.sel[t]!.length;
+                      final tot  = allNames[t]!.length;
+                      return GestureDetector(
+                        onTap: () => ss(() => st.sel[t]!.clear()),
+                        child: Container(
+                          margin: const EdgeInsets.only(right: 8),
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                          decoration: BoxDecoration(
+                              color: t.bgColor, borderRadius: BorderRadius.circular(20),
+                              border: Border.all(color: t.color.withOpacity(0.3))),
+                          child: Row(mainAxisSize: MainAxisSize.min, children: [
+                            Icon(t.icon, size: 11, color: t.color),
+                            const SizedBox(width: 5),
+                            Text('${t.label}  $cnt/$tot',
+                                style: TextStyle(color: t.color, fontSize: 11, fontWeight: FontWeight.w700)),
+                            const SizedBox(width: 5),
+                            Icon(Icons.close_rounded, size: 11, color: t.color.withOpacity(0.6)),
+                          ]),
+                        ),
+                      );
+                    }).toList()),
+                  ),
+                ],
+              ]),
+            ),
+
+            // ── ACCORDION LIST ────────────────────────────
+            Expanded(
+              child: ListView.builder(
+                controller: ctrl,
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 120),
+                itemCount: ReportTabType.values.length,
+                itemBuilder: (_, idx) {
+                  final tab      = ReportTabType.values[idx];
+                  final names    = allNames[tab]!;
+                  final tabSel   = st.sel[tab]!;
+                  final isOpen   = st.openSection == tab;
+                  final hasData  = names.isNotEmpty;
+                  final selCount = tabSel.length;
+                  final isAll    = st.isAllSelected(tab, names);
+                  final isPart   = st.isPartial(tab, names);
+
+                  return Container(
+                    margin: const EdgeInsets.only(bottom: 10),
+                    decoration: BoxDecoration(
+                      color: _white,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: selCount > 0 ? tab.color.withOpacity(0.4) : _divLine,
+                        width: selCount > 0 ? 1.5 : 1,
+                      ),
+                      boxShadow: [BoxShadow(
+                          color: (selCount > 0 ? tab.color : Colors.black).withOpacity(0.06),
+                          blurRadius: 8, offset: const Offset(0, 2))],
+                    ),
+                    child: Column(children: [
+
+                      // ── Section header row ────────────────
+                      InkWell(
+                        onTap: hasData ? () => ss(() {
+                          st.openSection = isOpen ? null : tab;
+                        }) : null,
+                        borderRadius: BorderRadius.circular(16),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+                          child: Row(children: [
+                            // Section icon badge
+                            Container(
+                              width: 40, height: 40,
+                              decoration: BoxDecoration(
+                                  color: selCount > 0 ? tab.color.withOpacity(0.12) : tab.bgColor,
+                                  borderRadius: BorderRadius.circular(11)),
+                              alignment: Alignment.center,
+                              child: Icon(tab.icon, color: selCount > 0 ? tab.color : _textGrey, size: 18),
+                            ),
+                            const SizedBox(width: 12),
+
+                            // Label + subtitle
+                            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                              Text(tab.label,
+                                  style: TextStyle(
+                                      color: hasData ? _textDark : _textGrey,
+                                      fontSize: 14, fontWeight: FontWeight.w700)),
+                              Text(
+                                !hasData
+                                    ? 'No data available'
+                                    : selCount == 0
+                                        ? '${names.length} item${names.length == 1 ? '' : 's'} available'
+                                        : isAll
+                                            ? 'All ${names.length} selected ✓'
+                                            : '$selCount of ${names.length} selected',
+                                style: TextStyle(
+                                    color: !hasData
+                                        ? _divLine
+                                        : selCount == 0
+                                            ? _textGrey
+                                            : tab.color,
+                                    fontSize: 11),
+                              ),
+                            ])),
+
+                            // Right side: quick ALL button + chevron
+                            if (hasData) ...[
+                              // "All" quick select tap — doesn't open accordion
+                              GestureDetector(
+                                onTap: () => ss(() {
+                                  if (isAll) {
+                                    tabSel.clear();
+                                  } else {
+                                    tabSel..clear()..addAll(names);
+                                  }
+                                }),
+                                child: AnimatedContainer(
+                                  duration: const Duration(milliseconds: 150),
+                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                                  decoration: BoxDecoration(
+                                      color: isAll ? tab.color : tab.bgColor,
+                                      borderRadius: BorderRadius.circular(20)),
+                                  child: Text(
+                                    isAll ? 'All ✓' : 'All',
+                                    style: TextStyle(
+                                        color: isAll ? _white : tab.color,
+                                        fontSize: 11, fontWeight: FontWeight.w700),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                            ],
+
+                            AnimatedRotation(
+                              turns: isOpen ? 0.5 : 0,
+                              duration: const Duration(milliseconds: 200),
+                              child: Icon(
+                                Icons.keyboard_arrow_down_rounded,
+                                color: hasData ? (isOpen ? tab.color : _textGrey) : _divLine,
+                                size: 22,
+                              ),
+                            ),
+                          ]),
+                        ),
+                      ),
+
+                      // ── Expanded item list ────────────────
+                      AnimatedSize(
+                        duration: const Duration(milliseconds: 250),
+                        curve: Curves.easeInOut,
+                        child: isOpen
+                            ? Container(
+                                decoration: BoxDecoration(
+                                    border: Border(top: BorderSide(color: tab.color.withOpacity(0.15)))),
+                                padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
+                                child: Column(children: [
+                                  // Clear all row inside expanded
+                                  if (selCount > 0)
+                                    Padding(
+                                      padding: const EdgeInsets.only(bottom: 8),
+                                      child: Row(children: [
+                                        Text('$selCount selected',
+                                            style: TextStyle(color: tab.color, fontSize: 11, fontWeight: FontWeight.w700)),
+                                        const Spacer(),
+                                        GestureDetector(
+                                          onTap: () => ss(() => tabSel.clear()),
+                                          child: Text('Clear', style: const TextStyle(color: _textGrey, fontSize: 11, fontWeight: FontWeight.w600)),
+                                        ),
+                                      ]),
+                                    ),
+                                  ...names.map((name) {
+                                    final isSel = tabSel.contains(name);
+                                    final agg   = aggCache[tab]![name];
+                                    final inc   = agg?.income ?? 0;
+                                    final trps  = agg?.trips  ?? 0;
+
+                                    Widget avatar;
+                                    switch (tab) {
+                                      case ReportTabType.vehicle:
+                                        avatar = Icon(Icons.directions_car_rounded, size: 15, color: isSel ? tab.color : _textGrey);
+                                        break;
+                                      case ReportTabType.revenue:
+                                        avatar = Icon(Icons.bar_chart_rounded, size: 15, color: isSel ? tab.color : _textGrey);
+                                        break;
+                                      default:
+                                        avatar = Text(name.isNotEmpty ? name[0].toUpperCase() : '?',
+                                            style: TextStyle(color: isSel ? tab.color : _textGrey, fontSize: 13, fontWeight: FontWeight.w800));
+                                    }
+
+                                    return GestureDetector(
+                                      onTap: () => ss(() =>
+                                          isSel ? tabSel.remove(name) : tabSel.add(name)),
+                                      child: AnimatedContainer(
+                                        duration: const Duration(milliseconds: 120),
+                                        margin: const EdgeInsets.only(bottom: 6),
+                                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                                        decoration: BoxDecoration(
+                                          color: isSel ? tab.color.withOpacity(0.07) : _bg,
+                                          borderRadius: BorderRadius.circular(11),
+                                          border: Border.all(
+                                              color: isSel ? tab.color.withOpacity(0.3) : _divLine),
+                                        ),
+                                        child: Row(children: [
+                                          Container(
+                                            width: 32, height: 32,
+                                            decoration: BoxDecoration(
+                                                color: isSel ? tab.color.withOpacity(0.12) : _divLine.withOpacity(0.3),
+                                                borderRadius: BorderRadius.circular(9)),
+                                            alignment: Alignment.center, child: avatar,
+                                          ),
+                                          const SizedBox(width: 10),
+                                          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                                            Text(name, style: TextStyle(
+                                                color: isSel ? _textDark : _textGrey,
+                                                fontSize: 12, fontWeight: FontWeight.w700),
+                                                maxLines: 1, overflow: TextOverflow.ellipsis),
+                                            if (trps > 0 || inc > 0)
+                                              Text('$trps trip${trps == 1 ? '' : 's'}  ·  ₹${_fmt(inc)}',
+                                                  style: TextStyle(color: isSel ? _textGrey : _divLine, fontSize: 10)),
+                                          ])),
+                                          // Checkbox
+                                          AnimatedContainer(
+                                            duration: const Duration(milliseconds: 120),
+                                            width: 20, height: 20,
+                                            decoration: BoxDecoration(
+                                                color: isSel ? tab.color : _white,
+                                                borderRadius: BorderRadius.circular(6),
+                                                border: Border.all(
+                                                    color: isSel ? tab.color : _divLine, width: 1.5)),
+                                            child: isSel ? const Icon(Icons.check_rounded, size: 13, color: _white) : null,
+                                          ),
+                                        ]),
+                                      ),
+                                    );
+                                  }),
+                                ]),
+                              )
+                            : const SizedBox.shrink(),
+                      ),
+                    ]),
+                  );
+                },
+              ),
+            ),
+
+            // ── STICKY BOTTOM: Generate PDF button ───────
+            Container(
+              padding: EdgeInsets.fromLTRB(16, 12, 16, MediaQuery.of(ctx).viewInsets.bottom + 20),
+              decoration: BoxDecoration(
+                color: _white,
+                border: const Border(top: BorderSide(color: _divLine)),
+                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 12, offset: const Offset(0, -3))],
+              ),
+              child: SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: st.anySelected ? _primary : _divLine,
+                    foregroundColor: _white, elevation: 0,
+                    padding: const EdgeInsets.symmetric(vertical: 15),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  ),
+                  onPressed: st.anySelected ? () async {
+                    Navigator.of(ctx).pop();
+                    await _generateAndShow(
+                      filteredByTab: filteredByTab,
+                      st: st,
+                      allNames: allNames,
+                    );
+                  } : null,
+                  icon: const Icon(Icons.download_rounded, size: 18),
+                  label: Text(
+                    st.anySelected
+                        ? 'Generate PDF  (${st.totalSelected} items)'
+                        : 'Select items to generate PDF',
+                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
+                  ),
+                ),
+              ),
+            ),
+
+          ]),
+        );
+      }),
+    );
+  }
+
+  // ─────────────────────────────────────────────────────────
+  //  GENERATE
   Future<void> _generateAndShow({
     required Map<ReportTabType, List<ReportData>> filteredByTab,
     required _SheetState st,
@@ -478,7 +872,7 @@ class _TravelReportPageState extends ConsumerState<TravelReportPage>
               return;
             }
 
-         //   _showDownloadSheet(filteredByTab);
+            _showDownloadSheet(filteredByTab);
           },
         ),
         _DateFilterBar(
