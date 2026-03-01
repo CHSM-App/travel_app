@@ -32,6 +32,8 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
   String? _imageUrl;
   bool _isSaving = false;
   bool _didPopulateInitialProfile = false;
+  int _avatarRefreshToken = 0;
+  bool _forceLetterAvatar = false;
 
   // ── Design tokens ─────────────────────────────────
   static const _primary = Color(0xFF5B6EF5);
@@ -69,21 +71,40 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
   }
 
   void _populateProfile(LoginInfo p) {
-    if (_didPopulateInitialProfile) return;
-
-    if (nameController.text.isEmpty) nameController.text = p.name ?? '';
-    if (mobileController.text.isEmpty) mobileController.text = p.mobile ?? '';
-    if (emailController.text.isEmpty) emailController.text = p.email ?? '';
-    if (addressController.text.isEmpty)
-      addressController.text = p.address ?? '';
-    if (agencyController.text.isEmpty)
-      agencyController.text = p.agencyName ?? '';
-    if (cityController.text.isEmpty) cityController.text = p.city ?? '';
-
-    setState(() {
-      _imageUrl = p.imageUrl;
+    if (!_didPopulateInitialProfile) {
+      if (nameController.text.isEmpty) nameController.text = p.name ?? '';
+      if (mobileController.text.isEmpty) mobileController.text = p.mobile ?? '';
+      if (emailController.text.isEmpty) emailController.text = p.email ?? '';
+      if (addressController.text.isEmpty) {
+        addressController.text = p.address ?? '';
+      }
+      if (agencyController.text.isEmpty) {
+        agencyController.text = p.agencyName ?? '';
+      }
+      if (cityController.text.isEmpty) cityController.text = p.city ?? '';
       _didPopulateInitialProfile = true;
-    });
+    }
+
+    final raw = p.imageUrl?.trim();
+    final nextImageUrl =
+        (raw == null || raw.isEmpty || raw.toLowerCase() == 'null') ? null : raw;
+
+    if (!_forceLetterAvatar && _profileImage == null && _imageUrl != nextImageUrl) {
+      setState(() {
+        _imageUrl = nextImageUrl;
+        _avatarRefreshToken++;
+      });
+    }
+  }
+
+  String? _displayImageUrl() {
+    if (_forceLetterAvatar) return null;
+    final imageUrl = _imageUrl?.trim();
+    if (imageUrl == null || imageUrl.isEmpty || imageUrl.toLowerCase() == 'null') {
+      return null;
+    }
+    final sep = imageUrl.contains('?') ? '&' : '?';
+    return '$imageUrl${sep}v=$_avatarRefreshToken';
   }
 
   // void _showImageOptions() {
@@ -134,6 +155,8 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
             _isSaving = true;
             _profileImage = null;
             _imageUrl = null;
+            _avatarRefreshToken++;
+            _forceLetterAvatar = true;
           });
 
           final res = await ref
@@ -154,6 +177,9 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
               _isSaving = false;
               _profileImage = previousLocalImage;
               _imageUrl = previousImageUrl;
+              _avatarRefreshToken++;
+              _forceLetterAvatar =
+                  previousLocalImage == null && (previousImageUrl == null || previousImageUrl.isEmpty);
             });
             _snack(res?['message'] ?? 'Failed to remove image', error: true);
           }
@@ -168,6 +194,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
       setState(() {
         _profileImage = File(f.path);
         _imageUrl = null;
+        _forceLetterAvatar = false;
       });
   }
 
@@ -189,7 +216,13 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
         setState(() => _isSaving = false);
         return;
       }
-      setState(() => _imageUrl = res['data']?['imageUrl']);
+      setState(() {
+        _imageUrl = res['data']?['imageUrl']?.toString();
+        _profileImage = null;
+        _avatarRefreshToken++;
+        _forceLetterAvatar = false;
+      });
+      _snack('Image uploaded successfully');
     }
 
     final info = LoginInfo(
@@ -334,11 +367,8 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
     final initial = nameController.text.isNotEmpty
         ? nameController.text[0].toUpperCase()
         : 'A';
-    final imageUrl = _imageUrl?.trim();
-    final hasValidNetworkImage =
-        imageUrl != null &&
-        imageUrl.isNotEmpty &&
-        imageUrl.toLowerCase() != 'null';
+    final displayImageUrl = _displayImageUrl();
+    final hasValidNetworkImage = displayImageUrl != null;
 
     Widget avatarFallback() {
       return Container(
@@ -440,7 +470,8 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
                                   )
                                 : hasValidNetworkImage
                                 ? Image.network(
-                                    imageUrl,
+                                    displayImageUrl,
+                                    key: ValueKey(displayImageUrl),
                                     fit: BoxFit.cover,
                                     errorBuilder: (_, __, ___) =>
                                         avatarFallback(),
