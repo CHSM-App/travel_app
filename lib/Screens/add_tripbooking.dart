@@ -54,7 +54,6 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
   //     notifier.customerList(agencyId);
   //   });
 
-
   //    if (widget.booking != null) {
   //     final b = widget.booking!;
   //     pickup.text = b.pickupLocation ?? "";
@@ -67,7 +66,6 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
   //     selectedCustomerId = b.customerId;
   //     startDateValue = b.startDateTime;
   //     endDateValue = b.endDateTime;
-      
 
   //      // 🔥 Strip UTC/timezone by converting to local and rebuilding clean DateTime
   // if (b.startDateTime != null) {
@@ -82,7 +80,6 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
   //   endDate.text = DateFormat("MMM dd, yyyy • hh:mm a").format(endDateValue!);
   // }
   //   }
-
 
   //     // 🔥 Edit mode: dates already set, fetch immediately
   //   if (widget.booking != null &&
@@ -100,53 +97,67 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
   //       widget.booking!.endDateTime!,
   //     );
   //   }
-  
+
   // }
 
   @override
-void initState() {
-  super.initState();
+  void initState() {
+    super.initState();
 
-  if (widget.booking != null) {
-    final b = widget.booking!;
-    pickup.text = b.pickupLocation ?? "";
-    drop.text = b.dropLocation ?? "";
-    distance.text = b.distance?.toString() ?? "";
-    fuelRequired.text = b.fuelRequired?.toString() ?? "";
-    tripCharges.text = b.amountApprove?.toString() ?? "";
-    selectedVehicleId = b.vehicleId;
-    selectedDriverId = b.driverId;
-    selectedCustomerId = b.customerId;
+    if (widget.booking != null) {
+      final b = widget.booking!;
+      pickup.text = b.pickupLocation ?? "";
+      drop.text = b.dropLocation ?? "";
+      distance.text = b.distance?.toString() ?? "";
+      fuelRequired.text = b.fuelRequired?.toString() ?? "";
+      tripCharges.text = b.amountApprove?.toString() ?? "";
+      selectedVehicleId = b.vehicleId;
+      selectedDriverId = b.driverId;
+      selectedCustomerId = b.customerId;
 
-    // 🔥 Clean datetime (removes UTC Z)
-    if (b.startDateTime != null) {
-      final s = b.startDateTime!;
-      startDateValue = DateTime(s.year, s.month, s.day, s.hour, s.minute);
-      startDate.text = DateFormat("MMM dd, yyyy • hh:mm a").format(startDateValue!);
+      // 🔥 Clean datetime (removes UTC Z)
+      if (b.startDateTime != null) {
+        final s = b.startDateTime!;
+        startDateValue = DateTime(s.year, s.month, s.day, s.hour, s.minute);
+        startDate.text = DateFormat(
+          "MMM dd, yyyy • hh:mm a",
+        ).format(startDateValue!);
+      }
+
+      if (b.endDateTime != null) {
+        final e = b.endDateTime!;
+        endDateValue = DateTime(e.year, e.month, e.day, e.hour, e.minute);
+        endDate.text = DateFormat(
+          "MMM dd, yyyy • hh:mm a",
+        ).format(endDateValue!);
+      }
     }
 
-    if (b.endDateTime != null) {
-      final e = b.endDateTime!;
-      endDateValue = DateTime(e.year, e.month, e.day, e.hour, e.minute);
-      endDate.text = DateFormat("MMM dd, yyyy • hh:mm a").format(endDateValue!);
-    }
+    Future.microtask(() {
+      final notifier = ref.read(tripBookingViewModelProvider.notifier);
+      final agencyId = ref.read(loginViewModelProvider).agencyId ?? "";
+
+      notifier.customerList(agencyId);
+
+      // 🔥 Use cleaned startDateValue/endDateValue NOT widget.booking!.startDateTime
+      if (widget.booking != null &&
+          startDateValue != null &&
+          endDateValue != null) {
+        notifier.fetchAvailableVehicles(
+          agencyId,
+          startDateValue!,
+          endDateValue!,
+          widget.booking!.tripId!,
+        );
+        notifier.fetchAvailableDrivers(
+          agencyId,
+          startDateValue!,
+          endDateValue!,
+          widget.booking?.tripId,
+        );
+      }
+    });
   }
-
-  Future.microtask(() {
-    final notifier = ref.read(tripBookingViewModelProvider.notifier);
-    final agencyId = ref.read(loginViewModelProvider).agencyId ?? "";
-
-    notifier.customerList(agencyId);
-
-    // 🔥 Use cleaned startDateValue/endDateValue NOT widget.booking!.startDateTime
-    if (widget.booking != null &&
-        startDateValue != null &&
-        endDateValue != null) {
-      notifier.fetchAvailableVehicles(agencyId, startDateValue!, endDateValue!, widget.booking!.tripId!);
-      notifier.fetchAvailableDrivers(agencyId, startDateValue!, endDateValue!, widget.booking?.tripId);
-    }
-  });
-}
 
   // Future<void> _pickDateTime(bool isStart) async {
   //   final date = await showDatePicker(
@@ -255,9 +266,19 @@ void initState() {
     //   selectedDriverId = null;
     // });
 
-    notifier.fetchAvailableVehicles(agencyId, startDateValue!, endDateValue!, null);
+    notifier.fetchAvailableVehicles(
+      agencyId,
+      startDateValue!,
+      endDateValue!,
+      null,
+    );
 
-    notifier.fetchAvailableDrivers(agencyId, startDateValue!, endDateValue!, null);
+    notifier.fetchAvailableDrivers(
+      agencyId,
+      startDateValue!,
+      endDateValue!,
+      null,
+    );
   }
 
   Future<void> _saveTrip() async {
@@ -447,7 +468,7 @@ void initState() {
     required ValueChanged<T?> onChanged,
   }) {
     return DropdownButtonFormField<T>(
-      value: value, // 🔥 was: initialValue: value
+      initialValue: value, // 🔥 was: initialValue: value
       items: items,
       onChanged: onChanged,
       validator: (v) => v == null ? "Please select an option" : null,
@@ -462,43 +483,51 @@ void initState() {
     );
   }
 
- Widget _disabledDropdown(String label, IconData icon, {String hint = "Select start & end date first"}) {
-  return IgnorePointer(
-    child: DropdownButtonFormField<int>(
-      value: null,
-      items: const [],
-      onChanged: null,
-      hint: Text(
-        hint,
-        style: const TextStyle(fontSize: 13, color: Color(0xFFAAAAAA)),
+  Widget _disabledDropdown(
+    String label,
+    IconData icon, {
+    String hint = "Select start & end date first",
+  }) {
+    return IgnorePointer(
+      child: DropdownButtonFormField<int>(
+        initialValue: null,
+        items: const [],
+        onChanged: null,
+        hint: Text(
+          hint,
+          style: const TextStyle(fontSize: 13, color: Color(0xFFAAAAAA)),
+        ),
+        icon: const Icon(
+          Icons.keyboard_arrow_down_rounded,
+          color: Color(0xFFAAAAAA),
+        ),
+        decoration: _inputDeco(label, icon),
       ),
-      icon: const Icon(
-        Icons.keyboard_arrow_down_rounded,
-        color: Color(0xFFAAAAAA),
-      ),
-      decoration: _inputDeco(label, icon),
-    ),
-  );
-}
+    );
+  }
 
-Widget _emptyField(String label, IconData icon,String msg) {
-   return IgnorePointer(
-    child: DropdownButtonFormField<int>(
-      value: null,
-      items: const [],
-      onChanged: null,
-      hint: Text(
-        msg,
-        style: const TextStyle(fontSize: 13, color: Color(0xFFAAAAAA)),
+  Widget _emptyField(String label, IconData icon, String msg) {
+    return IgnorePointer(
+      child: DropdownButtonFormField<int>(
+        initialValue: null,
+        items: const [],
+        onChanged: null,
+        hint: Text(
+          msg,
+          style: const TextStyle(
+            fontSize: 13,
+            color: Color.fromARGB(255, 204, 44, 44),
+          ),
+        ),
+        icon: const Icon(
+          Icons.keyboard_arrow_down_rounded,
+          color: Color(0xFFAAAAAA),
+        ),
+        decoration: _inputDeco(label, icon),
       ),
-      icon: const Icon(
-        Icons.keyboard_arrow_down_rounded,
-        color: Color(0xFFAAAAAA),
-      ),
-      decoration: _inputDeco(label, icon),
-    ),
-  );
-}
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(tripBookingViewModelProvider);
@@ -874,15 +903,19 @@ Widget _emptyField(String label, IconData icon,String msg) {
                             _disabledDropdown(
                               "Vehicle",
                               Icons.directions_car_outlined,
-                              hint: "Enter trip schedule to see available vehicles",
+                              hint:
+                                  "Enter trip schedule to see available vehicles",
                             )
                           else
                             state.availableVehicles.when(
                               data: (vehicles) {
-
-                                 if (vehicles.isEmpty) {
-      return _emptyField("Vehicle", Icons.directions_car_outlined, "No vehicle available for selected schedule");
-    }
+                                if (vehicles.isEmpty) {
+                                  return _emptyField(
+                                    "Vehicle",
+                                    Icons.directions_car_outlined,
+                                    "No vehicle available for selected schedule",
+                                  );
+                                }
                                 // 🔥 Guard: reset if selected value not in new list
                                 final validVehicleId =
                                     vehicles.any(
@@ -900,7 +933,9 @@ Widget _emptyField(String label, IconData icon,String msg) {
                                       .map(
                                         (e) => DropdownMenuItem<int>(
                                           value: e.vehicleId,
-                                          child: Text(e.name ?? ""),
+                                          child: Text(
+                                            "${e.name ?? ""} - ${e.number ?? "No Vehicle"}",
+                                          ),
                                         ),
                                       )
                                       .toList(),
@@ -921,15 +956,20 @@ Widget _emptyField(String label, IconData icon,String msg) {
                           if (startDateValue == null || endDateValue == null)
                             _disabledDropdown(
                               "Driver",
-                              Icons.person_pin_rounded ,
-                               hint: "Enter trip schedule to see available drivers",
+                              Icons.person_pin_rounded,
+                              hint:
+                                  "Enter trip schedule to see available drivers",
                             )
                           else
                             state.availableDrivers.when(
                               data: (drivers) {
-                                 if (drivers.isEmpty) {
-      return _emptyField("Driver", Icons.drive_eta_outlined, "No driver available for selected schedule");
-    }
+                                if (drivers.isEmpty) {
+                                  return _emptyField(
+                                    "Driver",
+                                    Icons.drive_eta_outlined,
+                                    "No driver available for selected schedule",
+                                  );
+                                }
                                 final validDriverId =
                                     drivers.any(
                                       (e) => e.driverId == selectedDriverId,
@@ -966,7 +1006,7 @@ Widget _emptyField(String label, IconData icon,String msg) {
                           // Customer
                           state.fetchCustomerList.when(
                             data: (customers) {
-                              // 🔥 FORCE MATCH AFTER API LOAD
+                              // MATCH AFTER API LOAD
                               WidgetsBinding.instance.addPostFrameCallback((_) {
                                 if (widget.booking != null &&
                                     selectedCustomerId != null) {
@@ -979,7 +1019,7 @@ Widget _emptyField(String label, IconData icon,String msg) {
                                       selectedCustomerId = null;
                                     });
                                   } else {
-                                    setState(() {}); // 🔥 Force rebuild
+                                    setState(() {});
                                   }
                                 }
                               });

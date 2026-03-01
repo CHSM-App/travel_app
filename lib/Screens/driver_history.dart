@@ -134,16 +134,16 @@ class _DriverHistoryPageState
                   ),
                 ),
               ),
-              const SizedBox(width: 14),
-              const Text(
-                "Driver's History",
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w700,
-                  color: _accent,
-                  letterSpacing: 2.2,
-                ),
-              ),
+              // const SizedBox(width: 14),
+              // const Text(
+              //   "Driver's History",
+              //   style: TextStyle(
+              //     fontSize: 11,
+              //     fontWeight: FontWeight.w700,
+              //     color: _accent,
+              //     letterSpacing: 2.2,
+              //   ),
+              // ),
             ],
           ),
 
