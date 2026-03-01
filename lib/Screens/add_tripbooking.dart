@@ -43,16 +43,66 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
   static const _textDark = Color(0xFF1A1A2E);
   static const _textMid = Color(0xFF6B7280);
 
+  // @override
+  // void initState() {
+  //   super.initState();
+  //   Future.microtask(() {
+  //     final notifier = ref.read(tripBookingViewModelProvider.notifier);
+  //     final agencyId = ref.read(loginViewModelProvider).agencyId ?? "";
+  //     // notifier.driverList(agencyId);
+  //     // notifier.vehicleList(agencyId);
+  //     notifier.customerList(agencyId);
+  //   });
+
+  //    if (widget.booking != null) {
+  //     final b = widget.booking!;
+  //     pickup.text = b.pickupLocation ?? "";
+  //     drop.text = b.dropLocation ?? "";
+  //     distance.text = b.distance?.toString() ?? "";
+  //     fuelRequired.text = b.fuelRequired?.toString() ?? "";
+  //     tripCharges.text = b.amountApprove?.toString() ?? "";
+  //     selectedVehicleId = b.vehicleId;
+  //     selectedDriverId = b.driverId;
+  //     selectedCustomerId = b.customerId;
+  //     startDateValue = b.startDateTime;
+  //     endDateValue = b.endDateTime;
+
+  //      // 🔥 Strip UTC/timezone by converting to local and rebuilding clean DateTime
+  // if (b.startDateTime != null) {
+  //   final s = b.startDateTime!.toLocal();
+  //   startDateValue = DateTime(s.year, s.month, s.day, s.hour, s.minute);
+  //   startDate.text = DateFormat("MMM dd, yyyy • hh:mm a").format(startDateValue!);
+  // }
+
+  // if (b.endDateTime != null) {
+  //   final e = b.endDateTime!.toLocal();
+  //   endDateValue = DateTime(e.year, e.month, e.day, e.hour, e.minute);
+  //   endDate.text = DateFormat("MMM dd, yyyy • hh:mm a").format(endDateValue!);
+  // }
+  //   }
+
+  //     // 🔥 Edit mode: dates already set, fetch immediately
+  //   if (widget.booking != null &&
+  //       widget.booking!.startDateTime != null &&
+  //       widget.booking!.endDateTime != null) {
+  //         final notifier = ref.read(tripBookingViewModelProvider.notifier);
+  //     notifier.fetchAvailableVehicles(
+  //       ref.read(loginViewModelProvider).agencyId?? '',
+  //       widget.booking!.startDateTime!,
+  //       widget.booking!.endDateTime!,
+  //     );
+  //     notifier.fetchAvailableDrivers(
+  //       ref.read(loginViewModelProvider).agencyId?? '',
+  //       widget.booking!.startDateTime!,
+  //       widget.booking!.endDateTime!,
+  //     );
+  //   }
+
+  // }
+
   @override
   void initState() {
     super.initState();
-    Future.microtask(() {
-      final notifier = ref.read(tripBookingViewModelProvider.notifier);
-      final agencyId = ref.read(loginViewModelProvider).agencyId ?? "";
-      notifier.driverList(agencyId);
-      notifier.vehicleList(agencyId);
-      notifier.customerList(agencyId);
-    });
 
     if (widget.booking != null) {
       final b = widget.booking!;
@@ -64,19 +114,96 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
       selectedVehicleId = b.vehicleId;
       selectedDriverId = b.driverId;
       selectedCustomerId = b.customerId;
-      startDateValue = b.startDateTime;
-      endDateValue = b.endDateTime;
+
+      // 🔥 Clean datetime (removes UTC Z)
       if (b.startDateTime != null) {
-        startDate.text = DateFormat("MMM dd, yyyy • hh:mm a").format(b.startDateTime!);
+        final s = b.startDateTime!;
+        startDateValue = DateTime(s.year, s.month, s.day, s.hour, s.minute);
+        startDate.text = DateFormat(
+          "MMM dd, yyyy • hh:mm a",
+        ).format(startDateValue!);
       }
+
       if (b.endDateTime != null) {
-        endDate.text = DateFormat("MMM dd, yyyy • hh:mm a").format(b.endDateTime!);
+        final e = b.endDateTime!;
+        endDateValue = DateTime(e.year, e.month, e.day, e.hour, e.minute);
+        endDate.text = DateFormat(
+          "MMM dd, yyyy • hh:mm a",
+        ).format(endDateValue!);
       }
     }
+
+    Future.microtask(() {
+      final notifier = ref.read(tripBookingViewModelProvider.notifier);
+      final agencyId = ref.read(loginViewModelProvider).agencyId ?? "";
+
+      notifier.customerList(agencyId);
+
+      // 🔥 Use cleaned startDateValue/endDateValue NOT widget.booking!.startDateTime
+      if (widget.booking != null &&
+          startDateValue != null &&
+          endDateValue != null) {
+        notifier.fetchAvailableVehicles(
+          agencyId,
+          startDateValue!,
+          endDateValue!,
+          widget.booking!.tripId!,
+        );
+        notifier.fetchAvailableDrivers(
+          agencyId,
+          startDateValue!,
+          endDateValue!,
+          widget.booking?.tripId,
+        );
+      }
+    });
   }
 
+  // Future<void> _pickDateTime(bool isStart) async {
+  //   final date = await showDatePicker(
+  //     context: context,
+  //     firstDate: DateTime(2020),
+  //     lastDate: DateTime(2035),
+  //     initialDate: DateTime.now(),
+  //     builder: (ctx, child) => Theme(
+  //       data: Theme.of(ctx).copyWith(
+  //         colorScheme: const ColorScheme.light(
+  //           primary: _primary,
+  //           onPrimary: Colors.white,
+  //           surface: _cardBg,
+  //         ),
+  //       ),
+  //       child: child!,
+  //     ),
+  //   );
+  //   if (date == null) return;
+
+  //   final time = await showTimePicker(
+  //     context: context,
+  //     initialTime: TimeOfDay.now(),
+  //     builder: (ctx, child) => Theme(
+  //       data: Theme.of(ctx).copyWith(
+  //         colorScheme: const ColorScheme.light(primary: _primary),
+  //       ),
+  //       child: child!,
+  //     ),
+  //   );
+  //   if (time == null) return;
+
+  //   final dt = DateTime(date.year, date.month, date.day, time.hour, time.minute);
+  //   setState(() {
+  //     if (isStart) {
+  //       startDateValue = dt;
+  //       startDate.text = DateFormat("MMM dd, yyyy • hh:mm a").format(dt);
+  //     } else {
+  //       endDateValue = dt;
+  //       endDate.text = DateFormat("MMM dd, yyyy • hh:mm a").format(dt);
+  //     }
+  //   });
+  // }
+
   Future<void> _pickDateTime(bool isStart) async {
-    final date = await showDatePicker(
+    final date = await await showDatePicker(
       context: context,
       firstDate: DateTime(2020),
       lastDate: DateTime(2035),
@@ -98,15 +225,22 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
       context: context,
       initialTime: TimeOfDay.now(),
       builder: (ctx, child) => Theme(
-        data: Theme.of(ctx).copyWith(
-          colorScheme: const ColorScheme.light(primary: _primary),
-        ),
+        data: Theme.of(
+          ctx,
+        ).copyWith(colorScheme: const ColorScheme.light(primary: _primary)),
         child: child!,
       ),
     );
     if (time == null) return;
 
-    final dt = DateTime(date.year, date.month, date.day, time.hour, time.minute);
+    final dt = DateTime(
+      date.year,
+      date.month,
+      date.day,
+      time.hour,
+      time.minute,
+    );
+
     setState(() {
       if (isStart) {
         startDateValue = dt;
@@ -116,58 +250,85 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
         endDate.text = DateFormat("MMM dd, yyyy • hh:mm a").format(dt);
       }
     });
+
+    // 🔥 IMPORTANT: Only fetch when BOTH dates selected
+    if (startDateValue != null && endDateValue != null) {
+      _loadAvailableResources();
+    }
   }
 
- Future<void> _saveTrip() async {
-  if (!_formKey.currentState!.validate()) return;
+  void _loadAvailableResources() {
+    final agencyId = ref.read(loginViewModelProvider).agencyId ?? "";
+    final notifier = ref.read(tripBookingViewModelProvider.notifier);
 
-  if (startDateValue == null || endDateValue == null) {
-    _showSnack("Please select start and end date & time");
-    return;
+    // setState(() {
+    //   selectedVehicleId = null;
+    //   selectedDriverId = null;
+    // });
+
+    notifier.fetchAvailableVehicles(
+      agencyId,
+      startDateValue!,
+      endDateValue!,
+      null,
+    );
+
+    notifier.fetchAvailableDrivers(
+      agencyId,
+      startDateValue!,
+      endDateValue!,
+      null,
+    );
   }
 
-  if (selectedVehicleId == null ||
-      selectedDriverId == null ||
-      selectedCustomerId == null) {
-    _showSnack("Please select vehicle, driver and customer");
-    return;
+  Future<void> _saveTrip() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    if (startDateValue == null || endDateValue == null) {
+      _showSnack("Please select start and end date & time");
+      return;
+    }
+
+    if (selectedVehicleId == null ||
+        selectedDriverId == null ||
+        selectedCustomerId == null) {
+      _showSnack("Please select vehicle, driver and customer");
+      return;
+    }
+
+    setState(() => _isSaving = true);
+
+    final booking = TripBooking(
+      tripId: widget.booking?.tripId, // 🔥 IMPORTANT
+      vehicleid: selectedVehicleId!,
+      driverid: selectedDriverId!,
+      customerid: selectedCustomerId!,
+      pickuplocation: pickup.text,
+      droplocation: drop.text,
+      distance: double.parse(distance.text),
+      fuelrequired: double.parse(fuelRequired.text),
+      tripcharges: double.parse(tripCharges.text),
+      startDateTime: startDateValue,
+      endDateTime: endDateValue,
+      status: widget.booking?.status ?? 3,
+      bookingdate: widget.booking?.bookingDate ?? DateTime.now(),
+      agencyId: ref.read(loginViewModelProvider).agencyId ?? "",
+    );
+
+    final notifier = ref.read(tripBookingViewModelProvider.notifier);
+
+    if (widget.booking != null) {
+      // 🔥 EDIT MODE
+      await notifier.updateTripBooking(widget.booking?.tripId ?? 0, booking);
+    } else {
+      // ADD MODEj
+      await notifier.addTripBooking(booking);
+    }
+
+    setState(() => _isSaving = false);
+
+    if (mounted) Navigator.pop(context);
   }
-
-  setState(() => _isSaving = true);
-
-  final booking = TripBooking(
-    tripId: widget.booking?.tripId,   // 🔥 IMPORTANT  
-    vehicleid: selectedVehicleId!,
-    driverid: selectedDriverId!,
-    customerid: selectedCustomerId!,
-    pickuplocation: pickup.text,
-    droplocation: drop.text,
-    distance: double.parse(distance.text),
-    fuelrequired: double.parse(fuelRequired.text),
-    tripcharges: double.parse(tripCharges.text),
-    startDateTime: startDateValue,
-    endDateTime: endDateValue,
-    status: widget.booking?.status ?? 3,
-    bookingdate:
-        widget.booking?.bookingDate ?? DateTime.now(),
-    agencyId: ref.read(loginViewModelProvider).agencyId ?? "",
-  );
-
-  final notifier =
-      ref.read(tripBookingViewModelProvider.notifier);
-
-  if (widget.booking != null) {
-    // 🔥 EDIT MODE
-    await notifier.updateTripBooking(widget.booking?.tripId ?? 0 , booking);
-  } else {
-    // ADD MODEj
-    await notifier.addTripBooking(booking);
-  }
-
-  setState(() => _isSaving = false);
-
-  if (mounted) Navigator.pop(context);
-}
 
   // ── Shared input decoration ──────────────────────────────────────────────────
   InputDecoration _inputDeco(String label, IconData icon, {String? prefix}) {
@@ -177,11 +338,13 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
       prefixIcon: Icon(icon, size: 18, color: _textMid),
       prefixText: prefix,
       prefixStyle: const TextStyle(
-          fontWeight: FontWeight.w700, color: _primary, fontSize: 14),
+        fontWeight: FontWeight.w700,
+        color: _primary,
+        fontSize: 14,
+      ),
       filled: true,
       fillColor: _surface,
-      contentPadding:
-          const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+      contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
         borderSide: BorderSide(color: Colors.grey.shade200),
@@ -202,7 +365,12 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
   }
 
   // ── Section card wrapper ─────────────────────────────────────────────────────
-  Widget _card({required String title, required IconData icon, required Color color, required List<Widget> children}) {
+  Widget _card({
+    required String title,
+    required IconData icon,
+    required Color color,
+    required List<Widget> children,
+  }) {
     return Container(
       decoration: BoxDecoration(
         color: _cardBg,
@@ -222,8 +390,9 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
             padding: const EdgeInsets.fromLTRB(18, 14, 18, 12),
             decoration: BoxDecoration(
               color: color.withOpacity(0.07),
-              borderRadius:
-                  const BorderRadius.vertical(top: Radius.circular(20)),
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(20),
+              ),
             ),
             child: Row(
               children: [
@@ -283,7 +452,8 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
         fontWeight: FontWeight.w600,
         fontSize: 14,
       ),
-      validator: (v) => (v == null || v.isEmpty) ? "This field is required" : null,
+      validator: (v) =>
+          (v == null || v.isEmpty) ? "This field is required" : null,
       decoration: _inputDeco(label, icon, prefix: prefix),
     );
   }
@@ -298,7 +468,7 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
     required ValueChanged<T?> onChanged,
   }) {
     return DropdownButtonFormField<T>(
-      initialValue: value,
+      initialValue: value, // 🔥 was: initialValue: value
       items: items,
       onChanged: onChanged,
       validator: (v) => v == null ? "Please select an option" : null,
@@ -310,6 +480,51 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
         fontSize: 14,
       ),
       decoration: _inputDeco(label, icon),
+    );
+  }
+
+  Widget _disabledDropdown(
+    String label,
+    IconData icon, {
+    String hint = "Select start & end date first",
+  }) {
+    return IgnorePointer(
+      child: DropdownButtonFormField<int>(
+        initialValue: null,
+        items: const [],
+        onChanged: null,
+        hint: Text(
+          hint,
+          style: const TextStyle(fontSize: 13, color: Color(0xFFAAAAAA)),
+        ),
+        icon: const Icon(
+          Icons.keyboard_arrow_down_rounded,
+          color: Color(0xFFAAAAAA),
+        ),
+        decoration: _inputDeco(label, icon),
+      ),
+    );
+  }
+
+  Widget _emptyField(String label, IconData icon, String msg) {
+    return IgnorePointer(
+      child: DropdownButtonFormField<int>(
+        initialValue: null,
+        items: const [],
+        onChanged: null,
+        hint: Text(
+          msg,
+          style: const TextStyle(
+            fontSize: 13,
+            color: Color.fromARGB(255, 204, 44, 44),
+          ),
+        ),
+        icon: const Icon(
+          Icons.keyboard_arrow_down_rounded,
+          color: Color(0xFFAAAAAA),
+        ),
+        decoration: _inputDeco(label, icon),
+      ),
     );
   }
 
@@ -338,8 +553,11 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
                   color: Colors.white.withOpacity(0.15),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: const Icon(Icons.arrow_back_ios_new,
-                    color: Colors.white, size: 16),
+                child: const Icon(
+                  Icons.arrow_back_ios_new,
+                  color: Colors.white,
+                  size: 16,
+                ),
               ),
             ),
             flexibleSpace: FlexibleSpaceBar(
@@ -413,7 +631,11 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
           // ── FORM BODY ────────────────────────────────────────────────────────
           SliverPadding(
             padding: EdgeInsets.fromLTRB(
-                hPad, 20, hPad, 100 + MediaQuery.of(context).padding.bottom),
+              hPad,
+              20,
+              hPad,
+              100 + MediaQuery.of(context).padding.bottom,
+            ),
             sliver: SliverList(
               delegate: SliverChildListDelegate([
                 Form(
@@ -466,7 +688,8 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
                                         keyboardType: TextInputType.number,
                                         formatters: [
                                           FilteringTextInputFormatter.allow(
-                                              RegExp(r'^\d+\.?\d*'))
+                                            RegExp(r'^\d+\.?\d*'),
+                                          ),
                                         ],
                                       ),
                                     ),
@@ -479,7 +702,8 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
                                         keyboardType: TextInputType.number,
                                         formatters: [
                                           FilteringTextInputFormatter.allow(
-                                              RegExp(r'^\d+\.?\d*'))
+                                            RegExp(r'^\d+\.?\d*'),
+                                          ),
                                         ],
                                       ),
                                     ),
@@ -494,7 +718,8 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
                                       keyboardType: TextInputType.number,
                                       formatters: [
                                         FilteringTextInputFormatter.allow(
-                                            RegExp(r'^\d+\.?\d*'))
+                                          RegExp(r'^\d+\.?\d*'),
+                                        ),
                                       ],
                                     ),
                                     const SizedBox(height: 12),
@@ -505,7 +730,8 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
                                       keyboardType: TextInputType.number,
                                       formatters: [
                                         FilteringTextInputFormatter.allow(
-                                            RegExp(r'^\d+\.?\d*'))
+                                          RegExp(r'^\d+\.?\d*'),
+                                        ),
                                       ],
                                     ),
                                   ],
@@ -519,7 +745,8 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
                             keyboardType: TextInputType.number,
                             formatters: [
                               FilteringTextInputFormatter.allow(
-                                  RegExp(r'^\d+\.?\d*'))
+                                RegExp(r'^\d+\.?\d*'),
+                              ),
                             ],
                           ),
                         ],
@@ -578,23 +805,33 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
                                 ),
 
                           // Duration preview
-                          if (startDateValue != null && endDateValue != null) ...[
+                          if (startDateValue != null &&
+                              endDateValue != null) ...[
                             const SizedBox(height: 14),
                             Container(
                               padding: const EdgeInsets.symmetric(
-                                  horizontal: 14, vertical: 10),
+                                horizontal: 14,
+                                vertical: 10,
+                              ),
                               decoration: BoxDecoration(
-                                color: const Color(0xFF7209B7).withOpacity(0.07),
+                                color: const Color(
+                                  0xFF7209B7,
+                                ).withOpacity(0.07),
                                 borderRadius: BorderRadius.circular(10),
                                 border: Border.all(
-                                    color: const Color(0xFF7209B7)
-                                        .withOpacity(0.2)),
+                                  color: const Color(
+                                    0xFF7209B7,
+                                  ).withOpacity(0.2),
+                                ),
                               ),
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  const Icon(Icons.timelapse,
-                                      size: 15, color: Color(0xFF7209B7)),
+                                  const Icon(
+                                    Icons.timelapse,
+                                    size: 15,
+                                    color: Color(0xFF7209B7),
+                                  ),
                                   const SizedBox(width: 8),
                                   Text(
                                     "Duration: ${_formatDuration(startDateValue!, endDateValue!)}",
@@ -613,100 +850,207 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
 
                       const SizedBox(height: 16),
 
-                      // ── ASSIGNMENTS ─────────────────────────────────────────
+                      // ───────────────────────── ASSIGNMENTS ────────────────────────────
                       _card(
                         title: "Assignments",
                         icon: Icons.groups_2_outlined,
                         color: const Color(0xFF06D6A0),
                         children: [
+                          // // Vehicle
+                          // state.availableVehicles.when(
+                          //   data: (vehicles) => _dropdown<int>(
+                          //     label: "Vehicle",
+                          //     icon: Icons.directions_car_outlined,
+                          //     color: const Color(0xFF06D6A0),
+                          //     value: selectedVehicleId,
+                          //     items: vehicles
+                          //         .map((e) => DropdownMenuItem<int>(
+                          //               value: e.vehicleId,
+                          //               child: Text(e.name ?? ""),
+                          //             ))
+                          //         .toList(),
+                          //     onChanged: (v) =>
+                          //         setState(() => selectedVehicleId = v),
+                          //   ),
+                          //   loading: () => _loadingField("Loading vehicles..."),
+                          //   error: (e, _) => _errorField("Failed to load vehicles"),
+                          // ),
+
+                          // const SizedBox(height: 12),
+
+                          // // Driver
+                          // state.availableDrivers.when(
+                          //   data: (drivers) => _dropdown<int>(
+                          //     label: "Driver",
+                          //     icon: Icons.drive_eta_outlined,
+                          //     color: const Color(0xFF06D6A0),
+                          //     value: selectedDriverId,
+                          //     items: drivers
+                          //         .map((e) => DropdownMenuItem<int>(
+                          //               value: e.driverId,
+                          //               child: Text(e.name ?? ""),
+                          //             ))
+                          //         .toList(),
+                          //     onChanged: (v) =>
+                          //         setState(() => selectedDriverId = v),
+                          //   ),
+                          //   loading: () => _loadingField("Loading drivers..."),
+                          //   error: (e, _) => _errorField("Failed to load drivers"),
+                          // ),
+
                           // Vehicle
-                          state.fetchVehicleList.when(
-                            data: (vehicles) => _dropdown<int>(
-                              label: "Vehicle",
-                              icon: Icons.directions_car_outlined,
-                              color: const Color(0xFF06D6A0),
-                              value: selectedVehicleId,
-                              items: vehicles
-                                   .where((v) => v.StatusId == 1)
-                                  .map((e) => DropdownMenuItem<int>(
-                                        value: e.vehicleId,
-                                        
-                                        child: Text(e.name ?? ""),
-                                      ))
-                                  .toList(),
-                              onChanged: (v) =>
-                                  setState(() => selectedVehicleId = v),
+                          if (startDateValue == null || endDateValue == null)
+                            _disabledDropdown(
+                              "Vehicle",
+                              Icons.directions_car_outlined,
+                              hint:
+                                  "Enter trip schedule to see available vehicles",
+                            )
+                          else
+                            state.availableVehicles.when(
+                              data: (vehicles) {
+                                if (vehicles.isEmpty) {
+                                  return _emptyField(
+                                    "Vehicle",
+                                    Icons.directions_car_outlined,
+                                    "No vehicle available for selected schedule",
+                                  );
+                                }
+                                // 🔥 Guard: reset if selected value not in new list
+                                final validVehicleId =
+                                    vehicles.any(
+                                      (e) => e.vehicleId == selectedVehicleId,
+                                    )
+                                    ? selectedVehicleId
+                                    : null;
+
+                                return _dropdown<int>(
+                                  label: "Vehicle",
+                                  icon: Icons.directions_car_outlined,
+                                  color: const Color(0xFF06D6A0),
+                                  value: validVehicleId,
+                                  items: vehicles
+                                      .map(
+                                        (e) => DropdownMenuItem<int>(
+                                          value: e.vehicleId,
+                                          child: Text(
+                                            "${e.name ?? ""} - ${e.number ?? "No Vehicle"}",
+                                          ),
+                                        ),
+                                      )
+                                      .toList(),
+                                  onChanged: (v) =>
+                                      setState(() => selectedVehicleId = v),
+                                );
+                              },
+                              loading: () => _loadingField(
+                                "Fetching available vehicles...",
+                              ),
+                              error: (e, _) =>
+                                  _errorField("Failed to load vehicles"),
                             ),
-                            loading: () => _loadingField("Loading vehicles..."),
-                            error: (e, _) => _errorField("Failed to load vehicles"),
-                          ),
 
                           const SizedBox(height: 12),
 
                           // Driver
-                          state.fetchDriverList.when(
-                            data: (drivers) => _dropdown<int>(
-                              label: "Driver",
-                              icon: Icons.drive_eta_outlined,
-                              color: const Color(0xFF06D6A0),
-                              value: selectedDriverId,
-                              items: drivers
-                                  .map((e) => DropdownMenuItem<int>(
-                                        value: e.driverId,
-                                        child: Text(e.name ?? ""),
-                                      ))
-                                  .toList(),
-                              onChanged: (v) =>
-                                  setState(() => selectedDriverId = v),
+                          if (startDateValue == null || endDateValue == null)
+                            _disabledDropdown(
+                              "Driver",
+                              Icons.person_pin_rounded,
+                              hint:
+                                  "Enter trip schedule to see available drivers",
+                            )
+                          else
+                            state.availableDrivers.when(
+                              data: (drivers) {
+                                if (drivers.isEmpty) {
+                                  return _emptyField(
+                                    "Driver",
+                                    Icons.drive_eta_outlined,
+                                    "No driver available for selected schedule",
+                                  );
+                                }
+                                final validDriverId =
+                                    drivers.any(
+                                      (e) => e.driverId == selectedDriverId,
+                                    )
+                                    ? selectedDriverId
+                                    : null;
+
+                                return _dropdown<int>(
+                                  label: "Driver",
+                                  icon: Icons.drive_eta_outlined,
+                                  color: const Color(0xFF06D6A0),
+                                  value: validDriverId,
+                                  items: drivers
+                                      .map(
+                                        (e) => DropdownMenuItem<int>(
+                                          value: e.driverId,
+                                          child: Text(e.name ?? ""),
+                                        ),
+                                      )
+                                      .toList(),
+                                  onChanged: (v) =>
+                                      setState(() => selectedDriverId = v),
+                                );
+                              },
+                              loading: () => _loadingField(
+                                "Fetching available drivers...",
+                              ),
+                              error: (e, _) =>
+                                  _errorField("Failed to load drivers"),
                             ),
-                            loading: () => _loadingField("Loading drivers..."),
-                            error: (e, _) => _errorField("Failed to load drivers"),
-                          ),
 
                           const SizedBox(height: 12),
 
                           // Customer
-                      state.fetchCustomerList.when(
-  data: (customers) {
+                          state.fetchCustomerList.when(
+                            data: (customers) {
+                              // MATCH AFTER API LOAD
+                              WidgetsBinding.instance.addPostFrameCallback((_) {
+                                if (widget.booking != null &&
+                                    selectedCustomerId != null) {
+                                  final exists = customers.any(
+                                    (c) => c.customerId == selectedCustomerId,
+                                  );
 
-    // 🔥 FORCE MATCH AFTER API LOAD
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (widget.booking != null && selectedCustomerId != null) {
-        final exists = customers.any(
-          (c) => c.customerId == selectedCustomerId,
-        );
+                                  if (!exists) {
+                                    setState(() {
+                                      selectedCustomerId = null;
+                                    });
+                                  } else {
+                                    setState(() {});
+                                  }
+                                }
+                              });
 
-        if (!exists) {
-          setState(() {
-            selectedCustomerId = null;
-          });
-        } else {
-          setState(() {}); // 🔥 Force rebuild
-        }
-      }
-    });
-
-    return _dropdown<int>(
-      label: "Customer",
-      icon: Icons.person_outline_rounded,
-      color: const Color(0xFF06D6A0),
-      value: customers.any(
-              (c) => c.customerId == selectedCustomerId)
-          ? selectedCustomerId
-          : null,
-      items: customers
-          .map((e) => DropdownMenuItem<int>(
-                value: e.customerId,
-                child: Text(e.name ?? ""),
-              ))
-          .toList(),
-      onChanged: (v) =>
-          setState(() => selectedCustomerId = v),
-    );
-  },
-  loading: () => _loadingField("Loading customers..."),
-  error: (e, _) => _errorField("Failed to load customers"),
-),
+                              return _dropdown<int>(
+                                label: "Customer",
+                                icon: Icons.person_outline_rounded,
+                                color: const Color(0xFF06D6A0),
+                                value:
+                                    customers.any(
+                                      (c) => c.customerId == selectedCustomerId,
+                                    )
+                                    ? selectedCustomerId
+                                    : null,
+                                items: customers
+                                    .map(
+                                      (e) => DropdownMenuItem<int>(
+                                        value: e.customerId,
+                                        child: Text(e.name ?? ""),
+                                      ),
+                                    )
+                                    .toList(),
+                                onChanged: (v) =>
+                                    setState(() => selectedCustomerId = v),
+                              );
+                            },
+                            loading: () =>
+                                _loadingField("Loading customers..."),
+                            error: (e, _) =>
+                                _errorField("Failed to load customers"),
+                          ),
                         ],
                       ),
                     ],
@@ -721,7 +1065,11 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
       // ── STICKY BOTTOM SAVE BUTTON ───────────────────────────────────────────
       bottomNavigationBar: Container(
         padding: EdgeInsets.fromLTRB(
-            hPad, 12, hPad, 16 + MediaQuery.of(context).padding.bottom),
+          hPad,
+          12,
+          hPad,
+          16 + MediaQuery.of(context).padding.bottom,
+        ),
         decoration: BoxDecoration(
           color: _cardBg,
           boxShadow: [
@@ -740,10 +1088,9 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
             padding: const EdgeInsets.symmetric(vertical: 16),
             decoration: BoxDecoration(
               gradient: _isSaving
-                  ? LinearGradient(colors: [
-                      Colors.grey.shade400,
-                      Colors.grey.shade300,
-                    ])
+                  ? LinearGradient(
+                      colors: [Colors.grey.shade400, Colors.grey.shade300],
+                    )
                   : const LinearGradient(
                       colors: [_primaryDark, _primary],
                       begin: Alignment.topLeft,
@@ -768,7 +1115,9 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
                     width: 18,
                     height: 18,
                     child: CircularProgressIndicator(
-                        strokeWidth: 2, color: Colors.white),
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
                   )
                 else
                   Icon(
@@ -781,8 +1130,8 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
                   _isSaving
                       ? "Saving..."
                       : isEdit
-                          ? "Update Trip"
-                          : "Save Trip",
+                      ? "Update Trip"
+                      : "Save Trip",
                   style: const TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.w700,
@@ -833,11 +1182,15 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
             width: 16,
             height: 16,
             child: CircularProgressIndicator(
-                strokeWidth: 2, color: Colors.grey.shade400),
+              strokeWidth: 2,
+              color: Colors.grey.shade400,
+            ),
           ),
           const SizedBox(width: 12),
-          Text(label,
-              style: TextStyle(color: Colors.grey.shade500, fontSize: 13)),
+          Text(
+            label,
+            style: TextStyle(color: Colors.grey.shade500, fontSize: 13),
+          ),
         ],
       ),
     );
@@ -855,11 +1208,14 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
         children: [
           const Icon(Icons.error_outline, size: 16, color: Color(0xFFE63946)),
           const SizedBox(width: 10),
-          Text(msg,
-              style: const TextStyle(
-                  color: Color(0xFFE63946),
-                  fontSize: 13,
-                  fontWeight: FontWeight.w500)),
+          Text(
+            msg,
+            style: const TextStyle(
+              color: Color(0xFFE63946),
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
         ],
       ),
     );

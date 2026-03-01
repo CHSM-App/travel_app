@@ -56,7 +56,7 @@ class _CustomerListPageState extends ConsumerState<CustomerListPage>
       setState(() => _searchFocused = _searchFocus.hasFocus);
     });
     Future.microtask(() async {
-      // await ref.read(loginViewModelProvider.notifier).loadFromStorage();
+      await ref.read(loginViewModelProvider.notifier).loadFromStorage();
       final agencyId = ref.read(loginViewModelProvider).agencyId ?? '';
       if (agencyId.trim().isNotEmpty) {
         ref.read(customerViewModelProvider.notifier).fetchCustomerslist(agencyId);
@@ -426,6 +426,7 @@ class _CustomerListPageState extends ConsumerState<CustomerListPage>
                                     ref.read(customerViewModelProvider).error ??
                                     'Delete failed',
                               ),
+                              backgroundColor: _C.error,
                               behavior: SnackBarBehavior.floating,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12),

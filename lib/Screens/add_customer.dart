@@ -237,8 +237,10 @@ class _AddCustomerPageState extends ConsumerState<AddCustomerPage>
       if (widget.isEdit) {
         customerId = customer.customerId ?? 0;
         await vm.updateCustomer(customer);
+        await ref.read(tripBookingViewModelProvider.notifier).customerList(agencyId);
       } else {
         customerId = await vm.addcustomer(customer);
+         await ref.read(tripBookingViewModelProvider.notifier).customerList(agencyId);
       }
 
       if (_selectedIdProofFile != null) {

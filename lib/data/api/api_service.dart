@@ -8,6 +8,7 @@ import 'package:travel_agency_app/domain/models/drivers.dart';
 import 'package:travel_agency_app/domain/models/fueltype.dart';
 import 'package:travel_agency_app/domain/models/login_info.dart';
 import 'package:travel_agency_app/domain/models/login_response.dart';
+import 'package:travel_agency_app/domain/models/reports_data.dart';
 import 'package:travel_agency_app/domain/models/services.dart';
 import 'package:travel_agency_app/domain/models/status.dart';
 import 'package:travel_agency_app/domain/models/token_response.dart';
@@ -74,6 +75,14 @@ abstract class ApiService {
   @POST("insert/addService/")
   Future<dynamic> addService(@Body() Services service);
 
+  @POST("insert/cancelTrip/{trip_id}")
+  Future<dynamic> cancelTrip(@Path("trip_id") int trip_id);
+
+   
+
+
+
+
   //Update
 
   @POST("insert/Updatevehicle")
@@ -85,7 +94,7 @@ abstract class ApiService {
   @POST("insert/UpdateCustomer")
   Future<dynamic> updateCustomer(@Body() Customer customer);
 
-  @POST("insert/updatePaymentStatus/")
+  @POST("insert/updatePaymentStatus")
   Future<dynamic> updatePaymentStatus(@Body() BookingInfo tripbooking);
 
   @POST("insert/updateService/{service_id}")
@@ -93,6 +102,8 @@ abstract class ApiService {
   
   @POST("insert/DeleteAdminProfile")
   Future<dynamic> deleteAdminProfile(@Body() Map<String, String> body);
+
+
 
 
   //---------------------UPLOAD PHOTOS AND DOCUMENTS----------------------------------------
@@ -181,6 +192,31 @@ abstract class ApiService {
     @Path("vehicle_id") int vehicleId,
   );
 
+
+  @GET("users/report/{agency_id}/{report_type}")
+  Future<List<ReportData>> getReport(
+    @Path("agency_id") String agencyId,
+    @Path("report_type") String reportType,
+  );
+
+  @GET("users/fetchAvailableVehicles/{agency_id}/{start_datetime}/{end_datetime}/{trip_id}")
+  Future<List<Vehicles>> fetchAvailableVehicles(
+    @Path("agency_id") String agencyId,
+    @Path("start_datetime") DateTime start,
+    @Path('end_datetime') DateTime end,
+    @Path("trip_id") int? tripId
+  );
+
+    @GET("users/fetchAvailableDrivers/{agency_id}/{start_datetime}/{end_datetime}/{trip_id}")
+  Future<List<Drivers>> fetchAvailableDrivers(
+    @Path("agency_id") String agencyId,
+    @Path("start_datetime") DateTime start,
+    @Path('end_datetime') DateTime end,
+    @Path('trip_id') int?tripId
+  );
+
+
+
   //---------------------DELETE API ----------------------------------------
   @DELETE("index/deleteVehicles/{vehicleid}")
   Future<dynamic> deleteVehicle(@Path("vehicleid") int vehicleid);
@@ -193,4 +229,6 @@ Future<dynamic>  deleteDriver(@Path("driverId") int driverId);
 
   @DELETE("index/deleteService/{service_id}")
   Future<dynamic> deleteService(@Path("service_id") int serviceId);
+
+  
 }

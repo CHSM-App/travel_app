@@ -67,6 +67,22 @@ class TripBookingImpl implements Tripbookingrepository {
   Future<dynamic> updateTripBooking(int tripId, TripBooking booking) {
     return apiService.updateTripBooking(tripId, booking);
   }
+
+     @override
+  Future<dynamic> cancelTrip(int trip_id) {
+    return apiService.cancelTrip(trip_id);
+  }
+
+   @override
+  Future<List<Vehicles>> fetchAvailableVehicles(String agencyId, DateTime start, DateTime end, int? tripId) {
+    return apiService.fetchAvailableVehicles(agencyId, start, end, tripId);
+  }
+
+  @override
+  Future<List<Drivers>> fetchAvailableDrivers(String agencyId, DateTime start, DateTime end, int? tripId) {
+    return apiService.fetchAvailableDrivers(agencyId, start, end, tripId);
+  }
+
   
 
 }

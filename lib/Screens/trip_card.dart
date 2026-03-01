@@ -100,7 +100,7 @@ class TripCard extends StatelessWidget {
 
   void _showTripDetail(BuildContext context) {
        print("DEBUG status: ${bookinginfo.status} | type: ${bookinginfo.status.runtimeType}");
-    final bool isEditable = bookinginfo.status==2  ;
+    final bool isEditable = bookinginfo.status==2;
 
     // Use tripType passed from the tab — same logic as active tab, no API status guessing
     final bool isActiveOrUpcoming =
@@ -529,32 +529,44 @@ class TripCard extends StatelessWidget {
 
                               switch (bookinginfo.status) {
                                 case 1:
-                                  pillColor = Colors.greenAccent;
+                                  pillColor = const Color.fromARGB(
+                                    255,
+                                    118,
+                                    166,
+                                    245,
+                                  ); // Blue
                                   pillIcon = Icons.directions_car;
                                   pillLabel = "Active";
                                   break;
+
                                 case 2:
-                                  pillColor = const Color(0xFFFFBE0B);
+                                  pillColor = const Color(
+                                    0xFFFF6B00,
+                                  ); // Deep Orange
                                   pillIcon = Icons.schedule;
                                   pillLabel = "Unpaid";
                                   break;
+
                                 case 3:
-                                  pillColor = Colors.orange;
+                                  pillColor = const Color.fromARGB(255, 211, 183, 252); // Purple
                                   pillIcon = Icons.upcoming_outlined;
                                   pillLabel = "Upcoming";
                                   break;
+
                                 case 4:
-                                  pillColor = Colors.greenAccent;
+                                  pillColor = const Color(0xFF2ECC71); // Green
                                   pillIcon = Icons.check_circle;
                                   pillLabel = "Complete";
                                   break;
+
                                 case 5:
-                                  pillColor = Colors.redAccent;
+                                  pillColor = const Color.fromARGB(255, 231, 95, 107); // Red
                                   pillIcon = Icons.cancel_outlined;
                                   pillLabel = "Cancelled";
                                   break;
+
                                 default:
-                                  pillColor = Colors.grey;
+                                  pillColor = const Color(0xFFADB5BD); // Grey
                                   pillIcon = Icons.info_outline;
                                   pillLabel = "Unknown";
                               }
@@ -594,7 +606,8 @@ class TripCard extends StatelessWidget {
                           const SizedBox(width: 6),
 
                           // ✏️ Edit Button
-                          GestureDetector(
+                          if(bookinginfo.status == 1 || bookinginfo.status == 2 || bookinginfo.status == 3)
+                            GestureDetector(
                             onTap: () {
                               Navigator.pop(ctx);
                               Navigator.push(
@@ -618,6 +631,7 @@ class TripCard extends StatelessWidget {
                               ),
                             ),
                           ),
+                          
 
                           const SizedBox(width: 6),
 
@@ -854,6 +868,99 @@ class TripCard extends StatelessWidget {
                               ],
                             ),
                           ),
+
+                          // ── Cancel Trip Button (Only for Active / Upcoming) ──
+                          if (isActiveOrUpcoming) ...[
+                            const SizedBox(height: 20),
+                            GestureDetector(
+                              onTap: () async {
+                                // Confirmation Dialog
+                                final confirm = await showDialog<bool>(
+                                  context: context,
+                                  builder: (_) => AlertDialog(
+                                    title: const Text("Cancel Trip"),
+                                    content: const Text(
+                                      "Are you sure you want to cancel this trip?",
+                                    ),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () =>
+                                            Navigator.pop(context, false),
+                                        child: const Text("No"),
+                                      ),
+                                      ElevatedButton(
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: Colors.red,
+                                        ),
+                                        onPressed: () =>
+                                            Navigator.pop(context, true),
+                                        child: const Text("Yes, Cancel"),
+                                      ),
+                                    ],
+                                  ),
+                                );
+
+                                if (confirm == true) {
+                                  // final updated = BookingInfo(
+                                  //   tripId: bookinginfo.tripId,
+                                  //   status: 5, // 🔥 Cancelled
+                                  // );
+
+                                  final trip_id = bookinginfo.tripId;
+                                  if (trip_id == null) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text("Invalid Trip ID"),
+                                      ),
+                                    );
+                                    return;
+                                  }
+
+                                  await ref
+                                      .read(TripPageViewModelProvider.notifier)
+                                      .cancelTrip(trip_id);
+
+                                  Navigator.pop(ctx);
+
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text(
+                                        "Trip cancelled successfully!",
+                                      ),
+                                      backgroundColor: Colors.red,
+                                    ),
+                                  );
+                                }
+                              },
+                              child: Container(
+                                width: double.infinity,
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 16,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFE63946),
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                                child: const Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      Icons.cancel_outlined,
+                                      color: Colors.white,
+                                    ),
+                                    SizedBox(width: 8),
+                                    Text(
+                                      "Cancel Trip",
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
 
                           // ── Submit / Done: hidden for active/upcoming unpaid ──
                           if (!isActiveOrUpcoming) ...[

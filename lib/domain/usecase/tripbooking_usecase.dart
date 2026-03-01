@@ -12,9 +12,11 @@ class TripbookingUsecase {
   Future<dynamic> addTripBooking(TripBooking tripBooking) {
     return repository.addTripBooking(tripBooking);
   }
+
   Future<List<Drivers>> driverList(String agencyId) {
     return repository.driverList(agencyId);
   }
+
   Future<List<Vehicles>> vehicleList(String agencyId) {
     return repository.vehicleList(agencyId);
   }
@@ -39,16 +41,27 @@ class TripbookingUsecase {
     return repository.activeTrip(agencyId);
   }
 
-  Future<List<BookingInfo>> cancelledTrip(String agencyId){
+  Future<List<BookingInfo>> cancelledTrip(String agencyId) {
     return repository.cancelledTrip(agencyId);
   }
 
-  Future<dynamic> updatePaymentStatus(BookingInfo tripbooking){
-     return repository.updatePaymentStatus(tripbooking);
+  Future<dynamic> updatePaymentStatus(BookingInfo tripbooking) {
+    return repository.updatePaymentStatus(tripbooking);
   }
 
-  Future<dynamic> updateTripBooking(int tripId,TripBooking booking) {
+  Future<dynamic> updateTripBooking(int tripId, TripBooking booking) {
     return repository.updateTripBooking(tripId, booking);
   }
 
+  Future<dynamic> cancelTrip(int trip_id) {
+    return repository.cancelTrip(trip_id);
+  }
+
+  Future<List<Vehicles>> fetchAvailableVehicles(String agencyId, DateTime start, DateTime end, int? tripId){
+    return repository.fetchAvailableVehicles(agencyId, start, end, tripId);
+  }
+
+  Future<List<Drivers>> fetchAvailableDrivers(String agencyId, DateTime start, DateTime end, int? tripId){
+    return repository.fetchAvailableDrivers(agencyId, start, end, tripId);
+  }
 }

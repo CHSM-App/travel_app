@@ -7,7 +7,6 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:open_file/open_file.dart';
 import 'package:travel_agency_app/core/storage/constant.dart';
 import 'package:travel_agency_app/domain/models/fueltype.dart';
-import 'package:travel_agency_app/domain/models/status.dart';
 import 'package:travel_agency_app/domain/models/vehicles.dart';
 import 'package:travel_agency_app/domain/models/vehicletype.dart';
 import 'package:travel_agency_app/domain/viewModel/addVehicle_viewmodel.dart';

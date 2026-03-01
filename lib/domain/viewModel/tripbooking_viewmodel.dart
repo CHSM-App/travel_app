@@ -14,6 +14,8 @@ class TripBookingState {
   final AsyncValue<List<Drivers>> fetchDriverList;
   final AsyncValue<List<Vehicles>> fetchVehicleList;
   final AsyncValue<List<Customer>> fetchCustomerList;
+  final AsyncValue<List<Vehicles>> availableVehicles;
+final AsyncValue<List<Drivers>> availableDrivers;
   final String? agencyId;
   const TripBookingState({
     this.isLoading = false,
@@ -22,6 +24,8 @@ class TripBookingState {
     this.fetchDriverList = const AsyncValue.loading(),
     this.fetchVehicleList = const AsyncValue.loading(),
     this.fetchCustomerList = const AsyncValue.loading(),
+    this.availableVehicles = const AsyncValue.loading(),
+    this.availableDrivers = const AsyncValue.loading(),
     this.agencyId,
   });
 
@@ -32,6 +36,9 @@ class TripBookingState {
     AsyncValue<List<Drivers>>? fetchDriverList,
     AsyncValue<List<Vehicles>>? fetchVehicleList,
     AsyncValue<List<Customer>>? fetchCustomerList,
+    AsyncValue<List<Vehicles>>? availableVehicles,
+    AsyncValue<List<Drivers>>? availableDrivers,
+
     String? agencyId,
   }) {
     return TripBookingState(
@@ -41,6 +48,8 @@ class TripBookingState {
       fetchDriverList: fetchDriverList ?? this.fetchDriverList,
       fetchVehicleList: fetchVehicleList ?? this.fetchVehicleList,
       fetchCustomerList: fetchCustomerList ?? this.fetchCustomerList,
+      availableVehicles: availableVehicles ?? this.availableVehicles,
+      availableDrivers: availableDrivers ?? this.availableDrivers,
       agencyId: agencyId ?? this.agencyId,
     );
   }
@@ -146,5 +155,39 @@ class TripBookingViewModel extends StateNotifier<TripBookingState> {
       state = state.copyWith(isLoading: false, error: e.toString());
     }
   }
-  
+
+  Future<void> fetchAvailableVehicles(String agencyId, DateTime start, DateTime end, int? tripId) async {
+      state = state.copyWith(availableVehicles: const AsyncValue.loading());
+    try {
+      final result = await usecase.fetchAvailableVehicles(agencyId, start, end, tripId);
+
+      state = state.copyWith(
+        isLoading: false,
+        availableVehicles: AsyncValue.data(result),
+      );
+    } catch (e, st) {
+      state = state.copyWith(
+        isLoading: false,
+        availableVehicles: AsyncValue.error(e, st),
+      );
+    }
+  }
+
+  void fetchAvailableDrivers(String agencyId, DateTime start, DateTime end, int? tripId) async{
+     state = state.copyWith(availableDrivers: const AsyncValue.loading());
+    try {
+      final result = await usecase.fetchAvailableDrivers(agencyId, start, end, tripId);
+
+      state = state.copyWith(
+        isLoading: false,
+        availableDrivers: AsyncValue.data(result),
+      );
+    } catch (e, st) {
+      state = state.copyWith(
+        isLoading: false,
+        availableDrivers: AsyncValue.error(e, st),
+      );
+    }
+  }
+
 }
