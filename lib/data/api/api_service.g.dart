@@ -441,7 +441,7 @@ class _ApiService implements ApiService {
       Options(method: 'POST', headers: _headers, extra: _extra)
           .compose(
             _dio.options,
-            'insert/updatePaymentStatus/',
+            'insert/updatePaymentStatus',
             queryParameters: queryParameters,
             data: _data,
           )

@@ -272,78 +272,6 @@ Future<void> _toggleVehicleStatus() async {
   }
 
 
-  Widget _maintenanceToggleButton() {
-  final bool isMaintenance = _currentStatus == 3;
-
-  final Color primaryColor =
-      isMaintenance ? const Color(0xFF16A34A) : const Color(0xFFEA580C);
-
-  final Color glowColor =
-      isMaintenance ? Colors.greenAccent : Colors.orangeAccent;
-
-  return GestureDetector(
-    onTap: _toggleVehicleStatus,
-    child: AnimatedContainer(
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeOutCubic,
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            primaryColor.withOpacity(0.9),
-            primaryColor.withOpacity(0.7),
-          ],
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: glowColor.withOpacity(0.5),
-            blurRadius: 20,
-            spreadRadius: -4,
-            offset: const Offset(0, 8),
-          ),
-        ],
-        border: Border.all(
-          color: Colors.white.withOpacity(0.25),
-          width: 1.2,
-        ),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          AnimatedSwitcher(
-            duration: const Duration(milliseconds: 300),
-            transitionBuilder: (child, anim) =>
-                ScaleTransition(scale: anim, child: child),
-            child: Icon(
-              isMaintenance
-                  ? Icons.check_circle_rounded
-                  : Icons.build_circle_rounded,
-              key: ValueKey(isMaintenance),
-              color: Colors.white,
-              size: 20,
-            ),
-          ),
-          const SizedBox(width: 10),
-          AnimatedSwitcher(
-            duration: const Duration(milliseconds: 300),
-            child: Text(
-              isMaintenance ? "Mark Available" : "In Maintenance",
-              key: ValueKey(isMaintenance.toString()),
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.w700,
-                letterSpacing: 0.3,
-              ),
-            ),
-          ),
-        ],
-      ),
-    ),
-  );
-}
 
   // ── PREMIUM HEADER ────────────────────────────────────────────────
 Widget _buildHeader() {
@@ -512,16 +440,6 @@ Widget _buildHeader() {
                 ),
 
                 const SizedBox(height: 18),
-
-                /// 🔥 VEHICLE MAINTENANCE TOGGLE BUTTON
-                const SizedBox(height: 18),
-FadeTransition(
-  opacity: _headerFade,
-  child: _maintenanceToggleButton(),
-),
-const SizedBox(height: 20),
-
-                const SizedBox(height: 20),
 
                 /// STATS STRIP (UNCHANGED)
                 FadeTransition(
@@ -1965,7 +1883,7 @@ class _MaintTabState extends ConsumerState<_MaintTab>
         style: TextStyle(fontWeight: FontWeight.w800),
       ),
       content: Text(
-        'Are you sure you want to delete "${service.serviceName}" permanently?',
+        'Are you sure you want to delete ${service.serviceName} service permanently?',
         style: const TextStyle(color: Colors.grey),
       ),
       actions: [

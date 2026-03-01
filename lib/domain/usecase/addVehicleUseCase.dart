@@ -70,4 +70,5 @@ class AddVehicleUseCase {
   Future<dynamic> deleteService(int serviceId) { 
      return addvehiclerepository.deleteService(serviceId);
   }
+
 }

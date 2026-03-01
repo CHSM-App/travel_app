@@ -548,7 +548,7 @@ class TripCard extends StatelessWidget {
                                   break;
 
                                 case 3:
-                                  pillColor = const Color(0xFF8338EC); // Purple
+                                  pillColor = const Color.fromARGB(255, 211, 183, 252); // Purple
                                   pillIcon = Icons.upcoming_outlined;
                                   pillLabel = "Upcoming";
                                   break;
@@ -560,7 +560,7 @@ class TripCard extends StatelessWidget {
                                   break;
 
                                 case 5:
-                                  pillColor = const Color(0xFFE63946); // Red
+                                  pillColor = const Color.fromARGB(255, 231, 95, 107); // Red
                                   pillIcon = Icons.cancel_outlined;
                                   pillLabel = "Cancelled";
                                   break;
