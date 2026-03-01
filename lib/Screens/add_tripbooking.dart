@@ -514,7 +514,10 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
         onChanged: null,
         hint: Text(
           msg,
-          style: const TextStyle(fontSize: 13, color: Color.fromARGB(255, 204, 44, 44)),
+          style: const TextStyle(
+            fontSize: 13,
+            color: Color.fromARGB(255, 204, 44, 44),
+          ),
         ),
         icon: const Icon(
           Icons.keyboard_arrow_down_rounded,
@@ -984,7 +987,6 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
                                         (e) => DropdownMenuItem<int>(
                                           value: e.driverId,
                                           child: Text(e.name ?? ""),
-                                          
                                         ),
                                       )
                                       .toList(),
