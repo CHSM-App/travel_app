@@ -118,13 +118,20 @@ class _MainBottomNavState extends ConsumerState<MainBottomNav>
     final loginState = ref.watch(loginViewModelProvider);
     String userName = "Admin";
     String initials = "A";
+    String? profileImageUrl;
 
-    loginState.adminProfile.whenData((profileList) {
-      if (profileList.isNotEmpty) {
-        userName = profileList.first.name ?? "Admin";
-        if (userName.isNotEmpty) initials = userName[0].toUpperCase();
+    final profileList = loginState.adminProfile.valueOrNull;
+    if (profileList != null && profileList.isNotEmpty) {
+      userName = profileList.first.name ?? "Admin";
+      if (userName.isNotEmpty) initials = userName[0].toUpperCase();
+
+      final rawImageUrl = profileList.first.imageUrl?.trim();
+      if (rawImageUrl != null &&
+          rawImageUrl.isNotEmpty &&
+          rawImageUrl.toLowerCase() != 'null') {
+        profileImageUrl = rawImageUrl;
       }
-    });
+    }
 
     return Scaffold(
       // ✅ KEY: content goes under the floating nav bar
@@ -175,18 +182,37 @@ class _MainBottomNavState extends ConsumerState<MainBottomNav>
                                 color: Colors.white.withOpacity(0.45),
                                 width: 1.5),
                           ),
-                          child: Center(
-                            child: Text(
-                              initials,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w800,
-                                fontSize: 18,
-                              ),
-                            ),
+                          child: profileImageUrl != null
+                              ? ClipRRect(
+                                  borderRadius: BorderRadius.circular(12),
+                                  child: Image.network(
+                                    profileImageUrl,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (_, __, ___) => Center(
+                                      child: Text(
+                                        initials,
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.w800,
+                                          fontSize: 18,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                )
+                              : Center(
+                                  child: Text(
+                                    initials,
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w800,
+                                      fontSize: 18,
+                                    ),
+                                  ),
+                                  ),
+                                ),
                           ),
-                        ),
-                      ),
+                     
                       const SizedBox(width: 12),
                       Expanded(
                         child: Column(
@@ -243,9 +269,6 @@ body: Stack(
         child: pages[selectedIndex],
       ),
     ),
-
-  if (selectedIndex == 2 || selectedIndex == 3)
- // In the body Stack, replace the existing FAB Positioned block:
 
 if (selectedIndex == 2 || selectedIndex == 3)
   Positioned(

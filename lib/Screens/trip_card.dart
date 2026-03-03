@@ -38,7 +38,7 @@ class TripCard extends StatelessWidget {
   String _formatTime(DateTime? date) {
     if (date == null) return '--';
     final hour = date.hour % 12 == 0 ? 12 : date.hour % 12;
-    final minute = date.minute.toString().padLeft(2, '0');
+    final minute = date.minute.toString().padLeft(2,'0');
     final period = date.hour >= 12 ? 'PM' : 'AM';
     return "$hour:$minute $period";
   }
@@ -116,10 +116,14 @@ class TripCard extends StatelessWidget {
     final driverController = TextEditingController(
       text: bookinginfo.driverCharges?.toString() ?? "",
     );
-    final receivedController = TextEditingController(
-      text: bookinginfo.amountReceived?.toString() ?? "",
-    );
+   final approved = bookinginfo.amountApprove ?? 0;
+final received = bookinginfo.amountReceived ?? 0;
 
+final receivedController = TextEditingController(
+  text: received > 0
+      ? received.toString()
+      : approved.toString(),
+);
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -142,6 +146,8 @@ class TripCard extends StatelessWidget {
         final labelWidth = isSmall ? 60.0 : 68.0;
         final sectionGap = isSmall ? 10.0 : 14.0;
         final fieldVertPad = isSmall ? 11.0 : 13.0;
+
+
 
         Widget infoBlock({
           required String label,

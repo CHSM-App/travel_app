@@ -261,6 +261,65 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
     ));
   }
 
+  void _showImagePreview() {
+    final displayImageUrl = _displayImageUrl();
+    if (_profileImage == null && displayImageUrl == null) {
+      _snack('No profile image to preview', error: true);
+      return;
+    }
+
+    showDialog(
+      context: context,
+      builder: (_) {
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          insetPadding: const EdgeInsets.all(16),
+          child: Stack(
+            children: [
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.9),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                padding: const EdgeInsets.all(12),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(14),
+                  child: InteractiveViewer(
+                    minScale: 1,
+                    maxScale: 4,
+                    child: _profileImage != null
+                        ? Image.file(
+                            _profileImage!,
+                            fit: BoxFit.contain,
+                            errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                          )
+                        : Image.network(
+                            displayImageUrl!,
+                            fit: BoxFit.contain,
+                            errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                          ),
+                  ),
+                ),
+              ),
+              Positioned(
+                top: 8,
+                right: 8,
+                child: Material(
+                  color: Colors.black54,
+                  shape: const CircleBorder(),
+                  child: IconButton(
+                    icon: const Icon(Icons.close_rounded, color: Colors.white),
+                    onPressed: () => Navigator.of(context).pop(),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final loginState = ref.watch(loginViewModelProvider);
@@ -445,38 +504,41 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
                   // Avatar
                   Stack(
                     children: [
-                      Container(
-                        width: 80,
-                        height: 80,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          border: Border.all(color: Colors.white, width: 3),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.2),
-                              blurRadius: 16,
-                              offset: const Offset(0, 6),
+                      GestureDetector(
+                        onTap: _showImagePreview,
+                        child: Container(
+                          width: 80,
+                          height: 80,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.white, width: 3),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.2),
+                                blurRadius: 16,
+                                offset: const Offset(0, 6),
+                              ),
+                            ],
+                          ),
+                          child: ClipOval(
+                            child: SizedBox.expand(
+                              child: _profileImage != null
+                                  ? Image.file(
+                                      _profileImage!,
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (_, __, ___) =>
+                                          avatarFallback(),
+                                    )
+                                  : hasValidNetworkImage
+                                  ? Image.network(
+                                      displayImageUrl,
+                                      key: ValueKey(displayImageUrl),
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (_, __, ___) =>
+                                          avatarFallback(),
+                                    )
+                                  : avatarFallback(),
                             ),
-                          ],
-                        ),
-                        child: ClipOval(
-                          child: SizedBox.expand(
-                            child: _profileImage != null
-                                ? Image.file(
-                                    _profileImage!,
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (_, __, ___) =>
-                                        avatarFallback(),
-                                  )
-                                : hasValidNetworkImage
-                                ? Image.network(
-                                    displayImageUrl,
-                                    key: ValueKey(displayImageUrl),
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (_, __, ___) =>
-                                        avatarFallback(),
-                                  )
-                                : avatarFallback(),
                           ),
                         ),
                       ),
