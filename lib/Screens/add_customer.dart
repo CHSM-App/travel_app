@@ -183,18 +183,38 @@ class _AddCustomerPageState extends ConsumerState<AddCustomerPage>
             onPressed: state.isLoading ? null : _submit,
             style: ElevatedButton.styleFrom(
               backgroundColor: _primary,
+               foregroundColor: Colors.white, 
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(16),
               ),
             ),
-            child: state.isLoading
-                ? const SizedBox(
-                    width: 22,
-                    height: 22,
-                    child: CircularProgressIndicator(
-                        strokeWidth: 2.5, color: Colors.white),
-                  )
-                : Text(widget.isEdit ? 'Update Customer' : 'Save Customer'),
+child: state.isLoading
+    ? const SizedBox(
+        width: 22,
+        height: 22,
+        child: CircularProgressIndicator(
+          strokeWidth: 2.5,
+          color: Colors.white,
+        ),
+      )
+    : Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            widget.isEdit ? Icons.edit : Icons.person_add,
+            color: Colors.white,
+          ),
+          const SizedBox(width: 8),
+          Text(
+            widget.isEdit ? 'Update Customer' : 'Add Customer',
+            style: const TextStyle(
+              fontWeight: FontWeight.w700,
+              fontSize: 16,
+              color: Colors.white,
+            ),
+          ),
+        ],
+      ),
           ),
         ),
       ),

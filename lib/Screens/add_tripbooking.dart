@@ -192,28 +192,6 @@ Future<void> _goAddCustomer() async {
     n.customerList(aid);
   }
 }
-  // // ── Navigate to Add pages and refresh on return ────────────────────────────
-  // Future<void> _goAddVehicle() async {
-  //   await Navigator.pushNamed(context, '/add-vehicle');
-  //   // Refresh vehicle list after returning
-  //   if (mounted && startDt != null && endDt != null) _fetch();
-  // }
-
-  // Future<void> _goAddDriver() async {
-  //   await Navigator.pushNamed(context, '/add-driver');
-  //   // Refresh driver list after returning
-  //   if (mounted && startDt != null && endDt != null) _fetch();
-  // }
-
-  // Future<void> _goAddCustomer() async {
-  //   await Navigator.pushNamed(context, '/add-customer');
-  //   // Refresh customer list after returning
-  //   if (mounted) {
-  //     final n   = ref.read(tripBookingViewModelProvider.notifier);
-  //     final aid = ref.read(loginViewModelProvider).agencyId ?? '';
-  //     n.customerList(aid);
-  //   }
-  // }
 
   // ── Save ───────────────────────────────────────────────────────────────────
   Future<void> _save() async {
@@ -335,7 +313,7 @@ Future<void> _goAddCustomer() async {
                     icon: Icons.groups_2_rounded, label: "Assignments",
                     iconColor: _C.green, iconBg: _C.greenSoft,
                     badge: "03",
-                    child: Column(children: [
+                    child: Column(children:[
 
                       // ── Vehicle ──────────────────────────────────────────
                       _assignLabel("Vehicle"),
@@ -347,6 +325,7 @@ Future<void> _goAddCustomer() async {
                         data: (list) {
                           // ── Edit mode: auto-set label from loaded list ──
                           if (selVehicle != null && selVehicleLabel == null) {
+                           
                             final match = list.where((e) => e.vehicleId == selVehicle);
                             if (match.isNotEmpty) {
                               WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -354,6 +333,7 @@ Future<void> _goAddCustomer() async {
                               });
                             }
                           }
+
                           if (list.isEmpty) return _emptyWithAddTile(
                             message: "No vehicles available for this schedule",
                             icon: Icons.directions_car_rounded,
@@ -362,6 +342,7 @@ Future<void> _goAddCustomer() async {
                             color: _C.accent,
                             bg: _C.accentSoft,
                           );
+                          
                           return _customDropTile<int>(
                             selected: selVehicle,
                             selectedLabel: selVehicleLabel,
@@ -493,6 +474,7 @@ Future<void> _goAddCustomer() async {
                         },
                         loading: () => _loadingTile("Loading customers..."),
                         error: (_, __) => _errorTile("Failed to load customers"),
+                      
                       ),
 
                     ]),
@@ -540,19 +522,19 @@ Future<void> _goAddCustomer() async {
               Text(isEdit ? "Update trip details" : "Fill in all trip details",
                   style: const TextStyle(fontSize: 12, color: _C.text2)),
             ])),
-            Container(
-              width: 40, height: 40,
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFF6378FF), _C.accent],
-                  begin: Alignment.topLeft, end: Alignment.bottomRight),
-                borderRadius: BorderRadius.circular(11),
-                boxShadow: [BoxShadow(color: _C.accent.withOpacity(0.3),
-                    blurRadius: 8, offset: const Offset(0, 3))],
-              ),
-              child: Icon(isEdit ? Icons.edit_road_rounded : Icons.add_road_rounded,
-                  color: Colors.white, size: 18),
-            ),
+            // Container(
+            //   width: 40, height: 40,
+            //   decoration: BoxDecoration(
+            //     gradient: const LinearGradient(
+            //       colors: [Color(0xFF6378FF), _C.accent],
+            //       begin: Alignment.topLeft, end: Alignment.bottomRight),
+            //     borderRadius: BorderRadius.circular(11),
+            //     boxShadow: [BoxShadow(color: _C.accent.withOpacity(0.3),
+            //         blurRadius: 8, offset: const Offset(0, 3))],
+            //   ),
+            //   child: Icon(isEdit ? Icons.edit_road_rounded : Icons.add_road_rounded,
+            //       color: Colors.white, size: 18),
+            // ),
           ]),
         ),
         const Divider(height: 1, color: _C.divider),
@@ -1004,14 +986,14 @@ Future<void> _goAddCustomer() async {
             blurRadius: 16, offset: const Offset(0, -6))],
       ),
       child: Row(children: [
-        GestureDetector(
-          onTap: () => Navigator.pop(context),
-          child: Container(width: 48, height: 48,
-            decoration: BoxDecoration(color: _C.surfaceLight,
-                borderRadius: BorderRadius.circular(13),
-                border: Border.all(color: _C.divider)),
-            child: const Icon(Icons.close_rounded, color: _C.text2, size: 20)),
-        ),
+        // GestureDetector(
+        //   onTap: () => Navigator.pop(context),
+        //   child: Container(width: 48, height: 48,
+        //     decoration: BoxDecoration(color: _C.surfaceLight,
+        //         borderRadius: BorderRadius.circular(13),
+        //         border: Border.all(color: _C.divider)),
+        //     child: const Icon(Icons.close_rounded, color: _C.text2, size: 20)),
+        // ),
         const SizedBox(width: 12),
         Expanded(
           child: GestureDetector(

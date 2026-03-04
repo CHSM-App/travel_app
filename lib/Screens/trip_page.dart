@@ -375,6 +375,9 @@ class _TripPageState extends ConsumerState<TripPage> {
               bookinginfo: filteredTrips[i],
               ref: ref,
               status: filteredTrips[i].status ?? 0, // ← pass the current tab type
+              onTripUpdated: () async {
+                _loadListForFilter(type);
+              },
             ),
           ),
         );

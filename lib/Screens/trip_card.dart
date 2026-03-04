@@ -9,12 +9,14 @@ class TripCard extends StatelessWidget {
   final BookingInfo bookinginfo;
   final WidgetRef ref;
   final int status; // 'active', 'upcoming', 'Paid', 'unpaid', 'cancelled'
+  final Future<void> Function()? onTripUpdated;
 
   const TripCard({
     super.key,
     required this.bookinginfo,
     required this.ref,
     required this.status,
+    this.onTripUpdated,
   });
 
   // ── Palette (matches CustomerHist light theme) ─────────────────────
@@ -101,6 +103,7 @@ class TripCard extends StatelessWidget {
   void _showTripDetail(BuildContext context) {
        print("DEBUG status: ${bookinginfo.status} | type: ${bookinginfo.status.runtimeType}");
     final bool isEditable = bookinginfo.status==2;
+    final bool isCancelled = bookinginfo.status == 5;
 
     // Use tripType passed from the tab — same logic as active tab, no API status guessing
     final bool isActiveOrUpcoming =
@@ -418,7 +421,6 @@ final receivedController = TextEditingController(
               ],
             );
           }
-
           return Column(
             children: [
               amountField(tollController, "Toll Charges", Icons.toll),
@@ -446,7 +448,6 @@ final receivedController = TextEditingController(
         }
 
         final initialSize = screenHeight < 700 ? 0.97 : 0.92;
-
         return Center(
           child: ConstrainedBox(
             constraints: BoxConstraints(maxWidth: sheetMaxWidth),
@@ -610,7 +611,6 @@ final receivedController = TextEditingController(
                             },
                           ),
                           const SizedBox(width: 6),
-
                           // ✏️ Edit Button
                           if(bookinginfo.status == 1 || bookinginfo.status == 2 || bookinginfo.status == 3)
                             GestureDetector(
@@ -663,15 +663,21 @@ final receivedController = TextEditingController(
                     ),
 
                     // ── SCROLLABLE BODY ────────────────────────────────────────
-                    Expanded(
-                      child: ListView(
-                        controller: scrollCtrl,
-                        padding: EdgeInsets.fromLTRB(
-                          hPad,
-                          14,
-                          hPad,
-                          32 + MediaQuery.of(ctx).padding.bottom,
-                        ),
+                   Expanded(
+  child: Padding(
+    padding: EdgeInsets.only(
+      bottom: MediaQuery.of(ctx).viewInsets.bottom, // ✅ KEYBOARD SPACE
+    ),
+    child: ListView(
+      controller: scrollCtrl,
+      keyboardDismissBehavior:
+          ScrollViewKeyboardDismissBehavior.onDrag,
+      padding: EdgeInsets.fromLTRB(
+        hPad,
+        14,
+        hPad,
+        32 + MediaQuery.of(ctx).padding.bottom,
+      ),
                         children: [
                           // ── Trip Info ──────────────────────────────────────
                           infoBlock(
@@ -717,12 +723,9 @@ final receivedController = TextEditingController(
                           ),
 
                           SizedBox(height: sectionGap),
-
                           // ── Customer + Driver ──────────────────────────────
                           customerDriverRow(),
-
                           SizedBox(height: sectionGap),
-
                           // ── Vehicle Info ───────────────────────────────────
                           infoBlock(
                             label: "VEHICLE",
@@ -760,7 +763,6 @@ final receivedController = TextEditingController(
                           ),
 
                           SizedBox(height: sectionGap),
-
                           // ── Payment & Charges ──────────────────────────────
                           Container(
                             decoration: BoxDecoration(
@@ -794,6 +796,7 @@ final receivedController = TextEditingController(
                                     children: [
                                       const Icon(
                                         Icons.account_balance_wallet_outlined,
+                                        
                                         size: 14,
                                         color: Color(0xFFE63946),
                                       ),
@@ -862,9 +865,8 @@ final receivedController = TextEditingController(
                                           ],
                                         ),
                                       ),
-
                                       // ── Input fields: hidden for active/upcoming unpaid ──
-                                      if (!isActiveOrUpcoming) ...[
+                                      if (!isActiveOrUpcoming && !isCancelled) ...[
                                         SizedBox(height: isSmall ? 10 : 12),
                                         paymentFields(),
                                       ],
@@ -925,9 +927,10 @@ final receivedController = TextEditingController(
                                   await ref
                                       .read(TripPageViewModelProvider.notifier)
                                       .cancelTrip(trip_id);
-
+                                  if (onTripUpdated != null) {
+                                    await onTripUpdated!();
+                                  }
                                   Navigator.pop(ctx);
-
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     const SnackBar(
                                       content: Text(
@@ -969,7 +972,7 @@ final receivedController = TextEditingController(
                           ],
 
                           // ── Submit / Done: hidden for active/upcoming unpaid ──
-                          if (!isActiveOrUpcoming) ...[
+                          if (!isActiveOrUpcoming && !isCancelled) ...[
                             const SizedBox(height: 24),
                             if (isEditable)
                               GestureDetector(
@@ -998,8 +1001,10 @@ final receivedController = TextEditingController(
                                   await ref
                                       .read(TripPageViewModelProvider.notifier)
                                       .updatePaymentStatus(updated);
+                                  if (onTripUpdated != null) {
+                                    await onTripUpdated!();
+                                  }
                                   Navigator.pop(ctx);
-
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(
                                       content: Text(
@@ -1094,6 +1099,7 @@ final receivedController = TextEditingController(
                           ],
                         ],
                       ),
+  ),
                     ),
                   ],
                 ),
