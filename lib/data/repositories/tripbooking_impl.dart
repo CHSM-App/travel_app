@@ -83,6 +83,5 @@ class TripBookingImpl implements Tripbookingrepository {
     return apiService.fetchAvailableDrivers(agencyId, start, end, tripId);
   }
 
-  
 
 }

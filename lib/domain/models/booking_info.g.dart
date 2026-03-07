@@ -43,6 +43,7 @@ BookingInfo _$BookingInfoFromJson(Map<String, dynamic> json) => BookingInfo(
   mileage: json['mileage'] as String?,
   fuelType: json['FuelType'] as String?,
   capacity: (json['capacity'] as num?)?.toInt(),
+  pendingAmount: (json['pending_amount'] as num?)?.toDouble(),
 );
 
 Map<String, dynamic> _$BookingInfoToJson(BookingInfo instance) =>
@@ -77,4 +78,5 @@ Map<String, dynamic> _$BookingInfoToJson(BookingInfo instance) =>
       'FuelType': instance.fuelType,
       'capacity': instance.capacity,
       'payment_status': instance.payment_status,
+      'pending_amount': instance.pendingAmount,
     };

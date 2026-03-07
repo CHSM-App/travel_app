@@ -44,53 +44,54 @@ class TripCard extends StatelessWidget {
     final period = date.hour >= 12 ? 'PM' : 'AM';
     return "$hour:$minute $period";
   }
+String get paymentStatus {
+  final approved = bookinginfo.amountApprove ?? 0;
+  final received = bookinginfo.amountReceived ?? 0;
 
-  String get paymentStatus {
-    final approved = bookinginfo.amountApprove ?? 0;
-    final received = bookinginfo.amountReceived ?? 0;
-    if (received == 0) return "Unpaid";
-    if (received < approved) return "Unpaid";
+  if (received == 0) {
+    return "Unpaid";
+  } else if (received < approved) {
+    return "Partially Paid";
+  } else {
     return "Paid";
   }
-
-  Color _paymentColor(String status) {
-    switch (status.toLowerCase()) {
-      case 'paid':
-        return _success;
-      case 'unpaid':
-        return _danger;
-      case 'partial':
-        return _warning;
-      default:
-        return _textSec;
-    }
+}
+Color _paymentColor(String status) {
+  switch (status.toLowerCase()) {
+    case 'paid':
+      return _success;
+    case 'unpaid':
+      return _danger;
+    case 'partially paid':
+      return _warning;
+    default:
+      return _textSec;
   }
-
-  Color _paymentBg(String status) {
-    switch (status.toLowerCase()) {
-      case 'paid':
-        return _successSoft;
-      case 'unpaid':
-        return _dangerSoft;
-      // case 'partial':
-      //   return _warningSoft;
-      default:
-        return _accentSoft;
-    }
+}
+Color _paymentBg(String status) {
+  switch (status.toLowerCase()) {
+    case 'paid':
+      return _successSoft;
+    case 'unpaid':
+      return _dangerSoft;
+    case 'partially paid':
+      return _warningSoft;
+    default:
+      return _accentSoft;
   }
-
-  IconData _paymentIcon(String status) {
-    switch (status.toLowerCase()) {
-      case 'paid':
-        return Icons.check_circle_rounded;
-      case 'unpaid':
-        return Icons.cancel_rounded;
-      // case 'partial':
-      //   return Icons.timelapse_rounded;
-      default:
-        return Icons.info_rounded;
-    }
+}
+ IconData _paymentIcon(String status) {
+  switch (status.toLowerCase()) {
+    case 'paid':
+      return Icons.check_circle_rounded;
+    case 'unpaid':
+      return Icons.cancel_rounded;
+    case 'partially paid':
+      return Icons.timelapse_rounded;
+    default:
+      return Icons.info_rounded;
   }
+}
 
   String get tripPaymentStatus {
     final approved = bookinginfo.amountApprove ?? 0;
@@ -119,14 +120,17 @@ class TripCard extends StatelessWidget {
     final driverController = TextEditingController(
       text: bookinginfo.driverCharges?.toString() ?? "",
     );
-   final approved = bookinginfo.amountApprove ?? 0;
+final approved = bookinginfo.amountApprove ?? 0;
 final received = bookinginfo.amountReceived ?? 0;
-
+final pending = approved - received;
 final receivedController = TextEditingController(
-  text: received > 0
-      ? received.toString()
-      : approved.toString(),
+  text: paymentStatus == "Partially Paid"
+      ? pending.toString()
+      : received == 0
+          ? approved.toString()
+          : received.toString(),
 );
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -260,7 +264,7 @@ final receivedController = TextEditingController(
               : const Color(0xFF6B7280);
           return TextField(
             controller: ctrl,
-            readOnly: !isEditable,
+    readOnly: !(isEditable || paymentStatus == "Partially Paid"),
             keyboardType: TextInputType.number,
             inputFormatters: [FilteringTextInputFormatter.digitsOnly],
             style: TextStyle(
@@ -865,6 +869,51 @@ final receivedController = TextEditingController(
                                           ],
                                         ),
                                       ),
+                                      if (paymentStatus == "Partially Paid") ...[
+  const SizedBox(height: 12),
+
+  Row(
+    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    children: [
+
+      Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            "Paid Amount",
+            style: TextStyle(fontWeight: FontWeight.w600),
+          ),
+          Text(
+            "₹$received",
+            style: const TextStyle(
+              fontWeight: FontWeight.w700,
+              color: Colors.green,
+            ),
+          ),
+        ],
+      ),
+
+      Column(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          const Text(
+            "Pending Amount",
+            style: TextStyle(fontWeight: FontWeight.w600),
+          ),
+          Text(
+            "₹$pending",
+            style: const TextStyle(
+              fontWeight: FontWeight.w700,
+              color: Colors.red,
+            ),
+          ),
+        ],
+      ),
+
+    ],
+  ),
+],
+  const SizedBox(height: 12),
                                       // ── Input fields: hidden for active/upcoming unpaid ──
                                       if (!isActiveOrUpcoming && !isCancelled) ...[
                                         SizedBox(height: isSmall ? 10 : 12),
@@ -974,9 +1023,10 @@ final receivedController = TextEditingController(
                           // ── Submit / Done: hidden for active/upcoming unpaid ──
                           if (!isActiveOrUpcoming && !isCancelled) ...[
                             const SizedBox(height: 24),
-                            if (isEditable)
+                       if (isEditable || paymentStatus == "Partially Paid")
                               GestureDetector(
                                 onTap: () async {
+                                  
                                   final updated = BookingInfo(
                                     tripId: bookinginfo.tripId,
                                     tollCharges:

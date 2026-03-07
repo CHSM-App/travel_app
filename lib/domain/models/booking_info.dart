@@ -93,6 +93,9 @@ class BookingInfo {
  @JsonKey(name: 'payment_status')
   final String? payment_status;
 
+  @JsonKey(name: 'pending_amount')
+  final double? pendingAmount;
+
 
   BookingInfo({
     this.tripId,
@@ -125,6 +128,7 @@ class BookingInfo {
     this.mileage,
     this.fuelType,
     this.capacity,
+    this.pendingAmount
   });
 
 

@@ -79,10 +79,6 @@ abstract class ApiService {
   Future<dynamic> cancelTrip(@Path("trip_id") int trip_id);
 
    
-
-
-
-
   //Update
 
   @POST("insert/Updatevehicle")
@@ -102,8 +98,6 @@ abstract class ApiService {
   
   @POST("insert/DeleteAdminProfile")
   Future<dynamic> deleteAdminProfile(@Body() Map<String, String> body);
-
-
 
 
   //---------------------UPLOAD PHOTOS AND DOCUMENTS----------------------------------------
@@ -222,7 +216,7 @@ abstract class ApiService {
   Future<dynamic> deleteVehicle(@Path("vehicleid") int vehicleid);
 
   @DELETE("index/deleteDrivers/{driverId}")
-Future<dynamic>  deleteDriver(@Path("driverId") int driverId);
+  Future<dynamic>  deleteDriver(@Path("driverId") int driverId);
 
   @DELETE("index/deleteCustomers/{customer_id}")
   Future<dynamic> deleteCustomer(@Path("customer_id") int customerId);

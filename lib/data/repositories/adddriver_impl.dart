@@ -1,12 +1,12 @@
 import 'dart:io';
 
- import 'package:travel_agency_app/data/api/api_service.dart';
+import 'package:travel_agency_app/data/api/api_service.dart';
 import 'package:travel_agency_app/domain/models/booking_info.dart';
 import 'package:travel_agency_app/domain/models/drivers.dart';
 import 'package:travel_agency_app/domain/repository/adddriverRepository.dart';
 
 class AddDriverImpl implements Adddriverrepository {
- final ApiService apiService;
+  final ApiService apiService;
 
   AddDriverImpl(this.apiService);
 
@@ -15,7 +15,7 @@ class AddDriverImpl implements Adddriverrepository {
     return apiService.AddDriver(driver);
   }
 
-    @override
+  @override
   Future<dynamic> updateDriver(Drivers driver) {
     return apiService.updateDriver(driver);
   }
@@ -29,25 +29,22 @@ class AddDriverImpl implements Adddriverrepository {
     return apiService.uploadDriverDocument(licenceDocument, driverId, agencyId);
   }
 
-    @override
+  @override
   Future<List<BookingInfo>> fetchDriverHistory(int driverId) {
     return apiService.fetchDriverHistory(driverId);
   }
 
-   @override
- Future<Map<String, dynamic>> deleteDriver(int driverId) async {
+  @override
+  Future<Map<String, dynamic>> deleteDriver(int driverId) async {
     final response = await apiService.deleteDriver(driverId);
     if (response is Map<String, dynamic>) {
       return response;
     }
     if (response is Map) {
-      return response.map(
-        (key, value) => MapEntry(key.toString(), value),
-      );
+      return response.map((key, value) => MapEntry(key.toString(), value));
     }
-    throw Exception('Invalid delete driver response type: ${response.runtimeType}');
+    throw Exception(
+      'Invalid delete driver response type: ${response.runtimeType}',
+    );
   }
-
-
-
 }

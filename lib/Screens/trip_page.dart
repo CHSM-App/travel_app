@@ -341,23 +341,34 @@ class _TripPageState extends ConsumerState<TripPage> {
       },
       data: (trips) {
         // Filter trips based on search query
-        final filteredTrips = trips.where((trip) {
-          if (_searchQuery.isEmpty) return true;
+ final filteredTrips = trips.where((trip) {
 
-          final customerName = trip.customer_name?.toLowerCase() ?? '';
-          final vehicleNumber = trip.vehicle_info?.toLowerCase() ?? '';
-          final driverName = trip.driver_name?.toLowerCase() ?? '';
-          final startLocation = trip.pickupLocation?.toLowerCase() ?? '';
-          final endLocation = trip.dropLocation?.toLowerCase() ?? '';
-          final paymentStatus = trip.payment_status?.toLowerCase() ?? '';
+  // When UNPAID tab selected → show Unpaid + Partially Paid
+  if (type == 'unpaid') {
+    final status = trip.payment_status?.toLowerCase() ?? '';
 
-          return customerName.contains(_searchQuery) ||
-              vehicleNumber.contains(_searchQuery) ||
-              driverName.contains(_searchQuery) ||
-              startLocation.contains(_searchQuery) ||
-              endLocation.contains(_searchQuery) ||
-              paymentStatus.contains(_searchQuery);
-        }).toList();
+    if (status != 'unpaid' && status != 'partially paid') {
+      return false;
+    }
+  }
+
+  if (_searchQuery.isEmpty) return true;
+
+  final customerName = trip.customer_name?.toLowerCase() ?? '';
+  final vehicleNumber = trip.vehicle_info?.toLowerCase() ?? '';
+  final driverName = trip.driver_name?.toLowerCase() ?? '';
+  final startLocation = trip.pickupLocation?.toLowerCase() ?? '';
+  final endLocation = trip.dropLocation?.toLowerCase() ?? '';
+  final paymentStatus = trip.payment_status?.toLowerCase() ?? '';
+
+  return customerName.contains(_searchQuery) ||
+      vehicleNumber.contains(_searchQuery) ||
+      driverName.contains(_searchQuery) ||
+      startLocation.contains(_searchQuery) ||
+      endLocation.contains(_searchQuery) ||
+      paymentStatus.contains(_searchQuery);
+
+}).toList();
 
         if (filteredTrips.isEmpty) {
           return _buildEmptyState(type);
