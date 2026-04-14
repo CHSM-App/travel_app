@@ -75,6 +75,16 @@ class _VehiclePageState extends ConsumerState<VehiclePage>
     super.dispose();
   }
 
+
+  Future<void> _refreshData() async {
+  final agencyId = ref.read(loginViewModelProvider).agencyId ?? '';
+
+  await Future.wait([
+    ref.read(tripBookingViewModelProvider.notifier).vehicleList(agencyId),
+    ref.read(tripBookingViewModelProvider.notifier).driverList(agencyId),
+  ]);
+}
+
   String _initials(String? name) {
     if (name == null || name.trim().isEmpty) return '?';
     final p = name.trim().split(' ');
@@ -1198,16 +1208,17 @@ class _VehiclePageState extends ConsumerState<VehiclePage>
                         children: [
                           // Stats strip uses filtered for accurate counts
                           _statsStrip(filtered, true),
-                          Expanded(
-                            child: ListView.builder(
-                              // ✅ FIX 1: Consistent horizontal padding (no margin in card)
-                              padding: const EdgeInsets.fromLTRB(16, 10, 16, 100),
-                              // ✅ FIX 2: Use `filtered` not raw `vehicles`
-                              itemCount: filtered.length,
-                              itemBuilder: (_, i) =>
-                                  _vehicleCard(filtered[i], i),
-                            ),
-                          ),
+                   Expanded(
+  child: RefreshIndicator(
+    onRefresh: _refreshData,
+    child: ListView.builder(
+      physics: const AlwaysScrollableScrollPhysics(), // 🔥 important
+      padding: const EdgeInsets.fromLTRB(16, 10, 16, 100),
+      itemCount: filtered.length,
+      itemBuilder: (_, i) => _vehicleCard(filtered[i], i),
+    ),
+  ),
+),
                         ],
                       );
                     },
@@ -1239,14 +1250,17 @@ class _VehiclePageState extends ConsumerState<VehiclePage>
                       return Column(
                         children: [
                           _statsStrip(filtered, false),
-                          Expanded(
-                            child: ListView.builder(
-                              padding:
-                                  const EdgeInsets.only(top: 6, bottom: 100),
-                              itemCount: filtered.length,
-                              itemBuilder: (_, i) => _driverCard(filtered[i], i),
-                            ),
-                          ),
+                     Expanded(
+  child: RefreshIndicator(
+    onRefresh: _refreshData,
+    child: ListView.builder(
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: const EdgeInsets.only(top: 6, bottom: 100),
+      itemCount: filtered.length,
+      itemBuilder: (_, i) => _driverCard(filtered[i], i),
+    ),
+  ),
+),
                         ],
                       );
                     },
