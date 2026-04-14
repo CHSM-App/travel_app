@@ -13,18 +13,23 @@ class DeletedRecordsPage extends ConsumerStatefulWidget {
 
 class _DeletedRecordsPageState extends ConsumerState<DeletedRecordsPage>
     with SingleTickerProviderStateMixin {
-  static const _bg = Color(0xFFF2F4F8);
-  static const _surface = Colors.white;
-  static const _surfaceLight = Color(0xFFF0F3FA);
-  static const _accent = Color(0xFF3D5AFE);
-  static const _text1 = Color(0xFF1A1D2E);
-  static const _text2 = Color(0xFF7B82A0);
-  static const _divider = Color(0xFFE4E8F0);
-  static const _red = Color(0xFFE53935);
-  static const _redSoft = Color(0xFFFFEBEE);
+  // ─── Design Tokens ────────────────────────────────────────────────────────
+  static const _bg          = Color(0xFFF4F6FB);
+  static const _surface     = Colors.white;
+  static const _surfaceAlt  = Color(0xFFF0F3FA);
+  static const _accent      = Color(0xFF3D5AFE);
+  static const _accentLight = Color(0xFFEEF1FF);
+  static const _accentGrad1 = Color(0xFF6378FF);
+  static const _text1       = Color(0xFF1A1D2E);
+  static const _text2       = Color(0xFF7B82A0);
+  static const _divider     = Color(0xFFE8EBF4);
+  static const _red         = Color(0xFFE53935);
+  static const _redSoft     = Color(0xFFFFEBEE);
+  static const _cardRadius  = 16.0;
+  static const _chipRadius  = 8.0;
 
   late final TabController _tabController;
-  final _searchCtrl = TextEditingController();
+  final _searchCtrl  = TextEditingController();
   final _searchFocus = FocusNode();
   bool _searchVisible = false;
 
@@ -34,10 +39,9 @@ class _DeletedRecordsPageState extends ConsumerState<DeletedRecordsPage>
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
+    _tabController.addListener(() => setState(() {}));
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        _loadDeletedItems();
-      }
+      if (mounted) _loadDeletedItems();
     });
   }
 
@@ -58,6 +62,7 @@ class _DeletedRecordsPageState extends ConsumerState<DeletedRecordsPage>
     super.dispose();
   }
 
+  // ─── Helpers ──────────────────────────────────────────────────────────────
   String _initials(String? name) {
     if (name == null || name.trim().isEmpty) return '?';
     final parts = name.trim().split(RegExp(r'\s+'));
@@ -66,126 +71,190 @@ class _DeletedRecordsPageState extends ConsumerState<DeletedRecordsPage>
         : parts.first[0].toUpperCase();
   }
 
-  Widget _sectionHeader() {
+  // ─── Widgets ──────────────────────────────────────────────────────────────
+
+  /// Top section: tab bar + optional search + titles
+  Widget _header() {
     return Container(
       color: _surface,
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+            padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
             child: Row(
               children: [
+                // ── Tab bar ──────────────────────────────────────────────
                 Expanded(
                   child: Container(
-                    height: 44,
+                    height: 46,
                     decoration: BoxDecoration(
-                      color: _surfaceLight,
-                      borderRadius: BorderRadius.circular(12),
+                      color: _surfaceAlt,
+                      borderRadius: BorderRadius.circular(13),
                       border: Border.all(color: _divider),
                     ),
                     child: TabBar(
                       controller: _tabController,
                       indicator: BoxDecoration(
                         gradient: const LinearGradient(
-                          colors: [Color(0xFF6378FF), _accent],
+                          colors: [_accentGrad1, _accent],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
                         ),
-                        borderRadius: BorderRadius.circular(10),
+                        borderRadius: BorderRadius.circular(11),
+                        boxShadow: [
+                          BoxShadow(
+                            color: _accent.withOpacity(0.30),
+                            blurRadius: 8,
+                            offset: const Offset(0, 3),
+                          ),
+                        ],
                       ),
                       indicatorPadding: const EdgeInsets.all(3),
                       labelColor: Colors.white,
                       unselectedLabelColor: _text2,
+                      labelStyle: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.2,
+                      ),
+                      unselectedLabelStyle: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
                       dividerColor: Colors.transparent,
                       onTap: (_) {
                         _searchCtrl.clear();
                         setState(() => _searchVisible = false);
                       },
                       tabs: const [
-                        Tab(text: 'Vehicles', icon: Icon(Icons.directions_car_rounded, size: 16)),
-                        Tab(text: 'Drivers', icon: Icon(Icons.person_rounded, size: 16)),
+                        Tab(
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.directions_car_rounded, size: 15),
+                              SizedBox(width: 5),
+                              Text('Vehicles'),
+                            ],
+                          ),
+                        ),
+                        Tab(
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.person_rounded, size: 15),
+                              SizedBox(width: 5),
+                              Text('Drivers'),
+                            ],
+                          ),
+                        ),
                       ],
                     ),
                   ),
                 ),
                 const SizedBox(width: 10),
-                GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      _searchVisible = !_searchVisible;
-                      if (!_searchVisible) {
-                        _searchCtrl.clear();
-                      } else {
-                        Future.delayed(
-                          const Duration(milliseconds: 100),
-                          () => _searchFocus.requestFocus(),
-                        );
-                      }
-                    });
-                  },
-                  child: Container(
-                    width: 44,
-                    height: 44,
-                    decoration: BoxDecoration(
-                      color: _searchVisible ? const Color(0xFFEEF1FF) : _surfaceLight,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: _searchVisible ? _accent : _divider,
-                      ),
-                    ),
-                    child: Icon(
-                      _searchVisible ? Icons.close_rounded : Icons.search_rounded,
-                      color: _searchVisible ? _accent : _text2,
-                    ),
-                  ),
+                // ── Search toggle ─────────────────────────────────────────
+                _SearchToggleButton(
+                  isActive: _searchVisible,
+                  onTap: () => setState(() {
+                    _searchVisible = !_searchVisible;
+                    if (!_searchVisible) {
+                      _searchCtrl.clear();
+                    } else {
+                      Future.delayed(
+                        const Duration(milliseconds: 120),
+                        () => _searchFocus.requestFocus(),
+                      );
+                    }
+                  }),
                 ),
               ],
             ),
           ),
-          if (_searchVisible)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-              child: TextField(
-                controller: _searchCtrl,
-                focusNode: _searchFocus,
-                onChanged: (_) => setState(() {}),
-                decoration: InputDecoration(
-                  hintText: _isVehicleTab ? 'Search deleted vehicles...' : 'Search deleted drivers...',
-                  prefixIcon: const Icon(Icons.search_rounded, size: 18),
-                  filled: true,
-                  fillColor: _surfaceLight,
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide.none,
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: _divider),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: _accent, width: 1.5),
-                  ),
-                ),
-              ),
-            ),
+
+          // ── Animated search field ────────────────────────────────────
+          AnimatedSize(
+            duration: const Duration(milliseconds: 220),
+            curve: Curves.easeInOut,
+            child: _searchVisible
+                ? Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                    child: TextField(
+                      controller: _searchCtrl,
+                      focusNode: _searchFocus,
+                      onChanged: (_) => setState(() {}),
+                      style: const TextStyle(
+                        fontSize: 13,
+                        color: _text1,
+                        fontWeight: FontWeight.w500,
+                      ),
+                      decoration: InputDecoration(
+                        hintText: _isVehicleTab
+                            ? 'Search deleted vehicles…'
+                            : 'Search deleted drivers…',
+                        hintStyle: const TextStyle(
+                          fontSize: 13,
+                          color: _text2,
+                          fontWeight: FontWeight.w400,
+                        ),
+                        prefixIcon: const Icon(
+                          Icons.search_rounded,
+                          size: 18,
+                          color: _text2,
+                        ),
+                        suffixIcon: _searchCtrl.text.isNotEmpty
+                            ? GestureDetector(
+                                onTap: () => setState(() => _searchCtrl.clear()),
+                                child: const Icon(
+                                  Icons.cancel_rounded,
+                                  size: 16,
+                                  color: _text2,
+                                ),
+                              )
+                            : null,
+                        filled: true,
+                        fillColor: _surfaceAlt,
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 13,
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide.none,
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(color: _divider),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide:
+                              const BorderSide(color: _accent, width: 1.5),
+                        ),
+                      ),
+                    ),
+                  )
+                : const SizedBox.shrink(),
+          ),
+
+          // ── Page titles ──────────────────────────────────────────────
           const Padding(
-            padding: EdgeInsets.fromLTRB(16, 12, 16, 4),
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                'Deleted Vehicles & Drivers',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: _text1),
+            padding: EdgeInsets.fromLTRB(16, 14, 16, 2),
+            child: Text(
+              'Deleted Vehicles & Drivers',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w800,
+                color: _text1,
+                letterSpacing: -0.3,
               ),
             ),
           ),
           const Padding(
-            padding: EdgeInsets.fromLTRB(16, 0, 16, 12),
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                'View items removed from your active list.',
-                style: TextStyle(fontSize: 12, color: _text2),
-              ),
+            padding: EdgeInsets.fromLTRB(16, 0, 16, 14),
+            child: Text(
+              'View items removed from your active list.',
+              style: TextStyle(fontSize: 12, color: _text2, height: 1.4),
             ),
           ),
           const Divider(height: 1, color: _divider),
@@ -194,10 +263,11 @@ class _DeletedRecordsPageState extends ConsumerState<DeletedRecordsPage>
     );
   }
 
-  Widget _stats(int count, {required bool vehicle}) {
+  /// Stats banner shown at top of each list
+  Widget _statsBanner(int count, {required bool vehicle}) {
     return Container(
-      margin: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      margin: const EdgeInsets.fromLTRB(16, 12, 16, 6),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
       decoration: BoxDecoration(
         color: _surface,
         borderRadius: BorderRadius.circular(14),
@@ -206,116 +276,224 @@ class _DeletedRecordsPageState extends ConsumerState<DeletedRecordsPage>
       child: Row(
         children: [
           Container(
-            padding: const EdgeInsets.all(8),
+            width: 34,
+            height: 34,
             decoration: BoxDecoration(
               color: _redSoft,
               borderRadius: BorderRadius.circular(10),
             ),
-            child: Icon(vehicle ? Icons.delete_outline_rounded : Icons.person_remove_alt_1_rounded, color: _red, size: 16),
+            child: Icon(
+              vehicle
+                  ? Icons.no_transfer_rounded
+                  : Icons.person_remove_alt_1_rounded,
+              color: _red,
+              size: 16,
+            ),
           ),
           const SizedBox(width: 10),
           Text(
-            '$count deleted ${vehicle ? 'vehicles' : 'drivers'}',
-            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: _text1),
+            '$count deleted ${vehicle ? 'vehicle${count != 1 ? 's' : ''}' : 'driver${count != 1 ? 's' : ''}'}',
+            style: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+              color: _text1,
+            ),
+          ),
+          const Spacer(),
+          Container(
+            padding:
+                const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            decoration: BoxDecoration(
+              color: _redSoft,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: const Text(
+              'Archived',
+              style: TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.w700,
+                color: _red,
+              ),
+            ),
           ),
         ],
       ),
     );
   }
 
+  /// Vehicle card
   Widget _vehicleCard(Vehicles v) {
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: _surface,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(_cardRadius),
         border: Border.all(color: _divider),
       ),
-      child: Row(
-        children: [
-          Container(
-            width: 42,
-            height: 42,
-            decoration: BoxDecoration(
-              color: _red,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: const Icon(Icons.directions_car_rounded, color: Colors.white, size: 20),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(_cardRadius),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(_cardRadius),
+          onTap: () {}, // optional: show detail
+          child: Padding(
+            padding: const EdgeInsets.all(14),
+            child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(v.name ?? 'Unknown vehicle', maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: _text1)),
-                const SizedBox(height: 4),
-                Text(v.number ?? 'No number available', style: const TextStyle(fontSize: 11, color: _text2, fontWeight: FontWeight.w600)),
-                const SizedBox(height: 8),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: [
-                    _chip(Icons.local_gas_station_rounded, v.Type ?? 'N/A'),
-                    _chip(Icons.people_alt_rounded, '${v.capacity ?? 0} seats'),
-                  ],
+                // Avatar
+                Container(
+                  width: 46,
+                  height: 46,
+                  decoration: BoxDecoration(
+                    color: _redSoft,
+                    borderRadius: BorderRadius.circular(13),
+                  ),
+                  child: const Icon(
+                    Icons.directions_car_rounded,
+                    color: _red,
+                    size: 22,
+                  ),
                 ),
+                const SizedBox(width: 12),
+                // Info
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        v.name ?? 'Unknown vehicle',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w800,
+                          color: _text1,
+                          letterSpacing: -0.1,
+                        ),
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        v.number ?? 'No number',
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: _text2,
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: 0.3,
+                        ),
+                      ),
+                      const SizedBox(height: 9),
+                      Wrap(
+                        spacing: 7,
+                        runSpacing: 7,
+                        children: [
+                          _chip(
+                            Icons.local_gas_station_rounded,
+                            v.Type ?? 'N/A',
+                          ),
+                          _chip(
+                            Icons.people_alt_rounded,
+                            '${v.capacity ?? 0} seats',
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                _deletedBadge(),
               ],
             ),
           ),
-          const SizedBox(width: 8),
-          _deletedBadge(),
-        ],
+        ),
       ),
     );
   }
 
+  /// Driver card
   Widget _driverCard(Drivers d) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
         color: _surface,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: _divider),
       ),
-      child: Row(
-        children: [
-          Container(
-            width: 38,
-            height: 38,
-            decoration: BoxDecoration(
-              color: _red,
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Center(
-              child: Text(_initials(d.name), style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: Colors.white)),
-            ),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(14),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(14),
+          onTap: () {},
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            child: Row(
               children: [
-                Text(d.name ?? 'Unknown driver', maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: _text1)),
-                const SizedBox(height: 4),
-                Text(d.phone?.isNotEmpty == true ? d.phone! : 'No phone available', style: const TextStyle(fontSize: 11, color: _text2, fontWeight: FontWeight.w600)),
+                // Initials avatar
+                Container(
+                  width: 42,
+                  height: 42,
+                  decoration: BoxDecoration(
+                    color: _redSoft,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Center(
+                    child: Text(
+                      _initials(d.name),
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w800,
+                        color: _red,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        d.name ?? 'Unknown driver',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w800,
+                          color: _text1,
+                          letterSpacing: -0.1,
+                        ),
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        d.phone?.isNotEmpty == true
+                            ? d.phone!
+                            : 'No phone available',
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: _text2,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                _deletedBadge(),
               ],
             ),
           ),
-          const SizedBox(width: 8),
-          _deletedBadge(),
-        ],
+        ),
       ),
     );
   }
 
-  Widget _chip(IconData icon, String value) {
+  Widget _chip(IconData icon, String label) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
       decoration: BoxDecoration(
-        color: _surfaceLight,
-        borderRadius: BorderRadius.circular(8),
+        color: _surfaceAlt,
+        borderRadius: BorderRadius.circular(_chipRadius),
         border: Border.all(color: _divider),
       ),
       child: Row(
@@ -323,7 +501,14 @@ class _DeletedRecordsPageState extends ConsumerState<DeletedRecordsPage>
         children: [
           Icon(icon, size: 11, color: _accent),
           const SizedBox(width: 4),
-          Text(value, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: _text1)),
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.w700,
+              color: _text1,
+            ),
+          ),
         ],
       ),
     );
@@ -336,110 +521,316 @@ class _DeletedRecordsPageState extends ConsumerState<DeletedRecordsPage>
         color: _redSoft,
         borderRadius: BorderRadius.circular(20),
       ),
-      child: const Text('Deleted', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: _red)),
+      child: const Text(
+        'Deleted',
+        style: TextStyle(
+          fontSize: 10,
+          fontWeight: FontWeight.w700,
+          color: _red,
+        ),
+      ),
     );
   }
 
-  Widget _loading(String msg) => Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [const CircularProgressIndicator(color: _accent), const SizedBox(height: 12), Text(msg, style: const TextStyle(color: _text2))]));
+  // ─── State widgets ────────────────────────────────────────────────────────
 
-  Widget _error(Object e) => Center(child: Padding(padding: const EdgeInsets.all(24), child: Text(e.toString(), textAlign: TextAlign.center, style: const TextStyle(color: _text2))));
+  Widget _loadingState(String message) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const SizedBox(
+            width: 36,
+            height: 36,
+            child: CircularProgressIndicator(
+              color: _accent,
+              strokeWidth: 2.5,
+            ),
+          ),
+          const SizedBox(height: 14),
+          Text(message, style: const TextStyle(color: _text2, fontSize: 13)),
+        ],
+      ),
+    );
+  }
 
-  Widget _empty(IconData icon, String title, String sub) {
+  Widget _errorState(Object error) {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(32),
+        padding: const EdgeInsets.all(28),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            CircleAvatar(radius: 34, backgroundColor: const Color(0xFFEEF1FF), child: Icon(icon, color: _accent, size: 30)),
-            const SizedBox(height: 16),
-            Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: _text1)),
+            Container(
+              width: 56,
+              height: 56,
+              decoration: BoxDecoration(
+                color: _redSoft,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: const Icon(
+                Icons.error_outline_rounded,
+                color: _red,
+                size: 28,
+              ),
+            ),
+            const SizedBox(height: 14),
+            const Text(
+              'Something went wrong',
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w700,
+                color: _text1,
+              ),
+            ),
             const SizedBox(height: 6),
-            Text(sub, textAlign: TextAlign.center, style: const TextStyle(fontSize: 13, color: _text2)),
+            Text(
+              error.toString(),
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: _text2, fontSize: 12, height: 1.5),
+            ),
+            const SizedBox(height: 20),
+            TextButton(
+              onPressed: _loadDeletedItems,
+              style: TextButton.styleFrom(
+                backgroundColor: _accentLight,
+                foregroundColor: _accent,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 10,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+              child: const Text(
+                'Retry',
+                style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+              ),
+            ),
           ],
         ),
       ),
     );
   }
 
+  Widget _emptyState({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+  }) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(36),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 72,
+              height: 72,
+              decoration: BoxDecoration(
+                color: _accentLight,
+                borderRadius: BorderRadius.circular(22),
+              ),
+              child: Icon(icon, color: _accent, size: 32),
+            ),
+            const SizedBox(height: 18),
+            Text(
+              title,
+              style: const TextStyle(
+                fontSize: 17,
+                fontWeight: FontWeight.w800,
+                color: _text1,
+                letterSpacing: -0.2,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              subtitle,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 13,
+                color: _text2,
+                height: 1.5,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ─── Tab content builders ─────────────────────────────────────────────────
+
+  Widget _vehiclesContent(List<Vehicles> vehicles) {
+    final q = _searchCtrl.text.toLowerCase();
+    final filtered = vehicles
+        .where((v) =>
+            (v.name?.toLowerCase().contains(q) ?? false) ||
+            (v.number?.toLowerCase().contains(q) ?? false))
+        .toList();
+
+    if (filtered.isEmpty) {
+      return _emptyState(
+        icon: Icons.directions_car_rounded,
+        title: q.isNotEmpty ? 'No results found' : 'No deleted vehicles',
+        subtitle: q.isNotEmpty
+            ? 'Try a different search term.'
+            : 'Deleted vehicles will appear here.',
+      );
+    }
+
+    return RefreshIndicator(
+      onRefresh: _loadDeletedItems,
+      color: _accent,
+      child: Column(
+        children: [
+          _statsBanner(filtered.length, vehicle: true),
+          Expanded(
+            child: ListView.builder(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
+              itemCount: filtered.length,
+              itemBuilder: (_, i) => _vehicleCard(filtered[i]),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _driversContent(List<Drivers> drivers) {
+    final q = _searchCtrl.text.toLowerCase();
+    final filtered = drivers
+        .where((d) =>
+            (d.name?.toLowerCase().contains(q) ?? false) ||
+            (d.phone?.toLowerCase().contains(q) ?? false))
+        .toList();
+
+    if (filtered.isEmpty) {
+      return _emptyState(
+        icon: Icons.person_rounded,
+        title: q.isNotEmpty ? 'No results found' : 'No deleted drivers',
+        subtitle: q.isNotEmpty
+            ? 'Try a different search term.'
+            : 'Deleted drivers will appear here.',
+      );
+    }
+
+    return RefreshIndicator(
+      onRefresh: _loadDeletedItems,
+      color: _accent,
+      child: Column(
+        children: [
+          _statsBanner(filtered.length, vehicle: false),
+          Expanded(
+            child: ListView.builder(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
+              itemCount: filtered.length,
+              itemBuilder: (_, i) => _driverCard(filtered[i]),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ─── Build ────────────────────────────────────────────────────────────────
+
   @override
   Widget build(BuildContext context) {
-    final state = ref.watch(tripBookingViewModelProvider);
+    final state       = ref.watch(tripBookingViewModelProvider);
     final vehicleState = state.fetchVehicleList;
-    final driverState = state.fetchDriverList;
+    final driverState  = state.fetchDriverList;
 
     return Scaffold(
       backgroundColor: _bg,
       appBar: AppBar(
-        title: const Text('Deleted Records', style: TextStyle(fontWeight: FontWeight.w700)),
+        title: const Text(
+          'Deleted Records',
+          style: TextStyle(
+            fontWeight: FontWeight.w800,
+            fontSize: 17,
+            letterSpacing: -0.2,
+          ),
+        ),
         backgroundColor: _surface,
         foregroundColor: _text1,
         elevation: 0,
         surfaceTintColor: Colors.transparent,
+        centerTitle: false,
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Container(height: 1, color: _divider),
+        ),
       ),
       body: Column(
         children: [
-          _sectionHeader(),
+          _header(),
           Expanded(
             child: TabBarView(
               controller: _tabController,
               children: [
                 vehicleState.when(
-                  loading: () => _loading('Loading deleted vehicles...'),
-                  error: (e, _) => _error(e),
-                  data: (vehicles) {
-                    final q = _searchCtrl.text.toLowerCase();
-                    final filtered = vehicles.where((v) => (v.name?.toLowerCase().contains(q) ?? false) || (v.number?.toLowerCase().contains(q) ?? false)).toList();
-                    if (filtered.isEmpty) {
-                      return _empty(Icons.directions_car_rounded, q.isNotEmpty ? 'No results' : 'No deleted vehicles', q.isNotEmpty ? 'Try a different search term.' : 'Deleted vehicles will appear here.');
-                    }
-                    return RefreshIndicator(
-                      onRefresh: _loadDeletedItems,
-                      child: Column(
-                        children: [
-                          _stats(filtered.length, vehicle: true),
-                          Expanded(
-                            child: ListView.builder(
-                              padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
-                              itemCount: filtered.length,
-                              itemBuilder: (_, i) => _vehicleCard(filtered[i]),
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
-                  },
+                  loading: () => _loadingState('Loading deleted vehicles…'),
+                  error: (e, _) => _errorState(e),
+                  data: _vehiclesContent,
                 ),
                 driverState.when(
-                  loading: () => _loading('Loading deleted drivers...'),
-                  error: (e, _) => _error(e),
-                  data: (drivers) {
-                    final q = _searchCtrl.text.toLowerCase();
-                    final filtered = drivers.where((d) => (d.name?.toLowerCase().contains(q) ?? false) || (d.phone?.toLowerCase().contains(q) ?? false)).toList();
-                    if (filtered.isEmpty) {
-                      return _empty(Icons.person_rounded, q.isNotEmpty ? 'No results' : 'No deleted drivers', q.isNotEmpty ? 'Try a different search term.' : 'Deleted drivers will appear here.');
-                    }
-                    return RefreshIndicator(
-                      onRefresh: _loadDeletedItems,
-                      child: Column(
-                        children: [
-                          _stats(filtered.length, vehicle: false),
-                          Expanded(
-                            child: ListView.builder(
-                              padding: const EdgeInsets.only(bottom: 24),
-                              itemCount: filtered.length,
-                              itemBuilder: (_, i) => _driverCard(filtered[i]),
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
-                  },
+                  loading: () => _loadingState('Loading deleted drivers…'),
+                  error: (e, _) => _errorState(e),
+                  data: _driversContent,
                 ),
               ],
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+// ─── Search Toggle Button (extracted widget for cleanliness) ──────────────────
+
+class _SearchToggleButton extends StatelessWidget {
+  const _SearchToggleButton({
+    required this.isActive,
+    required this.onTap,
+  });
+
+  final bool isActive;
+  final VoidCallback onTap;
+
+  static const _accent     = Color(0xFF3D5AFE);
+  static const _accentLight = Color(0xFFEEF1FF);
+  static const _surfaceAlt = Color(0xFFF0F3FA);
+  static const _divider    = Color(0xFFE8EBF4);
+  static const _text2      = Color(0xFF7B82A0);
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        width: 46,
+        height: 46,
+        decoration: BoxDecoration(
+          color: isActive ? _accentLight : _surfaceAlt,
+          borderRadius: BorderRadius.circular(13),
+          border: Border.all(
+            color: isActive ? _accent : _divider,
+            width: isActive ? 1.5 : 1.0,
+          ),
+        ),
+        child: AnimatedSwitcher(
+          duration: const Duration(milliseconds: 180),
+          child: Icon(
+            isActive ? Icons.close_rounded : Icons.search_rounded,
+            key: ValueKey(isActive),
+            color: isActive ? _accent : _text2,
+            size: 20,
+          ),
+        ),
       ),
     );
   }
