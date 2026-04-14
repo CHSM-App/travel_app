@@ -9,7 +9,11 @@ abstract class Tripbookingrepository {
 
   Future<List<Drivers>> driverList(String agencyId);
 
+  Future<List<Drivers>> deletedDriverList(String agencyId);
+
   Future<List<Vehicles>> vehicleList(String agencyId);
+
+  Future<List<Vehicles>> deletedVehicleList(String agencyId);
 
   Future<List<Customer>> customerList(String agencyId);
 

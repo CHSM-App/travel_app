@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:travel_agency_app/Screens/deleted_records_page.dart';
 import 'package:travel_agency_app/Screens/login.dart';
 import 'package:travel_agency_app/Screens/profile.dart';
 import 'package:travel_agency_app/core/network/token_provider.dart';
@@ -112,6 +113,19 @@ class _ModernSettingsPageState extends ConsumerState<ModernSettingsPage>
                         }),
                         _MenuItem(Icons.lock_outline_rounded, 'Privacy & Security', 'Manage your security settings'),
                         _MenuItem(Icons.language_rounded, 'Language', 'English (US)'),
+                        _MenuItem(
+                          Icons.delete_sweep_outlined,
+                          'Deleted Vehicles & Drivers',
+                          'View removed vehicles and drivers',
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const DeletedRecordsPage(),
+                              ),
+                            );
+                          },
+                        ),
                       ]),
                       const SizedBox(height: 24),
 

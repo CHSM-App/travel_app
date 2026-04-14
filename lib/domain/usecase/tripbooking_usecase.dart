@@ -16,9 +16,16 @@ class TripbookingUsecase {
   Future<List<Drivers>> driverList(String agencyId) {
     return repository.driverList(agencyId);
   }
+  Future<List<Drivers>> deletedDriverList(String agencyId) {
+    return repository.deletedDriverList(agencyId);
+  }
 
   Future<List<Vehicles>> vehicleList(String agencyId) {
     return repository.vehicleList(agencyId);
+  }
+
+  Future<List<Vehicles>> deletedVehicleList(String agencyId) {
+    return repository.deletedVehicleList(agencyId);
   }
 
   Future<List<Customer>> customerList(String agencyId) {

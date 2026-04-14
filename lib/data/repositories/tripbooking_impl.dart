@@ -21,9 +21,19 @@ class TripBookingImpl implements Tripbookingrepository {
     return apiService.driverList(agencyId);
   }
 
+    @override
+  Future<List<Drivers>> deletedDriverList(String agencyId) {
+    return apiService.deletedDriverList(agencyId);
+  }
+
   @override
   Future<List<Vehicles>> vehicleList(String agencyId) {
     return apiService.vehicleList(agencyId);
+  }
+
+  @override
+  Future<List<Vehicles>> deletedVehicleList(String agencyId) {
+    return apiService.deletedVehicleList(agencyId);
   }
 
   @override

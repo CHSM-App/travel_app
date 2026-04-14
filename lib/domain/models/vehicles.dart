@@ -20,6 +20,9 @@ class Vehicles {
   final String? StatusName;
   final String? agencyId;
 
+   @JsonKey(name: 'active_status')
+  final int? activeStatus;
+
   Vehicles({
     this.Vehicle_info,
     required this.vehicleId,
@@ -36,6 +39,7 @@ class Vehicles {
     this.Type,
     this.StatusName,
       this.agencyId,
+      this.activeStatus
   });
 
   factory Vehicles.fromJson(Map<String, dynamic> json) => Vehicles(

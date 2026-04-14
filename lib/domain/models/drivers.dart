@@ -36,6 +36,9 @@ class Drivers {
   @JsonKey(name: 'agency_id')
   final String? agencyId;
 
+  @JsonKey(name: 'active_status')
+  final String? activeStatus;
+
   Drivers({
     this.driverId,
     this.name,
@@ -46,6 +49,7 @@ class Drivers {
     this.vehicleId,
     this.photo,
     this.agencyId,
+    this.activeStatus
   });
 
   factory Drivers.fromJson(Map<String, dynamic> json) => Drivers(

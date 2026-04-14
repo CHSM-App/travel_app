@@ -16,6 +16,7 @@ Drivers _$DriversFromJson(Map<String, dynamic> json) => Drivers(
   vehicleId: (json['vehicleId'] as num?)?.toInt(),
   photo: json['photo'] as String?,
   agencyId: json['agency_id'] as String?,
+  activeStatus: json['active_status'] as String?,
 );
 
 Map<String, dynamic> _$DriversToJson(Drivers instance) => <String, dynamic>{
@@ -28,4 +29,5 @@ Map<String, dynamic> _$DriversToJson(Drivers instance) => <String, dynamic>{
   'vehicleId': instance.vehicleId,
   'photo': instance.photo,
   'agency_id': instance.agencyId,
+  'active_status': instance.activeStatus,
 };

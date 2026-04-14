@@ -348,7 +348,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
                 // ── FORM BODY (fills remaining space) ──
                 Expanded(
                   child: SingleChildScrollView(
-                    physics: const NeverScrollableScrollPhysics(),
+                    physics: const BouncingScrollPhysics(),
                     child: Padding(
                       padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
                       child: Form(

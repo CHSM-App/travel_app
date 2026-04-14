@@ -85,10 +85,41 @@ class TripBookingViewModel extends StateNotifier<TripBookingState> {
     }
   }
 
+   Future<void> deletedDriverList(String agencyId) async {
+    state = state.copyWith(fetchDriverList: const AsyncValue.loading());
+    try {
+      final result = await usecase.deletedDriverList(agencyId);
+      state = state.copyWith(
+        fetchDriverList: AsyncValue.data(result),
+        agencyId: agencyId,
+      );
+    } catch (e, st) {
+      state = state.copyWith(fetchDriverList: AsyncValue.error(e, st));
+    }
+  }
+
   Future<void> vehicleList(String agencyId) async {
     state = state.copyWith(isLoading: true);
     try {
       final result = await usecase.vehicleList(agencyId);
+      // final result = await usecase.vehicleList(agencyId);
+      state = state.copyWith(
+        isLoading: false,
+        fetchVehicleList: AsyncValue.data(result),
+        agencyId: agencyId,
+      );
+    } catch (e, st) {
+      state = state.copyWith(
+        isLoading: false,
+        fetchVehicleList: AsyncValue.error(e, st),
+      );
+    }
+  }
+
+  Future<void> deletedVehicleList(String agencyId) async {
+    state = state.copyWith(isLoading: true);
+    try {
+      final result = await usecase.deletedVehicleList(agencyId);
       // final result = await usecase.vehicleList(agencyId);
       state = state.copyWith(
         isLoading: false,
