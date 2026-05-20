@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:travel_agency_app/Screens/deleted_records_page.dart';
 import 'package:travel_agency_app/Screens/login.dart';
 import 'package:travel_agency_app/Screens/profile.dart';
@@ -111,7 +112,12 @@ class _ModernSettingsPageState extends ConsumerState<ModernSettingsPage>
                             await ref.read(loginViewModelProvider.notifier).adminProfile(adminId);
                           }
                         }),
-                        _MenuItem(Icons.lock_outline_rounded, 'Privacy & Security', 'Manage your security settings'),
+                        _MenuItem(
+                          Icons.lock_outline_rounded,
+                          'Privacy & Security',
+                          'View our privacy policy',
+                          onTap: () => _openPrivacyPolicy(context),
+                        ),
                         _MenuItem(Icons.language_rounded, 'Language', 'English (US)'),
                         _MenuItem(
                           Icons.delete_sweep_outlined,
@@ -471,6 +477,22 @@ class _ModernSettingsPageState extends ConsumerState<ModernSettingsPage>
 
   Widget _divider() {
     return Divider(height: 1, thickness: 1, color: _surface, indent: 56, endIndent: 16);
+  }
+
+  // ─────────────────────────── PRIVACY POLICY ──────────────────────
+
+  Future<void> _openPrivacyPolicy(BuildContext context) async {
+    final uri = Uri.parse('https://travels.vengurlatech.com/login/privacy');
+    final launched =
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+    if (!launched && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Could not open privacy policy'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   // ─────────────────────────── HELP CENTER SHEET ──────────────────

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:travel_agency_app/Screens/trip_card.dart';
+import 'package:travel_agency_app/core/network/error_messages.dart';
 import 'package:travel_agency_app/core/network/network_state_notifier.dart';
 import 'package:travel_agency_app/domain/models/booking_info.dart';
 import 'package:travel_agency_app/presentation/providers/viewmodel_provider.dart';
@@ -14,7 +15,7 @@ class TripPage extends ConsumerStatefulWidget {
 }
 
 class _TripPageState extends ConsumerState<TripPage> {
-  String _selectedFilter = 'active';
+  String _selectedFilter = 'all';
   String _searchQuery = '';
 
   @override
@@ -23,17 +24,17 @@ class _TripPageState extends ConsumerState<TripPage> {
 
     Future.microtask(() {
       final notifier = ref.read(TripPageViewModelProvider.notifier);
-      notifier.activeList(ref.read(loginViewModelProvider).agencyId ?? '');
-      // notifier.upcomingList(ref.read(loginViewModelProvider).agencyId ?? '');
-      // notifier.historyList(ref.read(loginViewModelProvider).agencyId ?? '');
-      // notifier.unpaidList(ref.read(loginViewModelProvider).agencyId ?? '');
-      // notifier.cancelledList(ref.read(loginViewModelProvider).agencyId ?? '');
+      // Default tab is "All" — load the merged list on open.
+      notifier.allTrips(ref.read(loginViewModelProvider).agencyId ?? '');
     });
   }
 
   void _loadListForFilter(String filter) {
     final notifier = ref.read(TripPageViewModelProvider.notifier);
     switch (filter) {
+      case 'all':
+        notifier.allTrips(ref.read(loginViewModelProvider).agencyId??"");
+        break;
       case 'active':
         notifier.activeList(ref.read(loginViewModelProvider).agencyId??"");
         break;
@@ -58,7 +59,11 @@ class _TripPageState extends ConsumerState<TripPage> {
 
     return Scaffold(
       backgroundColor: Colors.grey.shade50,
+      // Let the list flow under the floating pill nav. SafeArea handles the
+      // status bar; bottom is intentionally disabled so the ListView reaches
+      // the actual screen edge and items pass behind the transparent nav.
       body: SafeArea(
+        bottom: false,
         child: Column(
           children: [
             // Search Bar and Dropdown Container
@@ -163,6 +168,11 @@ class _TripPageState extends ConsumerState<TripPage> {
                         ),
                         items: [
                           _buildDropdownItem(
+                            'all',
+                            'All',
+                            Icons.list_alt_rounded,
+                          ),
+                          _buildDropdownItem(
                             'active',
                             'Active',
                             Icons.directions_car_rounded,
@@ -236,6 +246,9 @@ class _TripPageState extends ConsumerState<TripPage> {
 
     final state = ref.watch(TripPageViewModelProvider);
     switch (_selectedFilter) {
+      case 'all':
+        currentList = state.allList;
+        break;
       case 'active':
         currentList = state.activeList;
         break;
@@ -312,7 +325,7 @@ class _TripPageState extends ConsumerState<TripPage> {
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 32),
                 child: Text(
-                  e.toString(),
+                  friendlyErrorMessage(e),
                   style: TextStyle(
                     color: Colors.grey.shade600,
                     fontSize: 13,
@@ -379,7 +392,9 @@ class _TripPageState extends ConsumerState<TripPage> {
             _loadListForFilter(type);
           },
           child: ListView.builder(
-            padding: const EdgeInsets.all(16),
+            // Extra bottom padding so the last card scrolls clear of the
+            // floating pill nav (nav height ~64 + margin + safety).
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 110),
             itemCount: filteredTrips.length,
             itemBuilder: (_, i) => TripCard(
               key: ValueKey(filteredTrips[i].tripId ?? i),
@@ -402,6 +417,11 @@ class _TripPageState extends ConsumerState<TripPage> {
     String subtitle;
 
     switch (type) {
+      case 'all':
+        icon = Icons.list_alt_rounded;
+        title = 'No Trips';
+        subtitle = 'No trips have been booked yet';
+        break;
       case 'active':
         icon = Icons.car_rental_rounded;
         title = 'No Active Trips';

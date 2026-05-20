@@ -40,7 +40,7 @@ class TripBookingImpl implements Tripbookingrepository {
   Future<List<Customer>> customerList(String agencyId) {
     return apiService.customerList(agencyId);
   }
-    
+
   @override
   Future<List<BookingInfo>> historyTrip(String agencyId) {
     return apiService.historyTrip(agencyId);

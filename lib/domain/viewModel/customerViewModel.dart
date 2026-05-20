@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:travel_agency_app/core/network/error_messages.dart';
 import 'package:travel_agency_app/domain/models/booking_info.dart';
 import 'package:travel_agency_app/domain/models/customers.dart';
 import 'package:travel_agency_app/domain/usecase/customerUseCase.dart';
@@ -83,8 +84,16 @@ class CustomerViewModel extends StateNotifier<CustomerState> {
 
    try{
     final result=await usecase.addCustomer(customer);
+
+    // Some deployments still return HTTP 200 even when the stored procedure
+    // rejected the row (e.g. duplicate phone). Treat that as a real failure
+    // and surface the SP's message instead of falling through to a generic
+    // "Something went wrong".
+    final spMsg = _spFailureMessage(result);
+    if (spMsg != null) throw AppException(spMsg);
+
     final customerId = _extractCustomerId(result);
-    
+
     state=state.copyWith(
       isLoading: false,
       data: result is Map<String, dynamic>
@@ -118,6 +127,8 @@ Future<void> updateCustomer(Customer customer) async {
 
   try {
     final result = await usecase.updateCustomer(customer);
+    final spMsg = _spFailureMessage(result);
+    if (spMsg != null) throw AppException(spMsg);
     state = state.copyWith(isLoading: false, data: result);
   } on DioException catch (e) {
     final serverMessage = e.response?.data?['message']?.toString();
@@ -151,6 +162,44 @@ Future<void> updateCustomer(Customer customer) async {
       state = state.copyWith(isLoading: false, error: e.toString());
       rethrow;
     }
+  }
+
+  /// Returns a human-readable message if the API response actually represents
+  /// a stored-procedure failure (HTTP 200 but `success=false` somewhere in
+  /// the body, e.g. duplicate phone). Returns null when the response is a
+  /// legitimate success so the caller proceeds normally.
+  String? _spFailureMessage(dynamic result) {
+    if (result is! Map) return null;
+
+    bool? readBoolish(dynamic v) {
+      if (v == null) return null;
+      if (v is bool) return v;
+      if (v is num) return v == 1;
+      if (v is String) {
+        final s = v.toLowerCase().trim();
+        if (s == 'true' || s == '1') return true;
+        if (s == 'false' || s == '0') return false;
+      }
+      return null;
+    }
+
+    final topSuccess = readBoolish(result['success']);
+    final inner = result['data'];
+    final innerSuccess =
+        (inner is Map) ? readBoolish(inner['success']) : null;
+
+    // Treat as failure only when something explicitly says so.
+    final failed = topSuccess == false || innerSuccess == false;
+    if (!failed) return null;
+
+    final innerMsg = (inner is Map) ? inner['message'] : null;
+    final outerMsg = result['message'];
+    final msg = (innerMsg is String && innerMsg.trim().isNotEmpty)
+        ? innerMsg
+        : (outerMsg is String && outerMsg.trim().isNotEmpty)
+            ? outerMsg
+            : 'Could not save customer';
+    return msg.toString().trim();
   }
 
   int _extractCustomerId(dynamic result) {

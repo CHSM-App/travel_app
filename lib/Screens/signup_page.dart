@@ -509,7 +509,9 @@ class _SignUpPageState extends ConsumerState<SignUpPage>
                           width: double.infinity,
                           height: 54,
                           child: ElevatedButton(
-                            onPressed: loginState.isLoading ? null : _signUp,
+                            onPressed: (loginState.isLoading || !_agreeTerms)
+                                ? null
+                                : _signUp,
                             style: ElevatedButton.styleFrom(
                               backgroundColor: primaryColor,
                               foregroundColor: Colors.white,

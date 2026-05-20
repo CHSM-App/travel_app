@@ -14,9 +14,10 @@ final bool isLoading;
   final AsyncValue<List<BookingInfo>> unpaidList;
   final AsyncValue<List<BookingInfo>> activeList;
   final AsyncValue<List<BookingInfo>> cancelledList;
- 
+  final AsyncValue<List<BookingInfo>> allList;
+
   const TripPageState({
-   
+
      this.isLoading = false,
     this.data,
     this.error,
@@ -25,7 +26,8 @@ final bool isLoading;
     this.unpaidList = const AsyncValue.loading(),
     this.activeList = const AsyncValue.loading(),
     this.cancelledList = const AsyncValue.loading(),
- 
+    this.allList = const AsyncValue.loading(),
+
       });
 
   TripPageState copyWith({
@@ -38,10 +40,11 @@ final bool isLoading;
     AsyncValue<List<BookingInfo>>? unpaidList,
     AsyncValue<List<BookingInfo>>? activeList,
     AsyncValue<List<BookingInfo>>? cancelledList,
-   
+    AsyncValue<List<BookingInfo>>? allList,
+
   }) {
     return TripPageState(
-    
+
        isLoading: isLoading ?? this.isLoading,
       data: data ?? this.data,
       error: error ?? this.error,
@@ -50,7 +53,8 @@ final bool isLoading;
       unpaidList: unpaidList ?? this.unpaidList,
       activeList: activeList ?? this.activeList,
       cancelledList: cancelledList ?? this.cancelledList,
-       
+      allList: allList ?? this.allList,
+
     );
   }
 }
@@ -114,6 +118,54 @@ class TripPageViewModel extends StateNotifier<TripPageState> {
     }
   }
 
+
+  /// "All" tab: no single backend endpoint returns every trip, so fetch the
+  /// five status lists in parallel, de-dupe by trip id (a trip can appear in
+  /// more than one list, e.g. partially-paid history), and sort newest-first.
+  Future<void> allTrips(String agencyId) async {
+    state = state.copyWith(allList: const AsyncValue.loading());
+    try {
+      final results = await Future.wait([
+        usecase.activeTrip(agencyId),
+        usecase.upcomingTrip(agencyId),
+        usecase.historyTrip(agencyId),
+        usecase.unpaidTrip(agencyId),
+        usecase.cancelledTrip(agencyId),
+      ]);
+
+      final byId = <int, BookingInfo>{};
+      final noId = <BookingInfo>[];
+      for (final list in results) {
+        for (final trip in list) {
+          final id = trip.tripId;
+          if (id == null) {
+            noId.add(trip);
+          } else {
+            byId.putIfAbsent(id, () => trip);
+          }
+        }
+      }
+
+      final merged = [...byId.values, ...noId];
+      merged.sort((a, b) {
+        final ka = a.bookingDate ?? a.startDateTime;
+        final kb = b.bookingDate ?? b.startDateTime;
+        if (ka != null && kb != null) {
+          final c = kb.compareTo(ka);
+          if (c != 0) return c;
+        } else if (ka == null && kb != null) {
+          return 1;
+        } else if (ka != null && kb == null) {
+          return -1;
+        }
+        return (b.tripId ?? 0).compareTo(a.tripId ?? 0);
+      });
+
+      state = state.copyWith(allList: AsyncValue.data(merged));
+    } catch (e, st) {
+      state = state.copyWith(allList: AsyncValue.error(e, st));
+    }
+  }
 
    Future<void> updatePaymentStatus(BookingInfo bookinginfo) async {
     state = state.copyWith(isLoading: true, error: null);

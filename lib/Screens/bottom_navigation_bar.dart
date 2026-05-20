@@ -72,13 +72,14 @@ class _MainBottomNavState extends ConsumerState<MainBottomNav>
     });
 
     _pageAnimController = AnimationController(
-      duration: const Duration(milliseconds: 280),
+      duration: const Duration(milliseconds: 320),
       vsync: this,
     );
     _fadeAnimation = CurvedAnimation(
         parent: _pageAnimController, curve: Curves.easeInOut);
+    // Telegram-style: new tab page slides up from the bottom.
     _slideAnimation = Tween<Offset>(
-      begin: const Offset(0.05, 0),
+      begin: const Offset(0, 0.06),
       end: Offset.zero,
     ).animate(CurvedAnimation(
         parent: _pageAnimController, curve: Curves.easeOutCubic));
@@ -278,22 +279,13 @@ if (selectedIndex == 2 || selectedIndex == 3)
       onPressed: () {
         if (selectedIndex == 2) {
           // Customers tab
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const AddCustomerPage()),
-          );
+          Navigator.push(context, _slideUpRoute(const AddCustomerPage()));
         } else if (selectedIndex == 3) {
           // Vehicles tab
           if (vehicleTabIndex == 0) {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const AddVehiclePage()),
-            );
+            Navigator.push(context, _slideUpRoute(const AddVehiclePage()));
           } else {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const AddDriverPage()),
-            );
+            Navigator.push(context, _slideUpRoute(const AddDriverPage()));
           }
         }
       },
@@ -336,31 +328,32 @@ if (selectedIndex == 2 || selectedIndex == 3)
         bottom: bottomPadding > 0 ? bottomPadding + 6 : 16,
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(32),
+        borderRadius: BorderRadius.circular(40),
         child: BackdropFilter(
-          // ✨ THE FROSTED GLASS EFFECT — same as iPhone dock
-          filter: ImageFilter.blur(sigmaX: 30, sigmaY: 30),
+          // ✨ Telegram-style: heavier blur, less white so the page behind
+          // genuinely shows through.
+          filter: ImageFilter.blur(sigmaX: 36, sigmaY: 36),
           child: Container(
             height: 64,
             decoration: BoxDecoration(
-              // White with transparency — lets background show through
-              color: Colors.white.withOpacity(0.70),
-              borderRadius: BorderRadius.circular(32),
+              // Much more transparent than before — content reads through.
+              color: Colors.white.withOpacity(0.42),
+              borderRadius: BorderRadius.circular(40),
               border: Border.all(
-                // Thin white border — adds glass edge highlight
-                color: Colors.white.withOpacity(0.65),
-                width: 1.2,
+                // Subtle glass edge highlight.
+                color: Colors.white.withOpacity(0.35),
+                width: 1.0,
               ),
               boxShadow: [
                 BoxShadow(
-                  color: primaryColor.withOpacity(0.13),
-                  blurRadius: 32,
+                  color: primaryColor.withOpacity(0.10),
+                  blurRadius: 28,
                   spreadRadius: 0,
-                  offset: const Offset(0, 10),
+                  offset: const Offset(0, 8),
                 ),
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.07),
-                  blurRadius: 10,
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 8,
                   offset: const Offset(0, 2),
                 ),
               ],
@@ -443,6 +436,32 @@ if (selectedIndex == 2 || selectedIndex == 3)
       ),
     );
   }
+}
+
+// ── Telegram-style slide-up route ─────────────────────────
+// Pushes a page that animates up from the bottom of the screen instead of
+// the default right-to-left platform transition.
+Route<T> _slideUpRoute<T>(Widget child) {
+  return PageRouteBuilder<T>(
+    transitionDuration: const Duration(milliseconds: 320),
+    reverseTransitionDuration: const Duration(milliseconds: 260),
+    opaque: true,
+    pageBuilder: (_, __, ___) => child,
+    transitionsBuilder: (_, animation, __, page) {
+      final curved = CurvedAnimation(
+        parent: animation,
+        curve: Curves.easeOutCubic,
+        reverseCurve: Curves.easeInCubic,
+      );
+      return SlideTransition(
+        position: Tween<Offset>(
+          begin: const Offset(0, 1),
+          end: Offset.zero,
+        ).animate(curved),
+        child: FadeTransition(opacity: curved, child: page),
+      );
+    },
+  );
 }
 
 // ── Data Model ────────────────────────────────────────────

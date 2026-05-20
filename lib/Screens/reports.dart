@@ -7,6 +7,7 @@ import 'package:open_file/open_file.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:share_plus/share_plus.dart' as share_plus;
+import 'package:travel_agency_app/core/network/error_messages.dart';
 import 'package:travel_agency_app/domain/models/reports_data.dart';
 import 'package:travel_agency_app/presentation/providers/viewmodel_provider.dart';
 
@@ -894,7 +895,7 @@ class _TravelReportPageState extends ConsumerState<TravelReportPage>
               final asyncVal = state.getByTab(tab.tabIndex);
               return asyncVal.when(
                 loading: () => _LoadingView(color: tab.color),
-                error: (e, _) => _ErrorView(color: tab.color, errorMessage: e.toString(),
+                error: (e, _) => _ErrorView(color: tab.color, errorMessage: friendlyErrorMessage(e),
                     onRetry: () => ref.read(reportViewModelProvider.notifier).reloadTab(widget.agencyId, tab.tabIndex)),
                 data: (rawList) {
                   final filtered = _applyDateFilter(rawList, _filterType, _customStart, _customEnd);

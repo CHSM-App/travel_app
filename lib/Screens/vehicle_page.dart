@@ -5,6 +5,7 @@ import 'package:travel_agency_app/Screens/add_vehicle.dart';
 import 'package:travel_agency_app/Screens/add_driver.dart';
 import 'package:travel_agency_app/Screens/driver_history.dart';
 import 'package:travel_agency_app/Screens/vehicle_details.dart';
+import 'package:travel_agency_app/core/network/error_messages.dart';
 import 'package:travel_agency_app/domain/models/vehicles.dart';
 import 'package:travel_agency_app/domain/models/drivers.dart';
 import 'package:travel_agency_app/presentation/providers/viewmodel_provider.dart';
@@ -75,15 +76,14 @@ class _VehiclePageState extends ConsumerState<VehiclePage>
     super.dispose();
   }
 
-
   Future<void> _refreshData() async {
-  final agencyId = ref.read(loginViewModelProvider).agencyId ?? '';
+    final agencyId = ref.read(loginViewModelProvider).agencyId ?? '';
 
-  await Future.wait([
-    ref.read(tripBookingViewModelProvider.notifier).vehicleList(agencyId),
-    ref.read(tripBookingViewModelProvider.notifier).driverList(agencyId),
-  ]);
-}
+    await Future.wait([
+      ref.read(tripBookingViewModelProvider.notifier).vehicleList(agencyId),
+      ref.read(tripBookingViewModelProvider.notifier).driverList(agencyId),
+    ]);
+  }
 
   String _initials(String? name) {
     if (name == null || name.trim().isEmpty) return '?';
@@ -101,41 +101,38 @@ class _VehiclePageState extends ConsumerState<VehiclePage>
     final label = isAvailable
         ? 'Available'
         : statusId == 2
-            ? 'Engaged'
-            : 'Unknown';
+        ? 'Engaged'
+        : 'Unknown';
 
-  return Container(
-    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-    decoration: BoxDecoration(
-      color: bg,
-      borderRadius: BorderRadius.circular(20),
-    ),
-    child: Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          width: 5,
-          height: 5,
-          decoration: BoxDecoration(
-            color: color,
-            shape: BoxShape.circle,
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 5,
+            height: 5,
+            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
           ),
-        ),
-        const SizedBox(width: 4),
-        Text(
-          label,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: TextStyle(
-            fontSize: 10,
-            fontWeight: FontWeight.w700,
-            color: color,
+          const SizedBox(width: 4),
+          Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.w700,
+              color: color,
+            ),
           ),
-        ),
-      ],
-    ),
-  );
-}
+        ],
+      ),
+    );
+  }
 
   // ── Fuel Badge ────────────────────────────────────────────────────
   Widget _fuelBadge(String? fuelType) {
@@ -302,11 +299,12 @@ class _VehiclePageState extends ConsumerState<VehiclePage>
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-
               // ── Card body ───────────────────────────────────────
               Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 12,
+                ),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -414,13 +412,16 @@ class _VehiclePageState extends ConsumerState<VehiclePage>
                                     context,
                                     MaterialPageRoute(
                                       builder: (_) => AddVehiclePage(
-                                          vehicle: v, isEdit: true),
+                                        vehicle: v,
+                                        isEdit: true,
+                                      ),
                                     ),
                                   );
                                   if (result == true) {
                                     ref
-                                        .read(tripBookingViewModelProvider
-                                            .notifier)
+                                        .read(
+                                          tripBookingViewModelProvider.notifier,
+                                        )
                                         .vehicleList(
                                           ref
                                                   .read(loginViewModelProvider)
@@ -435,34 +436,39 @@ class _VehiclePageState extends ConsumerState<VehiclePage>
                                     Icons.directions_car_rounded,
                                     () async {
                                       Navigator.pop(context);
-                                      final agencyId = ref
+                                      final agencyId =
+                                          ref
                                               .read(loginViewModelProvider)
                                               .agencyId ??
                                           '';
                                       final vehicleId = v.vehicleId;
-                                      if (vehicleId == null ||
-                                          vehicleId <= 0) {
-                                        ScaffoldMessenger.of(context)
-                                            .showSnackBar(
+                                      if (vehicleId == null || vehicleId <= 0) {
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
                                           const SnackBar(
-                                            content:
-                                                Text('Cannot delete yet'),
+                                            content: Text('Cannot delete yet'),
                                             backgroundColor: _C.red,
                                           ),
                                         );
                                         return;
                                       }
                                       final result = await ref
-                                          .read(addVehicleViewModelProvider
-                                              .notifier)
+                                          .read(
+                                            addVehicleViewModelProvider
+                                                .notifier,
+                                          )
                                           .deleteVehicle(vehicleId);
                                       if (result['success'] == true) {
                                         ref
-                                            .read(tripBookingViewModelProvider
-                                                .notifier)
+                                            .read(
+                                              tripBookingViewModelProvider
+                                                  .notifier,
+                                            )
                                             .vehicleList(agencyId);
-                                        ScaffoldMessenger.of(context)
-                                            .showSnackBar(
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
                                           SnackBar(
                                             content: Text(
                                               result['message']?.toString() ??
@@ -472,14 +478,16 @@ class _VehiclePageState extends ConsumerState<VehiclePage>
                                           ),
                                         );
                                       } else {
-                                        ScaffoldMessenger.of(context)
-                                            .showSnackBar(
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
                                           SnackBar(
                                             content: Text(
                                               result['message']?.toString() ??
                                                   ref
                                                       .read(
-                                                          addVehicleViewModelProvider)
+                                                        addVehicleViewModelProvider,
+                                                      )
                                                       .error ??
                                                   'Cannot delete yet',
                                             ),
@@ -683,19 +691,28 @@ class _VehiclePageState extends ConsumerState<VehiclePage>
               // Menu
               _menuBtn(
                 items: [
-                  _menuItem('edit', Icons.edit_rounded, 'Edit', _C.accent,
-                      _C.accentSoft),
+                  _menuItem(
+                    'edit',
+                    Icons.edit_rounded,
+                    'Edit',
+                    _C.accent,
+                    _C.accentSoft,
+                  ),
                   const PopupMenuDivider(height: 0),
-                  _menuItem('delete', Icons.delete_rounded, 'Delete', _C.red,
-                      _C.redSoft),
+                  _menuItem(
+                    'delete',
+                    Icons.delete_rounded,
+                    'Delete',
+                    _C.red,
+                    _C.redSoft,
+                  ),
                 ],
                 onSelected: (val) async {
                   if (val == 'edit') {
                     final result = await Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (_) =>
-                            AddDriverPage(driver: d, isEdit: true),
+                        builder: (_) => AddDriverPage(driver: d, isEdit: true),
                       ),
                     );
                     if (result == true) {
@@ -763,19 +780,39 @@ class _VehiclePageState extends ConsumerState<VehiclePage>
       final available = vehicles.where((v) => v.StatusId == 1).length;
       final engaged = vehicles.where((v) => v.StatusId == 2).length;
       return _strip([
-        _stripItem('${items.length}', 'Total', Icons.inventory_2_rounded,
-            _C.accent, _C.accentSoft),
+        _stripItem(
+          '${items.length}',
+          'Total',
+          Icons.inventory_2_rounded,
+          _C.accent,
+          _C.accentSoft,
+        ),
         _stripDivider(),
-        _stripItem('$available', 'Available',
-            Icons.check_circle_outline_rounded, _C.green, _C.greenSoft),
+        _stripItem(
+          '$available',
+          'Available',
+          Icons.check_circle_outline_rounded,
+          _C.green,
+          _C.greenSoft,
+        ),
         _stripDivider(),
-        _stripItem('$engaged', 'Engaged', Icons.directions_car_rounded,
-            _C.orange, _C.orangeSoft),
+        _stripItem(
+          '$engaged',
+          'Engaged',
+          Icons.directions_car_rounded,
+          _C.orange,
+          _C.orangeSoft,
+        ),
       ]);
     } else {
       return _strip([
-        _stripItem('${items.length}', 'Total', Icons.people_rounded, _C.accent,
-            _C.accentSoft),
+        _stripItem(
+          '${items.length}',
+          'Total',
+          Icons.people_rounded,
+          _C.accent,
+          _C.accentSoft,
+        ),
       ]);
     }
   }
@@ -797,7 +834,12 @@ class _VehiclePageState extends ConsumerState<VehiclePage>
   }
 
   Widget _stripItem(
-      String value, String label, IconData icon, Color color, Color bg) {
+    String value,
+    String label,
+    IconData icon,
+    Color color,
+    Color bg,
+  ) {
     return Expanded(
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -805,24 +847,32 @@ class _VehiclePageState extends ConsumerState<VehiclePage>
           Container(
             padding: const EdgeInsets.all(6),
             decoration: BoxDecoration(
-                color: bg, borderRadius: BorderRadius.circular(8)),
+              color: bg,
+              borderRadius: BorderRadius.circular(8),
+            ),
             child: Icon(icon, size: 12, color: color),
           ),
           const SizedBox(width: 7),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(value,
-                  style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w800,
-                      color: _C.text1,
-                      height: 1)),
-              Text(label,
-                  style: const TextStyle(
-                      fontSize: 10,
-                      color: _C.text2,
-                      fontWeight: FontWeight.w500)),
+              Text(
+                value,
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w800,
+                  color: _C.text1,
+                  height: 1,
+                ),
+              ),
+              Text(
+                label,
+                style: const TextStyle(
+                  fontSize: 10,
+                  color: _C.text2,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
             ],
           ),
         ],
@@ -834,7 +884,11 @@ class _VehiclePageState extends ConsumerState<VehiclePage>
 
   // ── Delete Dialog ─────────────────────────────────────────────────
   void _deleteDialog(
-      String title, String name, IconData icon, VoidCallback onConfirm) {
+    String title,
+    String name,
+    IconData icon,
+    VoidCallback onConfirm,
+  ) {
     showDialog(
       context: context,
       builder: (ctx) => Dialog(
@@ -846,21 +900,31 @@ class _VehiclePageState extends ConsumerState<VehiclePage>
             children: [
               Container(
                 padding: const EdgeInsets.all(16),
-                decoration:
-                    const BoxDecoration(color: _C.redSoft, shape: BoxShape.circle),
+                decoration: const BoxDecoration(
+                  color: _C.redSoft,
+                  shape: BoxShape.circle,
+                ),
                 child: Icon(icon, color: _C.red, size: 30),
               ),
               const SizedBox(height: 16),
-              Text(title,
-                  style: const TextStyle(
-                      fontSize: 17,
-                      fontWeight: FontWeight.w800,
-                      color: _C.text1)),
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.w800,
+                  color: _C.text1,
+                ),
+              ),
               const SizedBox(height: 8),
-              Text('Delete "$name"?\nThis cannot be undone.',
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                      fontSize: 13, color: _C.text2, height: 1.5)),
+              Text(
+                'Delete "$name"?\nThis cannot be undone.',
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 13,
+                  color: _C.text2,
+                  height: 1.5,
+                ),
+              ),
               const SizedBox(height: 24),
               Row(
                 children: [
@@ -870,12 +934,17 @@ class _VehiclePageState extends ConsumerState<VehiclePage>
                       style: OutlinedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 13),
                         shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12)),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                         side: const BorderSide(color: _C.divider),
                       ),
-                      child: const Text('Cancel',
-                          style: TextStyle(
-                              fontWeight: FontWeight.w600, color: _C.text2)),
+                      child: const Text(
+                        'Cancel',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          color: _C.text2,
+                        ),
+                      ),
                     ),
                   ),
                   const SizedBox(width: 10),
@@ -886,10 +955,13 @@ class _VehiclePageState extends ConsumerState<VehiclePage>
                         backgroundColor: _C.red,
                         padding: const EdgeInsets.symmetric(vertical: 13),
                         shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12)),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                       ),
-                      child: const Text('Delete',
-                          style: TextStyle(fontWeight: FontWeight.w700)),
+                      child: const Text(
+                        'Delete',
+                        style: TextStyle(fontWeight: FontWeight.w700),
+                      ),
                     ),
                   ),
                 ],
@@ -912,21 +984,31 @@ class _VehiclePageState extends ConsumerState<VehiclePage>
             Container(
               width: 80,
               height: 80,
-              decoration:
-                  const BoxDecoration(color: _C.accentSoft, shape: BoxShape.circle),
+              decoration: const BoxDecoration(
+                color: _C.accentSoft,
+                shape: BoxShape.circle,
+              ),
               child: Icon(icon, size: 36, color: _C.accent),
             ),
             const SizedBox(height: 20),
-            Text(title,
-                style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w800,
-                    color: _C.text1)),
+            Text(
+              title,
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w800,
+                color: _C.text1,
+              ),
+            ),
             const SizedBox(height: 6),
-            Text(sub,
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                    fontSize: 13, color: _C.text2, height: 1.5)),
+            Text(
+              sub,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 13,
+                color: _C.text2,
+                height: 1.5,
+              ),
+            ),
           ],
         ),
       ),
@@ -935,56 +1017,65 @@ class _VehiclePageState extends ConsumerState<VehiclePage>
 
   // ── Loading ───────────────────────────────────────────────────────
   Widget _loading(String msg) => Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            SizedBox(
-              width: 32,
-              height: 32,
-              child: CircularProgressIndicator(
-                strokeWidth: 2.5,
-                color: _C.accent,
-                backgroundColor: _C.accent.withOpacity(0.1),
-              ),
-            ),
-            const SizedBox(height: 12),
-            Text(msg,
-                style: const TextStyle(
-                    color: _C.text2,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w500)),
-          ],
+    child: Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        SizedBox(
+          width: 32,
+          height: 32,
+          child: CircularProgressIndicator(
+            strokeWidth: 2.5,
+            color: _C.accent,
+            backgroundColor: _C.accent.withOpacity(0.1),
+          ),
         ),
-      );
+        const SizedBox(height: 12),
+        Text(
+          msg,
+          style: const TextStyle(
+            color: _C.text2,
+            fontSize: 13,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ],
+    ),
+  );
 
   // ── Error ─────────────────────────────────────────────────────────
   Widget _error(Object e) => Center(
-        child: Padding(
-          padding: const EdgeInsets.all(40),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(18),
-                decoration: const BoxDecoration(
-                    color: _C.redSoft, shape: BoxShape.circle),
-                child: const Icon(Icons.cloud_off_rounded,
-                    color: _C.red, size: 28),
-              ),
-              const SizedBox(height: 14),
-              const Text('Failed to load',
-                  style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                      color: _C.text1)),
-              const SizedBox(height: 6),
-              Text(e.toString(),
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(fontSize: 12, color: _C.text2)),
-            ],
+    child: Padding(
+      padding: const EdgeInsets.all(40),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(18),
+            decoration: const BoxDecoration(
+              color: _C.redSoft,
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(Icons.cloud_off_rounded, color: _C.red, size: 28),
           ),
-        ),
-      );
+          const SizedBox(height: 14),
+          const Text(
+            'Failed to load',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+              color: _C.text1,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            friendlyErrorMessage(e),
+            textAlign: TextAlign.center,
+            style: const TextStyle(fontSize: 12, color: _C.text2),
+          ),
+        ],
+      ),
+    ),
+  );
 
   // ── Header ────────────────────────────────────────────────────────
   Widget _buildHeader() {
@@ -1026,9 +1117,13 @@ class _VehiclePageState extends ConsumerState<VehiclePage>
                       labelColor: Colors.white,
                       unselectedLabelColor: _C.text2,
                       labelStyle: const TextStyle(
-                          fontSize: 13, fontWeight: FontWeight.w700),
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                      ),
                       unselectedLabelStyle: const TextStyle(
-                          fontSize: 13, fontWeight: FontWeight.w500),
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                      ),
                       dividerColor: Colors.transparent,
                       onTap: (_) {
                         _searchCtrl.clear();
@@ -1068,8 +1163,10 @@ class _VehiclePageState extends ConsumerState<VehiclePage>
                       _searchVisible = !_searchVisible;
                       if (!_searchVisible) _searchCtrl.clear();
                       if (_searchVisible) {
-                        Future.delayed(const Duration(milliseconds: 100),
-                            () => _searchFocus.requestFocus());
+                        Future.delayed(
+                          const Duration(milliseconds: 100),
+                          () => _searchFocus.requestFocus(),
+                        );
                       }
                     });
                   },
@@ -1111,37 +1208,48 @@ class _VehiclePageState extends ConsumerState<VehiclePage>
                 focusNode: _searchFocus,
                 onChanged: (_) => setState(() {}),
                 style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    color: _C.text1),
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: _C.text1,
+                ),
                 decoration: InputDecoration(
                   hintText: _isVehicleTab
                       ? 'Search vehicles...'
                       : 'Search drivers...',
                   hintStyle: const TextStyle(color: _C.text2, fontSize: 13),
-                  prefixIcon:
-                      const Icon(Icons.search_rounded, color: _C.text2, size: 18),
+                  prefixIcon: const Icon(
+                    Icons.search_rounded,
+                    color: _C.text2,
+                    size: 18,
+                  ),
                   suffixIcon: _searchCtrl.text.isNotEmpty
                       ? GestureDetector(
                           onTap: () => setState(() => _searchCtrl.clear()),
-                          child: const Icon(Icons.cancel_rounded,
-                              color: _C.text2, size: 16),
+                          child: const Icon(
+                            Icons.cancel_rounded,
+                            color: _C.text2,
+                            size: 16,
+                          ),
                         )
                       : null,
                   filled: true,
                   fillColor: _C.surfaceLight,
                   contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 14, vertical: 12),
+                    horizontal: 14,
+                    vertical: 12,
+                  ),
                   border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide.none),
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
                   enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: _C.divider)),
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: _C.divider),
+                  ),
                   focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide:
-                          const BorderSide(color: _C.accent, width: 1.5)),
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: _C.accent, width: 1.5),
+                  ),
                 ),
               ),
             ),
@@ -1165,10 +1273,10 @@ class _VehiclePageState extends ConsumerState<VehiclePage>
       ),
     );
 
-    final vehicleState =
-        ref.watch(tripBookingViewModelProvider).fetchVehicleList;
-    final driverState =
-        ref.watch(tripBookingViewModelProvider).fetchDriverList;
+    final vehicleState = ref
+        .watch(tripBookingViewModelProvider)
+        .fetchVehicleList;
+    final driverState = ref.watch(tripBookingViewModelProvider).fetchDriverList;
 
     return Scaffold(
       backgroundColor: _C.bg,
@@ -1208,17 +1316,24 @@ class _VehiclePageState extends ConsumerState<VehiclePage>
                         children: [
                           // Stats strip uses filtered for accurate counts
                           _statsStrip(filtered, true),
-                   Expanded(
-  child: RefreshIndicator(
-    onRefresh: _refreshData,
-    child: ListView.builder(
-      physics: const AlwaysScrollableScrollPhysics(), // 🔥 important
-      padding: const EdgeInsets.fromLTRB(16, 10, 16, 100),
-      itemCount: filtered.length,
-      itemBuilder: (_, i) => _vehicleCard(filtered[i], i),
-    ),
-  ),
-),
+                          Expanded(
+                            child: RefreshIndicator(
+                              onRefresh: _refreshData,
+                              child: ListView.builder(
+                                physics:
+                                    const AlwaysScrollableScrollPhysics(), // 🔥 important
+                                padding: const EdgeInsets.fromLTRB(
+                                  16,
+                                  10,
+                                  16,
+                                  100,
+                                ),
+                                itemCount: filtered.length,
+                                itemBuilder: (_, i) =>
+                                    _vehicleCard(filtered[i], i),
+                              ),
+                            ),
+                          ),
                         ],
                       );
                     },
@@ -1250,17 +1365,21 @@ class _VehiclePageState extends ConsumerState<VehiclePage>
                       return Column(
                         children: [
                           _statsStrip(filtered, false),
-                     Expanded(
-  child: RefreshIndicator(
-    onRefresh: _refreshData,
-    child: ListView.builder(
-      physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.only(top: 6, bottom: 100),
-      itemCount: filtered.length,
-      itemBuilder: (_, i) => _driverCard(filtered[i], i),
-    ),
-  ),
-),
+                          Expanded(
+                            child: RefreshIndicator(
+                              onRefresh: _refreshData,
+                              child: ListView.builder(
+                                physics: const AlwaysScrollableScrollPhysics(),
+                                padding: const EdgeInsets.only(
+                                  top: 6,
+                                  bottom: 100,
+                                ),
+                                itemCount: filtered.length,
+                                itemBuilder: (_, i) =>
+                                    _driverCard(filtered[i], i),
+                              ),
+                            ),
+                          ),
                         ],
                       );
                     },

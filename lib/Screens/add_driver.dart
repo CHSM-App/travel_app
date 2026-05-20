@@ -8,6 +8,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:open_file/open_file.dart';
 import 'package:travel_agency_app/core/storage/constant.dart';
 import 'package:travel_agency_app/domain/models/drivers.dart';
+import 'package:travel_agency_app/core/network/error_messages.dart';
 import 'package:travel_agency_app/presentation/providers/viewmodel_provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -345,7 +346,7 @@ class _AddDriverPageState extends ConsumerState<AddDriverPage>
 
       if (mounted) Navigator.pop(context, true);
     } catch (e) {
-      _showSnack(e.toString(), isError: true);
+      _showSnack(friendlyErrorMessage(e), isError: true);
     }
   }
 

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:travel_agency_app/core/network/error_messages.dart';
 import 'package:travel_agency_app/domain/models/drivers.dart';
 import 'package:travel_agency_app/domain/models/vehicles.dart';
 import 'package:travel_agency_app/presentation/providers/viewmodel_provider.dart';
@@ -585,7 +586,7 @@ class _DeletedRecordsPageState extends ConsumerState<DeletedRecordsPage>
             ),
             const SizedBox(height: 6),
             Text(
-              error.toString(),
+              friendlyErrorMessage(error),
               textAlign: TextAlign.center,
               style: const TextStyle(color: _text2, fontSize: 12, height: 1.5),
             ),

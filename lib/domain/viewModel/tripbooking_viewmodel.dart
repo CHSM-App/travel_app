@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:travel_agency_app/domain/models/booking_info.dart';
 import 'package:travel_agency_app/domain/models/customers.dart';
 import 'package:travel_agency_app/domain/models/drivers.dart';
 import 'package:travel_agency_app/domain/models/tripbooking_info.dart';
@@ -16,6 +17,7 @@ class TripBookingState {
   final AsyncValue<List<Customer>> fetchCustomerList;
   final AsyncValue<List<Vehicles>> availableVehicles;
 final AsyncValue<List<Drivers>> availableDrivers;
+  final AsyncValue<List<BookingInfo>> routeHistory;
   final String? agencyId;
   const TripBookingState({
     this.isLoading = false,
@@ -26,6 +28,7 @@ final AsyncValue<List<Drivers>> availableDrivers;
     this.fetchCustomerList = const AsyncValue.loading(),
     this.availableVehicles = const AsyncValue.loading(),
     this.availableDrivers = const AsyncValue.loading(),
+    this.routeHistory = const AsyncValue.data(<BookingInfo>[]),
     this.agencyId,
   });
 
@@ -38,6 +41,7 @@ final AsyncValue<List<Drivers>> availableDrivers;
     AsyncValue<List<Customer>>? fetchCustomerList,
     AsyncValue<List<Vehicles>>? availableVehicles,
     AsyncValue<List<Drivers>>? availableDrivers,
+    AsyncValue<List<BookingInfo>>? routeHistory,
 
     String? agencyId,
   }) {
@@ -50,6 +54,7 @@ final AsyncValue<List<Drivers>> availableDrivers;
       fetchCustomerList: fetchCustomerList ?? this.fetchCustomerList,
       availableVehicles: availableVehicles ?? this.availableVehicles,
       availableDrivers: availableDrivers ?? this.availableDrivers,
+      routeHistory: routeHistory ?? this.routeHistory,
       agencyId: agencyId ?? this.agencyId,
     );
   }
@@ -149,6 +154,20 @@ class TripBookingViewModel extends StateNotifier<TripBookingState> {
         isLoading: false,
         fetchCustomerList: AsyncValue.error(e, st),
       );
+    }
+  }
+
+  /// Loads the agency's completed trips so the booking form can suggest a
+  /// fare whenever the operator enters a pickup/drop that was billed before
+  /// (any customer). Reuses the existing `users/HistoryTrip/:agency_id`
+  /// endpoint and is fetched once when the form opens.
+  Future<void> loadRouteHistory(String agencyId) async {
+    state = state.copyWith(routeHistory: const AsyncValue.loading());
+    try {
+      final result = await usecase.historyTrip(agencyId);
+      state = state.copyWith(routeHistory: AsyncValue.data(result));
+    } catch (e, st) {
+      state = state.copyWith(routeHistory: AsyncValue.error(e, st));
     }
   }
 

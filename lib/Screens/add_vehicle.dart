@@ -9,6 +9,7 @@ import 'package:travel_agency_app/core/storage/constant.dart';
 import 'package:travel_agency_app/domain/models/fueltype.dart';
 import 'package:travel_agency_app/domain/models/vehicles.dart';
 import 'package:travel_agency_app/domain/models/vehicletype.dart';
+import 'package:travel_agency_app/core/network/error_messages.dart';
 import 'package:travel_agency_app/domain/viewModel/addVehicle_viewmodel.dart';
 import 'package:travel_agency_app/presentation/providers/viewmodel_provider.dart';
 
@@ -252,7 +253,7 @@ class _AddVehiclePageState extends ConsumerState<AddVehiclePage>
       } else if (err.contains('not null')) {
         err = 'A required field is missing.';
       } else {
-        err = e.toString();
+        err = friendlyErrorMessage(e);
       }
       _showSnack(err, isError: true);
       debugPrint("Error saving vehicle or uploading document: $e");

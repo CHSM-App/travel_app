@@ -8,6 +8,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:open_file/open_file.dart';
 import 'package:travel_agency_app/core/storage/constant.dart';
 import 'package:travel_agency_app/domain/models/customers.dart';
+import 'package:travel_agency_app/core/network/error_messages.dart';
 import 'package:travel_agency_app/presentation/providers/viewmodel_provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -221,16 +222,28 @@ child: state.isLoading
     );
   }
 
+  /// Pulls the SP's success message out of the API response (preferring the
+  /// nested `data.message` returned by `sp_Customer`, then the outer message).
+  /// Returns null when neither is present so the caller can fall back.
+  String? _extractSuccessMessage(Map<String, dynamic>? body) {
+    if (body == null) return null;
+    final inner = body['data'];
+    final innerMsg = inner is Map ? inner['message'] : null;
+    if (innerMsg is String && innerMsg.trim().isNotEmpty) {
+      return innerMsg.trim();
+    }
+    final outerMsg = body['message'];
+    if (outerMsg is String && outerMsg.trim().isNotEmpty) {
+      return outerMsg.trim();
+    }
+    return null;
+  }
+
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
 
-    final hasExisting = !_idProofRemoved &&
-        _existingIdProofUrl != null &&
-        _existingIdProofUrl!.isNotEmpty;
-    if (_selectedIdProofFile == null && !hasExisting) {
-      _showSnack('ID Proof upload is required', isError: true);
-      return;
-    }
+    // ID Proof is optional in both add and edit flows — the customer can be
+    // saved without one, and a document can be added or replaced later.
 
     final agencyId = ref.read(loginViewModelProvider).agencyId;
     if (agencyId == null ||
@@ -257,29 +270,58 @@ child: state.isLoading
       if (widget.isEdit) {
         customerId = customer.customerId ?? 0;
         await vm.updateCustomer(customer);
-        await ref.read(tripBookingViewModelProvider.notifier).customerList(agencyId);
       } else {
         customerId = await vm.addcustomer(customer);
-         await ref.read(tripBookingViewModelProvider.notifier).customerList(agencyId);
       }
 
-      if (_selectedIdProofFile != null) {
-        if (agencyId.trim().isEmpty || agencyId.trim().toLowerCase() == 'null') {
-          throw Exception('Agency ID is missing. Please login again.');
-        }
-        await vm.uploadCustomerDocument(
-          _selectedIdProofFile!,
-          customerId,
-          agencyId,
-        );
-      }
+      // Best-effort list refresh: a failure here mustn't mask the save.
+      // Refresh both sources so the Customers tab list AND the trip-booking
+      // customer dropdown reflect the change immediately.
+      try {
+        await Future.wait([
+          ref
+              .read(customerViewModelProvider.notifier)
+              .fetchCustomerslist(agencyId),
+          ref
+              .read(tripBookingViewModelProvider.notifier)
+              .customerList(agencyId),
+        ]);
+      } catch (_) {}
 
-      _showSnack(widget.isEdit
+      // Capture the SP's success message before any later step can mutate it.
+      final spMessage = _extractSuccessMessage(
+        ref.read(customerViewModelProvider).data,
+      );
+      final fallbackMessage = widget.isEdit
           ? 'Customer updated successfully'
-          : 'Customer added successfully');
+          : 'Customer added successfully';
+      final mainMessage = spMessage ?? fallbackMessage;
+
+      // Document upload is independent: the customer is already saved, so a
+      // photo-upload failure shouldn't masquerade as a "Something went wrong"
+      // on the save itself. Report it precisely and still pop back.
+      if (_selectedIdProofFile != null) {
+        try {
+          await vm.uploadCustomerDocument(
+            _selectedIdProofFile!,
+            customerId,
+            agencyId,
+          );
+        } catch (uploadErr) {
+          _showSnack(
+            '$mainMessage — document upload failed: '
+            '${friendlyErrorMessage(uploadErr)}',
+            isError: true,
+          );
+          if (mounted) Navigator.pop(context, true);
+          return;
+        }
+      }
+
+      _showSnack(mainMessage);
       if (mounted) Navigator.pop(context, true);
     } catch (e) {
-      _showSnack(e.toString(), isError: true);
+      _showSnack(friendlyErrorMessage(e), isError: true);
     }
   }
 
@@ -335,18 +377,13 @@ child: state.isLoading
                     fontWeight: FontWeight.w600,
                     color: Colors.grey.shade700)),
             const SizedBox(width: 6),
-            if (!widget.isEdit)
-              Text('*',
-                  style: TextStyle(
-                      color: Colors.red.shade500, fontWeight: FontWeight.w700))
-            else
-              Text(
-                '(Optional)',
-                style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey.shade400,
-                    fontWeight: FontWeight.w400),
-              ),
+            Text(
+              '(Optional)',
+              style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey.shade400,
+                  fontWeight: FontWeight.w400),
+            ),
           ],
         ),
         const SizedBox(height: 8),
@@ -527,13 +564,11 @@ child: state.isLoading
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
-            color: (!widget.isEdit)
-                ? _primary.withOpacity(0.4)
-                : Colors.grey.shade300,
+            color: Colors.grey.shade300,
             width: 1.5,
             style: BorderStyle.solid,
           ),
-          color: (!widget.isEdit) ? _primary.withOpacity(0.02) : _surface,
+          color: _surface,
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -548,25 +583,12 @@ child: state.isLoading
                   size: 28, color: _primary),
             ),
             const SizedBox(height: 10),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Text(
-                  'Upload ID Proof',
-                  style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: _textDark),
-                ),
-                if (!widget.isEdit) ...[
-                  const SizedBox(width: 4),
-                  Text('*',
-                      style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.red.shade500,
-                          fontWeight: FontWeight.w700)),
-                ],
-              ],
+            const Text(
+              'Upload ID Proof',
+              style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: _textDark),
             ),
             const SizedBox(height: 4),
             Text(
@@ -907,10 +929,13 @@ child: state.isLoading
 
   void _showSnack(String message, {bool isError = false}) {
     if (!mounted) return;
+    // SP `success = 1` → green; `success = 0` (or any other failure) → red.
+    // Callers signal failure via `isError: true`; everything else is green.
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
-        backgroundColor: isError ? Colors.red.shade600 : _accent,
+        backgroundColor:
+            isError ? Colors.red.shade600 : Colors.green.shade600,
       ),
     );
   }

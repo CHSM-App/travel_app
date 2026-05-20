@@ -6,6 +6,7 @@ import 'package:travel_agency_app/Screens/add_customer.dart';
 import 'package:travel_agency_app/Screens/add_driver.dart';
 import 'package:travel_agency_app/Screens/add_vehicle.dart';
 import 'package:travel_agency_app/domain/models/booking_info.dart';
+import 'package:travel_agency_app/domain/models/route_fare_suggestion.dart';
 import 'package:travel_agency_app/domain/models/tripbooking_info.dart';
 import 'package:travel_agency_app/presentation/providers/viewmodel_provider.dart';
 
@@ -118,10 +119,15 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
       }
     }
 
+    // Recompute the fare suggestion whenever the route text changes.
+    pickup.addListener(_onRouteChanged);
+    drop.addListener(_onRouteChanged);
+
     Future.microtask(() {
       final n = ref.read(tripBookingViewModelProvider.notifier);
       final aid = ref.read(loginViewModelProvider).agencyId ?? '';
       n.customerList(aid);
+      n.loadRouteHistory(aid);
       if (widget.booking != null && startDt != null && endDt != null) {
         n.fetchAvailableVehicles(
           aid,
@@ -136,17 +142,120 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
 
   @override
   void dispose() {
+    pickup.removeListener(_onRouteChanged);
+    drop.removeListener(_onRouteChanged);
     _staggerCtrl.dispose();
     super.dispose();
   }
 
+  // Rebuild so the fare-suggestion chip reflects the current route text.
+  void _onRouteChanged() {
+    if (mounted) setState(() {});
+  }
+
+  // Whole rupees when integral, else 2 decimals (kept parseable for the field).
+  String _money(double v) =>
+      v == v.roundToDouble() ? v.toStringAsFixed(0) : v.toStringAsFixed(2);
+
+  // ══════════════════════════════════════════════════════════════════════════
+  //  FARE MEMORY CHIP  ← suggests last/avg charge for this customer + route
+  // ══════════════════════════════════════════════════════════════════════════
+  Widget _fareChip(RouteFareSuggestion? fare) {
+    if (fare == null) return const SizedBox.shrink();
+    final last = _money(fare.lastCharge);
+    final avg = _money(fare.averageCharge);
+    final n = fare.tripCount;
+    return Padding(
+      padding: const EdgeInsets.only(top: 12),
+      child: GestureDetector(
+        onTap: () => setState(() => charges.text = _money(fare.lastCharge)),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          decoration: BoxDecoration(
+            color: _C.purpleSoft,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: _C.purple.withOpacity(0.25)),
+          ),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: _C.purple.withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(
+                  Icons.history_rounded,
+                  size: 14,
+                  color: _C.purple,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "Last fare ₹$last for this route",
+                      style: const TextStyle(
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w700,
+                        color: _C.text1,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      "Avg ₹$avg  ·  $n past trip${n == 1 ? '' : 's'} on this route",
+                      style: const TextStyle(fontSize: 11, color: _C.text2),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  color: _C.purple,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: const Text(
+                  "Use",
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   // ── DateTime Picker ────────────────────────────────────────────────────────
   Future<void> _pickDt(bool isStart) async {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    // Block past dates. End date additionally can't be before the picked start.
+    final earliest = isStart
+        ? today
+        : (startDt != null && startDt!.isAfter(today))
+            ? DateTime(startDt!.year, startDt!.month, startDt!.day)
+            : today;
+    final existing = isStart ? startDt : endDt;
+    final initial = (existing != null && !existing.isBefore(earliest))
+        ? existing
+        : earliest;
     final date = await showDatePicker(
       context: context,
-      firstDate: DateTime(2020),
+      firstDate: earliest,
       lastDate: DateTime(2035),
-      initialDate: DateTime.now(),
+      initialDate: initial,
       builder: (ctx, child) => Theme(
         data: Theme.of(ctx).copyWith(
           colorScheme: const ColorScheme.light(
@@ -282,6 +391,16 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
     final isEdit = widget.booking != null;
     final pb = MediaQuery.of(context).padding.bottom;
 
+    // Fare memory: last/avg charge billed for this exact route on any past
+    // (completed) trip, regardless of which customer it was.
+    final history =
+        state.routeHistory.asData?.value ?? const <BookingInfo>[];
+    final fare = RouteFareSuggestion.fromHistory(
+      history,
+      pickup: pickup.text,
+      drop: drop.text,
+    );
+
     SystemChrome.setSystemUIOverlayStyle(
       const SystemUiOverlayStyle(
         statusBarColor: Colors.transparent,
@@ -378,6 +497,7 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
                                   ),
                                 ],
                               ),
+                              _fareChip(fare),
                             ],
                           ),
                         ),

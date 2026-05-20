@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:travel_agency_app/Screens/trip_card.dart';
 import 'package:travel_agency_app/Screens/add_vehicle.dart';
+import 'package:travel_agency_app/core/network/error_messages.dart';
 import 'package:travel_agency_app/domain/models/services.dart';
 import 'package:travel_agency_app/domain/models/vehicles.dart';
 import 'package:travel_agency_app/presentation/providers/viewmodel_provider.dart';
@@ -1660,7 +1661,7 @@ class _TripsTabState extends ConsumerState<_TripsTab> {
       loading: () => const Center(
         child: CircularProgressIndicator(color: _C.accent, strokeWidth: 2),
       ),
-      error: (e, _) => _errState(e.toString()),
+      error: (e, _) => _errState(friendlyErrorMessage(e)),
       data: (trips) {
         if (trips.isEmpty) {
           return LayoutBuilder(
