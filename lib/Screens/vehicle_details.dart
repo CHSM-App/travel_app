@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:travel_agency_app/Screens/trip_card.dart';
 import 'package:travel_agency_app/Screens/add_vehicle.dart';
 import 'package:travel_agency_app/core/network/error_messages.dart';
+import 'package:travel_agency_app/core/widgets/skeleton.dart';
 import 'package:travel_agency_app/domain/models/services.dart';
 import 'package:travel_agency_app/domain/models/vehicles.dart';
 import 'package:travel_agency_app/presentation/providers/viewmodel_provider.dart';
@@ -1658,8 +1659,15 @@ class _TripsTabState extends ConsumerState<_TripsTab> {
     final state = ref.watch(addVehicleViewModelProvider).fetchTripsByVehicleId;
 
     return state.when(
-      loading: () => const Center(
-        child: CircularProgressIndicator(color: _C.accent, strokeWidth: 2),
+      loading: () => ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.fromLTRB(0, 8, 0, 24),
+        children: const [
+          SkeletonListItem(),
+          SkeletonListItem(),
+          SkeletonListItem(),
+          SkeletonListItem(),
+        ],
       ),
       error: (e, _) => _errState(friendlyErrorMessage(e)),
       data: (trips) {
@@ -2056,7 +2064,15 @@ class _MaintTabState extends ConsumerState<_MaintTab>
 
         Expanded(
           child: serviceAsync.when(
-            loading: () => const Center(child: CircularProgressIndicator()),
+            loading: () => ListView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.fromLTRB(0, 8, 0, 24),
+              children: const [
+                SkeletonListItem(hasTrailingLine: false),
+                SkeletonListItem(hasTrailingLine: false),
+                SkeletonListItem(hasTrailingLine: false),
+              ],
+            ),
             error: (e, _) => Center(child: Text("Error: $e")),
             data: (services) {
               final filteredServices = services.where((s) {

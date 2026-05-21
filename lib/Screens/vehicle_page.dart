@@ -6,6 +6,7 @@ import 'package:travel_agency_app/Screens/add_driver.dart';
 import 'package:travel_agency_app/Screens/driver_history.dart';
 import 'package:travel_agency_app/Screens/vehicle_details.dart';
 import 'package:travel_agency_app/core/network/error_messages.dart';
+import 'package:travel_agency_app/core/widgets/skeleton.dart';
 import 'package:travel_agency_app/domain/models/vehicles.dart';
 import 'package:travel_agency_app/domain/models/drivers.dart';
 import 'package:travel_agency_app/presentation/providers/viewmodel_provider.dart';
@@ -1016,28 +1017,18 @@ class _VehiclePageState extends ConsumerState<VehiclePage>
   }
 
   // ── Loading ───────────────────────────────────────────────────────
-  Widget _loading(String msg) => Center(
-    child: Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        SizedBox(
-          width: 32,
-          height: 32,
-          child: CircularProgressIndicator(
-            strokeWidth: 2.5,
-            color: _C.accent,
-            backgroundColor: _C.accent.withOpacity(0.1),
-          ),
-        ),
-        const SizedBox(height: 12),
-        Text(
-          msg,
-          style: const TextStyle(
-            color: _C.text2,
-            fontSize: 13,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
+  Widget _loading(String msg) => RefreshIndicator(
+    onRefresh: _refreshData,
+    color: _C.accent,
+    child: ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: const EdgeInsets.fromLTRB(0, 8, 0, 110),
+      children: const [
+        SkeletonListItem(),
+        SkeletonListItem(),
+        SkeletonListItem(),
+        SkeletonListItem(),
+        SkeletonListItem(),
       ],
     ),
   );

@@ -3,6 +3,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:travel_agency_app/Screens/trip_card.dart';
 import 'package:travel_agency_app/core/network/error_messages.dart';
+import 'package:travel_agency_app/core/widgets/skeleton.dart';
 import 'package:travel_agency_app/core/network/network_state_notifier.dart';
 import 'package:travel_agency_app/domain/models/booking_info.dart';
 import 'package:travel_agency_app/presentation/providers/viewmodel_provider.dart';
@@ -273,21 +274,18 @@ class _TripPageState extends ConsumerState<TripPage> {
 
   Widget _buildTripList(AsyncValue<List<BookingInfo>> state, String type) {
     return state.when(
-      loading: () => Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            CircularProgressIndicator(
-              color: Color(0xFF3D5AFE),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'Loading trips...',
-              style: TextStyle(
-                color: Colors.grey.shade600,
-                fontSize: 14,
-              ),
-            ),
+      loading: () => RefreshIndicator(
+        onRefresh: () async => _loadListForFilter(type),
+        color: const Color(0xFF3D5AFE),
+        child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.fromLTRB(0, 8, 0, 110),
+          children: const [
+            SkeletonListItem(),
+            SkeletonListItem(),
+            SkeletonListItem(),
+            SkeletonListItem(),
+            SkeletonListItem(),
           ],
         ),
       ),

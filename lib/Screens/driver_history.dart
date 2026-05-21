@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:travel_agency_app/Screens/trip_card.dart';
+import 'package:travel_agency_app/core/widgets/skeleton.dart';
 import 'package:travel_agency_app/domain/models/booking_info.dart';
 import 'package:travel_agency_app/domain/models/drivers.dart';
 import 'package:travel_agency_app/presentation/providers/viewmodel_provider.dart';
@@ -285,11 +286,28 @@ Widget _buildStats(AsyncValue<List<BookingInfo>> tripState) {
   // TRIP LIST
   // ─────────────────────────────────────────────────────────────
 
+  Future<void> _refreshTrips() async {
+    await ref
+        .read(addDriverViewModelProvider.notifier)
+        .fetchDriverHistory(widget.driver.driverId ?? 0);
+  }
+
   Widget _buildTripList(
       AsyncValue<List<BookingInfo>> state) {
     return state.when(
-      loading: () =>
-          const Center(child: CircularProgressIndicator()),
+      loading: () => RefreshIndicator(
+        onRefresh: _refreshTrips,
+        child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.fromLTRB(0, 8, 0, 24),
+          children: const [
+            SkeletonListItem(),
+            SkeletonListItem(),
+            SkeletonListItem(),
+            SkeletonListItem(),
+          ],
+        ),
+      ),
       error: (e, _) => Center(child: Text('$e')),
       data: (trips) {
         if (trips.isEmpty) {
@@ -297,14 +315,18 @@ Widget _buildStats(AsyncValue<List<BookingInfo>> tripState) {
               child: Text("No trips for this driver"));
         }
 
-        return ListView.builder(
-          padding: const EdgeInsets.only(bottom: 24),
-          itemCount: trips.length,
-          itemBuilder: (_, i) => TripCard(
-            key: ValueKey(trips[i].tripId),
-            bookinginfo: trips[i],
-            ref: ref,
-            status: trips[i].status ?? 0,
+        return RefreshIndicator(
+          onRefresh: _refreshTrips,
+          child: ListView.builder(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.only(bottom: 24),
+            itemCount: trips.length,
+            itemBuilder: (_, i) => TripCard(
+              key: ValueKey(trips[i].tripId),
+              bookinginfo: trips[i],
+              ref: ref,
+              status: trips[i].status ?? 0,
+            ),
           ),
         );
       },

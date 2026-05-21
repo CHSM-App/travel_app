@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:travel_agency_app/core/network/error_messages.dart';
+import 'package:travel_agency_app/core/widgets/skeleton.dart';
 import 'package:travel_agency_app/domain/models/drivers.dart';
 import 'package:travel_agency_app/domain/models/vehicles.dart';
 import 'package:travel_agency_app/presentation/providers/viewmodel_provider.dart';
@@ -536,20 +537,18 @@ class _DeletedRecordsPageState extends ConsumerState<DeletedRecordsPage>
   // ─── State widgets ────────────────────────────────────────────────────────
 
   Widget _loadingState(String message) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const SizedBox(
-            width: 36,
-            height: 36,
-            child: CircularProgressIndicator(
-              color: _accent,
-              strokeWidth: 2.5,
-            ),
-          ),
-          const SizedBox(height: 14),
-          Text(message, style: const TextStyle(color: _text2, fontSize: 13)),
+    return RefreshIndicator(
+      onRefresh: () async => _loadDeletedItems(),
+      color: _accent,
+      child: ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.fromLTRB(0, 8, 0, 24),
+        children: const [
+          SkeletonListItem(hasTrailingLine: false),
+          SkeletonListItem(hasTrailingLine: false),
+          SkeletonListItem(hasTrailingLine: false),
+          SkeletonListItem(hasTrailingLine: false),
+          SkeletonListItem(hasTrailingLine: false),
         ],
       ),
     );

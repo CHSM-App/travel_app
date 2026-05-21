@@ -5,6 +5,7 @@ import 'package:travel_agency_app/Screens/add_driver.dart';
 import 'package:travel_agency_app/Screens/add_tripbooking.dart';
 import 'package:travel_agency_app/Screens/add_vehicle.dart';
 import 'package:travel_agency_app/Screens/reports.dart';
+import 'package:travel_agency_app/core/widgets/skeleton.dart';
 import 'package:travel_agency_app/domain/models/booking_info.dart';
 import 'package:travel_agency_app/domain/viewModel/trippage_viewmodel.dart';
 import 'package:travel_agency_app/presentation/providers/viewmodel_provider.dart';
@@ -25,15 +26,34 @@ class _TravelAdminDashboardState extends ConsumerState<TravelAdminDashboard> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final agencyId = ref.read(loginViewModelProvider).agencyId ?? '';
-      if (agencyId.trim().isEmpty) return;
-      final notifier = ref.read(TripPageViewModelProvider.notifier);
-      notifier.activeList(agencyId);
-      notifier.upcomingList(agencyId);
-      notifier.historyList(agencyId);
-      notifier.unpaidList(agencyId);
-      notifier.cancelledList(agencyId);
+      _loadAll();
     });
+  }
+
+  void _loadAll() {
+    final agencyId = ref.read(loginViewModelProvider).agencyId ?? '';
+    if (agencyId.trim().isEmpty) return;
+    final notifier = ref.read(TripPageViewModelProvider.notifier);
+    notifier.activeList(agencyId);
+    notifier.upcomingList(agencyId);
+    notifier.historyList(agencyId);
+    notifier.unpaidList(agencyId);
+    notifier.cancelledList(agencyId);
+  }
+
+  // Triggered by RefreshIndicator. Awaits all five fetches so the spinner
+  // stays until the data is genuinely back, not just dispatched.
+  Future<void> _refresh() async {
+    final agencyId = ref.read(loginViewModelProvider).agencyId ?? '';
+    if (agencyId.trim().isEmpty) return;
+    final notifier = ref.read(TripPageViewModelProvider.notifier);
+    await Future.wait([
+      notifier.activeList(agencyId),
+      notifier.upcomingList(agencyId),
+      notifier.historyList(agencyId),
+      notifier.unpaidList(agencyId),
+      notifier.cancelledList(agencyId),
+    ]);
   }
 
   bool _isSameDay(DateTime a, DateTime b) =>
@@ -139,8 +159,16 @@ class _TravelAdminDashboardState extends ConsumerState<TravelAdminDashboard> {
             ),
           ),
           SafeArea(
-            child: SingleChildScrollView(
-              physics: const BouncingScrollPhysics(),
+            child: RefreshIndicator(
+              onRefresh: _refresh,
+              color: TravelAdminDashboard.primaryColor,
+              backgroundColor: Colors.white,
+              child: SingleChildScrollView(
+                // AlwaysScrollable so the pull-to-refresh works even when
+                // the content is shorter than the viewport.
+                physics: const AlwaysScrollableScrollPhysics(
+                  parent: BouncingScrollPhysics(),
+                ),
               padding: EdgeInsets.only(
                 left: hPad,
                 right: hPad,
@@ -166,6 +194,7 @@ class _TravelAdminDashboardState extends ConsumerState<TravelAdminDashboard> {
                   // SizedBox(height: isSmall ? 10 : 14),
                   // _ReycentActivity(isSmall: isSmall),
                 ],
+              ),
               ),
             ),
           ),
@@ -554,29 +583,38 @@ class _StatsRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bookingsVal = stats.isLoading
-        ? '...'
-        : stats.hasError
-            ? '--'
-            : stats.bookings.toString();
-    final revenueVal = stats.isLoading
-        ? '...'
-        : stats.hasError
-            ? '--'
-            : '₹${_formatCompact(stats.revenue)}';
-    final expenditureVal = stats.isLoading
-        ? '...'
-        : stats.hasError
-            ? '--'
-            : '₹${_formatCompact(stats.expenditure)}';
+    final bookingsVal = stats.bookings.toString();
+    final revenueVal = '₹${_formatCompact(stats.revenue)}';
+    final expenditureVal = '₹${_formatCompact(stats.expenditure)}';
 
     final statItems = [
-      _StatData('Today Bookings', bookingsVal, Icons.confirmation_number_outlined,
-          const Color(0xFF00BFA5), const Color(0xFFE0F7F4)),
-      _StatData('Today Revenue', revenueVal, Icons.currency_rupee_rounded,
-          const Color(0xFFFF6D00), const Color(0xFFFFF3E0)),
-      _StatData('Today Expenditure', expenditureVal, Icons.trending_down_rounded,
-          TravelAdminDashboard.primaryColor, const Color(0xFFE8EAFF)),
+      _StatData(
+        'Today Bookings',
+        bookingsVal,
+        Icons.confirmation_number_outlined,
+        const Color(0xFF00BFA5),
+        const Color(0xFFE0F7F4),
+        isLoading: stats.isLoading,
+        hasError: stats.hasError,
+      ),
+      _StatData(
+        'Today Revenue',
+        revenueVal,
+        Icons.currency_rupee_rounded,
+        const Color(0xFFFF6D00),
+        const Color(0xFFFFF3E0),
+        isLoading: stats.isLoading,
+        hasError: stats.hasError,
+      ),
+      _StatData(
+        'Today Expenditure',
+        expenditureVal,
+        Icons.trending_down_rounded,
+        TravelAdminDashboard.primaryColor,
+        const Color(0xFFE8EAFF),
+        isLoading: stats.isLoading,
+        hasError: stats.hasError,
+      ),
     ];
 
     return Row(
@@ -628,15 +666,21 @@ class _StatCard extends StatelessWidget {
             child: Icon(data.icon, color: data.color, size: isSmall ? 15 : 18),
           ),
           SizedBox(height: isSmall ? 7 : 10),
-          Text(
-            data.value,
-            style: TextStyle(
-              fontSize: isSmall ? 13 : 15,
-              fontWeight: FontWeight.w800,
-              color: TravelAdminDashboard.darkBlue,
-              letterSpacing: -0.3,
+          if (data.isLoading)
+            SkeletonBox(
+              width: isSmall ? 50 : 64,
+              height: isSmall ? 16 : 18,
+            )
+          else
+            Text(
+              data.hasError ? '—' : data.value,
+              style: TextStyle(
+                fontSize: isSmall ? 13 : 15,
+                fontWeight: FontWeight.w800,
+                color: TravelAdminDashboard.darkBlue,
+                letterSpacing: -0.3,
+              ),
             ),
-          ),
           const SizedBox(height: 2),
           Text(
             data.title,
@@ -885,7 +929,17 @@ class _StatData {
   final String title, value;
   final IconData icon;
   final Color color, bgColor;
-  const _StatData(this.title, this.value, this.icon, this.color, this.bgColor);
+  final bool isLoading;
+  final bool hasError;
+  const _StatData(
+    this.title,
+    this.value,
+    this.icon,
+    this.color,
+    this.bgColor, {
+    this.isLoading = false,
+    this.hasError = false,
+  });
 }
 
 class _ActionData {
@@ -925,3 +979,4 @@ String _formatCompact(double v) {
   if (v >= 1e3) return '${(v / 1e3).toStringAsFixed(2)}K';
   return v.toStringAsFixed(0);
 }
+

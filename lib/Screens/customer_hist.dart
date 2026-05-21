@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:travel_agency_app/Screens/trip_card.dart';
+import 'package:travel_agency_app/core/widgets/skeleton.dart';
 import 'package:travel_agency_app/domain/models/booking_info.dart';
 import 'package:travel_agency_app/domain/models/customers.dart';
 import 'package:travel_agency_app/presentation/providers/viewmodel_provider.dart';
@@ -434,31 +435,26 @@ Widget _compactStat(
   }
 
   Widget _loadingState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          SizedBox(
-            width: 32,
-            height: 32,
-            child: CircularProgressIndicator(
-              strokeWidth: 2.5,
-              color: _accent,
-              backgroundColor: _accent.withOpacity(0.1),
-            ),
-          ),
-          const SizedBox(height: 12),
-          const Text(
-            "Loading trips...",
-            style: TextStyle(
-              color: _textSecondary,
-              fontSize: 13,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
+    return RefreshIndicator(
+      onRefresh: _refreshTrips,
+      color: _accent,
+      child: ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.fromLTRB(0, 16, 0, 24),
+        children: const [
+          SkeletonListItem(),
+          SkeletonListItem(),
+          SkeletonListItem(),
+          SkeletonListItem(),
         ],
       ),
     );
+  }
+
+  Future<void> _refreshTrips() async {
+    await ref
+        .read(customerViewModelProvider.notifier)
+        .fetchCustomershist(widget.customer.customerId ?? 0);
   }
 
   Widget _errorState(Object e) {
