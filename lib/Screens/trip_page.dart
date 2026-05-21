@@ -23,10 +23,17 @@ class _TripPageState extends ConsumerState<TripPage> {
   void initState() {
     super.initState();
 
+    // If someone (e.g. the dashboard's Action Needed card) requested a
+    // specific filter, honour it on mount and clear the signal so a later
+    // manual visit defaults back to "All".
+    final requested = ref.read(tripPageInitialFilterProvider);
+    if (requested != null) {
+      _selectedFilter = requested;
+      ref.read(tripPageInitialFilterProvider.notifier).state = null;
+    }
+
     Future.microtask(() {
-      final notifier = ref.read(TripPageViewModelProvider.notifier);
-      // Default tab is "All" — load the merged list on open.
-      notifier.allTrips(ref.read(loginViewModelProvider).agencyId ?? '');
+      _loadListForFilter(_selectedFilter);
     });
   }
 

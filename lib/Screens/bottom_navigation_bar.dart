@@ -112,10 +112,21 @@ class _MainBottomNavState extends ConsumerState<MainBottomNav>
     setState(() => selectedIndex = index);
     _pageAnimController.reset();
     _pageAnimController.forward();
+    // Keep the provider in sync so listeners (e.g. the dashboard's deep-link
+    // flow) don't see a stale value the next time they read it.
+    if (ref.read(bottomNavIndexProvider) != index) {
+      ref.read(bottomNavIndexProvider.notifier).state = index;
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    // Deep-link from dashboard (or anywhere else): another widget writes to
+    // bottomNavIndexProvider and we react by animating to that tab.
+    ref.listen<int>(bottomNavIndexProvider, (prev, next) {
+      if (next != selectedIndex) _onItemTapped(next);
+    });
+
     final loginState = ref.watch(loginViewModelProvider);
     String userName = "Admin";
     String initials = "A";

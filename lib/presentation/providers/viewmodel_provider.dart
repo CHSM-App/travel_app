@@ -58,3 +58,12 @@ final reportViewModelProvider =
       final usecase = ref.watch(reportUseCaseProvider);
       return ReportViewModel(ref, usecase);
     });
+
+// Drives the bottom nav's current tab. The dashboard writes to this to deep-link
+// the operator into Trips/Vehicles with the right filter pre-applied.
+final bottomNavIndexProvider = StateProvider<int>((ref) => 0);
+
+// One-shot signal: the filter TripPage should mount with (e.g. 'unpaid',
+// 'upcoming', 'active'). TripPage consumes and clears it so a later manual
+// tab switch doesn't get hijacked.
+final tripPageInitialFilterProvider = StateProvider<String?>((ref) => null);

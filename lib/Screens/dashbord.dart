@@ -127,8 +127,8 @@ class _TravelAdminDashboardState extends ConsumerState<TravelAdminDashboard> {
 
     final sw = MediaQuery.of(context).size.width;
     final isSmall = sw < 340;
-    final hPad = isSmall ? 12.0 : 20.0;
-    final sectionGap = isSmall ? 18.0 : 28.0;
+    final hPad = isSmall ? 12.0 : 16.0;
+    final sectionGap = isSmall ? 12.0 : 16.0;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF0F4FF),
@@ -172,22 +172,28 @@ class _TravelAdminDashboardState extends ConsumerState<TravelAdminDashboard> {
               padding: EdgeInsets.only(
                 left: hPad,
                 right: hPad,
-                top: 18,
+                top: 12,
                 bottom: 110,
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   _PageTitle(isSmall: isSmall),
-                  SizedBox(height: sectionGap - 6),
+                  SizedBox(height: sectionGap - 2),
+                  _ActionNeededCard(
+                    isSmall: isSmall,
+                    tripState: tripState,
+                    isLoading: anyLoading,
+                  ),
+                  SizedBox(height: sectionGap),
                   _StatsRow(isSmall: isSmall, stats: todayStats),
                   SizedBox(height: sectionGap),
                   _SectionTitle(title: "Quick Actions", isSmall: isSmall),
-                  SizedBox(height: isSmall ? 10 : 14),
+                  SizedBox(height: isSmall ? 6 : 8),
                   _QuickActionsGrid(isSmall: isSmall),
                   SizedBox(height: sectionGap),
                   _SectionTitle(title: "Reports", isSmall: isSmall),
-                  SizedBox(height: isSmall ? 10 : 14),
+                  SizedBox(height: isSmall ? 6 : 8),
                   _BookingReportBanner(isSmall: isSmall),
                   SizedBox(height: sectionGap),
                   // _SectionTitle(title: "Recent Activity", isSmall: isSmall),
@@ -203,6 +209,306 @@ class _TravelAdminDashboardState extends ConsumerState<TravelAdminDashboard> {
     );
   }
 }
+// ─────────────────────────────────────────────────────────
+// ACTION NEEDED CARD
+// A worklist, not a scoreboard: three live rows the operator
+// can act on right now. Each row deep-links into the Trips tab
+// with the right filter pre-applied via the cross-tab providers.
+// ─────────────────────────────────────────────────────────
+class _ActionNeededCard extends ConsumerWidget {
+  final bool isSmall;
+  final TripPageState tripState;
+  final bool isLoading;
+
+  const _ActionNeededCard({
+    required this.isSmall,
+    required this.tripState,
+    required this.isLoading,
+  });
+
+  bool _isSameDay(DateTime a, DateTime b) =>
+      a.year == b.year && a.month == b.month && a.day == b.day;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final unpaid = tripState.unpaidList.valueOrNull ?? const <BookingInfo>[];
+    final upcoming = tripState.upcomingList.valueOrNull ?? const <BookingInfo>[];
+    final active = tripState.activeList.valueOrNull ?? const <BookingInfo>[];
+
+    // Outstanding dues: sum of pending_amount across unpaid + partially-paid
+    // trips. We also count unique customers so the row reads "₹X across N".
+    var duesTotal = 0.0;
+    final dueCustomers = <Object>{};
+    for (final t in unpaid) {
+      final status = t.payment_status?.toLowerCase() ?? '';
+      if (status != 'unpaid' && status != 'partially paid') continue;
+      duesTotal += t.pendingAmount ?? 0.0;
+      dueCustomers.add(t.customerId ?? 'c-${t.tripId ?? t.customer_name}');
+    }
+
+    final now = DateTime.now();
+    final startsToday = upcoming.where((t) {
+      final d = t.startDateTime ?? t.bookingDate;
+      return d != null && _isSameDay(d, now);
+    }).length;
+
+    final activeCount = active.length;
+
+    final totalAttention =
+        (duesTotal > 0 ? 1 : 0) + (startsToday > 0 ? 1 : 0) + (activeCount > 0 ? 1 : 0);
+
+    void goToTrips(String filter) {
+      ref.read(tripPageInitialFilterProvider.notifier).state = filter;
+      ref.read(bottomNavIndexProvider.notifier).state = 1;
+    }
+
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(isSmall ? 14 : 16),
+        boxShadow: [
+          BoxShadow(
+            color: TravelAdminDashboard.primaryColor.withOpacity(0.08),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(
+          isSmall ? 10 : 12,
+          isSmall ? 8 : 10,
+          isSmall ? 10 : 12,
+          isSmall ? 4 : 6,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  Icons.notifications_active_rounded,
+                  color: const Color(0xFFFF6D00),
+                  size: isSmall ? 14 : 16,
+                ),
+                SizedBox(width: isSmall ? 6 : 8),
+                Expanded(
+                  child: Text(
+                    'Action Needed',
+                    style: TextStyle(
+                      fontSize: isSmall ? 12 : 13,
+                      fontWeight: FontWeight.w800,
+                      color: TravelAdminDashboard.darkBlue,
+                      letterSpacing: -0.1,
+                    ),
+                  ),
+                ),
+                if (totalAttention > 0)
+                  Container(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: isSmall ? 6 : 8,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFEBEE),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      '$totalAttention',
+                      style: TextStyle(
+                        fontSize: isSmall ? 9 : 10,
+                        fontWeight: FontWeight.w800,
+                        color: const Color(0xFFD32F2F),
+                      ),
+                    ),
+                  )
+                else
+                  Text(
+                    'All caught up',
+                    style: TextStyle(
+                      fontSize: isSmall ? 9 : 10,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.grey.shade500,
+                    ),
+                  ),
+              ],
+            ),
+            SizedBox(height: isSmall ? 4 : 6),
+            _ActionRow(
+              isSmall: isSmall,
+              icon: Icons.currency_rupee_rounded,
+              color: const Color(0xFFD32F2F),
+              bg: const Color(0xFFFFEBEE),
+              title: 'Outstanding dues',
+              value: '₹${_formatCompact(duesTotal)}',
+              subtitle: dueCustomers.isEmpty
+                  ? 'No dues pending'
+                  : 'Across ${dueCustomers.length} '
+                      '${dueCustomers.length == 1 ? 'customer' : 'customers'}',
+              isLoading: isLoading && unpaid.isEmpty,
+              muted: duesTotal <= 0,
+              onTap: () => goToTrips('unpaid'),
+            ),
+            _RowDivider(),
+            _ActionRow(
+              isSmall: isSmall,
+              icon: Icons.event_available_rounded,
+              color: const Color(0xFFFF6D00),
+              bg: const Color(0xFFFFF3E0),
+              title: 'Trips starting today',
+              value: '$startsToday',
+              subtitle: startsToday == 0
+                  ? 'Nothing scheduled for today'
+                  : startsToday == 1
+                      ? '1 pickup to dispatch'
+                      : '$startsToday pickups to dispatch',
+              isLoading: isLoading && upcoming.isEmpty,
+              muted: startsToday == 0,
+              onTap: () => goToTrips('upcoming'),
+            ),
+            _RowDivider(),
+            _ActionRow(
+              isSmall: isSmall,
+              icon: Icons.directions_car_rounded,
+              color: const Color(0xFF00BFA5),
+              bg: const Color(0xFFE0F7F4),
+              title: 'Active trips right now',
+              value: '$activeCount',
+              subtitle: activeCount == 0
+                  ? 'No trips on the road'
+                  : activeCount == 1
+                      ? '1 vehicle on the road'
+                      : '$activeCount vehicles on the road',
+              isLoading: isLoading && active.isEmpty,
+              muted: activeCount == 0,
+              onTap: () => goToTrips('active'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ActionRow extends StatelessWidget {
+  final bool isSmall;
+  final IconData icon;
+  final Color color;
+  final Color bg;
+  final String title;
+  final String value;
+  final String subtitle;
+  final bool isLoading;
+  final bool muted;
+  final VoidCallback onTap;
+
+  const _ActionRow({
+    required this.isSmall,
+    required this.icon,
+    required this.color,
+    required this.bg,
+    required this.title,
+    required this.value,
+    required this.subtitle,
+    required this.isLoading,
+    required this.muted,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(10),
+      child: Padding(
+        padding: EdgeInsets.symmetric(
+          horizontal: isSmall ? 2 : 4,
+          vertical: isSmall ? 6 : 8,
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: isSmall ? 28 : 32,
+              height: isSmall ? 28 : 32,
+              decoration: BoxDecoration(
+                color: muted ? Colors.grey.shade100 : bg,
+                borderRadius: BorderRadius.circular(isSmall ? 8 : 9),
+              ),
+              child: Icon(
+                icon,
+                color: muted ? Colors.grey.shade400 : color,
+                size: isSmall ? 14 : 16,
+              ),
+            ),
+            SizedBox(width: isSmall ? 8 : 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontSize: isSmall ? 11 : 12,
+                      fontWeight: FontWeight.w700,
+                      color: TravelAdminDashboard.darkBlue,
+                      height: 1.2,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  Text(
+                    subtitle,
+                    style: TextStyle(
+                      fontSize: isSmall ? 9 : 10,
+                      color: Colors.grey.shade500,
+                      fontWeight: FontWeight.w500,
+                      height: 1.3,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(width: isSmall ? 4 : 6),
+            if (isLoading)
+              SkeletonBox(
+                width: isSmall ? 34 : 48,
+                height: isSmall ? 12 : 14,
+              )
+            else
+              Text(
+                value,
+                style: TextStyle(
+                  fontSize: isSmall ? 13 : 15,
+                  fontWeight: FontWeight.w800,
+                  color: muted ? Colors.grey.shade400 : color,
+                  letterSpacing: -0.2,
+                ),
+              ),
+            Icon(
+              Icons.chevron_right_rounded,
+              size: isSmall ? 14 : 16,
+              color: Colors.grey.shade300,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _RowDivider extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Divider(
+      height: 1,
+      thickness: 1,
+      color: Colors.grey.shade100,
+    );
+  }
+}
+
 // ─────────────────────────────────────────────────────────
 // BOOKING REPORT BANNER
 // ─────────────────────────────────────────────────────────
@@ -227,188 +533,94 @@ class _BookingReportBanner extends ConsumerWidget {
         width: double.infinity,
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(isSmall ? 18 : 22),
+          borderRadius: BorderRadius.circular(isSmall ? 14 : 16),
           boxShadow: [
             BoxShadow(
-              color: TravelAdminDashboard.primaryColor.withOpacity(0.10),
-              blurRadius: 20,
-              offset: const Offset(0, 7),
+              color: TravelAdminDashboard.primaryColor.withOpacity(0.08),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
             ),
           ],
         ),
         child: Padding(
-          padding: EdgeInsets.all(isSmall ? 14 : 18),
+          padding: EdgeInsets.all(isSmall ? 10 : 12),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              // Left: gradient icon box
               Container(
-                width: isSmall ? 52 : 64,
-                height: isSmall ? 52 : 64,
+                width: isSmall ? 36 : 42,
+                height: isSmall ? 36 : 42,
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
                     colors: [Color(0xFF3D5AFE), Color(0xFF7986CB)],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
-                  borderRadius: BorderRadius.circular(isSmall ? 13 : 16),
+                  borderRadius: BorderRadius.circular(isSmall ? 9 : 11),
                   boxShadow: [
                     BoxShadow(
-                      color: TravelAdminDashboard.primaryColor.withOpacity(0.30),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
+                      color: TravelAdminDashboard.primaryColor.withOpacity(0.25),
+                      blurRadius: 6,
+                      offset: const Offset(0, 2),
                     ),
                   ],
                 ),
                 child: Icon(
                   Icons.bar_chart_outlined,
                   color: Colors.white,
-                  size: isSmall ? 24 : 30,
+                  size: isSmall ? 18 : 22,
                 ),
               ),
-              SizedBox(width: isSmall ? 12 : 16),
+              SizedBox(width: isSmall ? 10 : 12),
 
-              // Middle: text content
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    // Badge
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 3),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFE8EAFF),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Text(
-                        "REPORTS",
-                        style: TextStyle(
-                          fontSize: isSmall ? 8 : 9,
-                          fontWeight: FontWeight.w800,
-                          color: TravelAdminDashboard.primaryColor,
-                          letterSpacing: 1.5,
-                        ),
-                      ),
-                    ),
-                    SizedBox(height: isSmall ? 5 : 7),
-
-                    // Title
                     Text(
                       "Booking Report",
                       style: TextStyle(
-                        fontSize: isSmall ? 16 : 20,
-                        fontWeight: FontWeight.w900,
+                        fontSize: isSmall ? 13 : 15,
+                        fontWeight: FontWeight.w800,
                         color: TravelAdminDashboard.darkBlue,
-                        letterSpacing: -0.4,
+                        letterSpacing: -0.2,
                         height: 1.1,
                       ),
                     ),
-                    SizedBox(height: isSmall ? 4 : 5),
-
-                    // Subtitle
+                    SizedBox(height: isSmall ? 2 : 3),
                     Text(
-                      
-                       "Bookings, drivers, vehicles,\ncustomers & revenue",
+                      "Bookings, drivers, vehicles & revenue",
                       style: TextStyle(
-                        fontSize: isSmall ? 10 : 11,
+                        fontSize: isSmall ? 9 : 10,
                         color: Colors.grey.shade500,
-                        height: 1.45,
+                        height: 1.3,
                         fontWeight: FontWeight.w500,
                       ),
-                    ),
-                    SizedBox(height: isSmall ? 10 : 14),
-
-                    // Chips
-                    Row(
-                      children: [
-                        _ReportChip(
-                          icon: Icons.bar_chart_rounded,
-                          label: "Analytics",
-                          color: TravelAdminDashboard.primaryColor,
-                          bg: const Color(0xFFE8EAFF),
-                          isSmall: isSmall,
-                        ),
-                        SizedBox(width: isSmall ? 6 : 8),
-                        // _ReportChip(
-                        //   icon: Icons.download_rounded,
-                        //   label: "Export",
-                        //   color: const Color(0xFF00897B),
-                        //   bg: const Color(0xFFE0F7F4),
-                        //   isSmall: isSmall,
-                        // ),
-                      ],
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ],
                 ),
               ),
-              SizedBox(width: isSmall ? 10 : 14),
+              SizedBox(width: isSmall ? 6 : 8),
 
-              // Right: arrow button
               Container(
-                width: isSmall ? 34 : 40,
-                height: isSmall ? 34 : 40,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFE8EAFF),
+                width: isSmall ? 26 : 30,
+                height: isSmall ? 26 : 30,
+                decoration: const BoxDecoration(
+                  color: Color(0xFFE8EAFF),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
                   Icons.arrow_forward_rounded,
                   color: TravelAdminDashboard.primaryColor,
-                  size: isSmall ? 16 : 20,
+                  size: isSmall ? 14 : 16,
                 ),
               ),
             ],
           ),
         ),
-      ),
-    );
-  }
-}
-
-// ─────────────────────────────────────────────────────────
-// REPORT CHIP (replaces _StatChip for this widget)
-// ─────────────────────────────────────────────────────────
-class _ReportChip extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final Color color;
-  final Color bg;
-  final bool isSmall;
-
-  const _ReportChip({
-    required this.icon,
-    required this.label,
-    required this.color,
-    required this.bg,
-    required this.isSmall,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.symmetric(
-        horizontal: isSmall ? 8 : 10,
-        vertical: isSmall ? 4 : 5,
-      ),
-      decoration: BoxDecoration(
-        color: bg,
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, color: color, size: isSmall ? 10 : 12),
-          const SizedBox(width: 4),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: isSmall ? 9 : 10,
-              color: color,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-        ],
       ),
     );
   }
@@ -624,7 +836,7 @@ class _StatsRow extends StatelessWidget {
         final s = entry.value;
         return Expanded(
           child: Padding(
-            padding: EdgeInsets.only(left: i == 0 ? 0 : (isSmall ? 6 : 12)),
+            padding: EdgeInsets.only(left: i == 0 ? 0 : (isSmall ? 6 : 8)),
             child: _StatCard(data: s, isSmall: isSmall),
           ),
         );
@@ -640,15 +852,15 @@ class _StatCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: EdgeInsets.all(isSmall ? 10 : 12),
+      padding: EdgeInsets.all(isSmall ? 8 : 10),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(isSmall ? 14 : 18),
+        borderRadius: BorderRadius.circular(isSmall ? 12 : 14),
         boxShadow: [
           BoxShadow(
-            color: data.color.withOpacity(0.12),
-            blurRadius: 14,
-            offset: const Offset(0, 5),
+            color: data.color.withOpacity(0.10),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
           ),
         ],
       ),
@@ -657,35 +869,37 @@ class _StatCard extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            width: isSmall ? 30 : 36,
-            height: isSmall ? 30 : 36,
+            width: isSmall ? 24 : 28,
+            height: isSmall ? 24 : 28,
             decoration: BoxDecoration(
               color: data.bgColor,
-              borderRadius: BorderRadius.circular(isSmall ? 8 : 10),
+              borderRadius: BorderRadius.circular(isSmall ? 7 : 8),
             ),
-            child: Icon(data.icon, color: data.color, size: isSmall ? 15 : 18),
+            child: Icon(data.icon, color: data.color, size: isSmall ? 13 : 15),
           ),
-          SizedBox(height: isSmall ? 7 : 10),
+          SizedBox(height: isSmall ? 5 : 7),
           if (data.isLoading)
             SkeletonBox(
-              width: isSmall ? 50 : 64,
-              height: isSmall ? 16 : 18,
+              width: isSmall ? 44 : 56,
+              height: isSmall ? 14 : 16,
             )
           else
             Text(
               data.hasError ? '—' : data.value,
               style: TextStyle(
-                fontSize: isSmall ? 13 : 15,
+                fontSize: isSmall ? 12 : 14,
                 fontWeight: FontWeight.w800,
                 color: TravelAdminDashboard.darkBlue,
                 letterSpacing: -0.3,
               ),
+              overflow: TextOverflow.ellipsis,
+              maxLines: 1,
             ),
-          const SizedBox(height: 2),
+          const SizedBox(height: 1),
           Text(
             data.title,
             style: TextStyle(
-              fontSize: isSmall ? 9 : 11,
+              fontSize: isSmall ? 8 : 10,
               color: Colors.grey.shade500,
               fontWeight: FontWeight.w500,
             ),
@@ -723,15 +937,15 @@ class _QuickActionsGrid extends StatelessWidget {
         Row(
           children: [
             Expanded(child: _ActionCard(data: actions[0], isSmall: isSmall)),
-            SizedBox(width: isSmall ? 8 : 14),
+            SizedBox(width: isSmall ? 6 : 8),
             Expanded(child: _ActionCard(data: actions[1], isSmall: isSmall)),
           ],
         ),
-        SizedBox(height: isSmall ? 8 : 14),
+        SizedBox(height: isSmall ? 6 : 8),
         Row(
           children: [
             Expanded(child: _ActionCard(data: actions[2], isSmall: isSmall)),
-            SizedBox(width: isSmall ? 8 : 14),
+            SizedBox(width: isSmall ? 6 : 8),
             Expanded(child: _ActionCard(data: actions[3], isSmall: isSmall)),
           ],
         ),
@@ -768,23 +982,23 @@ class _ActionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final iconSize = isSmall ? 36.0 : 44.0;
-    final iconInner = isSmall ? 17.0 : 22.0;
-    final pad = isSmall ? 10.0 : 14.0;
+    final iconSize = isSmall ? 30.0 : 34.0;
+    final iconInner = isSmall ? 15.0 : 17.0;
+    final pad = isSmall ? 8.0 : 10.0;
 
     return InkWell(
       onTap: () => _navigate(context),
-      borderRadius: BorderRadius.circular(isSmall ? 14 : 18),
+      borderRadius: BorderRadius.circular(isSmall ? 12 : 14),
       child: Container(
         padding: EdgeInsets.all(pad),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(isSmall ? 14 : 18),
+          borderRadius: BorderRadius.circular(isSmall ? 12 : 14),
           boxShadow: [
             BoxShadow(
-              color: data.color.withOpacity(0.12),
-              blurRadius: 14,
-              offset: const Offset(0, 5),
+              color: data.color.withOpacity(0.10),
+              blurRadius: 10,
+              offset: const Offset(0, 3),
             ),
           ],
         ),
@@ -795,19 +1009,19 @@ class _ActionCard extends StatelessWidget {
               height: iconSize,
               decoration: BoxDecoration(
                 color: data.bgColor,
-                borderRadius: BorderRadius.circular(isSmall ? 10 : 13),
+                borderRadius: BorderRadius.circular(isSmall ? 8 : 10),
               ),
               child: Icon(data.icon, color: data.color, size: iconInner),
             ),
-            SizedBox(width: isSmall ? 8 : 12),
+            SizedBox(width: isSmall ? 6 : 8),
             Expanded(
               child: Text(
                 data.title,
                 style: TextStyle(
-                  fontSize: isSmall ? 11 : 13,
+                  fontSize: isSmall ? 10 : 12,
                   fontWeight: FontWeight.w700,
                   color: TravelAdminDashboard.darkBlue,
-                  height: 1.3,
+                  height: 1.2,
                 ),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
