@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:travel_agency_app/Screens/deleted_records_page.dart';
+import 'package:travel_agency_app/Screens/help_center.dart';
 import 'package:travel_agency_app/Screens/login.dart';
 import 'package:travel_agency_app/Screens/profile.dart';
 import 'package:travel_agency_app/core/network/token_provider.dart';
@@ -138,7 +139,17 @@ class _ModernSettingsPageState extends ConsumerState<ModernSettingsPage>
                       _sectionLabel('Support'),
                       const SizedBox(height: 10),
                       _buildMenuGroup(items: [
-                        _MenuItem(Icons.help_outline_rounded, 'Help Center', 'Browse FAQs & guides', onTap: () => _showHelpCenter(context)),
+                        _MenuItem(
+                          Icons.help_outline_rounded,
+                          'Help Center',
+                          'Browse FAQs & guides',
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const HelpCenterPage(),
+                            ),
+                          ),
+                        ),
                         _MenuItem(Icons.info_outline_rounded, 'About', 'Version 1.0.0', onTap: () => _showAboutDialog(context)),
                       ]),
                       const SizedBox(height: 24),
@@ -493,73 +504,6 @@ class _ModernSettingsPageState extends ConsumerState<ModernSettingsPage>
         ),
       );
     }
-  }
-
-  // ─────────────────────────── HELP CENTER SHEET ──────────────────
-
-  void _showHelpCenter(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => DraggableScrollableSheet(
-        initialChildSize: 0.75,
-        maxChildSize: 0.95,
-        minChildSize: 0.5,
-        builder: (_, ctrl) => Container(
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-          ),
-          child: Column(
-            children: [
-              const SizedBox(height: 12),
-              Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(4))),
-              const SizedBox(height: 20),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
-                child: Row(
-                  children: [
-                    _iconBox(Icons.help_outline_rounded),
-                    const SizedBox(width: 14),
-                    const Text('Help Center', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: _textDark)),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 20),
-              Expanded(
-                child: ListView(
-                  controller: ctrl,
-                  padding: const EdgeInsets.symmetric(horizontal: 24),
-                  children: [
-                    _faqItem('How do I add a new booking?', 'Go to Dashboard → Quick Actions → New Booking and fill in the customer and vehicle details.'),
-                    _faqItem('How can I assign a driver?', 'Open a booking, tap "Assign Driver", and choose from available drivers.'),
-                    _faqItem('How do I view revenue reports?', 'Navigate to Dashboard → Reports → Revenue Report for a full income breakdown.'),
-                    _faqItem('How do I update vehicle info?', 'Go to Vehicles tab, tap on the vehicle card, and select Edit.'),
-                    _faqItem('Who can I contact for support?', 'Reach us at support@travelagency.com or call +91-XXXXXXXXXX between 9 AM – 6 PM IST.'),
-                    const SizedBox(height: 24),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _faqItem(String q, String a) {
-    return Theme(
-      data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
-      child: ExpansionTile(
-        tilePadding: EdgeInsets.zero,
-        childrenPadding: const EdgeInsets.only(bottom: 16),
-        title: Text(q, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: _textDark)),
-        children: [
-          Text(a, style: TextStyle(fontSize: 13, color: _textMid, height: 1.5)),
-        ],
-      ),
-    );
   }
 
   // ─────────────────────────── ABOUT DIALOG ───────────────────────
