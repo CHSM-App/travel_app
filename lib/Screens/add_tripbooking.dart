@@ -60,6 +60,8 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
   final _formKey = GlobalKey<FormState>();
   final pickup = TextEditingController();
   final drop = TextEditingController();
+  final pickupFocus = FocusNode();
+  final dropFocus = FocusNode();
   final distance = TextEditingController();
   final fuelReq = TextEditingController();
   final charges = TextEditingController();
@@ -144,6 +146,8 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
   void dispose() {
     pickup.removeListener(_onRouteChanged);
     drop.removeListener(_onRouteChanged);
+    pickupFocus.dispose();
+    dropFocus.dispose();
     _staggerCtrl.dispose();
     super.dispose();
   }
@@ -156,6 +160,20 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
   // Whole rupees when integral, else 2 decimals (kept parseable for the field).
   String _money(double v) =>
       v == v.roundToDouble() ? v.toStringAsFixed(0) : v.toStringAsFixed(2);
+
+  // Dedup pickup/drop strings case-insensitively, keeping the original
+  // casing of the FIRST occurrence and preserving order from the history.
+  List<String> _distinctLocations(Iterable<String?> input) {
+    final seen = <String>{};
+    final result = <String>[];
+    for (final raw in input) {
+      final s = raw?.trim();
+      if (s == null || s.isEmpty) continue;
+      final key = s.toLowerCase();
+      if (seen.add(key)) result.add(s);
+    }
+    return result;
+  }
 
   // ══════════════════════════════════════════════════════════════════════════
   //  FARE MEMORY CHIP  ← suggests last/avg charge for this customer + route
@@ -401,6 +419,12 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
       drop: drop.text,
     );
 
+    // Location suggestions sourced from past pickup/drop strings in history.
+    final pickupOptions =
+        _distinctLocations(history.map((t) => t.pickupLocation));
+    final dropOptions =
+        _distinctLocations(history.map((t) => t.dropLocation));
+
     SystemChrome.setSystemUIOverlayStyle(
       const SystemUiOverlayStyle(
         statusBarColor: Colors.transparent,
@@ -433,20 +457,24 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
                           badge: "01",
                           child: Column(
                             children: [
-                              _inputField(
+                              _locationAutocomplete(
                                 label: "Pickup Location",
                                 ctrl: pickup,
+                                focusNode: pickupFocus,
                                 icon: Icons.trip_origin_rounded,
                                 iconColor: _C.green,
                                 iconBg: _C.greenSoft,
+                                options: pickupOptions,
                               ),
                               _routeConnector(),
-                              _inputField(
+                              _locationAutocomplete(
                                 label: "Drop Location",
                                 ctrl: drop,
+                                focusNode: dropFocus,
                                 icon: Icons.location_on_rounded,
                                 iconColor: _C.red,
                                 iconBg: _C.redSoft,
+                                options: dropOptions,
                               ),
                               _divider(),
                               _inputField(
@@ -967,6 +995,121 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
   // ══════════════════════════════════════════════════════════════════════════
   //  INPUT FIELD
   // ══════════════════════════════════════════════════════════════════════════
+  // ══════════════════════════════════════════════════════════════════════════
+  //  LOCATION AUTOCOMPLETE  ← suggests past pickup/drop locations
+  // ══════════════════════════════════════════════════════════════════════════
+  Widget _locationAutocomplete({
+    required String label,
+    required TextEditingController ctrl,
+    required FocusNode focusNode,
+    required IconData icon,
+    required Color iconColor,
+    required Color iconBg,
+    required List<String> options,
+  }) {
+    return RawAutocomplete<String>(
+      textEditingController: ctrl,
+      focusNode: focusNode,
+      optionsBuilder: (TextEditingValue value) {
+        final q = value.text.trim().toLowerCase();
+        if (q.isEmpty) {
+          // Field focused but empty: show up to 6 recent unique locations.
+          return options.take(6);
+        }
+        return options
+            .where((s) {
+              final lower = s.toLowerCase();
+              return lower.contains(q) && lower != q;
+            })
+            .take(8);
+      },
+      onSelected: (String selection) {
+        ctrl.text = selection;
+        ctrl.selection = TextSelection.fromPosition(
+          TextPosition(offset: selection.length),
+        );
+        focusNode.unfocus();
+      },
+      fieldViewBuilder: (context, fieldCtrl, fieldFocus, onFieldSubmitted) {
+        return _inputField(
+          label: label,
+          ctrl: fieldCtrl,
+          icon: icon,
+          iconColor: iconColor,
+          iconBg: iconBg,
+          focusNode: fieldFocus,
+          onFieldSubmitted: (_) => onFieldSubmitted(),
+        );
+      },
+      optionsViewBuilder: (context, onSelected, displayedOptions) {
+        return Align(
+          alignment: Alignment.topLeft,
+          child: Material(
+            elevation: 6,
+            borderRadius: BorderRadius.circular(12),
+            color: _C.surface,
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxHeight: 220),
+              child: ListView.separated(
+                shrinkWrap: true,
+                padding: EdgeInsets.zero,
+                itemCount: displayedOptions.length,
+                separatorBuilder: (_, __) =>
+                    const Divider(height: 1, color: _C.divider),
+                itemBuilder: (_, i) {
+                  final option = displayedOptions.elementAt(i);
+                  return InkWell(
+                    onTap: () => onSelected(option),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 12,
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(6),
+                            decoration: BoxDecoration(
+                              color: iconBg,
+                              borderRadius: BorderRadius.circular(7),
+                            ),
+                            child: Icon(
+                              Icons.location_on_rounded,
+                              size: 12,
+                              color: iconColor,
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              option,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: _C.text1,
+                              ),
+                            ),
+                          ),
+                          const Icon(
+                            Icons.north_west_rounded,
+                            size: 14,
+                            color: _C.text2,
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   Widget _inputField({
     required String label,
     required TextEditingController ctrl,
@@ -976,9 +1119,13 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
     String? prefix,
     TextInputType? keyboard,
     List<TextInputFormatter>? fmt,
+    FocusNode? focusNode,
+    void Function(String)? onFieldSubmitted,
   }) {
     return TextFormField(
       controller: ctrl,
+      focusNode: focusNode,
+      onFieldSubmitted: onFieldSubmitted,
       keyboardType: keyboard,
       inputFormatters: fmt,
       style: const TextStyle(
