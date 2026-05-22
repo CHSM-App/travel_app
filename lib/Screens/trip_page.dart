@@ -66,6 +66,18 @@ class _TripPageState extends ConsumerState<TripPage> {
   Widget build(BuildContext context) {
     final state = ref.watch(TripPageViewModelProvider);
 
+    // Deep-link from elsewhere (e.g. the dashboard's Action Needed rows).
+    // IndexedStack keeps TripPage mounted across tab switches, so initState
+    // can't catch a filter request that arrives after first build — we listen
+    // here instead. The provider is cleared after consumption so a later
+    // manual visit defaults back to whatever the user last picked.
+    ref.listen<String?>(tripPageInitialFilterProvider, (prev, next) {
+      if (next == null || next == _selectedFilter) return;
+      setState(() => _selectedFilter = next);
+      _loadListForFilter(next);
+      ref.read(tripPageInitialFilterProvider.notifier).state = null;
+    });
+
     return Scaffold(
       backgroundColor: Colors.grey.shade50,
       // Let the list flow under the floating pill nav. SafeArea handles the
