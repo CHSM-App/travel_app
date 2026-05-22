@@ -5,6 +5,7 @@ import 'package:travel_agency_app/Screens/add_driver.dart';
 import 'package:travel_agency_app/Screens/add_tripbooking.dart';
 import 'package:travel_agency_app/Screens/add_vehicle.dart';
 import 'package:travel_agency_app/Screens/reports.dart';
+import 'package:travel_agency_app/core/theme/app_colors.dart';
 import 'package:travel_agency_app/core/widgets/skeleton.dart';
 import 'package:travel_agency_app/domain/models/booking_info.dart';
 import 'package:travel_agency_app/domain/viewModel/trippage_viewmodel.dart';
@@ -13,7 +14,9 @@ import 'package:travel_agency_app/presentation/providers/viewmodel_provider.dart
 class TravelAdminDashboard extends ConsumerStatefulWidget {
   const TravelAdminDashboard({super.key});
 
-  static const primaryColor = Color(0xFF3D5AFE);
+  static const primaryColor = AppColors.brandPrimary;
+  // Dark navy text — Phase 1 keeps text tokens as-is (out of scope for the
+  // indigo-only consolidation).
   static const darkBlue = Color(0xFF1A237E);
 
   @override
@@ -154,7 +157,7 @@ class _TravelAdminDashboardState extends ConsumerState<TravelAdminDashboard> {
               height: sw * 0.40,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: const Color(0xFF536DFE).withOpacity(0.06),
+                color: AppColors.brandPrimaryLight.withOpacity(0.06),
               ),
             ),
           ),
@@ -552,7 +555,7 @@ class _BookingReportBanner extends ConsumerWidget {
                 height: isSmall ? 36 : 42,
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
-                    colors: [Color(0xFF3D5AFE), Color(0xFF7986CB)],
+                    colors: [AppColors.brandPrimary, AppColors.brandPrimaryLight],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
@@ -609,7 +612,7 @@ class _BookingReportBanner extends ConsumerWidget {
                 width: isSmall ? 26 : 30,
                 height: isSmall ? 26 : 30,
                 decoration: const BoxDecoration(
-                  color: Color(0xFFE8EAFF),
+                  color: AppColors.brandSoft,
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
@@ -823,7 +826,7 @@ class _StatsRow extends StatelessWidget {
         expenditureVal,
         Icons.trending_down_rounded,
         TravelAdminDashboard.primaryColor,
-        const Color(0xFFE8EAFF),
+        AppColors.brandSoft,
         isLoading: stats.isLoading,
         hasError: stats.hasError,
       ),
@@ -927,7 +930,7 @@ class _QuickActionsGrid extends StatelessWidget {
       _ActionData("New Vehicle", Icons.directions_car_rounded,
           const Color(0xFFFF6D00), const Color(0xFFFFF3E0)),
       _ActionData("New Driver", Icons.person_pin_rounded,
-          TravelAdminDashboard.primaryColor, const Color(0xFFE8EAFF)),
+          TravelAdminDashboard.primaryColor, AppColors.brandSoft),
       _ActionData("New Customer", Icons.people_alt_rounded,
           const Color(0xFFAB47BC), const Color(0xFFF3E5F5)),
     ];
@@ -1047,7 +1050,7 @@ class _RecentActivity extends StatelessWidget {
       _ActivityData(Icons.check_circle_rounded, const Color(0xFF00BFA5),
           const Color(0xFFE0F7F4), "Invoice #1021 Paid", "2 hours ago"),
       _ActivityData(Icons.shopping_bag_rounded, TravelAdminDashboard.primaryColor,
-          const Color(0xFFE8EAFF), "New Order Received", "Today, 10:30 AM"),
+          AppColors.brandSoft, "New Order Received", "Today, 10:30 AM"),
       _ActivityData(Icons.directions_car_rounded, const Color(0xFFFF6D00),
           const Color(0xFFFFF3E0), "Vehicle Added", "Yesterday"),
     ];

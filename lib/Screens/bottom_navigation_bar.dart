@@ -10,7 +10,20 @@ import 'package:travel_agency_app/Screens/dashbord.dart';
 import 'package:travel_agency_app/Screens/setting.dart';
 import 'package:travel_agency_app/Screens/trip_page.dart';
 import 'package:travel_agency_app/Screens/vehicle_page.dart';
+import 'package:travel_agency_app/core/theme/app_colors.dart';
 import 'package:travel_agency_app/presentation/providers/viewmodel_provider.dart';
+
+// ── Pill nav theme ──────────────────────────────────────────────────────────
+class NavTheme {
+  static const navAccent = AppColors.brandPrimary;
+  static const navInactive = Color(0xFF1E293B);
+  // 10% alpha over brand primary — keep this in sync if brandPrimary changes.
+  static const navActivePill = Color(0x1A4F46E5);
+  static const navPillBg = Color(0x12FFFFFF);
+  static const navPillBorder = Color(0x26000000);
+  static const compactNavHeight = 48.0;
+  static const regularNavHeight = 56.0;
+}
 
 class MainBottomNav extends ConsumerStatefulWidget {
   const MainBottomNav({super.key});
@@ -24,12 +37,16 @@ class _MainBottomNavState extends ConsumerState<MainBottomNav>
   int selectedIndex = 0;
   int vehicleTabIndex = 0;
 
-  static const primaryColor = Color(0xFF3D5AFE);
+  static const primaryColor = AppColors.brandPrimary;
 
-  late AnimationController _pageAnimController;
-  late Animation<double> _fadeAnimation;
-  late Animation<Offset> _slideAnimation;
-  late List<AnimationController> _tabControllers;
+  // Drag state for the sliding active-tab indicator.
+  bool _isDragging = false;
+  double? _dragX;
+  int? _dragHoverIndex;
+
+  // 380 ms elastic 1.0 → 1.18 bounce per tab.
+  late final List<AnimationController> _iconControllers;
+  late final List<Animation<double>> _iconScales;
 
   late final List<Widget> pages = [
     const TravelAdminDashboard(),
@@ -37,6 +54,7 @@ class _MainBottomNavState extends ConsumerState<MainBottomNav>
     const CustomerListPage(),
     VehiclePage(
       onTabChanged: (index) {
+        // Drives the FAB label between "Add Vehicle" / "Add Driver".
         setState(() {
           vehicleTabIndex = index;
         });
@@ -49,7 +67,7 @@ class _MainBottomNavState extends ConsumerState<MainBottomNav>
     _NavItem(label: "Home",      icon: Icons.home_outlined,           activeIcon: Icons.home_rounded),
     _NavItem(label: "Trips",     icon: Icons.card_travel_outlined,    activeIcon: Icons.card_travel_rounded),
     _NavItem(label: "Customers", icon: Icons.people_outline,          activeIcon: Icons.people_rounded),
-    _NavItem(label: "Vehicles",  icon: Icons.directions_car_outlined, activeIcon: Icons.directions_car_rounded),
+    _NavItem(label: "Fleets",  icon: Icons.directions_car_outlined, activeIcon: Icons.directions_car_rounded),
     _NavItem(label: "Settings",  icon: Icons.settings_outlined,       activeIcon: Icons.settings_rounded),
   ];
 
@@ -57,63 +75,49 @@ class _MainBottomNavState extends ConsumerState<MainBottomNav>
   void initState() {
     super.initState();
 
-    // Transparent status bar — iPhone style
-    SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
-      statusBarColor: Colors.transparent,
-      statusBarIconBrightness: Brightness.light,
-    ));
-
     Future.microtask(() async {
-      // await ref.read(loginViewModelProvider.notifier).loadFromStorage();
       final adminId = ref.read(loginViewModelProvider).adminId;
       if (adminId > 0) {
         ref.read(loginViewModelProvider.notifier).adminProfile(adminId);
       }
     });
 
-    _pageAnimController = AnimationController(
-      duration: const Duration(milliseconds: 320),
-      vsync: this,
-    );
-    _fadeAnimation = CurvedAnimation(
-        parent: _pageAnimController, curve: Curves.easeInOut);
-    // Telegram-style: new tab page slides up from the bottom.
-    _slideAnimation = Tween<Offset>(
-      begin: const Offset(0, 0.06),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(
-        parent: _pageAnimController, curve: Curves.easeOutCubic));
-    _pageAnimController.forward();
-
-    _tabControllers = List.generate(
+    _iconControllers = List.generate(
       _navItems.length,
       (_) => AnimationController(
         vsync: this,
-        duration: const Duration(milliseconds: 180),
-        lowerBound: 0.82,
-        upperBound: 1.0,
-        value: 1.0,
+        duration: const Duration(milliseconds: 380),
       ),
     );
+    _iconScales = _iconControllers
+        .map(
+          (c) => Tween<double>(begin: 1.0, end: 1.18).animate(
+            CurvedAnimation(parent: c, curve: Curves.elasticOut),
+          ),
+        )
+        .toList();
+
+    // Pre-bounce the initial tab so the active icon starts at its scaled size.
+    _iconControllers[0].forward();
   }
 
   @override
   void dispose() {
-    _pageAnimController.dispose();
-    for (final c in _tabControllers) c.dispose();
+    for (final c in _iconControllers) {
+      c.dispose();
+    }
     super.dispose();
   }
 
   void _onItemTapped(int index) {
     if (selectedIndex == index) return;
-    _tabControllers[index]
-        .reverse()
-        .then((_) => _tabControllers[index].forward());
+    _iconControllers[selectedIndex].reverse();
     setState(() => selectedIndex = index);
-    _pageAnimController.reset();
-    _pageAnimController.forward();
-    // Keep the provider in sync so listeners (e.g. the dashboard's deep-link
-    // flow) don't see a stale value the next time they read it.
+    _iconControllers[index].forward(from: 0);
+    HapticFeedback.selectionClick();
+    // Keep the cross-tab provider in sync so deep links from elsewhere
+    // (e.g. dashboard Action Needed rows) read a correct current value
+    // and re-writing the same index doesn't loop back here.
     if (ref.read(bottomNavIndexProvider) != index) {
       ref.read(bottomNavIndexProvider.notifier).state = index;
     }
@@ -121,8 +125,7 @@ class _MainBottomNavState extends ConsumerState<MainBottomNav>
 
   @override
   Widget build(BuildContext context) {
-    // Deep-link from dashboard (or anywhere else): another widget writes to
-    // bottomNavIndexProvider and we react by animating to that tab.
+    // Listen for external tab-switch requests (e.g. dashboard deep links).
     ref.listen<int>(bottomNavIndexProvider, (prev, next) {
       if (next != selectedIndex) _onItemTapped(next);
     });
@@ -145,62 +148,87 @@ class _MainBottomNavState extends ConsumerState<MainBottomNav>
       }
     }
 
-    return Scaffold(
-      // ✅ KEY: content goes under the floating nav bar
-      extendBody: true,
-      
-      extendBodyBehindAppBar: true,
-      backgroundColor: const Color(0xFFF0F4FF),
+    // Light status bar icons against the dark indigo AppBar; white system
+    // nav matches the pill's translucent background.
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.light,
+        systemNavigationBarColor: Colors.white,
+        systemNavigationBarIconBrightness: Brightness.dark,
+      ),
+      child: PopScope(
+        canPop: selectedIndex == 0,
+        onPopInvokedWithResult: (didPop, result) {
+          if (didPop) return;
+          if (selectedIndex != 0) _onItemTapped(0);
+        },
+        child: Scaffold(
+          extendBody: true,
+          extendBodyBehindAppBar: true,
+          backgroundColor: const Color(0xFFF0F4FF),
 
-      // ── AppBar ─────────────────────────────────────────
-      appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(68),
-        child: ClipRect(
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-            child: Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    primaryColor.withOpacity(0.92),
-                    const Color(0xFF536DFE).withOpacity(0.90),
-                  ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: primaryColor.withOpacity(0.25),
-                    blurRadius: 12,
-                    offset: const Offset(0, 3),
+          // ── AppBar ─────────────────────────────────────────
+          appBar: PreferredSize(
+            preferredSize: const Size.fromHeight(68),
+            child: ClipRect(
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+                child: Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        primaryColor.withOpacity(0.92),
+                        AppColors.brandPrimaryLight.withOpacity(0.90),
+                      ],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: primaryColor.withOpacity(0.25),
+                        blurRadius: 12,
+                        offset: const Offset(0, 3),
+                      ),
+                    ],
                   ),
-                ],
-              ),
-              child: SafeArea(
-                child: Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  child: Row(
-                    children: [
-                      Hero(
-                        tag: 'profile_avatar',
-                        child: Container(
-                          width: 44,
-                          height: 44,
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.2),
-                            borderRadius: BorderRadius.circular(14),
-                            border: Border.all(
-                                color: Colors.white.withOpacity(0.45),
-                                width: 1.5),
-                          ),
-                          child: profileImageUrl != null
-                              ? ClipRRect(
-                                  borderRadius: BorderRadius.circular(12),
-                                  child: Image.network(
-                                    profileImageUrl,
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (_, __, ___) => Center(
+                  child: SafeArea(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 8),
+                      child: Row(
+                        children: [
+                          Hero(
+                            tag: 'profile_avatar',
+                            child: Container(
+                              width: 44,
+                              height: 44,
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.2),
+                                borderRadius: BorderRadius.circular(14),
+                                border: Border.all(
+                                    color: Colors.white.withOpacity(0.45),
+                                    width: 1.5),
+                              ),
+                              child: profileImageUrl != null
+                                  ? ClipRRect(
+                                      borderRadius: BorderRadius.circular(12),
+                                      child: Image.network(
+                                        profileImageUrl,
+                                        fit: BoxFit.cover,
+                                        errorBuilder: (_, __, ___) => Center(
+                                          child: Text(
+                                            initials,
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                              fontWeight: FontWeight.w800,
+                                              fontSize: 18,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    )
+                                  : Center(
                                       child: Text(
                                         initials,
                                         style: const TextStyle(
@@ -210,240 +238,306 @@ class _MainBottomNavState extends ConsumerState<MainBottomNav>
                                         ),
                                       ),
                                     ),
-                                  ),
-                                )
-                              : Center(
-                                  child: Text(
-                                    initials,
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.w800,
-                                      fontSize: 18,
-                                    ),
-                                  ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const Text(
+                                  "Welcome Back 👋",
+                                  style: TextStyle(
+                                      color: Colors.white70,
+                                      fontSize: 12,
+                                      letterSpacing: 0.3),
+                                ),
+                                const SizedBox(height: 1),
+                                Text(
+                                  userName,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w800,
+                                    letterSpacing: -0.2,
                                   ),
                                 ),
+                              ],
+                            ),
                           ),
-                     
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Text(
-                              "Welcome Back 👋",
-                              style: TextStyle(
-                                  color: Colors.white70,
-                                  fontSize: 12,
-                                  letterSpacing: 0.3),
-                            ),
-                            const SizedBox(height: 1),
-                            Text(
-                              userName,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 16,
-                                fontWeight: FontWeight.w800,
-                                letterSpacing: -0.2,
-                              ),
-                            ),
-                          ],
-                        ),
+                        ],
                       ),
-
-                    ],
+                    ),
                   ),
                 ),
               ),
             ),
           ),
-        ),
-      ),
 
-      // ── Body ───────────────────────────────────────────
-      // body: FadeTransition(
-      //   opacity: _fadeAnimation,
-      //   child: SlideTransition(
-      //     position: _slideAnimation,
-      //     child: pages[selectedIndex],
-      //   ),
-      // ),
-      
-body: Stack(
-  children: [
-
-    /// PAGE CONTENT
-    FadeTransition(
-      opacity: _fadeAnimation,
-      child: SlideTransition(
-        position: _slideAnimation,
-        child: pages[selectedIndex],
-      ),
-    ),
-
-if (selectedIndex == 2 || selectedIndex == 3)
-  Positioned(
-    right: 20,
-    bottom: 90, // sits above the floating nav bar
-    child: FloatingActionButton.extended(
-      onPressed: () {
-        if (selectedIndex == 2) {
-          // Customers tab
-          Navigator.push(context, _slideUpRoute(const AddCustomerPage()));
-        } else if (selectedIndex == 3) {
-          // Vehicles tab
-          if (vehicleTabIndex == 0) {
-            Navigator.push(context, _slideUpRoute(const AddVehiclePage()));
-          } else {
-            Navigator.push(context, _slideUpRoute(const AddDriverPage()));
-          }
-        }
-      },
-      backgroundColor: const Color(0xFF3D5AFE),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
-      icon: const Icon(Icons.add_rounded, color: Colors.white, size: 20),
-      label: Text(
-        selectedIndex == 2
-            ? "Add Customer"
-            : vehicleTabIndex == 0
-                ? "Add Vehicle"
-                : "Add Driver",
-        style: const TextStyle(
-          color: Colors.white,
-          fontWeight: FontWeight.w700,
-          fontSize: 14,
-        ),
-      ),
-    ),
-  ),
-
-  ],
-),
-      // ── iPhone-style Floating Glass Nav Bar ────────────
-      bottomNavigationBar: _buildGlassNavBar(),
-      
-    );
-  }
-
-  Widget _buildGlassNavBar() {
-    final bottomPadding = MediaQuery.of(context).padding.bottom;
-
-    return Padding(
-      // Floats above screen bottom with margin on all sides
-      padding: EdgeInsets.only(
-        left: 20,
-        right: 20,
-        bottom: bottomPadding > 0 ? bottomPadding + 6 : 16,
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(40),
-        child: BackdropFilter(
-          // ✨ Telegram-style: heavier blur, less white so the page behind
-          // genuinely shows through.
-          filter: ImageFilter.blur(sigmaX: 36, sigmaY: 36),
-          child: Container(
-            height: 64,
-            decoration: BoxDecoration(
-              // Much more transparent than before — content reads through.
-              color: Colors.white.withOpacity(0.42),
-              borderRadius: BorderRadius.circular(40),
-              border: Border.all(
-                // Subtle glass edge highlight.
-                color: Colors.white.withOpacity(0.35),
-                width: 1.0,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: primaryColor.withOpacity(0.10),
-                  blurRadius: 28,
-                  spreadRadius: 0,
-                  offset: const Offset(0, 8),
-                ),
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: List.generate(
-                _navItems.length,
-                (index) => _buildNavItem(index),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildNavItem(int index) {
-    final item = _navItems[index];
-    final isSelected = selectedIndex == index;
-
-    return GestureDetector(
-      onTap: () => _onItemTapped(index),
-      behavior: HitTestBehavior.opaque,
-      child: ScaleTransition(
-        scale: _tabControllers[index],
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 260),
-          curve: Curves.easeOutCubic,
-          padding: EdgeInsets.symmetric(
-            horizontal: isSelected ? 14 : 10,
-            vertical: 8,
-          ),
-          decoration: BoxDecoration(
-            // Active: solid indigo pill with glow shadow
-            color: isSelected ? primaryColor : Colors.transparent,
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: isSelected
-                ? [
-                    BoxShadow(
-                      color: primaryColor.withOpacity(0.38),
-                      blurRadius: 14,
-                      offset: const Offset(0, 4),
-                    )
-                  ]
-                : [],
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
+          // ── Body ───────────────────────────────────────────
+          body: Stack(
             children: [
-              Icon(
-                isSelected ? item.activeIcon : item.icon,
-                color: isSelected ? Colors.white : Colors.grey.shade500,
-                size: 22,
+              // IndexedStack keeps each tab's state across switches.
+              Positioned.fill(
+                child: IndexedStack(
+                  index: selectedIndex,
+                  children: pages,
+                ),
               ),
-              // Label slides in for active tab
-              AnimatedSize(
-                duration: const Duration(milliseconds: 260),
-                curve: Curves.easeOutCubic,
-                child: isSelected
-                    ? Row(
-                        children: [
-                          const SizedBox(width: 6),
-                          Text(
-                            item.label,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w700,
-                              letterSpacing: 0.2,
-                            ),
-                          ),
-                        ],
-                      )
-                    : const SizedBox.shrink(),
+
+              // Context-sensitive add FAB for Customers / Vehicles tabs.
+              if (selectedIndex == 2 || selectedIndex == 3)
+                Positioned(
+                  right: 20,
+                  bottom: 90,
+                  child: FloatingActionButton.extended(
+                    onPressed: () {
+                      if (selectedIndex == 2) {
+                        Navigator.push(
+                            context, _slideUpRoute(const AddCustomerPage()));
+                      } else if (selectedIndex == 3) {
+                        if (vehicleTabIndex == 0) {
+                          Navigator.push(
+                              context, _slideUpRoute(const AddVehiclePage()));
+                        } else {
+                          Navigator.push(
+                              context, _slideUpRoute(const AddDriverPage()));
+                        }
+                      }
+                    },
+                    backgroundColor: AppColors.brandPrimary,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    icon: const Icon(Icons.add_rounded,
+                        color: Colors.white, size: 20),
+                    label: Text(
+                      selectedIndex == 2
+                          ? "Add Customer"
+                          : vehicleTabIndex == 0
+                              ? "Add Vehicle"
+                              : "Add Driver",
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ),
+                ),
+
+              // Floating glassmorphic pill nav with draggable indicator.
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 0,
+                child: _buildPillNav(),
               ),
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  // ── Floating pill nav ─────────────────────────────────────
+  Widget _buildPillNav() {
+    final isCompact = MediaQuery.of(context).size.width < 360;
+    final navHeight =
+        isCompact ? NavTheme.compactNavHeight : NavTheme.regularNavHeight;
+
+    return SafeArea(
+      top: false,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+        // Shadow lives on the outer container — ClipRRect below would crop any
+        // shadow placed on the pill itself. Three layers: a wide indigo-tinted
+        // ambient, a tighter neutral key for grounding, and a crisp hairline
+        // that defines the bottom edge.
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(30),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.brandPrimary.withOpacity(0.10),
+                blurRadius: 32,
+                spreadRadius: 0,
+                offset: const Offset(0, 12),
+              ),
+              BoxShadow(
+                color: Colors.black.withOpacity(0.08),
+                blurRadius: 16,
+                spreadRadius: -2,
+                offset: const Offset(0, 6),
+              ),
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 2,
+                spreadRadius: 0,
+                offset: const Offset(0, 1),
+              ),
+            ],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(30),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
+              child: Container(
+                height: navHeight,
+                decoration: BoxDecoration(
+                  // Tiny lift in the base tint — pure glass on a light page
+                  // can read as flat; a hint of white gives the pill body.
+                  color: Colors.white.withOpacity(0.55),
+                  borderRadius: BorderRadius.circular(30),
+                  border: Border.all(
+                    color: NavTheme.navPillBorder,
+                    width: 0.3,
+                  ),
+                ),
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final totalWidth = constraints.maxWidth;
+                  final itemCount = _navItems.length;
+                  final itemWidth = totalWidth / itemCount;
+                  final pillWidth = itemWidth - 10;
+                  final pillHeight = navHeight - 10;
+
+                  final curCenter = (selectedIndex + 0.5) * itemWidth;
+                  final minCenter = itemWidth / 2;
+                  final maxCenter = totalWidth - itemWidth / 2;
+                  final dragCenter = ((_dragX ?? curCenter)
+                          .clamp(minCenter, maxCenter))
+                      .toDouble();
+                  final pillLeft = ((dragCenter - pillWidth / 2)
+                          .clamp(0.0, totalWidth - pillWidth))
+                      .toDouble();
+
+                  return GestureDetector(
+                    behavior: HitTestBehavior.translucent,
+                    onHorizontalDragStart: (d) {
+                      setState(() {
+                        _isDragging = true;
+                        _dragX = d.localPosition.dx
+                            .clamp(minCenter, maxCenter)
+                            .toDouble();
+                        _dragHoverIndex = selectedIndex;
+                      });
+                    },
+                    onHorizontalDragUpdate: (d) {
+                      final clamped = d.localPosition.dx
+                          .clamp(minCenter, maxCenter)
+                          .toDouble();
+                      final newHover = (clamped / itemWidth)
+                          .floor()
+                          .clamp(0, itemCount - 1);
+                      if (newHover != _dragHoverIndex) {
+                        HapticFeedback.selectionClick();
+                      }
+                      setState(() {
+                        _dragX = clamped;
+                        _dragHoverIndex = newHover;
+                      });
+                    },
+                    onHorizontalDragEnd: (_) {
+                      final raw = _dragX ?? curCenter;
+                      final newIdx =
+                          (raw / itemWidth).floor().clamp(0, itemCount - 1);
+                      setState(() {
+                        _isDragging = false;
+                        _dragX = null;
+                        _dragHoverIndex = null;
+                      });
+                      _onItemTapped(newIdx);
+                    },
+                    onHorizontalDragCancel: () {
+                      setState(() {
+                        _isDragging = false;
+                        _dragX = null;
+                        _dragHoverIndex = null;
+                      });
+                    },
+                    child: Stack(
+                      children: [
+                        AnimatedPositioned(
+                          duration: _isDragging
+                              ? Duration.zero
+                              : const Duration(milliseconds: 220),
+                          curve: Curves.easeInOut,
+                          top: 5,
+                          left: pillLeft,
+                          width: pillWidth,
+                          height: pillHeight,
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: NavTheme.navActivePill,
+                              borderRadius: BorderRadius.circular(22),
+                            ),
+                          ),
+                        ),
+                        Row(
+                          children: List.generate(itemCount, (i) {
+                            return Expanded(
+                              child: GestureDetector(
+                                behavior: HitTestBehavior.opaque,
+                                onTap: () => _onItemTapped(i),
+                                child: _buildTabCell(i, isCompact),
+                              ),
+                            );
+                          }),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ),
+          ),
+        ),
+      ),
+      ),
+    );
+  }
+
+  Widget _buildTabCell(int i, bool isCompact) {
+    final item = _navItems[i];
+    final selected = i == selectedIndex;
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 3, vertical: 4),
+      child: AnimatedBuilder(
+        animation: _iconScales[i],
+        builder: (context, _) {
+          return Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Transform.scale(
+                scale: _iconScales[i].value,
+                child: Icon(
+                  selected ? item.activeIcon : item.icon,
+                  size: isCompact ? 18 : 20,
+                  color: selected ? NavTheme.navAccent : NavTheme.navInactive,
+                ),
+              ),
+              const SizedBox(height: 2),
+              AnimatedDefaultTextStyle(
+                duration: const Duration(milliseconds: 200),
+                style: TextStyle(
+                  fontSize: isCompact ? 8 : 9,
+                  fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                  color: selected ? NavTheme.navAccent : NavTheme.navInactive,
+                  letterSpacing: 0.1,
+                ),
+                child: Text(
+                  item.label,
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
+                ),
+              ),
+            ],
+          );
+        },
       ),
     );
   }

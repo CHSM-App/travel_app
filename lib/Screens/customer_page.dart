@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:travel_agency_app/Screens/add_customer.dart';
 import 'package:travel_agency_app/Screens/customer_hist.dart';
 import 'package:travel_agency_app/core/network/error_messages.dart';
+import 'package:travel_agency_app/core/theme/app_colors.dart';
 import 'package:travel_agency_app/core/widgets/skeleton.dart';
 import 'package:travel_agency_app/domain/models/customers.dart';
 import 'package:travel_agency_app/presentation/providers/viewmodel_provider.dart';
@@ -18,8 +19,8 @@ class _C {
   static const slate100 = Color(0xFFF1F5F9);
   static const slate50 = Color(0xFFF8FAFC);
 
-  static const indigo = Color(0xFF4F6FE8);
-  static const indigoLight = Color(0xFFEEF2FF);
+  static const indigo = AppColors.brandPrimary;
+  static const indigoLight = AppColors.brandSoft;
 
   static const amber = Color(0xFFF59E0B);
   static const amberLight = Color(0xFFFFFBEB);
@@ -31,7 +32,7 @@ class _C {
 
 // Avatar color cycles
 const _avatarPalette = [
-  [Color(0xFFEEF2FF), Color(0xFF4F6FE8)],
+  [AppColors.brandSoft, AppColors.brandPrimary],
 
 ];
 

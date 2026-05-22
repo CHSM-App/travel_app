@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:travel_agency_app/core/network/error_messages.dart';
+import 'package:travel_agency_app/core/theme/app_colors.dart';
 import 'package:travel_agency_app/core/widgets/skeleton.dart';
 import 'package:travel_agency_app/domain/models/drivers.dart';
 import 'package:travel_agency_app/domain/models/vehicles.dart';
@@ -15,13 +16,13 @@ class DeletedRecordsPage extends ConsumerStatefulWidget {
 
 class _DeletedRecordsPageState extends ConsumerState<DeletedRecordsPage>
     with SingleTickerProviderStateMixin {
-  // ─── Design Tokens ────────────────────────────────────────────────────────
+  // ─── Design Tokens ────────────────────────────────────────────────────────m
   static const _bg          = Color(0xFFF4F6FB);
   static const _surface     = Colors.white;
   static const _surfaceAlt  = Color(0xFFF0F3FA);
-  static const _accent      = Color(0xFF3D5AFE);
-  static const _accentLight = Color(0xFFEEF1FF);
-  static const _accentGrad1 = Color(0xFF6378FF);
+  static const _accent      = AppColors.brandPrimary;
+  static const _accentLight = AppColors.brandSoft;
+  static const _accentGrad1 = AppColors.brandPrimaryLight;
   static const _text1       = Color(0xFF1A1D2E);
   static const _text2       = Color(0xFF7B82A0);
   static const _divider     = Color(0xFFE8EBF4);
@@ -800,8 +801,8 @@ class _SearchToggleButton extends StatelessWidget {
   final bool isActive;
   final VoidCallback onTap;
 
-  static const _accent     = Color(0xFF3D5AFE);
-  static const _accentLight = Color(0xFFEEF1FF);
+  static const _accent     = AppColors.brandPrimary;
+  static const _accentLight = AppColors.brandSoft;
   static const _surfaceAlt = Color(0xFFF0F3FA);
   static const _divider    = Color(0xFFE8EBF4);
   static const _text2      = Color(0xFF7B82A0);

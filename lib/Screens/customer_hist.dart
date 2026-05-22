@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:travel_agency_app/Screens/trip_card.dart';
+import 'package:travel_agency_app/core/theme/app_colors.dart';
 import 'package:travel_agency_app/core/widgets/skeleton.dart';
 import 'package:travel_agency_app/domain/models/booking_info.dart';
 import 'package:travel_agency_app/domain/models/customers.dart';
@@ -26,8 +27,8 @@ class _CustomerHistState extends ConsumerState<CustomerHist>
   static const Color _bg            = Color(0xFFF2F4F8);
   static const Color _surface       = Color(0xFFFFFFFF);
   static const Color _surfaceLight  = Color(0xFFF0F3FA);
-  static const Color _accent        = Color(0xFF3D5AFE);
-  static const Color _accentSoft    = Color(0xFFEEF1FF);
+  static const Color _accent        = AppColors.brandPrimary;
+  static const Color _accentSoft    = AppColors.brandSoft;
   static const Color _textPrimary   = Color(0xFF1A1D2E);
   static const Color _textSecondary = Color(0xFF7B82A0);
   static const Color _divider       = Color(0xFFE4E8F0);
@@ -115,7 +116,7 @@ class _CustomerHistState extends ConsumerState<CustomerHist>
         borderRadius: const BorderRadius.vertical(bottom: Radius.circular(28)),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF3D5AFE).withOpacity(0.08),
+            color: AppColors.brandPrimary.withOpacity(0.08),
             blurRadius: 24,
             offset: const Offset(0, 8),
           ),
@@ -197,7 +198,7 @@ class _CustomerHistState extends ConsumerState<CustomerHist>
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         gradient: const LinearGradient(
-                          colors: [Color(0xFF6378FF), Color(0xFF3D5AFE)],
+                          colors: [AppColors.brandPrimaryLight, AppColors.brandPrimary],
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
                         ),
@@ -498,7 +499,7 @@ Widget _compactStat(
                     horizontal: 28, vertical: 12),
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
-                    colors: [Color(0xFF6378FF), Color(0xFF3D5AFE)],
+                    colors: [AppColors.brandPrimaryLight, AppColors.brandPrimary],
                   ),
                   borderRadius: BorderRadius.circular(30),
                   boxShadow: [

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:travel_agency_app/core/theme/app_colors.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class HelpCenterPage extends StatefulWidget {
@@ -11,9 +12,9 @@ class HelpCenterPage extends StatefulWidget {
 
 class _HelpCenterPageState extends State<HelpCenterPage> {
   // ─── Palette (matches Settings screen) ─────────────────────────────
-  static const Color _primary = Color(0xFF5B6EF5);
-  static const Color _primaryDark = Color(0xFF3D50E0);
-  static const Color _primaryLight = Color(0xFFEEF0FE);
+  static const Color _primary = AppColors.brandPrimary;
+  static const Color _primaryDark = AppColors.brandPrimaryDark;
+  static const Color _primaryLight = AppColors.brandSoft;
   static const Color _surface = Color(0xFFF6F7FF);
   static const Color _cardBg = Colors.white;
   static const Color _textDark = Color(0xFF1A1D3B);

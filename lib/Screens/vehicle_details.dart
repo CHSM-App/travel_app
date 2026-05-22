@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:travel_agency_app/Screens/trip_card.dart';
 import 'package:travel_agency_app/Screens/add_vehicle.dart';
 import 'package:travel_agency_app/core/network/error_messages.dart';
+import 'package:travel_agency_app/core/theme/app_colors.dart';
 import 'package:travel_agency_app/core/widgets/skeleton.dart';
 import 'package:travel_agency_app/domain/models/services.dart';
 import 'package:travel_agency_app/domain/models/vehicles.dart';
@@ -15,10 +16,11 @@ abstract class _C {
   static const surface = Color(0xFFFFFFFF);
   static const surfaceAlt = Color(0xFFF5F6FA);
   static const g1 = Color(0xFF1A1F3A);
-  static const g2 = Color(0xFF2D3580);
-  static const g3 = Color(0xFF3D4FC8);
-  static const accent = Color(0xFF4F6EF7);
-  static const indigo = Color(0xFF4F46E5);
+  // Brand-indigo gradient companions. g2 = darker stop, g3 = mid, accent = primary.
+  static const g2 = AppColors.brandPrimaryDark;
+  static const g3 = AppColors.brandPrimary;
+  static const accent = AppColors.brandPrimary;
+  static const indigo = AppColors.brandPrimary;
   static const violet = Color(0xFF7C3AED);
   static const green = Color(0xFF059669);
   static const red = Color(0xFFDC2626);
@@ -383,8 +385,8 @@ Widget _buildHeader() {
                                 begin: Alignment.topLeft,
                                 end: Alignment.bottomRight,
                                 colors: [
-                                  Color(0xFF6B83FF),
-                                  Color(0xFF3D5AFE),
+                                  AppColors.brandPrimaryLight,
+                                  AppColors.brandPrimary,
                                 ],
                               ),
                             ),
@@ -571,7 +573,7 @@ Widget _buildHeader() {
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(16),
           gradient: const LinearGradient(
-            colors: [Color(0xFF5B76FF), Color(0xFF3D5AFE)],
+            colors: [AppColors.brandPrimaryLight, AppColors.brandPrimary],
           ),
           boxShadow: [
             BoxShadow(
@@ -681,7 +683,7 @@ Widget _buildHeader() {
                           children: [
                             const Icon(
                               Icons.build_rounded,
-                              color: Color(0xFF3D5AFE),
+                              color: AppColors.brandPrimary,
                             ),
                             const SizedBox(width: 8),
                             Text(
@@ -780,7 +782,7 @@ Widget _buildHeader() {
                                         const Icon(
                                           Icons.calendar_today_rounded,
                                           size: 18,
-                                          color: Color(0xFF3D5AFE),
+                                          color: AppColors.brandPrimary,
                                         ),
                                         const SizedBox(width: 12),
                                         Text(
@@ -826,7 +828,7 @@ Widget _buildHeader() {
                           height: 52,
                           child: ElevatedButton(
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF3D5AFE),
+                              backgroundColor: AppColors.brandPrimary,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(16),
                               ),
@@ -939,7 +941,7 @@ Widget _buildHeader() {
       decoration: InputDecoration(
         labelText: label,
         prefixText: prefix,
-        prefixIcon: Icon(icon, size: 18, color: const Color(0xFF3D5AFE)),
+        prefixIcon: Icon(icon, size: 18, color: AppColors.brandPrimary),
         filled: true,
         fillColor: Colors.white,
         contentPadding: const EdgeInsets.symmetric(
@@ -956,7 +958,7 @@ Widget _buildHeader() {
         ),
         focusedBorder: const OutlineInputBorder(
           borderRadius: BorderRadius.all(Radius.circular(16)),
-          borderSide: BorderSide(color: Color(0xFF3D5AFE), width: 1.4),
+          borderSide: BorderSide(color: AppColors.brandPrimary, width: 1.4),
         ),
       ),
     );
@@ -1325,8 +1327,8 @@ class _PressableButtonState extends State<_PressableButton>
           decoration: BoxDecoration(
             gradient: LinearGradient(
               colors: _pressed
-                  ? [const Color(0xFF3D5AFE), const Color(0xFF3D5AFE)]
-                  : [const Color(0xFF5B76FF), const Color(0xFF3D5AFE)],
+                  ? [AppColors.brandPrimary, AppColors.brandPrimary]
+                  : [AppColors.brandPrimaryLight, AppColors.brandPrimary],
             ),
             borderRadius: BorderRadius.circular(12),
             boxShadow: _pressed
@@ -1383,7 +1385,7 @@ class _PremiumTabBar extends SliverPersistentHeaderDelegate {
       dividerColor: Colors.transparent,
       indicator: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [Color(0xFF5B76FF), Color(0xFF3D5AFE)],
+          colors: [AppColors.brandPrimaryLight, AppColors.brandPrimary],
         ),
         borderRadius: BorderRadius.circular(8),
       ),

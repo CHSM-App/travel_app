@@ -8,13 +8,14 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:share_plus/share_plus.dart' as share_plus;
 import 'package:travel_agency_app/core/network/error_messages.dart';
+import 'package:travel_agency_app/core/theme/app_colors.dart';
 import 'package:travel_agency_app/domain/models/reports_data.dart';
 import 'package:travel_agency_app/presentation/providers/viewmodel_provider.dart';
 
 // ─────────────────────────────────────────────────────────────
 //  DESIGN TOKENS
 // ─────────────────────────────────────────────────────────────
-const _primary  = Color(0xFF3D5AFE);
+const _primary  = AppColors.brandPrimary;
 const _darkBlue = Color(0xFF1A237E);
 const _bg       = Color(0xFFF0F4FF);
 const _white    = Color(0xFFFFFFFF);
@@ -85,7 +86,7 @@ extension ReportTabExt on ReportTabType {
   }
   Color get bgColor {
     switch (this) {
-      case ReportTabType.booking:  return const Color(0xFFE8EAFF);
+      case ReportTabType.booking:  return AppColors.brandSoft;
       case ReportTabType.driver:   return const Color(0xFFE0F7F4);
       case ReportTabType.vehicle:  return const Color(0xFFFFF3E0);
       case ReportTabType.customer: return const Color(0xFFF3E5F5);
@@ -421,7 +422,7 @@ class _TravelReportPageState extends ConsumerState<TravelReportPage>
                 Row(children: [
                   // PDF icon
                   Container(padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(color: const Color(0xFFE8EAFF), borderRadius: BorderRadius.circular(12)),
+                      decoration: BoxDecoration(color: AppColors.brandSoft, borderRadius: BorderRadius.circular(12)),
                       child: const Icon(Icons.picture_as_pdf_rounded, color: _primary, size: 20)),
                   const SizedBox(width: 12),
                   Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -447,7 +448,7 @@ class _TravelReportPageState extends ConsumerState<TravelReportPage>
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
                       decoration: BoxDecoration(
-                          color: const Color(0xFFE8EAFF),
+                          color: AppColors.brandSoft,
                           borderRadius: BorderRadius.circular(20)),
                       child: const Text('Select All', style: TextStyle(color: _primary, fontSize: 11, fontWeight: FontWeight.w700)),
                     ),
@@ -936,7 +937,7 @@ class _PdfReadySheet extends StatelessWidget {
     child: Column(mainAxisSize: MainAxisSize.min, children: [
       Container(width: 40, height: 4, decoration: BoxDecoration(color: _divLine, borderRadius: BorderRadius.circular(2))),
       const SizedBox(height: 18),
-      Container(padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: const Color(0xFFE8EAFF), borderRadius: BorderRadius.circular(16)),
+      Container(padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: AppColors.brandSoft, borderRadius: BorderRadius.circular(16)),
           child: const Icon(Icons.picture_as_pdf_rounded, color: _primary, size: 36)),
       const SizedBox(height: 12),
       const Text('Report Ready!', style: TextStyle(color: _textDark, fontSize: 17, fontWeight: FontWeight.w800)),
@@ -1582,7 +1583,7 @@ class _BookingCard extends StatelessWidget {
     decoration: BoxDecoration(color: _white, borderRadius: BorderRadius.circular(14), boxShadow: [BoxShadow(color: _primary.withOpacity(0.08), blurRadius: 10, offset: const Offset(0, 3))]),
     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       Row(children: [
-        Container(width: 36, height: 36, decoration: BoxDecoration(color: const Color(0xFFE8EAFF), borderRadius: BorderRadius.circular(10)), alignment: Alignment.center, child: Text('#${item.tripId ?? index + 1}', style: const TextStyle(color: _primary, fontSize: 11, fontWeight: FontWeight.w800))),
+        Container(width: 36, height: 36, decoration: BoxDecoration(color: AppColors.brandSoft, borderRadius: BorderRadius.circular(10)), alignment: Alignment.center, child: Text('#${item.tripId ?? index + 1}', style: const TextStyle(color: _primary, fontSize: 11, fontWeight: FontWeight.w800))),
         const SizedBox(width: 10),
         Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(item.customerName ?? 'Customer', style: const TextStyle(color: _textDark, fontSize: 13, fontWeight: FontWeight.w700)), Text(DateFormat('dd MMM yyyy').format(item.safeDate), style: const TextStyle(color: _textGrey, fontSize: 11))])),
         Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5), decoration: BoxDecoration(color: const Color(0xFFE0F7F4), borderRadius: BorderRadius.circular(10)), child: Text('₹${_fmt(item.income)}', style: const TextStyle(color: _green, fontSize: 13, fontWeight: FontWeight.w800))),

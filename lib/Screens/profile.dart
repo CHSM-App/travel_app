@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:travel_agency_app/core/theme/app_colors.dart';
 import 'package:travel_agency_app/domain/models/login_info.dart';
 import 'package:travel_agency_app/presentation/providers/viewmodel_provider.dart';
 
@@ -36,9 +37,9 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
   bool _forceLetterAvatar = false;
 
   // ── Design tokens ─────────────────────────────────
-  static const _primary = Color(0xFF5B6EF5);
-  static const _primaryDk = Color(0xFF3D50E0);
-  static const _primaryLt = Color(0xFFEEF0FE);
+  static const _primary = AppColors.brandPrimary;
+  static const _primaryDk = AppColors.brandPrimaryDark;
+  static const _primaryLt = AppColors.brandSoft;
   static const _surface = Color(0xFFF4F5FF);
   static const _textDark = Color(0xFF1A1D3B);
   static const _textMid = Color(0xFF6B7280);
@@ -456,7 +457,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Color(0xFF5B6EF5), Color(0xFF3340C8)],
+          colors: [AppColors.brandPrimary, AppColors.brandPrimaryDark],
         ),
         borderRadius: BorderRadius.vertical(bottom: Radius.circular(30)),
       ),
@@ -766,7 +767,7 @@ class _ImagePickerSheet extends StatelessWidget {
     required this.onRemove,
   });
 
-  static const _primary  = Color(0xFF5B6EF5);
+  static const _primary  = AppColors.brandPrimary;
   static const _red      = Color(0xFFEF4444);
   static const _textDark = Color(0xFF1A1D3B);
 

@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:travel_agency_app/Screens/bottom_navigation_bar.dart';
 import 'package:travel_agency_app/Screens/forgot_password.dart';
 import 'package:travel_agency_app/Screens/signup_page.dart';
+import 'package:travel_agency_app/core/theme/app_colors.dart';
 import 'package:travel_agency_app/domain/models/login_info.dart';
 import 'package:travel_agency_app/domain/models/token_response.dart';
 import 'package:travel_agency_app/presentation/providers/viewmodel_provider.dart';
@@ -104,8 +105,8 @@ class _LoginPageState extends ConsumerState<LoginPage>
     final isLoading = loginState.isLoading || authState.isLoading;
 
     // Brand colors matching the app theme
-    const primaryColor = Color(0xFF3D5AFE);
-    const secondaryColor = Color(0xFF536DFE);
+    const primaryColor = AppColors.brandPrimary;
+    const secondaryColor = AppColors.brandPrimaryLight;
     const bgColor = Color(0xFFF0F4FF);
 
     return Scaffold(
@@ -159,7 +160,7 @@ class _LoginPageState extends ConsumerState<LoginPage>
                               height: 80,
                               decoration: BoxDecoration(
                                 gradient: const LinearGradient(
-                                  colors: [primaryColor, Color(0xFF7986CB)],
+                                  colors: [primaryColor, AppColors.brandPrimaryLight],
                                   begin: Alignment.topLeft,
                                   end: Alignment.bottomRight,
                                 ),
@@ -412,7 +413,7 @@ class _LoginPageState extends ConsumerState<LoginPage>
     return InputDecoration(
       hintText: hint,
       hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 14),
-      prefixIcon: Icon(icon, color: const Color(0xFF3D5AFE), size: 20),
+      prefixIcon: Icon(icon, color: AppColors.brandPrimary, size: 20),
       filled: true,
       fillColor: const Color(0xFFF5F7FF),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -426,7 +427,7 @@ class _LoginPageState extends ConsumerState<LoginPage>
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Color(0xFF3D5AFE), width: 1.5),
+        borderSide: const BorderSide(color: AppColors.brandPrimary, width: 1.5),
       ),
       errorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),

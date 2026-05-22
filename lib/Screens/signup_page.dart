@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:travel_agency_app/Screens/login.dart';
+import 'package:travel_agency_app/core/theme/app_colors.dart';
 import 'package:travel_agency_app/domain/models/login_info.dart';
 import 'package:travel_agency_app/presentation/providers/viewmodel_provider.dart';
 
@@ -37,7 +38,7 @@ class _SignUpPageState extends ConsumerState<SignUpPage>
   late Animation<Offset> _slideAnim;
 
   // Brand colors
-  static const primaryColor = Color(0xFF3D5AFE);
+  static const primaryColor = AppColors.brandPrimary;
   static const darkBlue = Color(0xFF1A237E);
 
   @override
@@ -165,7 +166,7 @@ class _SignUpPageState extends ConsumerState<SignUpPage>
               height: 200,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: const Color(0xFF536DFE).withOpacity(0.08),
+                color: AppColors.brandPrimaryLight.withOpacity(0.08),
               ),
             ),
           ),
@@ -191,7 +192,7 @@ class _SignUpPageState extends ConsumerState<SignUpPage>
                             height: 76,
                             decoration: BoxDecoration(
                               gradient: const LinearGradient(
-                                colors: [primaryColor, Color(0xFF7986CB)],
+                                colors: [primaryColor, AppColors.brandPrimaryLight],
                                 begin: Alignment.topLeft,
                                 end: Alignment.bottomRight,
                               ),

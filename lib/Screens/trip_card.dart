@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:travel_agency_app/Screens/add_tripbooking.dart';
+import 'package:travel_agency_app/core/theme/app_colors.dart';
 import 'package:travel_agency_app/domain/models/booking_info.dart';
 import 'package:travel_agency_app/presentation/providers/viewmodel_provider.dart';
 
@@ -20,8 +21,8 @@ class TripCard extends StatelessWidget {
   });
 
   // ── Palette (matches CustomerHist light theme) ─────────────────────
-  static const Color _accent = Color(0xFF3D5AFE);
-  static const Color _accentSoft = Color(0xFFEEF1FF);
+  static const Color _accent = AppColors.brandPrimary;
+  static const Color _accentSoft = AppColors.brandSoft;
   static const Color _textPrimary = Color(0xFF1A1D2E);
   static const Color _textSec = Color(0xFF7B82A0);
   static const Color _divider = Color(0xFFE4E8F0);
@@ -260,7 +261,7 @@ final receivedController = TextEditingController(
           bool highlight = false,
         }) {
           final color = highlight
-              ? const Color(0xFF4361EE)
+              ? AppColors.brandPrimary
               : const Color(0xFF6B7280);
           return TextField(
             controller: ctrl,
@@ -287,7 +288,7 @@ final receivedController = TextEditingController(
               fillColor: !isEditable
                   ? Colors.grey.shade50
                   : highlight
-                  ? const Color(0xFF4361EE).withOpacity(0.04)
+                  ? AppColors.brandPrimary.withOpacity(0.04)
                   : Colors.grey.shade50,
               contentPadding: EdgeInsets.symmetric(
                 vertical: fieldVertPad,
@@ -299,14 +300,14 @@ final receivedController = TextEditingController(
                   color: !isEditable
                       ? Colors.grey.shade200
                       : highlight
-                      ? const Color(0xFF4361EE).withOpacity(0.3)
+                      ? AppColors.brandPrimary.withOpacity(0.3)
                       : Colors.grey.shade200,
                 ),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
                 borderSide: const BorderSide(
-                  color: Color(0xFF4361EE),
+                  color: AppColors.brandPrimary,
                   width: 1.5,
                 ),
               ),
@@ -485,14 +486,14 @@ final receivedController = TextEditingController(
                       padding: EdgeInsets.all(isSmall ? 14 : 18),
                       decoration: BoxDecoration(
                         gradient: const LinearGradient(
-                          colors: [Color(0xFF4361EE), Color(0xFF3A0CA3)],
+                          colors: [AppColors.brandPrimary, AppColors.brandPrimaryDark],
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
                         ),
                         borderRadius: BorderRadius.circular(20),
                         boxShadow: [
                           BoxShadow(
-                            color: const Color(0xFF4361EE).withOpacity(0.32),
+                            color: AppColors.brandPrimary.withOpacity(0.32),
                             blurRadius: 18,
                             offset: const Offset(0, 7),
                           ),
@@ -687,41 +688,41 @@ final receivedController = TextEditingController(
                           infoBlock(
                             label: "TRIP INFO",
                             icon: Icons.route_rounded,
-                            color: const Color(0xFF4361EE),
+                            color: AppColors.brandPrimary,
                             rows: [
                               detailRow(
                                 "Pickup",
                                 bookinginfo.pickupLocation ?? "--",
                                 Icons.trip_origin,
-                                const Color(0xFF4361EE),
+                                AppColors.brandPrimary,
                               ),
                               rowDivider(),
                               detailRow(
                                 "Drop",
                                 bookinginfo.dropLocation ?? "--",
                                 Icons.location_on,
-                                const Color(0xFF4361EE),
+                                AppColors.brandPrimary,
                               ),
                               rowDivider(),
                               detailRow(
                                 "Start",
                                 "${_formatDate(bookinginfo.startDateTime)}  ${_formatTime(bookinginfo.startDateTime)}",
                                 Icons.calendar_today_outlined,
-                                const Color(0xFF4361EE),
+                                AppColors.brandPrimary,
                               ),
                               rowDivider(),
                               detailRow(
                                 "End",
                                 "${_formatDate(bookinginfo.endDateTime)}  ${_formatTime(bookinginfo.endDateTime)}",
                                 Icons.calendar_today_outlined,
-                                const Color(0xFF4361EE),
+                                AppColors.brandPrimary,
                               ),
                               rowDivider(),
                               detailRow(
                                 "Distance",
                                 "${bookinginfo.distance?.toString() ?? "--"} km",
                                 Icons.straighten,
-                                const Color(0xFF4361EE),
+                                AppColors.brandPrimary,
                               ),
                             ],
                           ),
@@ -1072,8 +1073,8 @@ final receivedController = TextEditingController(
                                   decoration: BoxDecoration(
                                     gradient: const LinearGradient(
                                       colors: [
-                                        Color(0xFF4361EE),
-                                        Color(0xFF3A0CA3),
+                                        AppColors.brandPrimary,
+                                        AppColors.brandPrimaryDark,
                                       ],
                                       begin: Alignment.topLeft,
                                       end: Alignment.bottomRight,
@@ -1081,9 +1082,7 @@ final receivedController = TextEditingController(
                                     borderRadius: BorderRadius.circular(16),
                                     boxShadow: [
                                       BoxShadow(
-                                        color: const Color(
-                                          0xFF4361EE,
-                                        ).withOpacity(0.4),
+                                        color: AppColors.brandPrimary.withOpacity(0.4),
                                         blurRadius: 14,
                                         offset: const Offset(0, 5),
                                       ),

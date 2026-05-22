@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:travel_agency_app/Screens/add_customer.dart';
 import 'package:travel_agency_app/Screens/add_driver.dart';
 import 'package:travel_agency_app/Screens/add_vehicle.dart';
+import 'package:travel_agency_app/core/theme/app_colors.dart';
 import 'package:travel_agency_app/domain/models/booking_info.dart';
 import 'package:travel_agency_app/domain/models/route_fare_suggestion.dart';
 import 'package:travel_agency_app/domain/models/tripbooking_info.dart';
@@ -15,9 +16,9 @@ class _C {
   static const bg = Color(0xFFF2F4F8);
   static const surface = Color(0xFFFFFFFF);
   static const surfaceLight = Color(0xFFF0F3FA);
-  static const accent = Color(0xFF3D5AFE);
-  static const accentSoft = Color(0xFFEEF1FF);
-  static const accentDark = Color(0xFF2541D4);
+  static const accent = AppColors.brandPrimary;
+  static const accentSoft = AppColors.brandSoft;
+  static const accentDark = AppColors.brandPrimaryDark;
   static const text1 = Color(0xFF1A1D2E);
   static const text2 = Color(0xFF7B82A0);
   static const divider = Color(0xFFE4E8F0);
@@ -883,7 +884,7 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
                 //   width: 40, height: 40,
                 //   decoration: BoxDecoration(
                 //     gradient: const LinearGradient(
-                //       colors: [Color(0xFF6378FF), _C.accent],
+                //       colors: [AppColors.brandPrimaryLight, _C.accent],
                 //       begin: Alignment.topLeft, end: Alignment.bottomRight),
                 //     borderRadius: BorderRadius.circular(11),
                 //     boxShadow: [BoxShadow(color: _C.accent.withOpacity(0.3),
@@ -1760,7 +1761,7 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
                           colors: [Colors.grey.shade300, Colors.grey.shade400],
                         )
                       : const LinearGradient(
-                          colors: [Color(0xFF6378FF), _C.accent],
+                          colors: [AppColors.brandPrimaryLight, _C.accent],
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
                         ),
@@ -2085,7 +2086,7 @@ class _DropSheetState<T> extends State<_DropSheet<T>> {
                                         )
                                       : const LinearGradient(
                                           colors: [
-                                            Color(0xFF6378FF),
+                                            AppColors.brandPrimaryLight,
                                             _C.accent,
                                           ],
                                           begin: Alignment.topLeft,

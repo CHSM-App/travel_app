@@ -6,6 +6,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:open_file/open_file.dart';
 import 'package:travel_agency_app/core/storage/constant.dart';
+import 'package:travel_agency_app/core/theme/app_colors.dart';
 import 'package:travel_agency_app/domain/models/fueltype.dart';
 import 'package:travel_agency_app/domain/models/vehicles.dart';
 import 'package:travel_agency_app/domain/models/vehicletype.dart';
@@ -49,8 +50,8 @@ class _AddVehiclePageState extends ConsumerState<AddVehiclePage>
   late AnimationController _animController;
   late Animation<double> _fadeAnim;
 
-  static const Color _primary = Color(0xFF3D5AFE);
-  static const Color _primaryDark = Color(0xFF0031CA);
+  static const Color _primary = AppColors.brandPrimary;
+  static const Color _primaryDark = AppColors.brandPrimaryDark;
   static const Color _accent = Color(0xFF00BFA5);
   static const Color _surface = Color(0xFFF4F6FB);
   static const Color _cardBg = Colors.white;

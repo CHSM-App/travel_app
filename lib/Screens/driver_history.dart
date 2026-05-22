@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:travel_agency_app/Screens/trip_card.dart';
+import 'package:travel_agency_app/core/theme/app_colors.dart';
 import 'package:travel_agency_app/core/widgets/skeleton.dart';
 import 'package:travel_agency_app/domain/models/booking_info.dart';
 import 'package:travel_agency_app/domain/models/drivers.dart';
@@ -29,7 +30,7 @@ class _DriverHistoryPageState
   static const Color _bg = Color(0xFFF2F4F8);
   static const Color _surface = Color(0xFFFFFFFF);
   static const Color _surfaceLight = Color(0xFFF0F3FA);
-  static const Color _accent = Color(0xFF3D5AFE);
+  static const Color _accent = AppColors.brandPrimary;
   static const Color _textPrimary = Color(0xFF1A1D2E);
   static const Color _textSecondary = Color(0xFF7B82A0);
   static const Color _divider = Color(0xFFE4E8F0);
@@ -167,7 +168,7 @@ class _DriverHistoryPageState
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(18),
                         gradient: const LinearGradient(
-                          colors: [Color(0xFF6378FF), Color(0xFF4A5BD4)],
+                          colors: [AppColors.brandPrimaryLight, AppColors.brandPrimaryDark],
                         ),
                       ),
                       child: const Icon(

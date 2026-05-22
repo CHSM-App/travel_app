@@ -6,6 +6,7 @@ import 'package:travel_agency_app/Screens/add_driver.dart';
 import 'package:travel_agency_app/Screens/driver_history.dart';
 import 'package:travel_agency_app/Screens/vehicle_details.dart';
 import 'package:travel_agency_app/core/network/error_messages.dart';
+import 'package:travel_agency_app/core/theme/app_colors.dart';
 import 'package:travel_agency_app/core/widgets/skeleton.dart';
 import 'package:travel_agency_app/domain/models/vehicles.dart';
 import 'package:travel_agency_app/domain/models/drivers.dart';
@@ -16,9 +17,9 @@ class _C {
   static const bg = Color(0xFFF2F4F8);
   static const surface = Color(0xFFFFFFFF);
   static const surfaceLight = Color(0xFFF0F3FA);
-  static const accent = Color(0xFF3D5AFE);
-  static const accentSoft = Color(0xFFEEF1FF);
-  static const accentDark = Color(0xFF2541D4);
+  static const accent = AppColors.brandPrimary;
+  static const accentSoft = AppColors.brandSoft;
+  static const accentDark = AppColors.brandPrimaryDark;
   static const text1 = Color(0xFF1A1D2E);
   static const text2 = Color(0xFF7B82A0);
   static const divider = Color(0xFFE4E8F0);
@@ -319,7 +320,7 @@ class _VehiclePageState extends ConsumerState<VehiclePage>
                           height: 42,
                           decoration: BoxDecoration(
                             gradient: const LinearGradient(
-                              colors: [Color(0xFF6378FF), _C.accent],
+                              colors: [AppColors.brandPrimaryLight, _C.accent],
                               begin: Alignment.topLeft,
                               end: Alignment.bottomRight,
                             ),
@@ -623,7 +624,7 @@ class _VehiclePageState extends ConsumerState<VehiclePage>
                 height: 38,
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
-                    colors: [Color(0xFF6378FF), _C.accent],
+                    colors: [AppColors.brandPrimaryLight, _C.accent],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
@@ -1090,7 +1091,7 @@ class _VehiclePageState extends ConsumerState<VehiclePage>
                       controller: _tabController,
                       indicator: BoxDecoration(
                         gradient: const LinearGradient(
-                          colors: [Color(0xFF6378FF), _C.accent],
+                          colors: [AppColors.brandPrimaryLight, _C.accent],
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
                         ),

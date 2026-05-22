@@ -6,6 +6,7 @@ import 'package:travel_agency_app/Screens/help_center.dart';
 import 'package:travel_agency_app/Screens/login.dart';
 import 'package:travel_agency_app/Screens/profile.dart';
 import 'package:travel_agency_app/core/network/token_provider.dart';
+import 'package:travel_agency_app/core/theme/app_colors.dart';
 import 'package:travel_agency_app/domain/models/login_info.dart';
 import 'package:travel_agency_app/domain/models/token_response.dart';
 import 'package:travel_agency_app/presentation/providers/viewmodel_provider.dart';
@@ -27,9 +28,9 @@ class _ModernSettingsPageState extends ConsumerState<ModernSettingsPage>
   bool locationEnabled = true;
 
   // App color palette — matches dashboard indigo theme
-  static const Color _primary = Color(0xFF5B6EF5);
-  static const Color _primaryDark = Color(0xFF3D50E0);
-  static const Color _primaryLight = Color(0xFFEEF0FE);
+  static const Color _primary = AppColors.brandPrimary;
+  static const Color _primaryDark = AppColors.brandPrimaryDark;
+  static const Color _primaryLight = AppColors.brandSoft;
   static const Color _surface = Color(0xFFF6F7FF);
   static const Color _cardBg = Colors.white;
   static const Color _textDark = Color(0xFF1A1D3B);
@@ -252,7 +253,7 @@ class _ModernSettingsPageState extends ConsumerState<ModernSettingsPage>
         gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Color(0xFF5B6EF5), Color(0xFF3D50E0)],
+          colors: [AppColors.brandPrimary, AppColors.brandPrimaryDark],
         ),
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
@@ -465,7 +466,7 @@ class _ModernSettingsPageState extends ConsumerState<ModernSettingsPage>
         borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF5B6EF5).withOpacity(0.06),
+            color: AppColors.brandPrimary.withOpacity(0.06),
             blurRadius: 16,
             offset: const Offset(0, 4),
           ),

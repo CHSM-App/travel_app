@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:open_file/open_file.dart';
 import 'package:travel_agency_app/core/storage/constant.dart';
+import 'package:travel_agency_app/core/theme/app_colors.dart';
 import 'package:travel_agency_app/domain/models/drivers.dart';
 import 'package:travel_agency_app/core/network/error_messages.dart';
 import 'package:travel_agency_app/presentation/providers/viewmodel_provider.dart';
@@ -42,7 +43,7 @@ class _AddDriverPageState extends ConsumerState<AddDriverPage>
   late AnimationController _animController;
   late Animation<double> _fadeAnim;
 
-  static const Color _primary = Color(0xFF3D5AFE);
+  static const Color _primary = AppColors.brandPrimary;
   static const Color _surface = Color(0xFFF4F6FB);
   static const Color _cardBg = Colors.white;
   static const Color _textDark = Color(0xFF0D0D2B);
