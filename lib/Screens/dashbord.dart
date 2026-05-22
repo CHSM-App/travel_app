@@ -36,7 +36,7 @@ class _TravelAdminDashboardState extends ConsumerState<TravelAdminDashboard> {
   void _loadAll() {
     final agencyId = ref.read(loginViewModelProvider).agencyId ?? '';
     if (agencyId.trim().isEmpty) return;
-    final notifier = ref.read(TripPageViewModelProvider.notifier);
+    final notifier = ref.read(tripPageViewModelProvider.notifier);
     notifier.activeList(agencyId);
     notifier.upcomingList(agencyId);
     notifier.historyList(agencyId);
@@ -49,7 +49,7 @@ class _TravelAdminDashboardState extends ConsumerState<TravelAdminDashboard> {
   Future<void> _refresh() async {
     final agencyId = ref.read(loginViewModelProvider).agencyId ?? '';
     if (agencyId.trim().isEmpty) return;
-    final notifier = ref.read(TripPageViewModelProvider.notifier);
+    final notifier = ref.read(tripPageViewModelProvider.notifier);
     await Future.wait([
       notifier.activeList(agencyId),
       notifier.upcomingList(agencyId),
@@ -112,7 +112,7 @@ class _TravelAdminDashboardState extends ConsumerState<TravelAdminDashboard> {
 
   @override
   Widget build(BuildContext context) {
-    final tripState = ref.watch(TripPageViewModelProvider);
+    final tripState = ref.watch(tripPageViewModelProvider);
     final mergedTrips = _mergedTrips(tripState);
     final anyLoading = tripState.activeList.isLoading ||
         tripState.upcomingList.isLoading ||

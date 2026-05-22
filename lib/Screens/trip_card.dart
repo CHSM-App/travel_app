@@ -6,16 +6,14 @@ import 'package:travel_agency_app/core/theme/app_colors.dart';
 import 'package:travel_agency_app/domain/models/booking_info.dart';
 import 'package:travel_agency_app/presentation/providers/viewmodel_provider.dart';
 
-class TripCard extends StatelessWidget {
+class TripCard extends ConsumerWidget {
   final BookingInfo bookinginfo;
-  final WidgetRef ref;
   final int status; // 'active', 'upcoming', 'Paid', 'unpaid', 'cancelled'
   final Future<void> Function()? onTripUpdated;
 
   const TripCard({
     super.key,
     required this.bookinginfo,
-    required this.ref,
     required this.status,
     this.onTripUpdated,
   });
@@ -102,7 +100,7 @@ Color _paymentBg(String status) {
     return "Paid";
   }
 
-  void _showTripDetail(BuildContext context) {
+  void _showTripDetail(BuildContext context, WidgetRef ref) {
        print("DEBUG status: ${bookinginfo.status} | type: ${bookinginfo.status.runtimeType}");
     final bool isEditable = bookinginfo.status==2;
     final bool isCancelled = bookinginfo.status == 5;
@@ -975,7 +973,7 @@ final receivedController = TextEditingController(
                                   }
 
                                   await ref
-                                      .read(TripPageViewModelProvider.notifier)
+                                      .read(tripPageViewModelProvider.notifier)
                                       .cancelTrip(trip_id);
                                   if (onTripUpdated != null) {
                                     await onTripUpdated!();
@@ -1050,7 +1048,7 @@ final receivedController = TextEditingController(
                                         0,
                                   );
                                   await ref
-                                      .read(TripPageViewModelProvider.notifier)
+                                      .read(tripPageViewModelProvider.notifier)
                                       .updatePaymentStatus(updated);
                                   if (onTripUpdated != null) {
                                     await onTripUpdated!();
@@ -1162,7 +1160,7 @@ final receivedController = TextEditingController(
 
   // BUILD — Compact Attractive Card
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final status = bookinginfo.payment_status ?? paymentStatus;
     final statusColor = _paymentColor(status);
     final statusBg = _paymentBg(status);
@@ -1172,7 +1170,7 @@ final receivedController = TextEditingController(
 
     return GestureDetector(
       onTap: () {
-        _showTripDetail(context);
+        _showTripDetail(context, ref);
       },
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),

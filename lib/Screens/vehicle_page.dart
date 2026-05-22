@@ -58,9 +58,11 @@ class _VehiclePageState extends ConsumerState<VehiclePage>
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
     _tabController.addListener(() {
+      if (_tabController.indexIsChanging) return;
       if (widget.onTabChanged != null) {
         widget.onTabChanged!(_tabController.index);
       }
+      if (mounted) setState(() {});
     });
 
     Future.microtask(() {
@@ -89,10 +91,15 @@ class _VehiclePageState extends ConsumerState<VehiclePage>
 
   String _initials(String? name) {
     if (name == null || name.trim().isEmpty) return '?';
-    final p = name.trim().split(' ');
-    return p.length >= 2
-        ? '${p[0][0]}${p[1][0]}'.toUpperCase()
-        : name[0].toUpperCase();
+    final parts = name
+        .trim()
+        .split(RegExp(r'\s+'))
+        .where((s) => s.isNotEmpty)
+        .toList();
+    if (parts.isEmpty) return '?';
+    return parts.length >= 2
+        ? '${parts[0][0]}${parts[1][0]}'.toUpperCase()
+        : parts[0][0].toUpperCase();
   }
 
   // ── Status Badge ──────────────────────────────────────────────────
@@ -419,6 +426,7 @@ class _VehiclePageState extends ConsumerState<VehiclePage>
                                       ),
                                     ),
                                   );
+                                  if (!mounted) return;
                                   if (result == true) {
                                     ref
                                         .read(
@@ -461,6 +469,7 @@ class _VehiclePageState extends ConsumerState<VehiclePage>
                                                 .notifier,
                                           )
                                           .deleteVehicle(vehicleId);
+                                      if (!mounted) return;
                                       if (result['success'] == true) {
                                         ref
                                             .read(
@@ -717,6 +726,7 @@ class _VehiclePageState extends ConsumerState<VehiclePage>
                         builder: (_) => AddDriverPage(driver: d, isEdit: true),
                       ),
                     );
+                    if (!mounted) return;
                     if (result == true) {
                       ref
                           .read(tripBookingViewModelProvider.notifier)
@@ -736,6 +746,7 @@ class _VehiclePageState extends ConsumerState<VehiclePage>
                         final result = await ref
                             .read(addDriverViewModelProvider.notifier)
                             .deleteDriver(d.driverId ?? 0);
+                        if (!mounted) return;
                         if (result['success'] == true) {
                           ref
                               .read(tripBookingViewModelProvider.notifier)

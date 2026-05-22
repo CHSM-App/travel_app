@@ -325,7 +325,6 @@ Widget _buildStats(AsyncValue<List<BookingInfo>> tripState) {
             itemBuilder: (_, i) => TripCard(
               key: ValueKey(trips[i].tripId),
               bookinginfo: trips[i],
-              ref: ref,
               status: trips[i].status ?? 0,
             ),
           ),

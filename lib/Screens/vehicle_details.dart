@@ -1770,7 +1770,6 @@ class _TripsTabState extends ConsumerState<_TripsTab> {
                   child: TripCard(
                     key: ValueKey(trips[i].tripId),
                     bookinginfo: trips[i],
-                    ref: ref,
                     status: trips[i].status?? 0,
                   ),
                 ),

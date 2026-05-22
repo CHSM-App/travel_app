@@ -13,17 +13,17 @@ class CustomerState {
   final bool isLoading;
   final Map<String, dynamic>? data;
   final String? error;
-  final AsyncValue<List<Customer>> CustomerList;
+  final AsyncValue<List<Customer>> customerList;
   final int? adminId;
-    final AsyncValue<List<BookingInfo>> Customerhist;
+    final AsyncValue<List<BookingInfo>> customerHist;
 
   const CustomerState({
    this.isLoading = false,
      this.data ,
     this.error,
-    this.CustomerList = const AsyncValue.loading(),
+    this.customerList = const AsyncValue.loading(),
     this.adminId,
-    this.Customerhist= const AsyncValue.loading(),
+    this.customerHist= const AsyncValue.loading(),
   });
 
   //AsyncValue<List<BookingInfo>>? get customerHist => null; 
@@ -32,18 +32,18 @@ class CustomerState {
    bool? isLoading,
     Map<String, dynamic>? data,
     String? error,
-    AsyncValue<List<Customer>>? CustomerList,
+    AsyncValue<List<Customer>>? customerList,
     int? adminId,
-    AsyncValue<List<BookingInfo>>? Customerhist,
+    AsyncValue<List<BookingInfo>>? customerHist,
 
   }) {
     return CustomerState(
        isLoading: isLoading ?? this.isLoading,
       data: data ?? this.data,
       error: error ?? this.error,
-      CustomerList: CustomerList ?? this.CustomerList,
+      customerList: customerList ?? this.customerList,
       adminId: adminId ?? this.adminId,
-      Customerhist: Customerhist ?? this.Customerhist,
+      customerHist: customerHist ?? this.customerHist,
     );
   } 
 }
@@ -55,22 +55,22 @@ class CustomerViewModel extends StateNotifier<CustomerState> {
  
 
   Future<void> fetchCustomerslist(String agencyId) async {
-    state = state.copyWith(CustomerList: const AsyncValue.loading());
+    state = state.copyWith(customerList: const AsyncValue.loading());
     try {
       final result = await usecase.customerList(agencyId);
-      state = state.copyWith(CustomerList: AsyncValue.data(result));
+      state = state.copyWith(customerList: AsyncValue.data(result));
     } catch (e, st) {
-      state = state.copyWith(CustomerList: AsyncValue.error(e, st));
+      state = state.copyWith(customerList: AsyncValue.error(e, st));
     }
   }
 
   Future<void> fetchCustomershist( int customer_id) async {
-    state = state.copyWith(Customerhist: const AsyncValue.loading());
+    state = state.copyWith(customerHist: const AsyncValue.loading());
     try {
       final result = await usecase.customerhist(customer_id);
-      state = state.copyWith(Customerhist: AsyncValue.data(result));
+      state = state.copyWith(customerHist: AsyncValue.data(result));
     } catch (e, st) {
-      state = state.copyWith(Customerhist: AsyncValue.error(e, st));
+      state = state.copyWith(customerHist: AsyncValue.error(e, st));
     }
   }
 

@@ -838,7 +838,7 @@ child: state.isLoading
     try {
       await ref.read(customerViewModelProvider.notifier).fetchCustomerslist(agencyId);
       final customers =
-          ref.read(customerViewModelProvider).CustomerList.asData?.value;
+          ref.read(customerViewModelProvider).customerList.asData?.value;
 
       if (customers == null || customers.isEmpty) return;
       final matched = customers.where((c) => c.customerId == customerId);

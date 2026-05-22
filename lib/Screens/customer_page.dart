@@ -30,12 +30,6 @@ class _C {
 
 }
 
-// Avatar color cycles
-const _avatarPalette = [
-  [AppColors.brandSoft, AppColors.brandPrimary],
-
-];
-
 // ─────────────────────────────────────────────────────────────────────────────
 
 class CustomerListPage extends ConsumerStatefulWidget {
@@ -102,9 +96,8 @@ class _CustomerListPageState extends ConsumerState<CustomerListPage>
 
   // ── Customer Card ────────────────────────────────────────────────────────────
   Widget _card(Customer customer, int index) {
-    final pair = _avatarPalette[index % _avatarPalette.length];
-    final bgCol = pair[0];
-    final fgCol = pair[1];
+    const bgCol = _C.indigoLight;
+    const fgCol = _C.indigo;
 
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0, end: 1),
@@ -122,15 +115,15 @@ class _CustomerListPageState extends ConsumerState<CustomerListPage>
         decoration: BoxDecoration(
           color: _C.surface,
           borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: _C.slate300.withOpacity(0.45), width: 1),
+          border: Border.all(color: _C.slate300.withValues(alpha: 0.45), width: 1),
           boxShadow: [
             BoxShadow(
-              color: _C.indigo.withOpacity(0.06),
+              color: _C.indigo.withValues(alpha: 0.06),
               blurRadius: 18,
               offset: const Offset(0, 5),
             ),
             BoxShadow(
-              color: Colors.black.withOpacity(0.03),
+              color: Colors.black.withValues(alpha: 0.03),
               blurRadius: 4,
               offset: const Offset(0, 1),
             ),
@@ -142,7 +135,7 @@ class _CustomerListPageState extends ConsumerState<CustomerListPage>
             color: Colors.transparent,
             child: InkWell(
               splashColor: _C.indigoLight,
-              highlightColor: _C.indigoLight.withOpacity(0.5),
+              highlightColor: _C.indigoLight.withValues(alpha: 0.5),
               onTap: () => Navigator.push(
                 context,
                 MaterialPageRoute(
@@ -182,7 +175,7 @@ class _CustomerListPageState extends ConsumerState<CustomerListPage>
                             color: bgCol,
                             borderRadius: BorderRadius.circular(14),
                             border: Border.all(
-                              color: fgCol.withOpacity(0.2),
+                              color: fgCol.withValues(alpha: 0.2),
                               width: 1.5,
                             ),
                           ),
@@ -271,13 +264,13 @@ class _CustomerListPageState extends ConsumerState<CustomerListPage>
         decoration: BoxDecoration(
           color: _C.slate100,
           borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: _C.slate300.withOpacity(0.5)),
+          border: Border.all(color: _C.slate300.withValues(alpha: 0.5)),
         ),
         child: const Icon(Icons.more_vert_rounded, color: _C.slate500, size: 17),
       ),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       elevation: 12,
-      shadowColor: Colors.black.withOpacity(0.15),
+      shadowColor: Colors.black.withValues(alpha: 0.15),
       color: _C.surface,
       onSelected: (val) {
         switch (val) {
@@ -294,12 +287,12 @@ class _CustomerListPageState extends ConsumerState<CustomerListPage>
         }
       },
       itemBuilder: (ctx) => [
-        _menuItem('view', Icons.history_rounded, 'View History',
-            _C.indigoLight, _C.indigo),
-        const PopupMenuDivider(height: 0),
+        // _menuItem('view', Icons.history_rounded, 'View History',
+        //     _C.indigoLight, _C.indigo),
+        // const PopupMenuDivider(height: 0),
         _menuItem('edit', Icons.edit_rounded, 'Edit',
             _C.amberLight, _C.amber),
-        const PopupMenuDivider(height: 0),
+        // const PopupMenuDivider(height: 0),
         _menuItem('delete', Icons.delete_rounded, 'Delete',
             _C.errorLight, _C.error, textColor: _C.error),
       ],
@@ -559,12 +552,12 @@ class _CustomerListPageState extends ConsumerState<CustomerListPage>
                       border: Border.all(
                         color: _searchFocused
                             ? _C.indigo
-                            : _C.slate300.withOpacity(0.7),
+                            : _C.slate300.withValues(alpha: 0.7),
                         width: _searchFocused ? 1.5 : 1,
                       ),
                       boxShadow: _searchFocused
                           ? [BoxShadow(
-                              color: _C.indigo.withOpacity(0.12),
+                              color: _C.indigo.withValues(alpha: 0.12),
                               blurRadius: 10,
                               offset: const Offset(0, 3),
                             )]
@@ -574,7 +567,7 @@ class _CustomerListPageState extends ConsumerState<CustomerListPage>
                       controller: _searchCtrl,
                       focusNode: _searchFocus,
                       onChanged: (v) =>
-                          setState(() => _query = v.toLowerCase()),
+                          setState(() => _query = v.toLowerCase().trim()),
                       style: const TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w500,
@@ -601,7 +594,7 @@ class _CustomerListPageState extends ConsumerState<CustomerListPage>
                                 child: Container(
                                   margin: const EdgeInsets.all(10),
                                   decoration: BoxDecoration(
-                                    color: _C.slate300.withOpacity(0.5),
+                                    color: _C.slate300.withValues(alpha: 0.5),
                                     shape: BoxShape.circle,
                                   ),
                                   child: const Icon(Icons.close_rounded,
@@ -627,7 +620,7 @@ class _CustomerListPageState extends ConsumerState<CustomerListPage>
 
             // ── List ────────────────────────────────────────────────────────
             Expanded(
-              child: state.CustomerList.when(
+              child: state.customerList.when(
                 loading: () => RefreshIndicator(
                   onRefresh: () async => _refresh(),
                   color: _C.indigo,

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -7,7 +9,100 @@ import 'package:travel_agency_app/core/theme/app_colors.dart';
 import 'package:travel_agency_app/core/widgets/skeleton.dart';
 import 'package:travel_agency_app/core/network/network_state_notifier.dart';
 import 'package:travel_agency_app/domain/models/booking_info.dart';
+import 'package:travel_agency_app/domain/viewModel/trippage_viewmodel.dart';
 import 'package:travel_agency_app/presentation/providers/viewmodel_provider.dart';
+
+/// Single source of truth for trip filters. `key` is the wire value used by
+/// the cross-screen [tripPageInitialFilterProvider] deep-link signal.
+enum TripFilter {
+  all('all', 'All', Icons.list_alt_rounded,
+      'No Trips', 'No trips have been booked yet'),
+  active('active', 'Active', Icons.directions_car_rounded,
+      'No Active Trips', "You don't have any active trips right now"),
+  upcoming('upcoming', 'Upcoming', Icons.schedule_rounded,
+      'No Upcoming Trips', 'No trips scheduled for the future'),
+  paid('paid', 'Paid', Icons.history_rounded,
+      'No Paid Trips', 'Your completed trips will appear here'),
+  unpaid('unpaid', 'Unpaid', Icons.payment_rounded,
+      'No Unpaid Trips', 'All trips are paid. Great job!'),
+  cancelled('cancelled', 'Cancelled', Icons.cancel_rounded,
+      'No Cancelled Trips', "You haven't cancelled any trips");
+
+  const TripFilter(
+    this.key,
+    this.label,
+    this.icon,
+    this.emptyTitle,
+    this.emptySubtitle,
+  );
+
+  final String key;
+  final String label;
+  final IconData icon;
+  final String emptyTitle;
+  final String emptySubtitle;
+
+  static TripFilter? fromKey(String? key) {
+    if (key == null) return null;
+    for (final f in values) {
+      if (f.key == key) return f;
+    }
+    return null;
+  }
+
+  AsyncValue<List<BookingInfo>> listFrom(TripPageState state) {
+    switch (this) {
+      case TripFilter.all:
+        return state.allList;
+      case TripFilter.active:
+        return state.activeList;
+      case TripFilter.upcoming:
+        return state.upcomingList;
+      case TripFilter.paid:
+        return state.historyList;
+      case TripFilter.unpaid:
+        return state.unpaidList;
+      case TripFilter.cancelled:
+        return state.cancelledList;
+    }
+  }
+}
+
+/// Date-range quick filters applied on top of the status filter.
+/// `windowDays = null` means either no date filter (all) or a user-supplied
+/// custom range; `0` means today only; otherwise it's a trailing window of N
+/// days ending today (inclusive).
+enum DateRange {
+  all('All', null, Icons.all_inclusive_rounded),
+  today('Today', 0, Icons.today_rounded),
+  week('Week', 7, Icons.view_week_rounded),
+  month('Month', 30, Icons.calendar_month_rounded),
+  custom('Custom', null, Icons.date_range_rounded);
+
+  const DateRange(this.label, this.windowDays, this.icon);
+
+  final String label;
+  final int? windowDays;
+  final IconData icon;
+
+  bool matches(DateTime? d, DateTime now, {DateTimeRange? customRange}) {
+    if (this == DateRange.all) return true;
+    if (d == null) return false;
+    final dayOnly = DateTime(d.year, d.month, d.day);
+    if (this == DateRange.custom) {
+      if (customRange == null) return true;
+      final start = DateTime(customRange.start.year, customRange.start.month,
+          customRange.start.day);
+      final end = DateTime(
+          customRange.end.year, customRange.end.month, customRange.end.day);
+      return !dayOnly.isBefore(start) && !dayOnly.isAfter(end);
+    }
+    final today = DateTime(now.year, now.month, now.day);
+    if (this == DateRange.today) return today == dayOnly;
+    final cutoff = today.subtract(Duration(days: windowDays! - 1));
+    return !dayOnly.isBefore(cutoff) && !dayOnly.isAfter(today);
+  }
+}
 
 class TripPage extends ConsumerStatefulWidget {
   const TripPage({super.key});
@@ -17,64 +112,158 @@ class TripPage extends ConsumerStatefulWidget {
 }
 
 class _TripPageState extends ConsumerState<TripPage> {
-  String _selectedFilter = 'all';
+  static const Duration _searchDebounce = Duration(milliseconds: 250);
+
+  TripFilter _selectedFilter = TripFilter.active;
+  DateRange _selectedRange = DateRange.all;
+  DateTimeRange? _customRange;
   String _searchQuery = '';
+  bool _searchVisible = false;
+
+  final TextEditingController _searchController = TextEditingController();
+  final FocusNode _searchFocus = FocusNode();
+  Timer? _debounceTimer;
 
   @override
   void initState() {
     super.initState();
 
-    // If someone (e.g. the dashboard's Action Needed card) requested a
-    // specific filter, honour it on mount and clear the signal so a later
-    // manual visit defaults back to "All".
-    final requested = ref.read(tripPageInitialFilterProvider);
+    // If someone (e.g. the dashboard's Action Needed card) requested a specific
+    // filter before this page was mounted, honour it. ref.listen below catches
+    // requests that arrive after mount; this branch is needed because listen
+    // doesn't fire on the value already present at subscription time.
+    final requested =
+        TripFilter.fromKey(ref.read(tripPageInitialFilterProvider));
     if (requested != null) {
       _selectedFilter = requested;
       ref.read(tripPageInitialFilterProvider.notifier).state = null;
     }
 
-    Future.microtask(() {
-      _loadListForFilter(_selectedFilter);
+    Future.microtask(() => _loadListForFilter(_selectedFilter));
+  }
+
+  @override
+  void dispose() {
+    _debounceTimer?.cancel();
+    _searchController.dispose();
+    _searchFocus.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadListForFilter(TripFilter filter) async {
+    final agencyId = ref.read(loginViewModelProvider).agencyId ?? '';
+    if (agencyId.isEmpty) return;
+    final notifier = ref.read(tripPageViewModelProvider.notifier);
+    switch (filter) {
+      case TripFilter.all:
+        await notifier.allTrips(agencyId);
+        break;
+      case TripFilter.active:
+        await notifier.activeList(agencyId);
+        break;
+      case TripFilter.upcoming:
+        await notifier.upcomingList(agencyId);
+        break;
+      case TripFilter.paid:
+        await notifier.historyList(agencyId);
+        break;
+      case TripFilter.unpaid:
+        await notifier.unpaidList(agencyId);
+        break;
+      case TripFilter.cancelled:
+        await notifier.cancelledList(agencyId);
+        break;
+    }
+  }
+
+  void _applyFilter(TripFilter filter) {
+    if (filter == _selectedFilter) return;
+    setState(() => _selectedFilter = filter);
+    _loadListForFilter(filter);
+  }
+
+  Future<void> _onRangeSelected(DateRange range) async {
+    if (range == DateRange.custom) {
+      await _pickCustomRange();
+      return;
+    }
+    if (range == _selectedRange && _customRange == null) return;
+    setState(() {
+      _selectedRange = range;
+      _customRange = null;
     });
   }
 
-  void _loadListForFilter(String filter) {
-    final notifier = ref.read(TripPageViewModelProvider.notifier);
-    switch (filter) {
-      case 'all':
-        notifier.allTrips(ref.read(loginViewModelProvider).agencyId??"");
-        break;
-      case 'active':
-        notifier.activeList(ref.read(loginViewModelProvider).agencyId??"");
-        break;
-      case 'upcoming':
-        notifier.upcomingList(ref.read(loginViewModelProvider).agencyId??"");
-        break;
-      case 'Paid':
-        notifier.historyList(ref.read(loginViewModelProvider).agencyId??"");
-        break;
-      case 'unpaid':
-        notifier.unpaidList(ref.read(loginViewModelProvider).agencyId??"");
-        break;
-      case 'cancelled':
-        notifier.cancelledList(ref.read(loginViewModelProvider).agencyId??"");
-        break;
+  Future<void> _pickCustomRange() async {
+    final now = DateTime.now();
+    final initial = _customRange ??
+        DateTimeRange(
+          start: now.subtract(const Duration(days: 6)),
+          end: now,
+        );
+    final picked = await showDateRangePicker(
+      context: context,
+      initialDateRange: initial,
+      firstDate: DateTime(now.year - 5),
+      lastDate: DateTime(now.year + 1),
+      builder: (context, child) => Theme(
+        data: Theme.of(context).copyWith(
+          colorScheme: Theme.of(context).colorScheme.copyWith(
+                primary: AppColors.brandPrimary,
+                onPrimary: Colors.white,
+              ),
+        ),
+        child: child!,
+      ),
+    );
+    if (picked != null && mounted) {
+      setState(() {
+        _selectedRange = DateRange.custom;
+        _customRange = picked;
+      });
+    }
+  }
+
+  void _onSearchChanged(String value) {
+    _debounceTimer?.cancel();
+    _debounceTimer = Timer(_searchDebounce, () {
+      if (!mounted) return;
+      final normalized = value.trim().toLowerCase();
+      if (normalized == _searchQuery) return;
+      setState(() => _searchQuery = normalized);
+    });
+  }
+
+  void _toggleSearch() {
+    setState(() {
+      _searchVisible = !_searchVisible;
+      if (!_searchVisible) {
+        _debounceTimer?.cancel();
+        _searchController.clear();
+        _searchQuery = '';
+        _searchFocus.unfocus();
+      }
+    });
+    if (_searchVisible) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _searchFocus.requestFocus();
+      });
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final state = ref.watch(TripPageViewModelProvider);
+    final state = ref.watch(tripPageViewModelProvider);
 
     // Deep-link from elsewhere (e.g. the dashboard's Action Needed rows).
     // IndexedStack keeps TripPage mounted across tab switches, so initState
     // can't catch a filter request that arrives after first build — we listen
-    // here instead. The provider is cleared after consumption so a later
+    // here as well. The provider is cleared after consumption so a later
     // manual visit defaults back to whatever the user last picked.
     ref.listen<String?>(tripPageInitialFilterProvider, (prev, next) {
-      if (next == null || next == _selectedFilter) return;
-      setState(() => _selectedFilter = next);
-      _loadListForFilter(next);
+      final requested = TripFilter.fromKey(next);
+      if (requested == null) return;
+      _applyFilter(requested);
       ref.read(tripPageInitialFilterProvider.notifier).state = null;
     });
 
@@ -87,156 +276,9 @@ class _TripPageState extends ConsumerState<TripPage> {
         bottom: false,
         child: Column(
           children: [
-            // Search Bar and Dropdown Container
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.05),
-                    blurRadius: 10,
-                    offset: const Offset(0, 3),
-                  ),
-                ],
-              ),
-              child: Row(
-                children: [
-                  // Search Bar
-                  Expanded(
-                    child: Container(
-                      height: 48,
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade100,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: Colors.grey.shade300,
-                          width: 1,
-                        ),
-                      ),
-                      child: TextField(
-                        onChanged: (value) {
-                          setState(() {
-                            _searchQuery = value.toLowerCase();
-                          });
-                        },
-                        decoration: InputDecoration(
-                          hintText: 'Search trips...',
-                          hintStyle: TextStyle(
-                            color: Colors.grey.shade500,
-                            fontSize: 14,
-                          ),
-                          prefixIcon: Icon(
-                            Icons.search_rounded,
-                            color: Colors.grey.shade600,
-                            size: 22,
-                          ),
-                          suffixIcon: _searchQuery.isNotEmpty
-                              ? IconButton(
-                                  icon: Icon(
-                                    Icons.clear_rounded,
-                                    color: Colors.grey.shade600,
-                                    size: 20,
-                                  ),
-                                  onPressed: () {
-                                    setState(() {
-                                      _searchQuery = '';
-                                    });
-                                  },
-                                )
-                              : null,
-                          border: InputBorder.none,
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 12,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(width: 12),
-
-                  // Dropdown Filter
-                  Container(
-                    height: 48,
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                    decoration: BoxDecoration(
-                      color: AppColors.brandPrimary,
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppColors.brandPrimary,
-                          blurRadius: 5,
-                          // offset: const Offset(0, 1),
-                        ),
-                      ],
-                    ),
-                    child: DropdownButtonHideUnderline(
-                      child: DropdownButton<String>(
-                        value: _selectedFilter,
-                        icon: const Icon(
-                          Icons.keyboard_arrow_down_rounded,
-                          color: Colors.white,
-                          size: 22,
-                        ),
-                        dropdownColor: AppColors.brandPrimary,
-                        borderRadius: BorderRadius.circular(12),
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                        ),
-                        items: [
-                          _buildDropdownItem(
-                            'all',
-                            'All',
-                            Icons.list_alt_rounded,
-                          ),
-                          _buildDropdownItem(
-                            'active',
-                            'Active',
-                            Icons.directions_car_rounded,
-                          ),
-                          _buildDropdownItem(
-                            'upcoming',
-                            'Upcoming',
-                            Icons.schedule_rounded,
-                          ),
-                          _buildDropdownItem(
-                            'Paid',
-                            'Paid',
-                            Icons.history_rounded,
-                          ),
-                          _buildDropdownItem(
-                            'unpaid',
-                            'Unpaid',
-                            Icons.payment_rounded,
-                          ),
-                          _buildDropdownItem(
-                            'cancelled',
-                            'Cancelled',
-                            Icons.cancel_rounded,
-                          ),
-                        ],
-                        onChanged: (value) {
-                          if (value != null) {
-                            setState(() {
-                              _selectedFilter = value;
-                            });
-                            _loadListForFilter(value);
-                          }
-                        },
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            // Content
+            _buildHeader(),
             Expanded(
-              child: _getCurrentList(state),
+              child: _buildTripList(_selectedFilter.listFrom(state)),
             ),
           ],
         ),
@@ -244,58 +286,277 @@ class _TripPageState extends ConsumerState<TripPage> {
     );
   }
 
-  DropdownMenuItem<String> _buildDropdownItem(
-    String value,
-    String label,
-    IconData icon,
-  ) {
-    return DropdownMenuItem(
-      value: value,
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
+  Widget _buildHeader() {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
         children: [
-          Icon(icon, size: 18, color: Colors.white),
-          const SizedBox(width: 8),
-          Text(label),
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 180),
+            transitionBuilder: (child, anim) =>
+                FadeTransition(opacity: anim, child: child),
+            child: _searchVisible
+                ? _buildSearchRow()
+                : _buildPrimaryRow(),
+          ),
         ],
       ),
     );
   }
 
-  Widget _getCurrentList(dynamic state) {
-    AsyncValue<List<BookingInfo>> currentList;
-
-    final state = ref.watch(TripPageViewModelProvider);
-    switch (_selectedFilter) {
-      case 'all':
-        currentList = state.allList;
-        break;
-      case 'active':
-        currentList = state.activeList;
-        break;
-      case 'upcoming':
-        currentList = state.upcomingList;
-        break;
-      case 'Paid':
-        currentList = state.historyList;
-        break;
-      case 'unpaid':
-        currentList = state.unpaidList;
-        break;
-      case 'cancelled':
-        currentList = state.cancelledList;
-        break;
-      default:
-        currentList = state.activeList;
-    }
-
-    return _buildTripList(currentList, _selectedFilter);
+  Widget _buildPrimaryRow() {
+    return Row(
+      key: const ValueKey('primary'),
+      children: [
+        _buildStatusDropdown(),
+        const Spacer(),
+        _buildDateFilterButton(),
+        const SizedBox(width: 2),
+        _buildSearchIcon(),
+      ],
+    );
   }
 
-  Widget _buildTripList(AsyncValue<List<BookingInfo>> state, String type) {
+  Widget _buildSearchRow() {
+    return Row(
+      key: const ValueKey('search'),
+      children: [
+        IconButton(
+          icon: const Icon(Icons.arrow_back_rounded),
+          color: Colors.grey.shade700,
+          onPressed: _toggleSearch,
+        ),
+        Expanded(child: _buildSearchField()),
+      ],
+    );
+  }
+
+  Widget _buildStatusDropdown() {
+    return Container(
+      height: 40,
+      padding: const EdgeInsets.symmetric(horizontal: 10),
+      decoration: BoxDecoration(
+        color: AppColors.brandPrimary,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<TripFilter>(
+          value: _selectedFilter,
+          isDense: true,
+          icon: const Icon(
+            Icons.keyboard_arrow_down_rounded,
+            color: Colors.white,
+            size: 20,
+          ),
+          dropdownColor: AppColors.brandPrimary,
+          borderRadius: BorderRadius.circular(10),
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+          ),
+          // selectedItemBuilder lets us render the closed dropdown differently
+          // from the menu items. We prefix the closed state with "Status:" so
+          // users can tell this control from the adjacent date-range chips.
+          selectedItemBuilder: (context) => [
+            for (final f in TripFilter.values)
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(
+                    Icons.tune_rounded,
+                    size: 15,
+                    color: Colors.white,
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    'Status: ${f.label}',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+          ],
+          items: [
+            for (final f in TripFilter.values)
+              DropdownMenuItem(
+                value: f,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(f.icon, size: 16, color: Colors.white),
+                    const SizedBox(width: 8),
+                    Text(f.label),
+                  ],
+                ),
+              ),
+          ],
+          onChanged: (value) {
+            if (value != null) _applyFilter(value);
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDateFilterButton() {
+    final isDefault =
+        _selectedRange == DateRange.all ||
+            (_selectedRange == DateRange.custom && _customRange == null);
+    final activeLabel = _activeDateLabel();
+
+    return PopupMenuButton<DateRange>(
+      tooltip: 'Date filter',
+      initialValue: _selectedRange,
+      position: PopupMenuPosition.under,
+      offset: const Offset(0, 8),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      onSelected: _onRangeSelected,
+      itemBuilder: (context) => [
+        for (final r in DateRange.values)
+          PopupMenuItem<DateRange>(
+            value: r,
+            child: _DateMenuRow(
+              range: r,
+              selected: r == _selectedRange,
+              customRange:
+                  r == DateRange.custom ? _customRange : null,
+            ),
+          ),
+      ],
+      child: Container(
+        constraints: const BoxConstraints(maxWidth: 180),
+        height: 36,
+        padding: EdgeInsets.symmetric(horizontal: isDefault ? 8 : 10),
+        decoration: BoxDecoration(
+          color: isDefault
+              ? Colors.transparent
+              : AppColors.brandPrimary.withValues(alpha: 0.10),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: isDefault
+                ? Colors.transparent
+                : AppColors.brandPrimary,
+            width: 1,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.filter_alt_rounded,
+              size: 18,
+              color: isDefault
+                  ? Colors.grey.shade700
+                  : AppColors.brandPrimary,
+            ),
+            if (!isDefault) ...[
+              const SizedBox(width: 4),
+              Flexible(
+                child: Text(
+                  activeLabel,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.brandPrimary,
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _activeDateLabel() {
+    if (_selectedRange == DateRange.custom && _customRange != null) {
+      return '${_shortDate(_customRange!.start)} – ${_shortDate(_customRange!.end)}';
+    }
+    return _selectedRange.label;
+  }
+
+  Widget _buildSearchIcon() {
+    return IconButton(
+      icon: Icon(
+        Icons.search_rounded,
+        color: Colors.grey.shade700,
+        size: 22,
+      ),
+      tooltip: 'Search',
+      onPressed: _toggleSearch,
+    );
+  }
+
+  Widget _buildSearchField() {
+    return Container(
+      height: 40,
+      decoration: BoxDecoration(
+        color: Colors.grey.shade100,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: Colors.grey.shade300, width: 1),
+      ),
+      child: TextField(
+        controller: _searchController,
+        focusNode: _searchFocus,
+        onChanged: _onSearchChanged,
+        decoration: InputDecoration(
+          isDense: true,
+          hintText: 'Search trips...',
+          hintStyle: TextStyle(color: Colors.grey.shade500, fontSize: 13),
+          prefixIcon: Icon(
+            Icons.search_rounded,
+            color: Colors.grey.shade600,
+            size: 20,
+          ),
+          // Listen to the controller directly so toggling the clear button
+          // doesn't rebuild the whole page on every keystroke.
+          suffixIcon: ValueListenableBuilder<TextEditingValue>(
+            valueListenable: _searchController,
+            builder: (_, value, __) {
+              if (value.text.isEmpty) return const SizedBox.shrink();
+              return IconButton(
+                icon: Icon(
+                  Icons.clear_rounded,
+                  color: Colors.grey.shade600,
+                  size: 18,
+                ),
+                onPressed: () {
+                  _searchController.clear();
+                  _onSearchChanged('');
+                },
+              );
+            },
+          ),
+          border: InputBorder.none,
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 12,
+            vertical: 8,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTripList(AsyncValue<List<BookingInfo>> state) {
+    final filter = _selectedFilter;
     return state.when(
       loading: () => RefreshIndicator(
-        onRefresh: () async => _loadListForFilter(type),
+        onRefresh: () => _loadListForFilter(filter),
         color: AppColors.brandPrimary,
         child: ListView(
           physics: const AlwaysScrollableScrollPhysics(),
@@ -318,198 +579,324 @@ class _TripPageState extends ConsumerState<TripPage> {
                 e.type == DioExceptionType.receiveTimeout);
 
         if (isOffline || isNetworkError) {
-          return const SizedBox.shrink();
+          return _buildMessageState(
+            filter: filter,
+            icon: Icons.wifi_off_rounded,
+            iconColor: Colors.grey.shade500,
+            title: 'You appear to be offline',
+            subtitle:
+                'Check your connection and pull to refresh, or tap retry.',
+          );
         }
 
-        return Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                Icons.error_outline_rounded,
-                size: 64,
-                color: Colors.red.shade300,
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'Error loading trips',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.grey.shade800,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 32),
-                child: Text(
-                  friendlyErrorMessage(e),
-                  style: TextStyle(
-                    color: Colors.grey.shade600,
-                    fontSize: 13,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ),
-              const SizedBox(height: 16),
-              ElevatedButton.icon(
-                onPressed: () {
-                  _loadListForFilter(type);
-                },
-                icon: const Icon(Icons.refresh_rounded, size: 18),
-                label: const Text('Retry'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.brandPrimary,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-              ),
-            ],
-          ),
+        return _buildMessageState(
+          filter: filter,
+          icon: Icons.error_outline_rounded,
+          iconColor: Colors.red.shade300,
+          title: 'Error loading trips',
+          subtitle: friendlyErrorMessage(e),
         );
       },
       data: (trips) {
-        // Filter trips based on search query
- final filteredTrips = trips.where((trip) {
+        final filtered = _filterAndSearch(trips, filter);
+        if (filtered.isEmpty) return _buildEmptyState(filter);
 
-  // When UNPAID tab selected → show Unpaid + Partially Paid
-  if (type == 'unpaid') {
-    final status = trip.payment_status?.toLowerCase() ?? '';
-
-    if (status != 'unpaid' && status != 'partially paid') {
-      return false;
-    }
-  }
-
-  if (_searchQuery.isEmpty) return true;
-
-  final customerName = trip.customer_name?.toLowerCase() ?? '';
-  final vehicleNumber = trip.vehicle_info?.toLowerCase() ?? '';
-  final driverName = trip.driver_name?.toLowerCase() ?? '';
-  final startLocation = trip.pickupLocation?.toLowerCase() ?? '';
-  final endLocation = trip.dropLocation?.toLowerCase() ?? '';
-  final paymentStatus = trip.payment_status?.toLowerCase() ?? '';
-
-  return customerName.contains(_searchQuery) ||
-      vehicleNumber.contains(_searchQuery) ||
-      driverName.contains(_searchQuery) ||
-      startLocation.contains(_searchQuery) ||
-      endLocation.contains(_searchQuery) ||
-      paymentStatus.contains(_searchQuery);
-
-}).toList();
-
-        if (filteredTrips.isEmpty) {
-          return _buildEmptyState(type);
-        }
+        final items = _groupByDay(filtered);
 
         return RefreshIndicator(
-          onRefresh: () async {
-            _loadListForFilter(type);
-          },
+          onRefresh: () => _loadListForFilter(filter),
+          color: AppColors.brandPrimary,
           child: ListView.builder(
             // Extra bottom padding so the last card scrolls clear of the
             // floating pill nav (nav height ~64 + margin + safety).
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 110),
-            itemCount: filteredTrips.length,
-            itemBuilder: (_, i) => TripCard(
-              key: ValueKey(filteredTrips[i].tripId ?? i),
-              bookinginfo: filteredTrips[i],
-              ref: ref,
-              status: filteredTrips[i].status ?? 0, // ← pass the current tab type
-              onTripUpdated: () async {
-                _loadListForFilter(type);
-              },
-            ),
+            padding: const EdgeInsets.fromLTRB(12, 8, 12, 110),
+            itemCount: items.length,
+            itemBuilder: (_, i) {
+              final item = items[i];
+              if (item.isHeader) {
+                return _buildSectionHeader(item.headerLabel!);
+              }
+              final trip = item.trip!;
+              return TripCard(
+                key: ValueKey(trip.tripId ?? i),
+                bookinginfo: trip,
+                status: trip.status ?? 0,
+                onTripUpdated: () => _loadListForFilter(filter),
+              );
+            },
           ),
         );
       },
     );
   }
 
-  Widget _buildEmptyState(String type) {
-    IconData icon;
-    String title;
-    String subtitle;
-
-    switch (type) {
-      case 'all':
-        icon = Icons.list_alt_rounded;
-        title = 'No Trips';
-        subtitle = 'No trips have been booked yet';
-        break;
-      case 'active':
-        icon = Icons.car_rental_rounded;
-        title = 'No Active Trips';
-        subtitle = 'You don\'t have any active trips right now';
-        break;
-      case 'upcoming':
-        icon = Icons.event_rounded;
-        title = 'No Upcoming Trips';
-        subtitle = 'No trips scheduled for the future';
-        break;
-      case 'Paid':
-        icon = Icons.payment_outlined;
-        title = 'No paid Trip ';
-        subtitle = 'Your completed trips will appear here';
-        break;
-      case 'unpaid':
-        icon = Icons.payment_rounded;
-        title = 'No Unpaid Trips';
-        subtitle = 'All trips are paid. Great job!';
-        break;
-      case 'cancelled':
-        icon = Icons.cancel_rounded;
-        title = 'No Cancelled Trips';
-        subtitle = 'You haven\'t cancelled any trips';
-        break;
-      default:
-        icon = Icons.info_outline_rounded;
-        title = 'No Trips Found';
-        subtitle = 'No trips available';
-    }
-
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+  Widget _buildSectionHeader(String label) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(4, 12, 4, 6),
+      child: Row(
         children: [
-          Container(
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: Colors.indigo.shade50,
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              icon,
-              size: 64,
-              color: Colors.indigo.shade300,
-            ),
-          ),
-          const SizedBox(height: 24),
           Text(
-            title,
-            style: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-              color: Colors.black87,
+            label,
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+              color: Colors.grey.shade800,
+              letterSpacing: 0.2,
             ),
           ),
-          const SizedBox(height: 8),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 48),
-            child: Text(
-              subtitle,
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey.shade600,
-              ),
-              textAlign: TextAlign.center,
+          const SizedBox(width: 10),
+          Expanded(
+            child: Container(
+              height: 1,
+              color: Colors.grey.shade200,
             ),
           ),
         ],
       ),
     );
   }
+
+  List<BookingInfo> _filterAndSearch(
+    List<BookingInfo> trips,
+    TripFilter filter,
+  ) {
+    final isUnpaidTab = filter == TripFilter.unpaid;
+    final query = _searchQuery;
+    final hasQuery = query.isNotEmpty;
+    final range = _selectedRange;
+    final now = DateTime.now();
+
+    return trips.where((trip) {
+      if (isUnpaidTab) {
+        final status = trip.payment_status?.toLowerCase() ?? '';
+        if (status != 'unpaid' && status != 'partially paid') return false;
+      }
+      if (!range.matches(_sortKey(trip), now, customRange: _customRange)) {
+        return false;
+      }
+
+      if (!hasQuery) return true;
+      return (trip.customer_name?.toLowerCase().contains(query) ?? false) ||
+          (trip.vehicle_info?.toLowerCase().contains(query) ?? false) ||
+          (trip.driver_name?.toLowerCase().contains(query) ?? false) ||
+          (trip.pickupLocation?.toLowerCase().contains(query) ?? false) ||
+          (trip.dropLocation?.toLowerCase().contains(query) ?? false) ||
+          (trip.payment_status?.toLowerCase().contains(query) ?? false);
+    }).toList();
+  }
+
+  /// Sort descending by day, then build a flat list of section headers
+  /// interleaved with trip rows. Headers render "Today", "Yesterday", or a
+  /// short weekday/date label; trips with no usable date land under "Undated".
+  List<_RowItem> _groupByDay(List<BookingInfo> trips) {
+    final sorted = [...trips];
+    sorted.sort((a, b) {
+      final ka = _sortKey(a);
+      final kb = _sortKey(b);
+      if (ka == null && kb == null) return 0;
+      if (ka == null) return 1;
+      if (kb == null) return -1;
+      return kb.compareTo(ka);
+    });
+
+    final now = DateTime.now();
+    final items = <_RowItem>[];
+    String? lastHeader;
+    for (final trip in sorted) {
+      final key = _sortKey(trip);
+      final header = key == null ? 'Undated' : _formatDayHeader(key, now);
+      if (header != lastHeader) {
+        items.add(_RowItem.header(header));
+        lastHeader = header;
+      }
+      items.add(_RowItem.trip(trip));
+    }
+    return items;
+  }
+
+  static DateTime? _sortKey(BookingInfo t) =>
+      t.bookingDate ?? t.startDateTime ?? t.endDateTime;
+
+  static const _weekdays = [
+    'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun',
+  ];
+  static const _months = [
+    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+  ];
+
+  static String _formatDayHeader(DateTime d, DateTime now) {
+    final day = DateTime(d.year, d.month, d.day);
+    final today = DateTime(now.year, now.month, now.day);
+    final diff = today.difference(day).inDays;
+    if (diff == 0) return 'Today';
+    if (diff == 1) return 'Yesterday';
+    final wd = _weekdays[d.weekday - 1];
+    final mo = _months[d.month - 1];
+    if (d.year == now.year) return '$wd, ${d.day} $mo';
+    return '$wd, ${d.day} $mo ${d.year}';
+  }
+
+  /// Scrollable + refreshable message screen used for offline / error /
+  /// empty states. Wrapping the column in a ListView keeps pull-to-refresh
+  /// working when there's no data to scroll over.
+  Widget _buildMessageState({
+    required TripFilter filter,
+    required IconData icon,
+    required Color iconColor,
+    required String title,
+    required String subtitle,
+    bool showRetry = true,
+  }) {
+    return RefreshIndicator(
+      onRefresh: () => _loadListForFilter(filter),
+      color: AppColors.brandPrimary,
+      child: ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.fromLTRB(24, 80, 24, 110),
+        children: [
+          Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: Colors.indigo.shade50,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(icon, size: 56, color: iconColor),
+                ),
+                const SizedBox(height: 20),
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.black87,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  subtitle,
+                  style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
+                  textAlign: TextAlign.center,
+                ),
+                if (showRetry) ...[
+                  const SizedBox(height: 14),
+                  ElevatedButton.icon(
+                    onPressed: () => _loadListForFilter(filter),
+                    icon: const Icon(Icons.refresh_rounded, size: 18),
+                    label: const Text('Retry'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.brandPrimary,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEmptyState(TripFilter filter) => _buildMessageState(
+        filter: filter,
+        icon: filter.icon,
+        iconColor: Colors.indigo.shade300,
+        title: filter.emptyTitle,
+        subtitle: filter.emptySubtitle,
+        showRetry: false,
+      );
+}
+
+const _monthAbbr = [
+  'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+];
+
+String _shortDate(DateTime d) {
+  final mo = _monthAbbr[d.month - 1];
+  final now = DateTime.now();
+  if (d.year == now.year) return '${d.day} $mo';
+  return '${d.day} $mo ${d.year}';
+}
+
+class _DateMenuRow extends StatelessWidget {
+  const _DateMenuRow({
+    required this.range,
+    required this.selected,
+    required this.customRange,
+  });
+
+  final DateRange range;
+  final bool selected;
+  final DateTimeRange? customRange;
+
+  @override
+  Widget build(BuildContext context) {
+    final hasCustomRange =
+        range == DateRange.custom && customRange != null;
+    final label = hasCustomRange
+        ? '${_shortDate(customRange!.start)} – ${_shortDate(customRange!.end)}'
+        : range.label;
+    final caption = range == DateRange.custom
+        ? (hasCustomRange ? 'Tap to change' : 'Pick a start and end date')
+        : null;
+    final color = selected ? AppColors.brandPrimary : Colors.grey.shade800;
+
+    return Row(
+      children: [
+        Icon(range.icon, size: 18, color: color),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                  color: color,
+                ),
+              ),
+              if (caption != null)
+                Text(
+                  caption,
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: Colors.grey.shade500,
+                  ),
+                ),
+            ],
+          ),
+        ),
+        if (selected)
+          Icon(Icons.check_rounded,
+              size: 18, color: AppColors.brandPrimary),
+      ],
+    );
+  }
+}
+
+class _RowItem {
+  _RowItem.header(String label)
+      : headerLabel = label,
+        trip = null;
+  _RowItem.trip(BookingInfo t)
+      : headerLabel = null,
+        trip = t;
+
+  final String? headerLabel;
+  final BookingInfo? trip;
+
+  bool get isHeader => headerLabel != null;
 }

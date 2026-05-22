@@ -41,7 +41,7 @@ final customerViewModelProvider =
       return CustomerViewModel(usecase);
     });
 
-final TripPageViewModelProvider =
+final tripPageViewModelProvider =
     StateNotifierProvider<TripPageViewModel, TripPageState>((ref) {
       final usecase = ref.watch(tripBookingUseCaseProvider);
       return TripPageViewModel(ref, usecase);
