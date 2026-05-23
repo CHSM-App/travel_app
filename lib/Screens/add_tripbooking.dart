@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-import 'package:travel_agency_app/Screens/add_customer.dart';
 import 'package:travel_agency_app/Screens/add_driver.dart';
 import 'package:travel_agency_app/Screens/add_vehicle.dart';
 import 'package:travel_agency_app/core/theme/app_colors.dart';
 import 'package:travel_agency_app/domain/models/booking_info.dart';
+import 'package:travel_agency_app/domain/models/customers.dart';
 import 'package:travel_agency_app/domain/models/route_fare_suggestion.dart';
 import 'package:travel_agency_app/domain/models/tripbooking_info.dart';
 import 'package:travel_agency_app/presentation/providers/viewmodel_provider.dart';
@@ -73,7 +73,18 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
   int? selVehicle, selDriver, selCustomer;
   bool _saving = false;
 
-  String? selVehicleLabel, selDriverLabel, selCustomerLabel;
+  String? selVehicleLabel, selDriverLabel;
+
+  // Inline customer form (replaces the customer dropdown).
+  // `selCustomer` is set when an existing customer is picked from autocomplete;
+  // it gets cleared the moment the admin edits any of these fields, so the
+  // save path knows to create a new customer instead of reusing one.
+  final customerName = TextEditingController();
+  final customerPhone = TextEditingController();
+  final customerAddress = TextEditingController();
+  final customerNameFocus = FocusNode();
+  final customerPhoneFocus = FocusNode();
+  bool _suppressCustomerFieldListener = false;
 
   late AnimationController _staggerCtrl;
   late List<Animation<double>> _anims;
@@ -126,6 +137,12 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
     pickup.addListener(_onRouteChanged);
     drop.addListener(_onRouteChanged);
 
+    // Detach from the picked customer the moment the admin edits any of the
+    // autofilled fields — saving will then create a new customer instead.
+    customerName.addListener(_onCustomerFieldChanged);
+    customerPhone.addListener(_onCustomerFieldChanged);
+    customerAddress.addListener(_onCustomerFieldChanged);
+
     Future.microtask(() {
       final n = ref.read(tripBookingViewModelProvider.notifier);
       final aid = ref.read(loginViewModelProvider).agencyId ?? '';
@@ -147,8 +164,16 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
   void dispose() {
     pickup.removeListener(_onRouteChanged);
     drop.removeListener(_onRouteChanged);
+    customerName.removeListener(_onCustomerFieldChanged);
+    customerPhone.removeListener(_onCustomerFieldChanged);
+    customerAddress.removeListener(_onCustomerFieldChanged);
+    customerName.dispose();
+    customerPhone.dispose();
+    customerAddress.dispose();
     pickupFocus.dispose();
     dropFocus.dispose();
+    customerNameFocus.dispose();
+    customerPhoneFocus.dispose();
     _staggerCtrl.dispose();
     super.dispose();
   }
@@ -156,6 +181,210 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
   // Rebuild so the fare-suggestion chip reflects the current route text.
   void _onRouteChanged() {
     if (mounted) setState(() {});
+  }
+
+  // Autofill all three customer fields from a picked suggestion. The listener
+  // suppression flag prevents the field-change handler from immediately
+  // clearing selCustomer in response to our own writes.
+  void _applyCustomer(Customer c) {
+    _suppressCustomerFieldListener = true;
+    customerName.text = c.name ?? '';
+    customerPhone.text = c.phone ?? '';
+    customerAddress.text = c.address ?? '';
+    _suppressCustomerFieldListener = false;
+    setState(() => selCustomer = c.customerId);
+  }
+
+  void _onCustomerFieldChanged() {
+    if (_suppressCustomerFieldListener) return;
+    if (selCustomer == null) return;
+    // Any manual edit after an autofill detaches us from the linked customer:
+    // saving will create a NEW customer with the typed values.
+    setState(() => selCustomer = null);
+  }
+
+  // RawAutocomplete-backed input that searches the customer list and, on
+  // selection, autofills every customer field via [_applyCustomer]. Both the
+  // name field and the phone field use this — the difference is the matcher.
+  Widget _customerAutocompleteField({
+    required TextEditingController ctrl,
+    required FocusNode focusNode,
+    required String label,
+    required IconData icon,
+    required List<Customer> customers,
+    required bool Function(Customer c, String query) matcher,
+    String? Function(String?)? validator,
+    TextInputType? keyboard,
+    List<TextInputFormatter>? fmt,
+  }) {
+    return RawAutocomplete<Customer>(
+      textEditingController: ctrl,
+      focusNode: focusNode,
+      displayStringForOption: (c) =>
+          (label.toLowerCase().contains('phone') ||
+                  label.toLowerCase().contains('mobile'))
+              ? (c.phone ?? '')
+              : (c.name ?? ''),
+      optionsBuilder: (value) {
+        final q = value.text.trim().toLowerCase();
+        if (q.isEmpty) return const Iterable<Customer>.empty();
+        return customers.where((c) => matcher(c, q)).take(8);
+      },
+      onSelected: (c) {
+        _applyCustomer(c);
+        focusNode.unfocus();
+      },
+      fieldViewBuilder: (context, fieldCtrl, fieldFocus, onSubmit) {
+        return _inputField(
+          label: label,
+          ctrl: fieldCtrl,
+          icon: icon,
+          iconColor: _C.orange,
+          iconBg: _C.orangeSoft,
+          focusNode: fieldFocus,
+          keyboard: keyboard,
+          fmt: fmt,
+          validator: validator,
+          onFieldSubmitted: (_) => onSubmit(),
+          suffixIcon: GestureDetector(
+            onTap: () {
+              if (!fieldFocus.hasFocus) {
+                fieldFocus.requestFocus();
+              }
+            },
+            child: const Padding(
+              padding: EdgeInsets.only(right: 12),
+              child: Icon(
+                Icons.search_rounded,
+                size: 18,
+                color: _C.text2,
+              ),
+            ),
+          ),
+        );
+      },
+      optionsViewBuilder: (context, onSelected, options) {
+        return Align(
+          alignment: Alignment.topLeft,
+          child: Material(
+            elevation: 6,
+            borderRadius: BorderRadius.circular(12),
+            color: _C.surface,
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxHeight: 240),
+              child: ListView.separated(
+                shrinkWrap: true,
+                padding: EdgeInsets.zero,
+                itemCount: options.length,
+                separatorBuilder: (_, __) =>
+                    const Divider(height: 1, color: _C.divider),
+                itemBuilder: (_, i) {
+                  final c = options.elementAt(i);
+                  return InkWell(
+                    onTap: () => onSelected(c),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 10,
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(7),
+                            decoration: BoxDecoration(
+                              color: _C.orangeSoft,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Icon(
+                              Icons.person_rounded,
+                              size: 14,
+                              color: _C.orange,
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment:
+                                  CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  c.name ?? '—',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w700,
+                                    color: _C.text1,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Row(
+                                  children: [
+                                    const Icon(
+                                      Icons.phone_rounded,
+                                      size: 11,
+                                      color: _C.text2,
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      c.phone ?? '—',
+                                      style: const TextStyle(
+                                        fontSize: 11,
+                                        color: _C.text2,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                if ((c.address ?? '').trim().isNotEmpty) ...[
+                                  const SizedBox(height: 2),
+                                  Row(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      const Padding(
+                                        padding: EdgeInsets.only(top: 1),
+                                        child: Icon(
+                                          Icons.location_on_rounded,
+                                          size: 11,
+                                          color: _C.text2,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Expanded(
+                                        child: Text(
+                                          c.address!.trim(),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: const TextStyle(
+                                            fontSize: 11,
+                                            color: _C.text2,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ),
+                          const Icon(
+                            Icons.north_west_rounded,
+                            size: 14,
+                            color: _C.text2,
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ),
+        );
+      },
+    );
   }
 
   // Whole rupees when integral, else 2 decimals (kept parseable for the field).
@@ -351,19 +580,6 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
     }
   }
 
-  Future<void> _goAddCustomer() async {
-    await Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => const AddCustomerPage()),
-    );
-
-    if (mounted) {
-      final n = ref.read(tripBookingViewModelProvider.notifier);
-      final aid = ref.read(loginViewModelProvider).agencyId ?? '';
-      n.customerList(aid);
-    }
-  }
-
   // ── Save ───────────────────────────────────────────────────────────────────
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
@@ -371,16 +587,55 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
       _snack("Select start & end date/time");
       return;
     }
-    if (selVehicle == null || selDriver == null || selCustomer == null) {
-      _snack("Select vehicle, driver & customer");
+    if (selVehicle == null || selDriver == null) {
+      _snack("Select vehicle & driver");
       return;
     }
     setState(() => _saving = true);
+    final agencyId = ref.read(loginViewModelProvider).agencyId ?? '';
+
+    // selCustomer is null when the admin typed fresh customer details (either
+    // skipping the autocomplete entirely or editing autofilled values). Create
+    // the customer in the DB first so we have a real customerId for the trip.
+    int? customerId = selCustomer;
+    if (customerId == null) {
+      final newCustomer = Customer(
+        customerId: 0,
+        name: customerName.text.trim(),
+        phone: customerPhone.text.trim(),
+        address: customerAddress.text.trim(),
+        agencyId: agencyId,
+      );
+      try {
+        customerId = await ref
+            .read(customerViewModelProvider.notifier)
+            .addcustomer(newCustomer);
+      } catch (e) {
+        if (!mounted) return;
+        setState(() => _saving = false);
+        _snack("Failed to save customer");
+        return;
+      }
+      // Refresh the cached customer list so subsequent searches see the new one.
+      try {
+        await ref
+            .read(tripBookingViewModelProvider.notifier)
+            .customerList(agencyId);
+      } catch (_) {}
+    }
+
+    if (customerId == 0) {
+      if (!mounted) return;
+      setState(() => _saving = false);
+      _snack("Failed to save customer");
+      return;
+    }
+
     final bk = TripBooking(
       tripId: widget.booking?.tripId,
       vehicleid: selVehicle!,
       driverid: selDriver!,
-      customerid: selCustomer!,
+      customerid: customerId,
       pickuplocation: pickup.text,
       droplocation: drop.text,
       distance: double.parse(distance.text),
@@ -390,15 +645,16 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
       endDateTime: endDt,
       status: widget.booking?.status ?? 3,
       bookingdate: widget.booking?.bookingDate ?? DateTime.now(),
-      agencyId: ref.read(loginViewModelProvider).agencyId ?? '',
+      agencyId: agencyId,
     );
     final n = ref.read(tripBookingViewModelProvider.notifier);
     if (widget.booking != null)
       await n.updateTripBooking(widget.booking?.tripId ?? 0, bk);
     else
       await n.addTripBooking(bk);
+    if (!mounted) return;
     setState(() => _saving = false);
-    if (mounted) Navigator.pop(context);
+    Navigator.pop(context);
   }
 
   // ══════════════════════════════════════════════════════════════════════════
@@ -447,15 +703,133 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
                   key: _formKey,
                   child: Column(
                     children: [
-                      // ── 01  ROUTE ────────────────────────────────────────────
+                      // ── 01  CUSTOMER ─────────────────────────────────────────
                       _FadeSlide(
                         anim: _anims[0],
+                        child: _sectionCard(
+                          icon: Icons.person_outline_rounded,
+                          label: "Customer Details",
+                          iconColor: _C.orange,
+                          iconBg: _C.orangeSoft,
+                          badge: "01",
+                          child: state.fetchCustomerList.when(
+                            loading: () =>
+                                _loadingTile("Loading customers..."),
+                            error: (_, __) =>
+                                _errorTile("Failed to load customers"),
+                            data: (customers) {
+                              // Edit mode: hydrate the inline fields from the
+                              // booking's customer once the list loads.
+                              if (widget.booking != null &&
+                                  widget.booking!.customerId != null &&
+                                  selCustomer == null &&
+                                  customerName.text.isEmpty &&
+                                  customerPhone.text.isEmpty) {
+                                final match = customers.where(
+                                  (c) =>
+                                      c.customerId ==
+                                      widget.booking!.customerId,
+                                );
+                                if (match.isNotEmpty) {
+                                  WidgetsBinding.instance
+                                      .addPostFrameCallback((_) {
+                                        if (mounted) {
+                                          _applyCustomer(match.first);
+                                        }
+                                      });
+                                }
+                              }
+
+                              return Column(
+                                crossAxisAlignment:
+                                    CrossAxisAlignment.start,
+                                children: [
+                                  _customerAutocompleteField(
+                                    ctrl: customerPhone,
+                                    focusNode: customerPhoneFocus,
+                                    label: "Mobile Number",
+                                    icon: Icons.phone_rounded,
+                                    customers: customers,
+                                    keyboard: TextInputType.phone,
+                                    fmt: [
+                                      FilteringTextInputFormatter.digitsOnly,
+                                      LengthLimitingTextInputFormatter(10),
+                                    ],
+                                    matcher: (c, q) =>
+                                        (c.phone ?? '').contains(q),
+                                    validator: (v) {
+                                      final t = v?.trim() ?? '';
+                                      if (t.isEmpty) {
+                                        return "Phone number is required";
+                                      }
+                                      if (t.length != 10) {
+                                        return "Must be 10 digits";
+                                      }
+                                      return null;
+                                    },
+                                  ),
+                                  const SizedBox(height: 10),
+                                  _customerAutocompleteField(
+                                    ctrl: customerName,
+                                    focusNode: customerNameFocus,
+                                    label: "Customer Name",
+                                    icon: Icons.person_outline_rounded,
+                                    customers: customers,
+                                    matcher: (c, q) => (c.name ?? '')
+                                        .toLowerCase()
+                                        .contains(q),
+                                    validator: (v) =>
+                                        (v == null || v.trim().isEmpty)
+                                            ? "Customer name is required"
+                                            : null,
+                                  ),
+                                  const SizedBox(height: 10),
+                                  _inputField(
+                                    label: "Customer Address",
+                                    ctrl: customerAddress,
+                                    icon: Icons.location_on_rounded,
+                                    iconColor: _C.orange,
+                                    iconBg: _C.orangeSoft,
+                                  ),
+                                  if (selCustomer != null) ...[
+                                    const SizedBox(height: 8),
+                                    Row(
+                                      children: const [
+                                        Icon(
+                                          Icons.check_circle_rounded,
+                                          size: 13,
+                                          color: _C.green,
+                                        ),
+                                        SizedBox(width: 6),
+                                        Text(
+                                          "Existing customer linked",
+                                          style: TextStyle(
+                                            fontSize: 11.5,
+                                            color: _C.green,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ],
+                              );
+                            },
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(height: 12),
+
+                      // ── 02  ROUTE ────────────────────────────────────────────
+                      _FadeSlide(
+                        anim: _anims[1],
                         child: _sectionCard(
                           icon: Icons.route_rounded,
                           label: "Route Details",
                           iconColor: _C.accent,
                           iconBg: _C.accentSoft,
-                          badge: "01",
+                          badge: "02",
                           child: Column(
                             children: [
                               _locationAutocomplete(
@@ -534,15 +908,15 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
 
                       const SizedBox(height: 12),
 
-                      // ── 02  SCHEDULE ─────────────────────────────────────────
+                      // ── 03  SCHEDULE ─────────────────────────────────────────
                       _FadeSlide(
-                        anim: _anims[1],
+                        anim: _anims[2],
                         child: _sectionCard(
                           icon: Icons.calendar_month_rounded,
                           label: "Trip Schedule",
                           iconColor: _C.purple,
                           iconBg: _C.purpleSoft,
-                          badge: "02",
+                          badge: "03",
                           child: Column(
                             children: [
                               _dateTile(
@@ -573,15 +947,15 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
 
                       const SizedBox(height: 12),
 
-                      // ── 03  ASSIGNMENTS ──────────────────────────────────────
+                      // ── 04  ASSIGNMENTS ──────────────────────────────────────
                       _FadeSlide(
-                        anim: _anims[2],
+                        anim: _anims[3],
                         child: _sectionCard(
                           icon: Icons.groups_2_rounded,
                           label: "Assignments",
                           iconColor: _C.green,
                           iconBg: _C.greenSoft,
-                          badge: "03",
+                          badge: "04",
                           child: Column(
                             children: [
                               // ── Vehicle ──────────────────────────────────────────
@@ -632,7 +1006,7 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
                                       icon: Icons.directions_car_rounded,
                                       color: _C.accent,
                                       bg: _C.accentSoft,
-                                      onAdd: _goAddVehicle,
+                                      onAdd: (_) => _goAddVehicle(),
                                       addLabel: "Add Vehicle",
                                       items: list
                                           .map(
@@ -709,7 +1083,7 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
                                       icon: Icons.person_pin_circle_rounded,
                                       color: _C.purple,
                                       bg: _C.purpleSoft,
-                                      onAdd: _goAddDriver,
+                                      onAdd: (_) => _goAddDriver(),
                                       addLabel: "Add Driver",
                                       items: list
                                           .map(
@@ -736,82 +1110,6 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
                                   error: (_, __) =>
                                       _errorTile("Failed to load drivers"),
                                 ),
-
-                              const SizedBox(height: 14),
-
-                              // ── Customer ─────────────────────────────────────────
-                              _assignLabel("Customer"),
-                              const SizedBox(height: 6),
-                              state.fetchCustomerList.when(
-                                data: (customers) {
-                                  WidgetsBinding.instance.addPostFrameCallback((
-                                    _,
-                                  ) {
-                                    if (widget.booking != null &&
-                                        selCustomer != null) {
-                                      if (!customers.any(
-                                        (c) => c.customerId == selCustomer,
-                                      ))
-                                        setState(() {
-                                          selCustomer = null;
-                                          selCustomerLabel = null;
-                                        });
-                                      // ── Edit mode: auto-set label from loaded list ──
-                                      else if (selCustomerLabel == null) {
-                                        final match = customers.where(
-                                          (c) => c.customerId == selCustomer,
-                                        );
-                                        if (match.isNotEmpty)
-                                          setState(
-                                            () => selCustomerLabel =
-                                                match.first.name ?? '',
-                                          );
-                                      }
-                                    }
-                                  });
-
-                                  if (customers.isEmpty)
-                                    return _emptyWithAddTile(
-                                      message: "No customers found",
-                                      icon: Icons.person_outline_rounded,
-                                      addLabel: "Add Customer",
-                                      onAdd: _goAddCustomer,
-                                      color: _C.orange,
-                                      bg: _C.orangeSoft,
-                                    );
-
-                                  return _customDropTile<int>(
-                                    selected: selCustomer,
-                                    selectedLabel: selCustomerLabel,
-                                    placeholder: "Select Customer",
-                                    icon: Icons.person_outline_rounded,
-                                    color: _C.orange,
-                                    bg: _C.orangeSoft,
-                                    onAdd: _goAddCustomer,
-                                    addLabel: "Add Customer",
-                                    items: customers
-                                        .map(
-                                          (e) => _DropItem(
-                                            value: e.customerId!,
-                                            label: e.name ?? '',
-                                            subtitle: "Customer",
-                                            icon: Icons.person_outline_rounded,
-                                            color: _C.orange,
-                                          ),
-                                        )
-                                        .toList(),
-                                    onSelect: (val, label) => setState(() {
-                                      selCustomer = val;
-                                      selCustomerLabel = label;
-                                    }),
-                                    hasError: selCustomer == null,
-                                  );
-                                },
-                                loading: () =>
-                                    _loadingTile("Loading customers..."),
-                                error: (_, __) =>
-                                    _errorTile("Failed to load customers"),
-                              ),
                             ],
                           ),
                         ),
@@ -1122,6 +1420,8 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
     List<TextInputFormatter>? fmt,
     FocusNode? focusNode,
     void Function(String)? onFieldSubmitted,
+    String? Function(String?)? validator,
+    Widget? suffixIcon,
   }) {
     return TextFormField(
       controller: ctrl,
@@ -1134,7 +1434,8 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
         fontWeight: FontWeight.w600,
         color: _C.text1,
       ),
-      validator: (v) => (v == null || v.isEmpty) ? "Required" : null,
+      validator:
+          validator ?? (v) => (v == null || v.isEmpty) ? "Required" : null,
       decoration: InputDecoration(
         labelText: label,
         labelStyle: const TextStyle(color: _C.text2, fontSize: 13),
@@ -1156,6 +1457,7 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
             child: Icon(icon, size: 14, color: iconColor),
           ),
         ),
+        suffixIcon: suffixIcon,
         filled: true,
         fillColor: _C.surfaceLight,
         contentPadding: const EdgeInsets.symmetric(
@@ -1456,7 +1758,7 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
     required List<_DropItem<T>> items,
     required Function(T, String) onSelect,
     bool hasError = false,
-    VoidCallback? onAdd,
+    void Function(String query)? onAdd,
     String addLabel = "Add New",
   }) {
     final hasVal = selected != null;
@@ -1580,7 +1882,7 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
     Function(T, String) onSelect,
     Color color,
     Color bg, {
-    VoidCallback? onAdd,
+    void Function(String query)? onAdd,
     String addLabel = "Add New",
   }) {
     showModalBottomSheet(
@@ -1598,9 +1900,9 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
         bg: bg,
         onAdd: onAdd == null
             ? null
-            : () {
+            : (query) {
                 Navigator.pop(ctx);
-                onAdd();
+                onAdd(query);
               },
         addLabel: addLabel,
       ),
@@ -1856,7 +2158,9 @@ class _DropSheet<T> extends StatefulWidget {
   final Function(T, String) onSelect;
   final Color color;
   final Color bg;
-  final VoidCallback? onAdd;
+  // Receives the current search query so callers can pre-fill an "add new"
+  // form with what the user just typed (e.g. a phone or name that didn't match).
+  final void Function(String query)? onAdd;
   final String addLabel;
   const _DropSheet({
     required this.items,
@@ -1885,9 +2189,12 @@ class _DropSheetState<T> extends State<_DropSheet<T>> {
       setState(() {
         _filtered = q.isEmpty
             ? widget.items
-            : widget.items
-                  .where((e) => e.label.toLowerCase().contains(q))
-                  .toList();
+            : widget.items.where((e) {
+                final inLabel = e.label.toLowerCase().contains(q);
+                final inSubtitle =
+                    e.subtitle?.toLowerCase().contains(q) ?? false;
+                return inLabel || inSubtitle;
+              }).toList();
       });
     });
   }
@@ -2042,10 +2349,66 @@ class _DropSheetState<T> extends State<_DropSheet<T>> {
                           ),
                         ),
                         const SizedBox(height: 4),
-                        const Text(
-                          "Try a different search term",
-                          style: TextStyle(fontSize: 12, color: _C.text2),
+                        Text(
+                          _searchCtrl.text.isEmpty
+                              ? "Try a different search term"
+                              : "No match for \"${_searchCtrl.text}\"",
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: _C.text2,
+                          ),
                         ),
+                        if (widget.onAdd != null &&
+                            _searchCtrl.text.trim().isNotEmpty) ...[
+                          const SizedBox(height: 16),
+                          GestureDetector(
+                            onTap: () => widget.onAdd!(_searchCtrl.text.trim()),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 11,
+                              ),
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  colors: [
+                                    widget.color.withOpacity(0.85),
+                                    widget.color,
+                                  ],
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                ),
+                                borderRadius: BorderRadius.circular(11),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: widget.color.withOpacity(0.3),
+                                    blurRadius: 8,
+                                    offset: const Offset(0, 3),
+                                  ),
+                                ],
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(
+                                    Icons.add_rounded,
+                                    size: 16,
+                                    color: Colors.white,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    '${widget.addLabel} with "${_searchCtrl.text.trim()}"',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w700,
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
                       ],
                     ),
                   )
@@ -2203,7 +2566,7 @@ class _DropSheetState<T> extends State<_DropSheet<T>> {
           if (widget.onAdd != null) ...[
             const Divider(height: 1, color: _C.divider),
             GestureDetector(
-              onTap: widget.onAdd,
+              onTap: () => widget.onAdd!(_searchCtrl.text.trim()),
               child: Container(
                 width: double.infinity,
                 padding: const EdgeInsets.symmetric(

@@ -183,6 +183,8 @@ class _TravelAdminDashboardState extends ConsumerState<TravelAdminDashboard> {
                 children: [
                   _PageTitle(isSmall: isSmall),
                   SizedBox(height: sectionGap - 2),
+                  _NewBookingHero(isSmall: isSmall),
+                  SizedBox(height: sectionGap),
                   _ActionNeededCard(
                     isSmall: isSmall,
                     tripState: tripState,
@@ -508,6 +510,174 @@ class _RowDivider extends StatelessWidget {
       height: 1,
       thickness: 1,
       color: Colors.grey.shade100,
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────
+// NEW BOOKING HERO
+// Attention-grabbing CTA at the top — gradient surface with
+// a soft decorative ring, large icon, headline, and an arrow
+// pill. Tap anywhere on the card opens the trip-booking form.
+// ─────────────────────────────────────────────────────────
+class _NewBookingHero extends StatelessWidget {
+  final bool isSmall;
+  const _NewBookingHero({required this.isSmall});
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(isSmall ? 16 : 20),
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => TripBookingForm()),
+        ),
+        child: Ink(
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [
+                AppColors.brandPrimary,
+                AppColors.brandPrimaryLight,
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(isSmall ? 16 : 20),
+            boxShadow: [
+              BoxShadow(
+                color: TravelAdminDashboard.primaryColor.withOpacity(0.30),
+                blurRadius: 16,
+                offset: const Offset(0, 6),
+              ),
+            ],
+          ),
+          child: Stack(
+            children: [
+              // Decorative ring — soft brand-tinted circle peeking from the
+              // right edge. Adds depth without competing with the headline.
+              Positioned(
+                right: -28,
+                top: -22,
+                child: Container(
+                  width: isSmall ? 110 : 130,
+                  height: isSmall ? 110 : 130,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Colors.white.withOpacity(0.10),
+                  ),
+                ),
+              ),
+              Positioned(
+                right: 28,
+                bottom: -36,
+                child: Container(
+                  width: isSmall ? 72 : 84,
+                  height: isSmall ? 72 : 84,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Colors.white.withOpacity(0.06),
+                  ),
+                ),
+              ),
+              Padding(
+                padding: EdgeInsets.fromLTRB(
+                  isSmall ? 14 : 18,
+                  isSmall ? 14 : 16,
+                  isSmall ? 14 : 18,
+                  isSmall ? 14 : 16,
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: isSmall ? 44 : 52,
+                      height: isSmall ? 44 : 52,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.18),
+                        borderRadius:
+                            BorderRadius.circular(isSmall ? 12 : 14),
+                        border: Border.all(
+                          color: Colors.white.withOpacity(0.30),
+                          width: 1,
+                        ),
+                      ),
+                      child: Icon(
+                        Icons.add_road_rounded,
+                        color: Colors.white,
+                        size: isSmall ? 22 : 26,
+                      ),
+                    ),
+                    SizedBox(width: isSmall ? 12 : 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            'New Booking',
+                            style: TextStyle(
+                              fontSize: isSmall ? 17 : 20,
+                              fontWeight: FontWeight.w800,
+                              color: Colors.white,
+                              letterSpacing: -0.4,
+                              height: 1.1,
+                            ),
+                          ),
+                          SizedBox(height: isSmall ? 3 : 4),
+                          Text(
+                            'Book a trip in seconds',
+                            style: TextStyle(
+                              fontSize: isSmall ? 11 : 12.5,
+                              color: Colors.white.withOpacity(0.85),
+                              fontWeight: FontWeight.w500,
+                              height: 1.2,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
+                    ),
+                    SizedBox(width: isSmall ? 8 : 10),
+                    Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: isSmall ? 10 : 12,
+                        vertical: isSmall ? 7 : 8,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius:
+                            BorderRadius.circular(isSmall ? 20 : 22),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            'Start',
+                            style: TextStyle(
+                              fontSize: isSmall ? 11 : 12,
+                              fontWeight: FontWeight.w800,
+                              color: TravelAdminDashboard.primaryColor,
+                              letterSpacing: 0.1,
+                            ),
+                          ),
+                          SizedBox(width: isSmall ? 3 : 4),
+                          Icon(
+                            Icons.arrow_forward_rounded,
+                            size: isSmall ? 13 : 15,
+                            color: TravelAdminDashboard.primaryColor,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

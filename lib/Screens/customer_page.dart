@@ -338,6 +338,8 @@ class _CustomerListPageState extends ConsumerState<CustomerListPage>
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
         elevation: 0,
         backgroundColor: _C.surface,
+
+        
         child: Padding(
           padding: const EdgeInsets.all(24),
           child: Column(

@@ -16,11 +16,15 @@ import 'package:url_launcher/url_launcher.dart';
 class AddCustomerPage extends ConsumerStatefulWidget {
   final bool isEdit;
   final Customer? customer;
+  final String? initialName;
+  final String? initialPhone;
 
   const AddCustomerPage({
     super.key,
     this.isEdit = false,
     this.customer,
+    this.initialName,
+    this.initialPhone,
   });
 
   @override
@@ -70,6 +74,13 @@ class _AddCustomerPageState extends ConsumerState<AddCustomerPage>
       _existingIdProofUrl = _normalizeDocUrl(c.documents);
       _selectedIdProofFile = null;
       _idProofRemoved = false;
+    } else {
+      if (widget.initialName != null && widget.initialName!.isNotEmpty) {
+        name.text = widget.initialName!;
+      }
+      if (widget.initialPhone != null && widget.initialPhone!.isNotEmpty) {
+        phone.text = widget.initialPhone!;
+      }
     }
 
     Future.microtask(_refreshExistingIdProofFromApi);
