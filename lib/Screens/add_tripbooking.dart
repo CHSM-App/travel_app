@@ -148,6 +148,11 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
       final aid = ref.read(loginViewModelProvider).agencyId ?? '';
       n.customerList(aid);
       n.loadRouteHistory(aid);
+      // Pull active + upcoming trips too so location autocomplete can suggest
+      // routes from in-flight bookings, not just completed ones.
+      final tn = ref.read(tripPageViewModelProvider.notifier);
+      tn.activeList(aid);
+      tn.upcomingList(aid);
       if (widget.booking != null && startDt != null && endDt != null) {
         n.fetchAvailableVehicles(
           aid,
@@ -663,24 +668,36 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(tripBookingViewModelProvider);
+    final tripState = ref.watch(tripPageViewModelProvider);
     final isEdit = widget.booking != null;
     final pb = MediaQuery.of(context).padding.bottom;
 
-    // Fare memory: last/avg charge billed for this exact route on any past
-    // (completed) trip, regardless of which customer it was.
+    // Trips we mine for route + fare memory. Active and upcoming trips count
+    // alongside completed ones — fromHistory keys off `amountApprove` (the
+    // quoted fare at booking time), which is set the moment a trip is booked,
+    // so an in-flight trip is just as useful as a finished one here.
     final history =
         state.routeHistory.asData?.value ?? const <BookingInfo>[];
+    final activeTrips =
+        tripState.activeList.asData?.value ?? const <BookingInfo>[];
+    final upcomingTrips =
+        tripState.upcomingList.asData?.value ?? const <BookingInfo>[];
+    final routeTrips = <BookingInfo>[
+      ...activeTrips,
+      ...upcomingTrips,
+      ...history,
+    ];
+
     final fare = RouteFareSuggestion.fromHistory(
-      history,
+      routeTrips,
       pickup: pickup.text,
       drop: drop.text,
     );
 
-    // Location suggestions sourced from past pickup/drop strings in history.
     final pickupOptions =
-        _distinctLocations(history.map((t) => t.pickupLocation));
+        _distinctLocations(routeTrips.map((t) => t.pickupLocation));
     final dropOptions =
-        _distinctLocations(history.map((t) => t.dropLocation));
+        _distinctLocations(routeTrips.map((t) => t.dropLocation));
 
     SystemChrome.setSystemUIOverlayStyle(
       const SystemUiOverlayStyle(

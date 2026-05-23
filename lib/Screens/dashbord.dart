@@ -5,6 +5,7 @@ import 'package:travel_agency_app/Screens/add_driver.dart';
 import 'package:travel_agency_app/Screens/add_tripbooking.dart';
 import 'package:travel_agency_app/Screens/add_vehicle.dart';
 import 'package:travel_agency_app/Screens/reports.dart';
+import 'package:travel_agency_app/Screens/vehicle_report.dart';
 import 'package:travel_agency_app/core/theme/app_colors.dart';
 import 'package:travel_agency_app/core/widgets/skeleton.dart';
 import 'package:travel_agency_app/domain/models/booking_info.dart';
@@ -356,23 +357,7 @@ class _ActionNeededCard extends ConsumerWidget {
               onTap: () => goToTrips('unpaid'),
             ),
             _RowDivider(),
-            _ActionRow(
-              isSmall: isSmall,
-              icon: Icons.event_available_rounded,
-              color: const Color(0xFFFF6D00),
-              bg: const Color(0xFFFFF3E0),
-              title: 'Trips starting today',
-              value: '$startsToday',
-              subtitle: startsToday == 0
-                  ? 'Nothing scheduled for today'
-                  : startsToday == 1
-                      ? '1 pickup to dispatch'
-                      : '$startsToday pickups to dispatch',
-              isLoading: isLoading && upcoming.isEmpty,
-              muted: startsToday == 0,
-              onTap: () => goToTrips('upcoming'),
-            ),
-            _RowDivider(),
+         
             _ActionRow(
               isSmall: isSmall,
               icon: Icons.directions_car_rounded,
@@ -388,6 +373,23 @@ class _ActionNeededCard extends ConsumerWidget {
               isLoading: isLoading && active.isEmpty,
               muted: activeCount == 0,
               onTap: () => goToTrips('active'),
+            ),
+               _RowDivider(),
+               _ActionRow(
+              isSmall: isSmall,
+              icon: Icons.event_available_rounded,
+              color: const Color(0xFFFF6D00),
+              bg: const Color(0xFFFFF3E0),
+              title: 'Upcoming Trips',
+              value: '$startsToday',
+              subtitle: startsToday == 0
+                  ? 'Nothing scheduled for today'
+                  : startsToday == 1
+                      ? '1 pickup to dispatch'
+                      : '$startsToday pickups to dispatch',
+              isLoading: isLoading && upcoming.isEmpty,
+              muted: startsToday == 0,
+              onTap: () => goToTrips('upcoming'),
             ),
           ],
         ),
@@ -972,6 +974,19 @@ class _StatsRow extends StatelessWidget {
     final revenueVal = '₹${_formatCompact(stats.revenue)}';
     final expenditureVal = '₹${_formatCompact(stats.expenditure)}';
 
+    // Both money tiles deep-link into the Vehicle Report filtered to today —
+    // tapping a number is the natural "show me where this came from" gesture.
+    void openTodayReport() {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => const VehicleReportPage(
+            initialPeriod: VehicleReportPeriod.today,
+          ),
+        ),
+      );
+    }
+
     final statItems = [
       _StatData(
         'Today Bookings',
@@ -990,6 +1005,7 @@ class _StatsRow extends StatelessWidget {
         const Color(0xFFFFF3E0),
         isLoading: stats.isLoading,
         hasError: stats.hasError,
+        onTap: openTodayReport,
       ),
       _StatData(
         'Today Expenditure',
@@ -999,6 +1015,7 @@ class _StatsRow extends StatelessWidget {
         AppColors.brandSoft,
         isLoading: stats.isLoading,
         hasError: stats.hasError,
+        onTap: openTodayReport,
       ),
     ];
 
@@ -1024,23 +1041,30 @@ class _StatCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.all(isSmall ? 8 : 10),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(isSmall ? 12 : 14),
-        boxShadow: [
-          BoxShadow(
-            color: data.color.withOpacity(0.10),
-            blurRadius: 10,
-            offset: const Offset(0, 3),
+    final borderRadius = BorderRadius.circular(isSmall ? 12 : 14);
+    return Material(
+      color: Colors.white,
+      borderRadius: borderRadius,
+      child: InkWell(
+        borderRadius: borderRadius,
+        onTap: data.onTap,
+        child: Ink(
+          padding: EdgeInsets.all(isSmall ? 8 : 10),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: borderRadius,
+            boxShadow: [
+              BoxShadow(
+                color: data.color.withOpacity(0.10),
+                blurRadius: 10,
+                offset: const Offset(0, 3),
+              ),
+            ],
           ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
           Container(
             width: isSmall ? 24 : 28,
             height: isSmall ? 24 : 28,
@@ -1080,6 +1104,8 @@ class _StatCard extends StatelessWidget {
             maxLines: 1,
           ),
         ],
+          ),
+        ),
       ),
     );
   }
@@ -1307,6 +1333,9 @@ class _StatData {
   final Color color, bgColor;
   final bool isLoading;
   final bool hasError;
+  // When non-null the card becomes tappable — used to deep-link the Revenue
+  // and Expenditure stats into the Vehicle Report filtered to today.
+  final VoidCallback? onTap;
   const _StatData(
     this.title,
     this.value,
@@ -1315,6 +1344,7 @@ class _StatData {
     this.bgColor, {
     this.isLoading = false,
     this.hasError = false,
+    this.onTap,
   });
 }
 

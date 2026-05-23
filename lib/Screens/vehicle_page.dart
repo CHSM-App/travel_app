@@ -5,6 +5,7 @@ import 'package:travel_agency_app/Screens/add_vehicle.dart';
 import 'package:travel_agency_app/Screens/add_driver.dart';
 import 'package:travel_agency_app/Screens/driver_history.dart';
 import 'package:travel_agency_app/Screens/vehicle_details.dart';
+import 'package:travel_agency_app/Screens/vehicle_report.dart';
 import 'package:travel_agency_app/core/network/error_messages.dart';
 import 'package:travel_agency_app/core/theme/app_colors.dart';
 import 'package:travel_agency_app/core/widgets/skeleton.dart';
@@ -1159,6 +1160,36 @@ class _VehiclePageState extends ConsumerState<VehiclePage>
                 ),
 
                 const SizedBox(width: 10),
+
+                // Report button — only on the Vehicles tab, since the report
+                // is a per-vehicle revenue/expense breakdown.
+                if (_isVehicleTab) ...[
+                  GestureDetector(
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const VehicleReportPage(),
+                      ),
+                    ),
+                    child: Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: _C.accentSoft,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: _C.accent.withOpacity(0.30),
+                        ),
+                      ),
+                      child: const Icon(
+                        Icons.insights_rounded,
+                        color: _C.accent,
+                        size: 20,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                ],
 
                 GestureDetector(
                   onTap: () {
