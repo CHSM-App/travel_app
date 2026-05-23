@@ -21,10 +21,8 @@ enum TripFilter {
       'No Active Trips', "You don't have any active trips right now"),
   upcoming('upcoming', 'Upcoming', Icons.schedule_rounded,
       'No Upcoming Trips', 'No trips scheduled for the future'),
-  paid('paid', 'Paid', Icons.history_rounded,
-      'No Paid Trips', 'Your completed trips will appear here'),
-  unpaid('unpaid', 'Unpaid', Icons.payment_rounded,
-      'No Unpaid Trips', 'All trips are paid. Great job!'),
+  completed('completed', 'Completed', Icons.task_alt_rounded,
+      'No Completed Trips', 'Completed trips will appear here'),
   cancelled('cancelled', 'Cancelled', Icons.cancel_rounded,
       'No Cancelled Trips', "You haven't cancelled any trips");
 
@@ -50,6 +48,9 @@ enum TripFilter {
     return null;
   }
 
+  // The list to render. For [TripFilter.completed] the caller must additionally
+  // pick a sub-tab — see [CompletedSubTab.listFrom]. We default to the unpaid
+  // bucket here so this stays usable as a fallback if the sub-tab is missing.
   AsyncValue<List<BookingInfo>> listFrom(TripPageState state) {
     switch (this) {
       case TripFilter.all:
@@ -58,12 +59,31 @@ enum TripFilter {
         return state.activeList;
       case TripFilter.upcoming:
         return state.upcomingList;
-      case TripFilter.paid:
-        return state.historyList;
-      case TripFilter.unpaid:
+      case TripFilter.completed:
         return state.unpaidList;
       case TripFilter.cancelled:
         return state.cancelledList;
+    }
+  }
+}
+
+/// Sub-tab shown only when [TripFilter.completed] is selected. Splits the
+/// completed bucket into the two views the operator actually cares about.
+enum CompletedSubTab {
+  unpaid('Unpaid', Icons.payment_rounded),
+  paid('Paid', Icons.history_rounded);
+
+  const CompletedSubTab(this.label, this.icon);
+
+  final String label;
+  final IconData icon;
+
+  AsyncValue<List<BookingInfo>> listFrom(TripPageState state) {
+    switch (this) {
+      case CompletedSubTab.unpaid:
+        return state.unpaidList;
+      case CompletedSubTab.paid:
+        return state.historyList;
     }
   }
 }
@@ -115,6 +135,9 @@ class _TripPageState extends ConsumerState<TripPage> {
   static const Duration _searchDebounce = Duration(milliseconds: 250);
 
   TripFilter _selectedFilter = TripFilter.active;
+  // Active only when [_selectedFilter] is [TripFilter.completed]. Default to
+  // "Unpaid" because that's the actionable view operators usually want first.
+  CompletedSubTab _completedSubTab = CompletedSubTab.unpaid;
   DateRange _selectedRange = DateRange.all;
   DateTimeRange? _customRange;
   String _searchQuery = '';
@@ -132,14 +155,30 @@ class _TripPageState extends ConsumerState<TripPage> {
     // filter before this page was mounted, honour it. ref.listen below catches
     // requests that arrive after mount; this branch is needed because listen
     // doesn't fire on the value already present at subscription time.
-    final requested =
-        TripFilter.fromKey(ref.read(tripPageInitialFilterProvider));
-    if (requested != null) {
-      _selectedFilter = requested;
+    final resolved = _resolveDeepLink(ref.read(tripPageInitialFilterProvider));
+    if (resolved != null) {
+      _selectedFilter = resolved.filter;
+      if (resolved.subTab != null) _completedSubTab = resolved.subTab!;
       ref.read(tripPageInitialFilterProvider.notifier).state = null;
     }
 
     Future.microtask(() => _loadListForFilter(_selectedFilter));
+  }
+
+  /// Translates a [tripPageInitialFilterProvider] key into a filter + optional
+  /// sub-tab. Keeps the old `'paid'` / `'unpaid'` deep-links working — they now
+  /// open Completed with the matching sub-tab pre-selected.
+  ({TripFilter filter, CompletedSubTab? subTab})? _resolveDeepLink(
+      String? key) {
+    if (key == 'unpaid') {
+      return (filter: TripFilter.completed, subTab: CompletedSubTab.unpaid);
+    }
+    if (key == 'paid') {
+      return (filter: TripFilter.completed, subTab: CompletedSubTab.paid);
+    }
+    final f = TripFilter.fromKey(key);
+    if (f == null) return null;
+    return (filter: f, subTab: null);
   }
 
   @override
@@ -164,11 +203,13 @@ class _TripPageState extends ConsumerState<TripPage> {
       case TripFilter.upcoming:
         await notifier.upcomingList(agencyId);
         break;
-      case TripFilter.paid:
-        await notifier.historyList(agencyId);
-        break;
-      case TripFilter.unpaid:
-        await notifier.unpaidList(agencyId);
+      case TripFilter.completed:
+        // Both sub-tabs feed off these lists; pull them in parallel so toggling
+        // between Unpaid/Paid never shows a stale skeleton.
+        await Future.wait([
+          notifier.unpaidList(agencyId),
+          notifier.historyList(agencyId),
+        ]);
         break;
       case TripFilter.cancelled:
         await notifier.cancelledList(agencyId);
@@ -176,10 +217,21 @@ class _TripPageState extends ConsumerState<TripPage> {
     }
   }
 
-  void _applyFilter(TripFilter filter) {
-    if (filter == _selectedFilter) return;
-    setState(() => _selectedFilter = filter);
-    _loadListForFilter(filter);
+  void _applyFilter(TripFilter filter, {CompletedSubTab? subTab}) {
+    final filterChanged = filter != _selectedFilter;
+    final subTabChanged =
+        subTab != null && subTab != _completedSubTab;
+    if (!filterChanged && !subTabChanged) return;
+    setState(() {
+      _selectedFilter = filter;
+      if (subTab != null) _completedSubTab = subTab;
+    });
+    if (filterChanged) _loadListForFilter(filter);
+  }
+
+  void _applyCompletedSubTab(CompletedSubTab subTab) {
+    if (subTab == _completedSubTab) return;
+    setState(() => _completedSubTab = subTab);
   }
 
   Future<void> _onRangeSelected(DateRange range) async {
@@ -261,9 +313,9 @@ class _TripPageState extends ConsumerState<TripPage> {
     // here as well. The provider is cleared after consumption so a later
     // manual visit defaults back to whatever the user last picked.
     ref.listen<String?>(tripPageInitialFilterProvider, (prev, next) {
-      final requested = TripFilter.fromKey(next);
-      if (requested == null) return;
-      _applyFilter(requested);
+      final resolved = _resolveDeepLink(next);
+      if (resolved == null) return;
+      _applyFilter(resolved.filter, subTab: resolved.subTab);
       ref.read(tripPageInitialFilterProvider.notifier).state = null;
     });
 
@@ -278,7 +330,11 @@ class _TripPageState extends ConsumerState<TripPage> {
           children: [
             _buildHeader(),
             Expanded(
-              child: _buildTripList(_selectedFilter.listFrom(state)),
+              child: _buildTripList(
+                _selectedFilter == TripFilter.completed
+                    ? _completedSubTab.listFrom(state)
+                    : _selectedFilter.listFrom(state),
+              ),
             ),
           ],
         ),
@@ -309,7 +365,85 @@ class _TripPageState extends ConsumerState<TripPage> {
                 ? _buildSearchRow()
                 : _buildPrimaryRow(),
           ),
+          if (_selectedFilter == TripFilter.completed) ...[
+            const SizedBox(height: 8),
+            _buildCompletedSubTabs(),
+          ],
         ],
+      ),
+    );
+  }
+
+  Widget _buildCompletedSubTabs() {
+    return Container(
+      height: 38,
+      padding: const EdgeInsets.all(3),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade100,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: Colors.grey.shade200, width: 1),
+      ),
+      child: Row(
+        children: [
+          for (final tab in CompletedSubTab.values)
+            Expanded(
+              child: _buildSubTabPill(
+                tab: tab,
+                selected: tab == _completedSubTab,
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSubTabPill({
+    required CompletedSubTab tab,
+    required bool selected,
+  }) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(8),
+        onTap: () => _applyCompletedSubTab(tab),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 160),
+          curve: Curves.easeOut,
+          decoration: BoxDecoration(
+            color: selected ? AppColors.brandPrimary : Colors.transparent,
+            borderRadius: BorderRadius.circular(8),
+            boxShadow: selected
+                ? [
+                    BoxShadow(
+                      color: AppColors.brandPrimary.withValues(alpha: 0.25),
+                      blurRadius: 6,
+                      offset: const Offset(0, 2),
+                    ),
+                  ]
+                : const [],
+          ),
+          alignment: Alignment.center,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                tab.icon,
+                size: 15,
+                color: selected ? Colors.white : Colors.grey.shade700,
+              ),
+              const SizedBox(width: 6),
+              Text(
+                tab.label,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
+                  color: selected ? Colors.white : Colors.grey.shade700,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -660,7 +794,10 @@ class _TripPageState extends ConsumerState<TripPage> {
     List<BookingInfo> trips,
     TripFilter filter,
   ) {
-    final isUnpaidTab = filter == TripFilter.unpaid;
+    // Same defensive payment-status check as before, now keyed on the sub-tab:
+    // the unpaid view only shows trips that are actually unpaid/partially paid.
+    final isUnpaidTab = filter == TripFilter.completed &&
+        _completedSubTab == CompletedSubTab.unpaid;
     final query = _searchQuery;
     final hasQuery = query.isNotEmpty;
     final range = _selectedRange;

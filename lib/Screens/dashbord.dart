@@ -1094,9 +1094,9 @@ class _QuickActionsGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // "New Booking" lives in the hero CTA at the top of the dashboard, so the
+    // Quick Actions row only carries the three secondary entity-creation flows.
     final actions = [
-      _ActionData("New Booking", Icons.add_card_rounded,
-          const Color(0xFF00BFA5), const Color(0xFFE0F7F4)),
       _ActionData("New Vehicle", Icons.directions_car_rounded,
           const Color(0xFFFF6D00), const Color(0xFFFFF3E0)),
       _ActionData("New Driver", Icons.person_pin_rounded,
@@ -1105,23 +1105,12 @@ class _QuickActionsGrid extends StatelessWidget {
           const Color(0xFFAB47BC), const Color(0xFFF3E5F5)),
     ];
 
-    return Column(
+    return Row(
       children: [
-        Row(
-          children: [
-            Expanded(child: _ActionCard(data: actions[0], isSmall: isSmall)),
-            SizedBox(width: isSmall ? 6 : 8),
-            Expanded(child: _ActionCard(data: actions[1], isSmall: isSmall)),
-          ],
-        ),
-        SizedBox(height: isSmall ? 6 : 8),
-        Row(
-          children: [
-            Expanded(child: _ActionCard(data: actions[2], isSmall: isSmall)),
-            SizedBox(width: isSmall ? 6 : 8),
-            Expanded(child: _ActionCard(data: actions[3], isSmall: isSmall)),
-          ],
-        ),
+        for (var i = 0; i < actions.length; i++) ...[
+          if (i > 0) SizedBox(width: isSmall ? 6 : 8),
+          Expanded(child: _ActionCard(data: actions[i], isSmall: isSmall)),
+        ],
       ],
     );
   }
