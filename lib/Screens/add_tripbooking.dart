@@ -139,8 +139,10 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
 
     // Detach from the picked customer the moment the admin edits any of the
     // autofilled fields — saving will then create a new customer instead.
+    // Phone gets its own handler that ALSO wipes name/address, so re-searching
+    // by a different number starts from a clean slate.
     customerName.addListener(_onCustomerFieldChanged);
-    customerPhone.addListener(_onCustomerFieldChanged);
+    customerPhone.addListener(_onCustomerPhoneChanged);
     customerAddress.addListener(_onCustomerFieldChanged);
 
     Future.microtask(() {
@@ -170,7 +172,7 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
     pickup.removeListener(_onRouteChanged);
     drop.removeListener(_onRouteChanged);
     customerName.removeListener(_onCustomerFieldChanged);
-    customerPhone.removeListener(_onCustomerFieldChanged);
+    customerPhone.removeListener(_onCustomerPhoneChanged);
     customerAddress.removeListener(_onCustomerFieldChanged);
     customerName.dispose();
     customerPhone.dispose();
@@ -205,6 +207,19 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
     if (selCustomer == null) return;
     // Any manual edit after an autofill detaches us from the linked customer:
     // saving will create a NEW customer with the typed values.
+    setState(() => selCustomer = null);
+  }
+
+  // Editing the phone after picking a customer means the admin is searching for
+  // (or entering) a different person — wipe the autofilled name/address too so
+  // the form is a clean slate, not a mix of two customers' data.
+  void _onCustomerPhoneChanged() {
+    if (_suppressCustomerFieldListener) return;
+    if (selCustomer == null) return;
+    _suppressCustomerFieldListener = true;
+    customerName.clear();
+    customerAddress.clear();
+    _suppressCustomerFieldListener = false;
     setState(() => selCustomer = null);
   }
 
@@ -504,46 +519,14 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
     final initial = (existing != null && !existing.isBefore(earliest))
         ? existing
         : earliest;
-    final date = await showDatePicker(
-      context: context,
-      firstDate: earliest,
-      lastDate: DateTime(2035),
-      initialDate: initial,
-      builder: (ctx, child) => Theme(
-        data: Theme.of(ctx).copyWith(
-          colorScheme: const ColorScheme.light(
-            primary: _C.accent,
-            onPrimary: Colors.white,
-            surface: _C.surface,
-            onSurface: _C.text1,
-          ),
-        ),
-        child: child!,
-      ),
+
+    final dt = await _showDateTimeSheet(
+      earliest: earliest,
+      initial: initial,
+      title: isStart ? "Start Date & Time" : "End Date & Time",
+      accent: isStart ? _C.green : _C.red,
     );
-    if (date == null) return;
-    final time = await showTimePicker(
-      context: context,
-      initialTime: TimeOfDay.now(),
-      builder: (ctx, child) => Theme(
-        data: Theme.of(ctx).copyWith(
-          colorScheme: const ColorScheme.light(
-            primary: _C.accent,
-            onPrimary: Colors.white,
-            surface: _C.surface,
-          ),
-        ),
-        child: child!,
-      ),
-    );
-    if (time == null) return;
-    final dt = DateTime(
-      date.year,
-      date.month,
-      date.day,
-      time.hour,
-      time.minute,
-    );
+    if (dt == null) return;
     setState(() {
       if (isStart) {
         startDt = dt;
@@ -554,6 +537,329 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
       }
     });
     if (startDt != null && endDt != null) _fetch();
+  }
+
+  // Combined date + time picker in one bottom sheet. The calendar drives the
+  // day; the hour/minute spinners + AM/PM toggle drive the time. Confirm
+  // commits the merged DateTime; cancel/dismiss returns null.
+  Future<DateTime?> _showDateTimeSheet({
+    required DateTime earliest,
+    required DateTime initial,
+    required String title,
+    required Color accent,
+  }) {
+    DateTime selectedDate =
+        DateTime(initial.year, initial.month, initial.day);
+    int selectedHour = initial.hour;
+    int selectedMinute = initial.minute;
+
+    return showModalBottomSheet<DateTime>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (ctx, setSt) {
+            final displayHour =
+                selectedHour % 12 == 0 ? 12 : selectedHour % 12;
+            final isPm = selectedHour >= 12;
+            return Container(
+              decoration: const BoxDecoration(
+                color: _C.surface,
+                borderRadius:
+                    BorderRadius.vertical(top: Radius.circular(24)),
+              ),
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(ctx).viewInsets.bottom + 12,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    margin: const EdgeInsets.only(top: 10),
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: _C.divider,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 16, 20, 6),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: accent.withOpacity(0.12),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Icon(
+                            Icons.calendar_month_rounded,
+                            color: accent,
+                            size: 18,
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            title,
+                            style: const TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w800,
+                              color: _C.text1,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Theme(
+                    data: Theme.of(ctx).copyWith(
+                      colorScheme: ColorScheme.light(
+                        primary: accent,
+                        onPrimary: Colors.white,
+                        surface: _C.surface,
+                        onSurface: _C.text1,
+                      ),
+                    ),
+                    child: SizedBox(
+                      height: 320,
+                      child: CalendarDatePicker(
+                        initialDate: selectedDate,
+                        firstDate: earliest,
+                        lastDate: DateTime(2035),
+                        onDateChanged: (d) =>
+                            setSt(() => selectedDate = d),
+                      ),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 6, 20, 12),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 10,
+                      ),
+                      decoration: BoxDecoration(
+                        color: _C.surfaceLight,
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: _C.divider),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.access_time_rounded,
+                            size: 18,
+                            color: accent,
+                          ),
+                          const SizedBox(width: 10),
+                          const Text(
+                            "Time",
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                              color: _C.text2,
+                            ),
+                          ),
+                          const Spacer(),
+                          _timeUnit(
+                            value: displayHour.toString(),
+                            onUp: () => setSt(() {
+                              selectedHour = (selectedHour + 1) % 24;
+                            }),
+                            onDown: () => setSt(() {
+                              selectedHour = (selectedHour - 1 + 24) % 24;
+                            }),
+                            accent: accent,
+                          ),
+                          const Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 4),
+                            child: Text(
+                              ":",
+                              style: TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.w800,
+                                color: _C.text1,
+                              ),
+                            ),
+                          ),
+                          _timeUnit(
+                            value: selectedMinute
+                                .toString()
+                                .padLeft(2, '0'),
+                            onUp: () => setSt(() {
+                              selectedMinute = (selectedMinute + 1) % 60;
+                            }),
+                            onDown: () => setSt(() {
+                              selectedMinute =
+                                  (selectedMinute - 1 + 60) % 60;
+                            }),
+                            accent: accent,
+                          ),
+                          const SizedBox(width: 10),
+                          GestureDetector(
+                            onTap: () => setSt(() {
+                              selectedHour = (selectedHour + 12) % 24;
+                            }),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 8,
+                              ),
+                              decoration: BoxDecoration(
+                                color: accent.withOpacity(0.12),
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(
+                                  color: accent.withOpacity(0.3),
+                                ),
+                              ),
+                              child: Text(
+                                isPm ? "PM" : "AM",
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w800,
+                                  color: accent,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: GestureDetector(
+                            onTap: () => Navigator.pop(ctx),
+                            child: Container(
+                              height: 46,
+                              decoration: BoxDecoration(
+                                color: _C.surfaceLight,
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: _C.divider),
+                              ),
+                              child: const Center(
+                                child: Text(
+                                  "Cancel",
+                                  style: TextStyle(
+                                    color: _C.text2,
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: GestureDetector(
+                            onTap: () {
+                              final dt = DateTime(
+                                selectedDate.year,
+                                selectedDate.month,
+                                selectedDate.day,
+                                selectedHour,
+                                selectedMinute,
+                              );
+                              Navigator.pop(ctx, dt);
+                            },
+                            child: Container(
+                              height: 46,
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  colors: [
+                                    accent.withOpacity(0.85),
+                                    accent,
+                                  ],
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                ),
+                                borderRadius: BorderRadius.circular(12),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: accent.withOpacity(0.3),
+                                    blurRadius: 10,
+                                    offset: const Offset(0, 4),
+                                  ),
+                                ],
+                              ),
+                              child: const Center(
+                                child: Text(
+                                  "Confirm",
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w800,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _timeUnit({
+    required String value,
+    required VoidCallback onUp,
+    required VoidCallback onDown,
+    required Color accent,
+  }) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        InkWell(
+          onTap: onUp,
+          borderRadius: BorderRadius.circular(6),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+            child: Icon(
+              Icons.keyboard_arrow_up_rounded,
+              size: 18,
+              color: accent,
+            ),
+          ),
+        ),
+        Container(
+          width: 36,
+          alignment: Alignment.center,
+          child: Text(
+            value,
+            style: const TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w800,
+              color: _C.text1,
+            ),
+          ),
+        ),
+        InkWell(
+          onTap: onDown,
+          borderRadius: BorderRadius.circular(6),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+            child: Icon(
+              Icons.keyboard_arrow_down_rounded,
+              size: 18,
+              color: accent,
+            ),
+          ),
+        ),
+      ],
+    );
   }
 
   void _fetch() {
