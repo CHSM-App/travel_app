@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:travel_agency_app/Screens/add_tripbooking.dart';
 import 'package:travel_agency_app/Screens/trip_card.dart';
 import 'package:travel_agency_app/core/network/error_messages.dart';
 import 'package:travel_agency_app/core/theme/app_colors.dart';
@@ -326,20 +327,59 @@ class _TripPageState extends ConsumerState<TripPage> {
       // the actual screen edge and items pass behind the transparent nav.
       body: SafeArea(
         bottom: false,
-        child: Column(
+        child: Stack(
           children: [
-            _buildHeader(),
-            Expanded(
-              child: _buildTripList(
-                _selectedFilter == TripFilter.completed
-                    ? _completedSubTab.listFrom(state)
-                    : _selectedFilter.listFrom(state),
+            Column(
+              children: [
+                _buildHeader(),
+                Expanded(
+                  child: _buildTripList(
+                    _selectedFilter == TripFilter.completed
+                        ? _completedSubTab.listFrom(state)
+                        : _selectedFilter.listFrom(state),
+                  ),
+                ),
+              ],
+            ),
+
+            // Add-trip FAB, positioned above the floating pill nav to match the
+            // Customers / Fleet tabs' add buttons.
+            Positioned(
+              right: 20,
+              bottom: 90,
+              child: FloatingActionButton.extended(
+                onPressed: _openAddTrip,
+                backgroundColor: AppColors.brandPrimary,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                icon: const Icon(Icons.add_rounded,
+                    color: Colors.white, size: 20),
+                label: const Text(
+                  'Add Trip',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 14,
+                  ),
+                ),
               ),
             ),
           ],
         ),
       ),
     );
+  }
+
+  /// Opens the booking form to create a new trip, then refreshes the currently
+  /// selected list so the new booking shows up without a manual pull-to-refresh.
+  Future<void> _openAddTrip() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const TripBookingForm()),
+    );
+    if (!mounted) return;
+    _loadListForFilter(_selectedFilter);
   }
 
   Widget _buildHeader() {

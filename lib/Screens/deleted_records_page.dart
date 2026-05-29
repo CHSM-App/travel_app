@@ -28,6 +28,13 @@ class _DeletedRecordsPageState extends ConsumerState<DeletedRecordsPage>
   static const _divider     = Color(0xFFE8EBF4);
   static const _red         = Color(0xFFE53935);
   static const _redSoft     = Color(0xFFFFEBEE);
+  static const _redGrad1    = Color(0xFFFF6B6B);
+  static const _green       = Color(0xFF2DB976);
+  static const _greenSoft   = Color(0xFFE8F8F1);
+  static const _diesel      = Color(0xFF1D4ED8);
+  static const _dieselSoft  = Color(0xFFDBEAFE);
+  static const _petrol      = Color(0xFF7C3AED);
+  static const _petrolSoft  = Color(0xFFEDE9FE);
   static const _cardRadius  = 16.0;
   static const _chipRadius  = 8.0;
 
@@ -325,87 +332,150 @@ class _DeletedRecordsPageState extends ConsumerState<DeletedRecordsPage>
   }
 
   /// Vehicle card
-  Widget _vehicleCard(Vehicles v) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      decoration: BoxDecoration(
-        color: _surface,
-        borderRadius: BorderRadius.circular(_cardRadius),
-        border: Border.all(color: _divider),
+  Widget _vehicleCard(Vehicles v, int i) {
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0, end: 1),
+      duration: Duration(milliseconds: 200 + i * 40),
+      curve: Curves.easeOutCubic,
+      builder: (_, val, child) => Opacity(
+        opacity: val,
+        child: Transform.translate(
+          offset: Offset(0, 14 * (1 - val)),
+          child: child,
+        ),
       ),
-      child: Material(
-        color: Colors.transparent,
-        borderRadius: BorderRadius.circular(_cardRadius),
-        child: InkWell(
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 10),
+        decoration: BoxDecoration(
+          color: _surface,
           borderRadius: BorderRadius.circular(_cardRadius),
-          onTap: () {}, // optional: show detail
-          child: Padding(
-            padding: const EdgeInsets.all(14),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Avatar
-                Container(
-                  width: 46,
-                  height: 46,
-                  decoration: BoxDecoration(
-                    color: _redSoft,
-                    borderRadius: BorderRadius.circular(13),
-                  ),
-                  child: const Icon(
-                    Icons.directions_car_rounded,
-                    color: _red,
-                    size: 22,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                // Info
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+          border: Border.all(color: _divider, width: 1),
+          boxShadow: [
+            BoxShadow(
+              color: _accent.withOpacity(0.06),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Material(
+          color: Colors.transparent,
+          borderRadius: BorderRadius.circular(_cardRadius),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(_cardRadius),
+            onTap: () {}, // optional: show detail
+            child: Padding(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Row 1: gradient icon + name + plate + Deleted badge
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      Text(
-                        v.name ?? 'Unknown vehicle',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w800,
-                          color: _text1,
-                          letterSpacing: -0.1,
+                      Container(
+                        width: 42,
+                        height: 42,
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [_redGrad1, _red],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: [
+                            BoxShadow(
+                              color: _red.withOpacity(0.25),
+                              blurRadius: 8,
+                              offset: const Offset(0, 3),
+                            ),
+                          ],
+                        ),
+                        child: const Icon(
+                          Icons.directions_car_rounded,
+                          color: Colors.white,
+                          size: 20,
                         ),
                       ),
-                      const SizedBox(height: 3),
-                      Text(
-                        v.number ?? 'No number',
-                        style: const TextStyle(
-                          fontSize: 11,
-                          color: _text2,
-                          fontWeight: FontWeight.w600,
-                          letterSpacing: 0.3,
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              v.name ?? 'Unknown vehicle',
+                              style: const TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w800,
+                                color: _text1,
+                                letterSpacing: -0.2,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                              maxLines: 1,
+                            ),
+                            if (v.number != null) ...[
+                              const SizedBox(height: 3),
+                              Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(
+                                    Icons.credit_card_rounded,
+                                    size: 11,
+                                    color: _text2,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    v.number!,
+                                    style: const TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w700,
+                                      color: _text2,
+                                      letterSpacing: 0.8,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ],
                         ),
                       ),
-                      const SizedBox(height: 9),
-                      Wrap(
-                        spacing: 7,
-                        runSpacing: 7,
-                        children: [
-                          _chip(
-                            Icons.local_gas_station_rounded,
-                            v.Type ?? 'N/A',
-                          ),
-                          _chip(
-                            Icons.people_alt_rounded,
-                            '${v.capacity ?? 0} seats',
-                          ),
-                        ],
+                      const SizedBox(width: 8),
+                      _deletedBadge(),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  Container(height: 1, color: _divider),
+                  const SizedBox(height: 10),
+                  // Row 2: stat chips (wrap so they never overflow)
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Expanded(
+                        child: Wrap(
+                          spacing: 6,
+                          runSpacing: 6,
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          children: [
+                            _statChip(
+                              Icons.event_seat_rounded,
+                              '${v.capacity ?? "--"}',
+                              'Seats',
+                            ),
+                            _statChip(
+                              Icons.speed_rounded,
+                              v.mileage != null ? '${v.mileage}' : '--',
+                              'km/l',
+                            ),
+                            _fuelBadge(v.FuelType ?? v.Type),
+                          ],
+                        ),
                       ),
                     ],
                   ),
-                ),
-                const SizedBox(width: 8),
-                _deletedBadge(),
-              ],
+                ],
+              ),
             ),
           ),
         ),
@@ -414,76 +484,117 @@ class _DeletedRecordsPageState extends ConsumerState<DeletedRecordsPage>
   }
 
   /// Driver card
-  Widget _driverCard(Drivers d) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      decoration: BoxDecoration(
-        color: _surface,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: _divider),
+  Widget _driverCard(Drivers d, int i) {
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0, end: 1),
+      duration: Duration(milliseconds: 200 + i * 40),
+      curve: Curves.easeOutCubic,
+      builder: (_, val, child) => Opacity(
+        opacity: val,
+        child: Transform.translate(
+          offset: Offset(0, 10 * (1 - val)),
+          child: child,
+        ),
       ),
-      child: Material(
-        color: Colors.transparent,
-        borderRadius: BorderRadius.circular(14),
-        child: InkWell(
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 8),
+        decoration: BoxDecoration(
+          color: _surface,
           borderRadius: BorderRadius.circular(14),
-          onTap: () {},
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-            child: Row(
-              children: [
-                // Initials avatar
-                Container(
-                  width: 42,
-                  height: 42,
-                  decoration: BoxDecoration(
-                    color: _redSoft,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Center(
-                    child: Text(
-                      _initials(d.name),
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w800,
-                        color: _red,
+          border: Border.all(color: _divider, width: 1),
+          boxShadow: [
+            BoxShadow(
+              color: _accent.withOpacity(0.05),
+              blurRadius: 8,
+              offset: const Offset(0, 3),
+            ),
+          ],
+        ),
+        child: Material(
+          color: Colors.transparent,
+          borderRadius: BorderRadius.circular(14),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(14),
+            onTap: () {},
+            child: Padding(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              child: Row(
+                children: [
+                  // Gradient initials avatar
+                  Container(
+                    width: 38,
+                    height: 38,
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [_redGrad1, _red],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
                       ),
+                      borderRadius: BorderRadius.circular(10),
+                      boxShadow: [
+                        BoxShadow(
+                          color: _red.withOpacity(0.2),
+                          blurRadius: 6,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
                     ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        d.name ?? 'Unknown driver',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                    child: Center(
+                      child: Text(
+                        _initials(d.name),
                         style: const TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w800,
-                          color: _text1,
-                          letterSpacing: -0.1,
+                          color: Colors.white,
                         ),
                       ),
-                      const SizedBox(height: 3),
-                      Text(
-                        d.phone?.isNotEmpty == true
-                            ? d.phone!
-                            : 'No phone available',
-                        style: const TextStyle(
-                          fontSize: 11,
-                          color: _text2,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
-                ),
-                const SizedBox(width: 8),
-                _deletedBadge(),
-              ],
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          d.name ?? 'Unknown driver',
+                          style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w800,
+                            color: _text1,
+                            letterSpacing: -0.1,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        if (d.phone != null && d.phone!.isNotEmpty) ...[
+                          const SizedBox(height: 3),
+                          Row(
+                            children: [
+                              const Icon(
+                                Icons.phone_rounded,
+                                size: 11,
+                                color: _red,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                d.phone!,
+                                style: const TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w600,
+                                  color: _text2,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  _deletedBadge(),
+                ],
+              ),
             ),
           ),
         ),
@@ -491,7 +602,7 @@ class _DeletedRecordsPageState extends ConsumerState<DeletedRecordsPage>
     );
   }
 
-  Widget _chip(IconData icon, String label) {
+  Widget _statChip(IconData icon, String value, String label) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
       decoration: BoxDecoration(
@@ -505,11 +616,59 @@ class _DeletedRecordsPageState extends ConsumerState<DeletedRecordsPage>
           Icon(icon, size: 11, color: _accent),
           const SizedBox(width: 4),
           Text(
-            label,
+            '$value $label',
             style: const TextStyle(
               fontSize: 10,
               fontWeight: FontWeight.w700,
               color: _text1,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Fuel-type badge — same colour mapping as the active Fleet page.
+  Widget _fuelBadge(String? fuelType) {
+    final fuel = (fuelType ?? '').toLowerCase();
+    Color bg, fg;
+    IconData icon;
+
+    if (fuel.contains('ev') || fuel.contains('electric')) {
+      bg = _greenSoft;
+      fg = _green;
+      icon = Icons.bolt_rounded;
+    } else if (fuel.contains('petrol')) {
+      bg = _petrolSoft;
+      fg = _petrol;
+      icon = Icons.local_gas_station_rounded;
+    } else if (fuel.contains('cng')) {
+      bg = _greenSoft;
+      fg = _green;
+      icon = Icons.local_gas_station_rounded;
+    } else {
+      bg = _dieselSoft;
+      fg = _diesel;
+      icon = Icons.opacity_rounded;
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 10, color: fg),
+          const SizedBox(width: 3),
+          Text(
+            fuelType ?? 'N/A',
+            style: TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.w700,
+              color: fg,
             ),
           ),
         ],
@@ -691,7 +850,7 @@ class _DeletedRecordsPageState extends ConsumerState<DeletedRecordsPage>
             child: ListView.builder(
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
               itemCount: filtered.length,
-              itemBuilder: (_, i) => _vehicleCard(filtered[i]),
+              itemBuilder: (_, i) => _vehicleCard(filtered[i], i),
             ),
           ),
         ],
@@ -727,7 +886,7 @@ class _DeletedRecordsPageState extends ConsumerState<DeletedRecordsPage>
             child: ListView.builder(
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
               itemCount: filtered.length,
-              itemBuilder: (_, i) => _driverCard(filtered[i]),
+              itemBuilder: (_, i) => _driverCard(filtered[i], i),
             ),
           ),
         ],

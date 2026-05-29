@@ -51,7 +51,6 @@ class _MainBottomNavState extends ConsumerState<MainBottomNav>
   late final List<Widget> pages = [
     const TravelAdminDashboard(),
     const TripPage(),
-    const CustomerListPage(),
     VehiclePage(
       onTabChanged: (index) {
         // Drives the FAB label between "Add Vehicle" / "Add Driver".
@@ -60,14 +59,15 @@ class _MainBottomNavState extends ConsumerState<MainBottomNav>
         });
       },
     ),
+    const CustomerListPage(),
     const ModernSettingsPage(),
   ];
 
   final List<_NavItem> _navItems = const [
     _NavItem(label: "Home",      icon: Icons.home_outlined,           activeIcon: Icons.home_rounded),
     _NavItem(label: "Trips",     icon: Icons.card_travel_outlined,    activeIcon: Icons.card_travel_rounded),
-    _NavItem(label: "Customers", icon: Icons.people_outline,          activeIcon: Icons.people_rounded),
     _NavItem(label: "Fleets",  icon: Icons.directions_car_outlined, activeIcon: Icons.directions_car_rounded),
+    _NavItem(label: "Customers", icon: Icons.people_outline,          activeIcon: Icons.people_rounded),
     _NavItem(label: "Settings",  icon: Icons.settings_outlined,       activeIcon: Icons.settings_rounded),
   ];
 
@@ -293,10 +293,10 @@ class _MainBottomNavState extends ConsumerState<MainBottomNav>
                   bottom: 90,
                   child: FloatingActionButton.extended(
                     onPressed: () {
-                      if (selectedIndex == 2) {
+                      if (selectedIndex == 3) {
                         Navigator.push(
                             context, _slideUpRoute(const AddCustomerPage()));
-                      } else if (selectedIndex == 3) {
+                      } else if (selectedIndex == 2) {
                         if (vehicleTabIndex == 0) {
                           Navigator.push(
                               context, _slideUpRoute(const AddVehiclePage()));
@@ -313,7 +313,7 @@ class _MainBottomNavState extends ConsumerState<MainBottomNav>
                     icon: const Icon(Icons.add_rounded,
                         color: Colors.white, size: 20),
                     label: Text(
-                      selectedIndex == 2
+                      selectedIndex == 3
                           ? "Add Customer"
                           : vehicleTabIndex == 0
                               ? "Add Vehicle"
@@ -524,8 +524,8 @@ class _MainBottomNavState extends ConsumerState<MainBottomNav>
               AnimatedDefaultTextStyle(
                 duration: const Duration(milliseconds: 200),
                 style: TextStyle(
-                  fontSize: isCompact ? 8 : 9,
-                  fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                  fontSize: isCompact ? 10 : 11,
+                  fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
                   color: selected ? NavTheme.navAccent : NavTheme.navInactive,
                   letterSpacing: 0.1,
                 ),

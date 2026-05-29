@@ -40,9 +40,10 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
   static const _primary = AppColors.brandPrimary;
   static const _primaryDk = AppColors.brandPrimaryDark;
   static const _primaryLt = AppColors.brandSoft;
-  static const _surface = Color(0xFFF4F5FF);
-  static const _textDark = Color(0xFF1A1D3B);
+  static const _bg = Color(0xFFF5F7FB);
+  static const _textDark = Color(0xFF0F1729);
   static const _textMid = Color(0xFF6B7280);
+  static const _divider = Color(0xFFE6EAF2);
   static const _green = Color(0xFF10B981);
   static const _red = Color(0xFFEF4444);
 
@@ -326,7 +327,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
     final loginState = ref.watch(loginViewModelProvider);
 
     return Scaffold(
-      backgroundColor: _surface,
+      backgroundColor: _bg,
       body: loginState.adminProfile.when(
         loading: () =>
             const Center(child: CircularProgressIndicator(color: _primary)),
@@ -351,61 +352,76 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
                   child: SingleChildScrollView(
                     physics: const BouncingScrollPhysics(),
                     child: Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+                      padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
                       child: Form(
                         key: _formKey,
                         child: Column(
                           children: [
-                            _section('Personal Info', [
-                              _FieldItem(
-                                nameController,
-                                'Full Name',
-                                Icons.person_outline_rounded,
-                              ),
-                              _FieldItem(
-                                mobileController,
-                                'Mobile',
-                                Icons.phone_outlined,
-                                type: TextInputType.phone,
-                                max: 10,
-                                validate: (v) {
-                                  if (v == null || v.isEmpty) return 'Required';
-                                  if (v.length != 10)
-                                    return '10 digits required';
-                                  return null;
-                                },
-                              ),
-                              _FieldItem(
-                                emailController,
-                                'Email',
-                                Icons.email_outlined,
-                                type: TextInputType.emailAddress,
-                                validate: (v) {
-                                  if (v == null || v.isEmpty) return 'Required';
-                                  if (!v.contains('@')) return 'Invalid email';
-                                  return null;
-                                },
-                              ),
-                            ]),
-                            const SizedBox(height: 14),
-                            _section('Agency & Location', [
-                              _FieldItem(
-                                agencyController,
-                                'Agency Name',
-                                Icons.business_outlined,
-                              ),
-                              _FieldItem(
-                                cityController,
-                                'City',
-                                Icons.location_city_outlined,
-                              ),
-                              _FieldItem(
-                                addressController,
-                                'Address',
-                                Icons.home_outlined,
-                              ),
-                            ]),
-                            const SizedBox(height: 20),
+                            _section(
+                              'Personal Info',
+                              Icons.person_rounded,
+                              [
+                                _FieldItem(
+                                  nameController,
+                                  'Full Name',
+                                  Icons.person_outline_rounded,
+                                ),
+                                _FieldItem(
+                                  mobileController,
+                                  'Mobile',
+                                  Icons.phone_outlined,
+                                  type: TextInputType.phone,
+                                  max: 10,
+                                  validate: (v) {
+                                    if (v == null || v.isEmpty) {
+                                      return 'Required';
+                                    }
+                                    if (v.length != 10) {
+                                      return '10 digits required';
+                                    }
+                                    return null;
+                                  },
+                                ),
+                                _FieldItem(
+                                  emailController,
+                                  'Email',
+                                  Icons.email_outlined,
+                                  type: TextInputType.emailAddress,
+                                  validate: (v) {
+                                    if (v == null || v.isEmpty) {
+                                      return 'Required';
+                                    }
+                                    if (!v.contains('@')) {
+                                      return 'Invalid email';
+                                    }
+                                    return null;
+                                  },
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+                            _section(
+                              'Agency & Location',
+                              Icons.business_rounded,
+                              [
+                                _FieldItem(
+                                  agencyController,
+                                  'Agency Name',
+                                  Icons.business_outlined,
+                                ),
+                                _FieldItem(
+                                  cityController,
+                                  'City',
+                                  Icons.location_city_outlined,
+                                ),
+                                _FieldItem(
+                                  addressController,
+                                  'Address',
+                                  Icons.home_outlined,
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 16),
                             _saveButton(),
                           ],
                         ),
@@ -421,8 +437,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
     );
   }
 
-  // ── Header: gradient + avatar fully inside ────────────────────
-
+  // ── Compact header: horizontal avatar + name strip ──────────
   Widget _buildHeader() {
     final initial = nameController.text.isNotEmpty
         ? nameController.text[0].toUpperCase()
@@ -435,227 +450,289 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: [
-              Colors.white.withOpacity(0.3),
-              Colors.white.withOpacity(0.15),
+              Colors.white.withOpacity(0.30),
+              Colors.white.withOpacity(0.12),
             ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
           ),
         ),
         alignment: Alignment.center,
         child: Text(
           initial,
           style: const TextStyle(
-            fontSize: 32,
+            fontSize: 22,
             fontWeight: FontWeight.w800,
             color: Colors.white,
+            letterSpacing: -0.3,
           ),
         ),
       );
     }
 
     return Container(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [AppColors.brandPrimary, AppColors.brandPrimaryDark],
         ),
-        borderRadius: BorderRadius.vertical(bottom: Radius.circular(30)),
+        borderRadius: const BorderRadius.vertical(bottom: Radius.circular(22)),
+        boxShadow: [
+          BoxShadow(
+            color: _primary.withOpacity(0.25),
+            blurRadius: 14,
+            offset: const Offset(0, 6),
+          ),
+        ],
       ),
-      child: SafeArea(
-        bottom: false,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(8, 8, 16, 20),
-          child: Column(
-            children: [
-              // Back + Title row
-              Row(
-                children: [
-                  IconButton(
-                    icon: Container(
-                      padding: const EdgeInsets.all(7),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.18),
-                        borderRadius: BorderRadius.circular(11),
-                      ),
-                      child: const Icon(
-                        Icons.arrow_back_ios_new_rounded,
-                        color: Colors.white,
-                        size: 15,
-                      ),
-                    ),
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                  const Text(
-                    'Edit Profile',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w800,
-                      color: Colors.white,
-                      letterSpacing: -0.4,
-                    ),
-                  ),
-                ],
+      child: ClipRRect(
+        borderRadius: const BorderRadius.vertical(
+          bottom: Radius.circular(22),
+        ),
+        child: Stack(
+          children: [
+            // Single soft decorative blob, kept subtle.
+            Positioned(
+              right: -30,
+              top: -30,
+              child: Container(
+                width: 110,
+                height: 110,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.white.withOpacity(0.07),
+                ),
               ),
-              const SizedBox(height: 14),
-
-              // Avatar row — fully inside header
-              Row(
-                children: [
-                  const SizedBox(width: 16),
-                  // Avatar
-                  Stack(
-                    children: [
-                      GestureDetector(
-                        onTap: _showImagePreview,
-                        child: Container(
-                          width: 80,
-                          height: 80,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            border: Border.all(color: Colors.white, width: 3),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.2),
-                                blurRadius: 16,
-                                offset: const Offset(0, 6),
+            ),
+            SafeArea(
+              bottom: false,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(8, 6, 12, 14),
+                child: Column(
+                  children: [
+                    // Title bar
+                    Row(
+                      children: [
+                        Material(
+                          color: Colors.white.withOpacity(0.16),
+                          borderRadius: BorderRadius.circular(10),
+                          child: InkWell(
+                            onTap: () => Navigator.pop(context),
+                            borderRadius: BorderRadius.circular(10),
+                            child: Container(
+                              width: 32,
+                              height: 32,
+                              alignment: Alignment.center,
+                              child: const Icon(
+                                Icons.arrow_back_ios_new_rounded,
+                                color: Colors.white,
+                                size: 13,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        const Text(
+                          'Edit Profile',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w800,
+                            color: Colors.white,
+                            letterSpacing: -0.3,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    // Horizontal avatar + name + camera button row
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                      child: Row(
+                        children: [
+                          Stack(
+                            alignment: Alignment.bottomRight,
+                            children: [
+                              GestureDetector(
+                                onTap: _showImagePreview,
+                                child: Container(
+                                  width: 56,
+                                  height: 56,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: const Color(0xFFE8EAF6),
+                                    border: Border.all(
+                                      color: Colors.white.withOpacity(0.85),
+                                      width: 2,
+                                    ),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withOpacity(0.18),
+                                        blurRadius: 10,
+                                        offset: const Offset(0, 4),
+                                      ),
+                                    ],
+                                  ),
+                                  child: ClipOval(
+                                    child: _profileImage != null
+                                        ? Image.file(
+                                            _profileImage!,
+                                            fit: BoxFit.cover,
+                                            errorBuilder: (_, __, ___) =>
+                                                avatarFallback(),
+                                          )
+                                        : hasValidNetworkImage
+                                            ? Image.network(
+                                                displayImageUrl,
+                                                key: ValueKey(displayImageUrl),
+                                                fit: BoxFit.cover,
+                                                errorBuilder: (_, __, ___) =>
+                                                    avatarFallback(),
+                                              )
+                                            : avatarFallback(),
+                                  ),
+                                ),
+                              ),
+                              Positioned(
+                                right: -2,
+                                bottom: -2,
+                                child: GestureDetector(
+                                  onTap: _showImageOptions,
+                                  child: Container(
+                                    width: 22,
+                                    height: 22,
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      color: Colors.white,
+                                      border: Border.all(
+                                        color: _primary.withOpacity(0.25),
+                                        width: 1.2,
+                                      ),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withOpacity(0.15),
+                                          blurRadius: 5,
+                                          offset: const Offset(0, 2),
+                                        ),
+                                      ],
+                                    ),
+                                    child: const Icon(
+                                      Icons.camera_alt_rounded,
+                                      color: _primary,
+                                      size: 11,
+                                    ),
+                                  ),
+                                ),
                               ),
                             ],
                           ),
-                          child: ClipOval(
-                            child: SizedBox.expand(
-                              child: _profileImage != null
-                                  ? Image.file(
-                                      _profileImage!,
-                                      fit: BoxFit.cover,
-                                      errorBuilder: (_, __, ___) =>
-                                          avatarFallback(),
-                                    )
-                                  : hasValidNetworkImage
-                                  ? Image.network(
-                                      displayImageUrl,
-                                      key: ValueKey(displayImageUrl),
-                                      fit: BoxFit.cover,
-                                      errorBuilder: (_, __, ___) =>
-                                          avatarFallback(),
-                                    )
-                                  : avatarFallback(),
-                            ),
-                          ),
-                        ),
-                      ),
-                      Positioned(
-                        bottom: 0,
-                        right: 0,
-                        child: GestureDetector(
-                          onTap: _showImageOptions,
-                          child: Container(
-                            width: 26,
-                            height: 26,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: Colors.white,
-                              border: Border.all(color: _primary, width: 1.5),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.15),
-                                  blurRadius: 6,
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  nameController.text.isNotEmpty
+                                      ? nameController.text
+                                      : 'Your Name',
+                                  style: const TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w800,
+                                    color: Colors.white,
+                                    letterSpacing: -0.3,
+                                    height: 1.1,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                const SizedBox(height: 3),
+                                Text(
+                                  emailController.text.isNotEmpty
+                                      ? emailController.text
+                                      : 'Manage your account',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: Colors.white.withOpacity(0.80),
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                 ),
                               ],
                             ),
-                            child: const Icon(
-                              Icons.camera_alt_rounded,
-                              color: _primary,
-                              size: 13,
-                            ),
                           ),
-                        ),
+                        ],
                       ),
-                    ],
-                  ),
-                  const SizedBox(width: 16),
-
-                  // Name + tap hint
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        nameController.text.isNotEmpty
-                            ? nameController.text
-                            : 'Your Name',
-                        style: const TextStyle(
-                          fontSize: 17,
-                          fontWeight: FontWeight.w700,
-                          color: Colors.white,
-                          letterSpacing: -0.3,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      GestureDetector(
-                        onTap: _showImageOptions,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.2),
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: const Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(Icons.camera_alt_outlined, color: Colors.white, size: 12),
-                              SizedBox(width: 4),
-                              Text('Change photo',
-                                  style: TextStyle(fontSize: 11, color: Colors.white,
-                                      fontWeight: FontWeight.w600)),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
+                    ),
+                  ],
+                ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
   }
 
-  // ── Section card ─────────────────────────────────────────────
-
-  Widget _section(String title, List<_FieldItem> fields) {
+  // ── Section card (compact) ───────────────────────────────────
+  Widget _section(String title, IconData icon, List<_FieldItem> fields) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.only(left: 4, bottom: 8),
-          child: Text(title.toUpperCase(),
-              style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700,
-                  color: _textMid, letterSpacing: 1.3)),
+          padding: const EdgeInsets.only(left: 2, bottom: 6),
+          child: Row(
+            children: [
+              Container(
+                width: 3,
+                height: 12,
+                decoration: BoxDecoration(
+                  color: _primary,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(width: 7),
+              Icon(icon, color: _primary, size: 11),
+              const SizedBox(width: 5),
+              Text(
+                title.toUpperCase(),
+                style: const TextStyle(
+                  fontSize: 9.5,
+                  fontWeight: FontWeight.w800,
+                  color: _textMid,
+                  letterSpacing: 1.1,
+                ),
+              ),
+            ],
+          ),
         ),
         Container(
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: [BoxShadow(
-                color: _primary.withOpacity(0.07), blurRadius: 16, offset: const Offset(0, 4))],
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: _divider),
+            boxShadow: [
+              BoxShadow(
+                color: _primary.withOpacity(0.04),
+                blurRadius: 10,
+                offset: const Offset(0, 2),
+              ),
+            ],
           ),
           child: Column(
             children: List.generate(fields.length, (i) {
-              final isFirst = i == 0;
-              final isLast  = i == fields.length - 1;
+              final isLast = i == fields.length - 1;
               return Column(
                 children: [
-                  ClipRRect(
-                    borderRadius: BorderRadius.vertical(
-                      top:    isFirst ? const Radius.circular(20) : Radius.zero,
-                      bottom: isLast  ? const Radius.circular(20) : Radius.zero,
-                    ),
-                    child: _buildField(fields[i]),
-                  ),
+                  _buildField(fields[i]),
                   if (!isLast)
-                    Divider(height: 1, thickness: 1,
-                        color: _surface, indent: 56, endIndent: 0),
+                    const Divider(
+                      height: 1,
+                      thickness: 1,
+                      color: _divider,
+                      indent: 44,
+                    ),
                 ],
               );
             }),
@@ -670,67 +747,122 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
       controller: f.ctrl,
       keyboardType: f.type,
       maxLines: 1,
-      inputFormatters: f.max != null ? [LengthLimitingTextInputFormatter(f.max!)] : null,
-      validator: f.validate ?? (v) => (v == null || v.isEmpty) ? 'Required' : null,
-      style: const TextStyle(fontSize: 14, color: _textDark, fontWeight: FontWeight.w500),
+      inputFormatters:
+          f.max != null ? [LengthLimitingTextInputFormatter(f.max!)] : null,
+      validator:
+          f.validate ?? (v) => (v == null || v.isEmpty) ? 'Required' : null,
+      style: const TextStyle(
+        fontSize: 13.5,
+        color: _textDark,
+        fontWeight: FontWeight.w600,
+        letterSpacing: -0.1,
+      ),
+      cursorColor: _primary,
       decoration: InputDecoration(
         labelText: f.label,
-        labelStyle: const TextStyle(fontSize: 12, color: _textMid),
+        isDense: true,
+        labelStyle: const TextStyle(
+          fontSize: 12,
+          color: _textMid,
+          fontWeight: FontWeight.w500,
+        ),
+        floatingLabelStyle: const TextStyle(
+          fontSize: 11.5,
+          color: _primary,
+          fontWeight: FontWeight.w700,
+        ),
         prefixIcon: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
           child: Container(
-            padding: const EdgeInsets.all(7),
-            decoration: BoxDecoration(color: _primaryLt, borderRadius: BorderRadius.circular(9)),
-            child: Icon(f.icon, color: _primary, size: 15),
+            padding: const EdgeInsets.all(5),
+            decoration: BoxDecoration(
+              color: _primaryLt,
+              borderRadius: BorderRadius.circular(7),
+            ),
+            child: Icon(f.icon, color: _primary, size: 13),
           ),
         ),
-        border:        InputBorder.none,
+        prefixIconConstraints: const BoxConstraints(
+          minWidth: 44,
+          minHeight: 32,
+        ),
+        border: InputBorder.none,
         focusedBorder: InputBorder.none,
         enabledBorder: InputBorder.none,
-        errorBorder:   InputBorder.none,
+        errorBorder: InputBorder.none,
+        focusedErrorBorder: InputBorder.none,
         filled: true,
-        fillColor: Colors.white,
-        // Compact vertical padding so fields fit on screen
-        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-        errorStyle: const TextStyle(fontSize: 10, color: _red),
+        fillColor: Colors.transparent,
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+        errorStyle: const TextStyle(
+          fontSize: 9.5,
+          color: _red,
+          fontWeight: FontWeight.w600,
+          height: 0.9,
+        ),
       ),
     );
   }
 
-  // ── Save button ───────────────────────────────────────────────
-
+  // ── Save button (compact) ────────────────────────────────────
   Widget _saveButton() {
-    return Container(
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 200),
       width: double.infinity,
-      height: 52,
+      height: 46,
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: _isSaving
-              ? [_primary.withOpacity(0.6), _primaryDk.withOpacity(0.6)]
+              ? [_primary.withOpacity(0.55), _primaryDk.withOpacity(0.55)]
               : [_primary, _primaryDk],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: _isSaving ? [] : [
-          BoxShadow(color: _primary.withOpacity(0.38), blurRadius: 16, offset: const Offset(0, 7)),
-        ],
+        borderRadius: BorderRadius.circular(13),
+        boxShadow: _isSaving
+            ? []
+            : [
+                BoxShadow(
+                  color: _primary.withOpacity(0.32),
+                  blurRadius: 12,
+                  offset: const Offset(0, 5),
+                ),
+              ],
       ),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(13),
           onTap: _isSaving ? null : _saveProfile,
           child: Center(
             child: _isSaving
-                ? const SizedBox(width: 22, height: 22,
-                    child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5))
+                ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(
+                      color: Colors.white,
+                      strokeWidth: 2.2,
+                    ),
+                  )
                 : const Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.check_rounded, color: Colors.white, size: 20),
-                      SizedBox(width: 8),
-                      Text('Save Changes',
-                          style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700,
-                              color: Colors.white, letterSpacing: -0.2)),
+                      Icon(
+                        Icons.check_circle_rounded,
+                        color: Colors.white,
+                        size: 17,
+                      ),
+                      SizedBox(width: 7),
+                      Text(
+                        'Save Changes',
+                        style: TextStyle(
+                          fontSize: 13.5,
+                          fontWeight: FontWeight.w800,
+                          color: Colors.white,
+                          letterSpacing: -0.2,
+                        ),
+                      ),
                     ],
                   ),
           ),

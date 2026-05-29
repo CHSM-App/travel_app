@@ -16,9 +16,9 @@ class TravelAdminDashboard extends ConsumerStatefulWidget {
   const TravelAdminDashboard({super.key});
 
   static const primaryColor = AppColors.brandPrimary;
-  // Dark navy text — Phase 1 keeps text tokens as-is (out of scope for the
-  // indigo-only consolidation).
-  static const darkBlue = Color(0xFF1A237E);
+  // Primary text color. Points at the shared neutral token so the dashboard
+  // uses one dark text colour rather than a separate navy.
+  static const darkBlue = AppColors.textPrimary;
 
   @override
   ConsumerState<TravelAdminDashboard> createState() =>
@@ -297,7 +297,7 @@ class _ActionNeededCard extends ConsumerWidget {
               children: [
                 Icon(
                   Icons.notifications_active_rounded,
-                  color: const Color(0xFFFF6D00),
+                  color: AppColors.brandPrimary,
                   size: isSmall ? 14 : 16,
                 ),
                 SizedBox(width: isSmall ? 6 : 8),
@@ -319,7 +319,7 @@ class _ActionNeededCard extends ConsumerWidget {
                       vertical: 2,
                     ),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFFFEBEE),
+                      color: AppColors.dangerSoft,
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
@@ -327,7 +327,7 @@ class _ActionNeededCard extends ConsumerWidget {
                       style: TextStyle(
                         fontSize: isSmall ? 9 : 10,
                         fontWeight: FontWeight.w800,
-                        color: const Color(0xFFD32F2F),
+                        color: AppColors.danger,
                       ),
                     ),
                   )
@@ -346,8 +346,8 @@ class _ActionNeededCard extends ConsumerWidget {
             _ActionRow(
               isSmall: isSmall,
               icon: Icons.currency_rupee_rounded,
-              color: const Color(0xFFD32F2F),
-              bg: const Color(0xFFFFEBEE),
+              color: AppColors.danger,
+              bg: AppColors.dangerSoft,
               title: 'Outstanding dues',
               value: '₹${_formatCompact(duesTotal)}',
               subtitle: dueCustomers.isEmpty
@@ -363,8 +363,8 @@ class _ActionNeededCard extends ConsumerWidget {
             _ActionRow(
               isSmall: isSmall,
               icon: Icons.directions_car_rounded,
-              color: const Color(0xFF00BFA5),
-              bg: const Color(0xFFE0F7F4),
+              color: AppColors.info,
+              bg: AppColors.infoSoft,
               title: 'Active trips right now',
               value: '$activeCount',
               subtitle: activeCount == 0
@@ -380,8 +380,8 @@ class _ActionNeededCard extends ConsumerWidget {
                _ActionRow(
               isSmall: isSmall,
               icon: Icons.event_available_rounded,
-              color: const Color(0xFFFF6D00),
-              bg: const Color(0xFFFFF3E0),
+              color: AppColors.warning,
+              bg: AppColors.warningSoft,
               title: 'Upcoming Trips',
               value: '$startsToday',
               subtitle: startsToday == 0
@@ -806,8 +806,9 @@ class _BookingReportBanner extends ConsumerWidget {
 // ─────────────────────────────────────────────────────────
 // VEHICLE REPORT BANNER
 // Mirrors the Booking Report banner but routes to the
-// per-vehicle revenue/expense report. Uses an orange accent
-// so the two report cards are visually distinct.
+// per-vehicle revenue/expense report. Shares the brand accent
+// with Booking Report — the two cards are told apart by their
+// icon and title rather than a separate hue.
 // ─────────────────────────────────────────────────────────
 class _VehicleReportBanner extends StatelessWidget {
   final bool isSmall;
@@ -815,9 +816,9 @@ class _VehicleReportBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const accent = Color(0xFFE67E22);
-    const accentLight = Color(0xFFFF8A33);
-    const accentSoft = Color(0xFFFFF3E0);
+    const accent = AppColors.brandPrimary;
+    const accentLight = AppColors.brandPrimaryLight;
+    const accentSoft = AppColors.brandSoft;
 
     return GestureDetector(
       onTap: () {
@@ -1114,8 +1115,8 @@ class _StatsRow extends StatelessWidget {
         'Today Bookings',
         bookingsVal,
         Icons.confirmation_number_outlined,
-        const Color(0xFF00BFA5),
-        const Color(0xFFE0F7F4),
+        AppColors.brandPrimary,
+        AppColors.brandSoft,
         isLoading: stats.isLoading,
         hasError: stats.hasError,
       ),
@@ -1123,8 +1124,8 @@ class _StatsRow extends StatelessWidget {
         'Today Revenue',
         revenueVal,
         Icons.currency_rupee_rounded,
-        const Color(0xFFFF6D00),
-        const Color(0xFFFFF3E0),
+        AppColors.success,
+        AppColors.successSoft,
         isLoading: stats.isLoading,
         hasError: stats.hasError,
         onTap: openTodayReport,
@@ -1133,8 +1134,8 @@ class _StatsRow extends StatelessWidget {
         'Today Expenditure',
         expenditureVal,
         Icons.trending_down_rounded,
-        TravelAdminDashboard.primaryColor,
-        AppColors.brandSoft,
+        AppColors.danger,
+        AppColors.dangerSoft,
         isLoading: stats.isLoading,
         hasError: stats.hasError,
         onTap: openTodayReport,
@@ -1246,11 +1247,11 @@ class _QuickActionsGrid extends StatelessWidget {
     // Quick Actions row only carries the three secondary entity-creation flows.
     final actions = [
       _ActionData("New Vehicle", Icons.directions_car_rounded,
-          const Color(0xFFFF6D00), const Color(0xFFFFF3E0)),
+          AppColors.brandPrimary, AppColors.brandSoft),
       _ActionData("New Driver", Icons.person_pin_rounded,
-          TravelAdminDashboard.primaryColor, AppColors.brandSoft),
+          AppColors.brandPrimary, AppColors.brandSoft),
       _ActionData("New Customer", Icons.people_alt_rounded,
-          const Color(0xFFAB47BC), const Color(0xFFF3E5F5)),
+          AppColors.brandPrimary, AppColors.brandSoft),
     ];
 
     return Row(
