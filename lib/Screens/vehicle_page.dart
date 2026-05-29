@@ -1162,7 +1162,8 @@ class _VehiclePageState extends ConsumerState<VehiclePage>
                 const SizedBox(width: 10),
 
                 // Report button — only on the Vehicles tab, since the report
-                // is a per-vehicle revenue/expense breakdown.
+                // is a per-vehicle revenue/expense breakdown. Promoted to a
+                // gradient pill so it visibly stands out in the header strip.
                 if (_isVehicleTab) ...[
                   GestureDetector(
                     onTap: () => Navigator.push(
@@ -1172,19 +1173,42 @@ class _VehiclePageState extends ConsumerState<VehiclePage>
                       ),
                     ),
                     child: Container(
-                      width: 44,
                       height: 44,
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
                       decoration: BoxDecoration(
-                        color: _C.accentSoft,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: _C.accent.withOpacity(0.30),
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFFFF8A33), Color(0xFFE67E22)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
                         ),
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFFE67E22).withOpacity(0.45),
+                            blurRadius: 12,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
                       ),
-                      child: const Icon(
-                        Icons.insights_rounded,
-                        color: _C.accent,
-                        size: 20,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: const [
+                          Icon(
+                            Icons.insights_rounded,
+                            color: Colors.white,
+                            size: 18,
+                          ),
+                          SizedBox(width: 6),
+                          Text(
+                            'Report',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 0.2,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ),

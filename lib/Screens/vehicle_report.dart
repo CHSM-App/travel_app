@@ -8,21 +8,27 @@ import 'package:travel_agency_app/domain/viewModel/trippage_viewmodel.dart';
 import 'package:travel_agency_app/presentation/providers/usecase_provider.dart';
 import 'package:travel_agency_app/presentation/providers/viewmodel_provider.dart';
 
+// ─── Design tokens ─────────────────────────────────────────────────────────
 class _C {
-  static const bg = Color(0xFFF2F4F8);
+  static const bg = Color(0xFFF5F7FB);
   static const surface = Color(0xFFFFFFFF);
-  static const surfaceLight = Color(0xFFF0F3FA);
+  static const surfaceLight = Color(0xFFF1F4FA);
   static const accent = AppColors.brandPrimary;
+  static const accentLight = AppColors.brandPrimaryLight;
+  static const accentDark = AppColors.brandPrimaryDark;
   static const accentSoft = AppColors.brandSoft;
-  static const text1 = Color(0xFF1A1D2E);
-  static const text2 = Color(0xFF7B82A0);
-  static const divider = Color(0xFFE4E8F0);
-  static const green = Color(0xFF2DB976);
-  static const greenSoft = Color(0xFFE8F8F1);
-  static const red = Color(0xFFE53935);
-  static const redSoft = Color(0xFFFFEBEE);
-  static const orange = Color(0xFFE67E22);
-  static const orangeSoft = Color(0xFFFEF0E6);
+  static const text1 = Color(0xFF0F1729);
+  static const text2 = Color(0xFF6B7280);
+  static const text3 = Color(0xFFA3ABBD);
+  static const divider = Color(0xFFE6EAF2);
+  static const dividerLight = Color(0xFFF1F4F9);
+  static const green = Color(0xFF10B981);
+  static const greenSoft = Color(0xFFD1FAE5);
+  static const red = Color(0xFFEF4444);
+  static const redSoft = Color(0xFFFEE2E2);
+  static const orange = Color(0xFFF59E0B);
+  static const orangeSoft = Color(0xFFFEF3C7);
+  static const gold = Color(0xFFD4AF37);
 }
 
 /// Date-window filter applied to the trip ledger. Defaults to "This Month"
@@ -37,9 +43,22 @@ extension on VehicleReportPeriod {
       case VehicleReportPeriod.today:
         return 'Today';
       case VehicleReportPeriod.week:
-        return 'This Week';
+        return 'Week';
       case VehicleReportPeriod.month:
-        return 'This Month';
+        return 'Month';
+    }
+  }
+
+  IconData get icon {
+    switch (this) {
+      case VehicleReportPeriod.all:
+        return Icons.all_inclusive_rounded;
+      case VehicleReportPeriod.today:
+        return Icons.today_rounded;
+      case VehicleReportPeriod.week:
+        return Icons.view_week_rounded;
+      case VehicleReportPeriod.month:
+        return Icons.calendar_month_rounded;
     }
   }
 
@@ -264,9 +283,7 @@ class _VehicleReportPageState extends ConsumerState<VehicleReportPage> {
             _buildPeriodChips(),
             Expanded(
               child: vehicleState.when(
-                loading: () => const Center(
-                  child: CircularProgressIndicator(color: _C.accent),
-                ),
+                loading: () => _loadingState(),
                 error: (e, _) =>
                     _errorState('Failed to load vehicles\n$e'),
                 data: (vehicles) {
@@ -296,9 +313,10 @@ class _VehicleReportPageState extends ConsumerState<VehicleReportPage> {
                   return RefreshIndicator(
                     onRefresh: _refreshAll,
                     color: _C.accent,
+                    backgroundColor: _C.surface,
                     child: ListView(
                       physics: const AlwaysScrollableScrollPhysics(),
-                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 110),
+                      padding: const EdgeInsets.fromLTRB(16, 14, 16, 110),
                       children: [
                         _OverallCard(
                           revenue: totalRev,
@@ -308,44 +326,16 @@ class _VehicleReportPageState extends ConsumerState<VehicleReportPage> {
                           tripCount: tripCount,
                           period: _period,
                         ),
-                        const SizedBox(height: 18),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 2),
-                          child: Row(
-                            children: [
-                              const Text(
-                                'Per Vehicle',
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w800,
-                                  color: _C.text1,
-                                  letterSpacing: -0.2,
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 7, vertical: 2),
-                                decoration: BoxDecoration(
-                                  color: _C.surfaceLight,
-                                  borderRadius: BorderRadius.circular(10),
-                                  border: Border.all(color: _C.divider),
-                                ),
-                                child: Text(
-                                  '${stats.length}',
-                                  style: const TextStyle(
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.w800,
-                                    color: _C.text2,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 10),
+                        const SizedBox(height: 16),
+                        _perVehicleHeader(stats.length),
+                        const SizedBox(height: 8),
                         for (var i = 0; i < stats.length; i++)
-                          _VehicleRevenueCard(stat: stats[i], index: i),
+                          _VehicleRevenueCard(
+                            stat: stats[i],
+                            index: i,
+                            isTopPerformer:
+                                i == 0 && stats[i].revenue > 0,
+                          ),
                       ],
                     ),
                   );
@@ -358,18 +348,109 @@ class _VehicleReportPageState extends ConsumerState<VehicleReportPage> {
     );
   }
 
-  Widget _buildAppBar() {
-    return Container(
-      color: _C.surface,
-      padding: const EdgeInsets.fromLTRB(8, 8, 16, 12),
+  // ── Per-vehicle section header ─────────────────────────────────────
+  Widget _perVehicleHeader(int count) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 2),
       child: Row(
         children: [
-          IconButton(
-            icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 18),
-            color: _C.text1,
-            onPressed: () => Navigator.pop(context),
+          Container(
+            width: 4,
+            height: 18,
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [_C.accentLight, _C.accent],
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+              ),
+              borderRadius: BorderRadius.circular(4),
+            ),
           ),
-          const SizedBox(width: 4),
+          const SizedBox(width: 10),
+          const Text(
+            'Per Vehicle',
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w800,
+              color: _C.text1,
+              letterSpacing: -0.3,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+            decoration: BoxDecoration(
+              color: _C.accentSoft,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Text(
+              '$count',
+              style: const TextStyle(
+                fontSize: 10.5,
+                fontWeight: FontWeight.w800,
+                color: _C.accent,
+              ),
+            ),
+          ),
+          const Spacer(),
+          Row(
+            children: const [
+              Icon(
+                Icons.swap_vert_rounded,
+                size: 13,
+                color: _C.text3,
+              ),
+              SizedBox(width: 3),
+              Text(
+                'Sorted by net',
+                style: TextStyle(
+                  fontSize: 10.5,
+                  fontWeight: FontWeight.w600,
+                  color: _C.text3,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── App bar ────────────────────────────────────────────────────────
+  Widget _buildAppBar() {
+    return Container(
+      decoration: BoxDecoration(
+        color: _C.surface,
+        boxShadow: [
+          BoxShadow(
+            color: _C.accent.withValues(alpha: 0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.fromLTRB(10, 10, 16, 14),
+      child: Row(
+        children: [
+          Material(
+            color: _C.surfaceLight,
+            borderRadius: BorderRadius.circular(12),
+            child: InkWell(
+              onTap: () => Navigator.pop(context),
+              borderRadius: BorderRadius.circular(12),
+              child: Container(
+                width: 40,
+                height: 40,
+                alignment: Alignment.center,
+                child: const Icon(
+                  Icons.arrow_back_ios_new_rounded,
+                  size: 16,
+                  color: _C.text1,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
           const Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -378,15 +459,16 @@ class _VehicleReportPageState extends ConsumerState<VehicleReportPage> {
                 Text(
                   'Vehicle Report',
                   style: TextStyle(
-                    fontSize: 17,
+                    fontSize: 18,
                     fontWeight: FontWeight.w800,
                     color: _C.text1,
-                    letterSpacing: -0.3,
+                    letterSpacing: -0.4,
+                    height: 1.1,
                   ),
                 ),
-                SizedBox(height: 2),
+                SizedBox(height: 3),
                 Text(
-                  'Revenue and expenses by vehicle',
+                  'Track performance per vehicle',
                   style: TextStyle(
                     fontSize: 11.5,
                     color: _C.text2,
@@ -397,15 +479,27 @@ class _VehicleReportPageState extends ConsumerState<VehicleReportPage> {
             ),
           ),
           Container(
-            padding: const EdgeInsets.all(8),
+            width: 40,
+            height: 40,
             decoration: BoxDecoration(
-              color: _C.accentSoft,
-              borderRadius: BorderRadius.circular(10),
+              gradient: const LinearGradient(
+                colors: [_C.accentLight, _C.accent],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: _C.accent.withValues(alpha: 0.30),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
             ),
             child: const Icon(
-              Icons.insights_rounded,
+              Icons.analytics_rounded,
               size: 18,
-              color: _C.accent,
+              color: Colors.white,
             ),
           ),
         ],
@@ -413,18 +507,22 @@ class _VehicleReportPageState extends ConsumerState<VehicleReportPage> {
     );
   }
 
+  // ── Period segmented control ───────────────────────────────────────
   Widget _buildPeriodChips() {
     return Container(
       color: _C.surface,
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+      child: Container(
+        padding: const EdgeInsets.all(4),
+        decoration: BoxDecoration(
+          color: _C.surfaceLight,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: _C.divider),
+        ),
         child: Row(
           children: [
-            for (final p in VehicleReportPeriod.values) ...[
-              _periodChip(p),
-              const SizedBox(width: 8),
-            ],
+            for (final p in VehicleReportPeriod.values)
+              Expanded(child: _periodChip(p)),
           ],
         ),
       ),
@@ -434,25 +532,83 @@ class _VehicleReportPageState extends ConsumerState<VehicleReportPage> {
   Widget _periodChip(VehicleReportPeriod p) {
     final active = p == _period;
     return GestureDetector(
+      behavior: HitTestBehavior.opaque,
       onTap: () => setState(() => _period = p),
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        duration: const Duration(milliseconds: 220),
+        curve: Curves.easeOutCubic,
+        padding: const EdgeInsets.symmetric(vertical: 9),
         decoration: BoxDecoration(
-          color: active ? _C.accent : _C.surfaceLight,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: active ? _C.accent : _C.divider,
+          gradient: active
+              ? const LinearGradient(
+                  colors: [_C.accentLight, _C.accent],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                )
+              : null,
+          color: active ? null : Colors.transparent,
+          borderRadius: BorderRadius.circular(10),
+          boxShadow: active
+              ? [
+                  BoxShadow(
+                    color: _C.accent.withValues(alpha: 0.25),
+                    blurRadius: 6,
+                    offset: const Offset(0, 2),
+                  ),
+                ]
+              : null,
+        ),
+        child: Center(
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                p.icon,
+                size: 13,
+                color: active ? Colors.white : _C.text2,
+              ),
+              const SizedBox(width: 5),
+              Text(
+                p.label,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  color: active ? Colors.white : _C.text2,
+                  letterSpacing: -0.1,
+                ),
+              ),
+            ],
           ),
         ),
-        child: Text(
-          p.label,
-          style: TextStyle(
-            fontSize: 12.5,
-            fontWeight: FontWeight.w700,
-            color: active ? Colors.white : _C.text2,
+      ),
+    );
+  }
+
+  // ── States: loading / empty / error ────────────────────────────────
+  Widget _loadingState() {
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          SizedBox(
+            width: 36,
+            height: 36,
+            child: CircularProgressIndicator(
+              strokeWidth: 3,
+              valueColor: AlwaysStoppedAnimation(_C.accent),
+            ),
           ),
-        ),
+          const SizedBox(height: 14),
+          const Text(
+            'Crunching the numbers...',
+            style: TextStyle(
+              fontSize: 12,
+              color: _C.text2,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -465,29 +621,48 @@ class _VehicleReportPageState extends ConsumerState<VehicleReportPage> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              width: 78,
-              height: 78,
-              decoration: const BoxDecoration(
-                color: _C.accentSoft,
+              width: 88,
+              height: 88,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    _C.accentSoft,
+                    _C.accentSoft.withValues(alpha: 0.5),
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
                 shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: _C.accent.withValues(alpha: 0.10),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
               ),
-              child: Icon(icon, size: 34, color: _C.accent),
+              child: Icon(icon, size: 38, color: _C.accent),
             ),
-            const SizedBox(height: 18),
+            const SizedBox(height: 20),
             Text(
               title,
               style: const TextStyle(
-                fontSize: 16,
+                fontSize: 17,
                 fontWeight: FontWeight.w800,
                 color: _C.text1,
+                letterSpacing: -0.3,
               ),
             ),
-            const SizedBox(height: 6),
+            const SizedBox(height: 8),
             Text(
               sub,
               textAlign: TextAlign.center,
               style: const TextStyle(
-                  fontSize: 12.5, color: _C.text2, height: 1.4),
+                fontSize: 12.5,
+                color: _C.text2,
+                height: 1.5,
+                fontWeight: FontWeight.w500,
+              ),
             ),
           ],
         ),
@@ -498,10 +673,41 @@ class _VehicleReportPageState extends ConsumerState<VehicleReportPage> {
   Widget _errorState(String msg) => Center(
         child: Padding(
           padding: const EdgeInsets.all(40),
-          child: Text(
-            msg,
-            textAlign: TextAlign.center,
-            style: const TextStyle(color: _C.red),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(18),
+                decoration: const BoxDecoration(
+                  color: _C.redSoft,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.cloud_off_rounded,
+                  color: _C.red,
+                  size: 30,
+                ),
+              ),
+              const SizedBox(height: 14),
+              const Text(
+                'Something went wrong',
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w800,
+                  color: _C.text1,
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                msg,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 12,
+                  color: _C.text2,
+                  height: 1.4,
+                ),
+              ),
+            ],
           ),
         ),
       );
@@ -509,6 +715,10 @@ class _VehicleReportPageState extends ConsumerState<VehicleReportPage> {
 
 // ─────────────────────────────────────────────────────────
 // OVERALL SUMMARY CARD
+// Premium gradient surface with a hero net display, sub-row
+// for Revenue/Expense, a margin badge, and footer chips for
+// vehicle/trip counts. Decorative blobs add depth without
+// competing with the data.
 // ─────────────────────────────────────────────────────────
 class _OverallCard extends StatelessWidget {
   final double revenue;
@@ -531,151 +741,234 @@ class _OverallCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final net = revenue - expense;
     final isProfit = net >= 0;
+    // Margin = profit as a percentage of revenue. When revenue is zero we
+    // fall back to a flat 0% so the badge still renders cleanly.
+    final margin = revenue > 0 ? (net / revenue * 100) : 0.0;
+
     return Container(
-      padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [AppColors.brandPrimary, AppColors.brandPrimaryLight],
+          colors: [
+            _C.accent,
+            _C.accentDark,
+            _C.accent,
+          ],
+          stops: [0.0, 0.55, 1.0],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(22),
         boxShadow: [
           BoxShadow(
-            color: AppColors.brandPrimary.withValues(alpha: 0.25),
-            blurRadius: 14,
-            offset: const Offset(0, 6),
+            color: _C.accent.withValues(alpha: 0.32),
+            blurRadius: 22,
+            offset: const Offset(0, 10),
           ),
         ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              const Icon(
-                Icons.account_balance_wallet_rounded,
-                color: Colors.white,
-                size: 18,
-              ),
-              const SizedBox(width: 8),
-              Text(
-                'Overall · ${period.label}',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 12.5,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 0.2,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: _overallStat(
-                  label: 'Revenue',
-                  value: '₹${_formatCompact(revenue)}',
-                  icon: Icons.south_west_rounded,
-                ),
-              ),
-              _vDivider(),
-              Expanded(
-                child: _overallStat(
-                  label: 'Expense',
-                  value: '₹${_formatCompact(expense)}',
-                  icon: Icons.north_east_rounded,
-                ),
-              ),
-              _vDivider(),
-              Expanded(
-                child: _overallStat(
-                  label: 'Net',
-                  value:
-                      '${isProfit ? '' : '−'}₹${_formatCompact(net.abs())}',
-                  icon: isProfit
-                      ? Icons.trending_up_rounded
-                      : Icons.trending_down_rounded,
-                  emphasised: true,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Container(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.16),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Row(
-              children: [
-                const Icon(Icons.directions_car_rounded,
-                    size: 13, color: Colors.white),
-                const SizedBox(width: 5),
-                Text(
-                  '$activeVehicles of $totalVehicles vehicles active',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(width: 10),
-                const Icon(Icons.receipt_long_rounded,
-                    size: 13, color: Colors.white),
-                const SizedBox(width: 5),
-                Text(
-                  '$tripCount trip${tripCount == 1 ? '' : 's'}',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _overallStat({
-    required String label,
-    required String value,
-    required IconData icon,
-    bool emphasised = false,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(22),
+        child: Stack(
           children: [
-            Icon(icon, size: 12, color: Colors.white.withValues(alpha: 0.85)),
-            const SizedBox(width: 4),
-            Text(
-              label,
-              style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.85),
-                fontSize: 10.5,
-                fontWeight: FontWeight.w600,
-                letterSpacing: 0.2,
+            // Decorative blobs — soft, subtle depth without distracting.
+            Positioned(
+              right: -36,
+              top: -36,
+              child: Container(
+                width: 150,
+                height: 150,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.white.withValues(alpha: 0.08),
+                ),
+              ),
+            ),
+            Positioned(
+              right: 48,
+              bottom: -50,
+              child: Container(
+                width: 100,
+                height: 100,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.white.withValues(alpha: 0.06),
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 14),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Header row: label + margin pill
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.18),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Icon(
+                          Icons.account_balance_wallet_rounded,
+                          color: Colors.white,
+                          size: 12,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Overall · ${period.label}',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.3,
+                        ),
+                      ),
+                      const Spacer(),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.20),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              isProfit
+                                  ? Icons.trending_up_rounded
+                                  : Icons.trending_down_rounded,
+                              color: Colors.white,
+                              size: 11,
+                            ),
+                            const SizedBox(width: 3),
+                            Text(
+                              '${isProfit ? '+' : ''}'
+                              '${margin.toStringAsFixed(1)}%',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 10,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  // Hero net: label + value inline for compactness
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.baseline,
+                    textBaseline: TextBaseline.alphabetic,
+                    children: [
+                      Text(
+                        '${isProfit ? '' : '−'}₹${_formatCompact(net.abs())}',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 24,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: -0.8,
+                          height: 1,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 2),
+                        child: Text(
+                          isProfit ? 'net profit' : 'net loss',
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.82),
+                            fontSize: 10.5,
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: 0.4,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  // Sub stats: Revenue / Expense
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _subStat(
+                          label: 'Revenue',
+                          value: '₹${_formatCompact(revenue)}',
+                          icon: Icons.south_west_rounded,
+                        ),
+                      ),
+                      _vDivider(),
+                      Expanded(
+                        child: _subStat(
+                          label: 'Expense',
+                          value: '₹${_formatCompact(expense)}',
+                          icon: Icons.north_east_rounded,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  // Footer chips
+                  Row(
+                    children: [
+                      _footerChip(
+                        Icons.directions_car_rounded,
+                        '$activeVehicles/$totalVehicles active',
+                      ),
+                      const SizedBox(width: 6),
+                      _footerChip(
+                        Icons.receipt_long_rounded,
+                        '$tripCount trip${tripCount == 1 ? '' : 's'}',
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ),
           ],
         ),
-        const SizedBox(height: 4),
+      ),
+    );
+  }
+
+  Widget _subStat({
+    required String label,
+    required String value,
+    required IconData icon,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Row(
+          children: [
+            Icon(icon, size: 11, color: Colors.white.withValues(alpha: 0.85)),
+            const SizedBox(width: 4),
+            Text(
+              label,
+              style: TextStyle(
+                color: Colors.white.withValues(alpha: 0.82),
+                fontSize: 10,
+                fontWeight: FontWeight.w600,
+                letterSpacing: 0.3,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 3),
         Text(
           value,
-          style: TextStyle(
+          style: const TextStyle(
             color: Colors.white,
-            fontSize: emphasised ? 18 : 16,
+            fontSize: 15.5,
             fontWeight: FontWeight.w800,
             letterSpacing: -0.4,
+            height: 1.1,
           ),
           overflow: TextOverflow.ellipsis,
         ),
@@ -685,19 +978,53 @@ class _OverallCard extends StatelessWidget {
 
   Widget _vDivider() => Container(
         width: 1,
-        height: 36,
-        margin: const EdgeInsets.symmetric(horizontal: 6),
-        color: Colors.white.withValues(alpha: 0.20),
+        height: 32,
+        margin: const EdgeInsets.symmetric(horizontal: 8),
+        color: Colors.white.withValues(alpha: 0.18),
       );
+
+  Widget _footerChip(IconData icon, String label) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.16),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.10)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 10, color: Colors.white),
+          const SizedBox(width: 4),
+          Text(
+            label,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 10,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 // ─────────────────────────────────────────────────────────
 // PER-VEHICLE CARD
+// Modern card with a rank badge for the top performer, refined
+// stat tiles, an expense-share meter, and a maintenance footnote
+// when service costs are part of the picture.
 // ─────────────────────────────────────────────────────────
 class _VehicleRevenueCard extends StatelessWidget {
   final _VehicleStat stat;
   final int index;
-  const _VehicleRevenueCard({required this.stat, required this.index});
+  final bool isTopPerformer;
+  const _VehicleRevenueCard({
+    required this.stat,
+    required this.index,
+    this.isTopPerformer = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -718,185 +1045,271 @@ class _VehicleRevenueCard extends StatelessWidget {
 
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0, end: 1),
-      duration: Duration(milliseconds: 220 + (index.clamp(0, 10)) * 35),
+      duration: Duration(milliseconds: 240 + (index.clamp(0, 10)) * 35),
       curve: Curves.easeOutCubic,
       builder: (_, val, child) => Opacity(
         opacity: val,
         child: Transform.translate(
-          offset: Offset(0, 10 * (1 - val)),
+          offset: Offset(0, 12 * (1 - val)),
           child: child,
         ),
       ),
       child: Container(
-        margin: const EdgeInsets.only(bottom: 10),
-        padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+        margin: const EdgeInsets.only(bottom: 8),
         decoration: BoxDecoration(
           color: _C.surface,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: _C.divider),
+          borderRadius: BorderRadius.circular(13),
+          border: Border.all(
+            color: isTopPerformer
+                ? _C.gold.withValues(alpha: 0.45)
+                : _C.divider,
+            width: isTopPerformer ? 1.3 : 1,
+          ),
           boxShadow: [
             BoxShadow(
-              color: _C.accent.withValues(alpha: 0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 3),
+              color: (isTopPerformer ? _C.gold : _C.accent)
+                  .withValues(alpha: isTopPerformer ? 0.09 : 0.04),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
             ),
           ],
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        child: Stack(
           children: [
-            // ── Header: icon + name + plate + trip count ──
-            Row(
-              children: [
-                Container(
-                  width: 38,
-                  height: 38,
+            if (isTopPerformer)
+              Positioned(
+                top: 0,
+                right: 12,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 7,
+                    vertical: 2.5,
+                  ),
                   decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: isActive
-                          ? const [
-                              AppColors.brandPrimaryLight,
-                              _C.accent,
-                            ]
-                          : [Colors.grey.shade300, Colors.grey.shade400],
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFFF5C038), _C.gold],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: const Icon(
-                    Icons.directions_car_rounded,
-                    color: Colors.white,
-                    size: 18,
-                  ),
-                ),
-                const SizedBox(width: 11),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        v.name ?? 'Unknown',
-                        style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w800,
-                          color: _C.text1,
-                          letterSpacing: -0.2,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                    borderRadius: const BorderRadius.vertical(
+                      bottom: Radius.circular(7),
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: _C.gold.withValues(alpha: 0.30),
+                        blurRadius: 4,
+                        offset: const Offset(0, 1),
                       ),
-                      const SizedBox(height: 2),
+                    ],
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: const [
+                      Icon(
+                        Icons.workspace_premium_rounded,
+                        size: 9,
+                        color: Colors.white,
+                      ),
+                      SizedBox(width: 2),
                       Text(
-                        v.number ?? 'No plate',
-                        style: const TextStyle(
-                          fontSize: 10.5,
-                          fontWeight: FontWeight.w700,
-                          color: _C.text2,
-                          letterSpacing: 0.5,
+                        'TOP',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 8.5,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 0.7,
                         ),
                       ),
                     ],
                   ),
                 ),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 9, vertical: 5),
-                  decoration: BoxDecoration(
-                    color: isActive ? _C.accentSoft : _C.surfaceLight,
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                      color: isActive ? _C.accent : _C.divider,
-                      width: isActive ? 1 : 1,
-                    ),
-                  ),
-                  child: Text(
-                    hasTrips
-                        ? '${stat.tripCount} trip${stat.tripCount == 1 ? '' : 's'}'
-                        : (stat.maintenanceExpense > 0
-                            ? 'Service only'
-                            : 'No activity'),
-                    style: TextStyle(
-                      fontSize: 10.5,
-                      fontWeight: FontWeight.w800,
-                      color: isActive ? _C.accent : _C.text2,
-                    ),
-                  ),
-                ),
-              ],
+              ),
+            Padding(
+              padding: EdgeInsets.fromLTRB(
+                12,
+                isTopPerformer ? 11 : 10,
+                12,
+                10,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _header(v, isActive),
+                  if (isActive) ...[
+                    const SizedBox(height: 9),
+                    Container(height: 1, color: _C.dividerLight),
+                    const SizedBox(height: 9),
+                    _statsRow(isProfit, net),
+                    const SizedBox(height: 9),
+                    _ExpenseShareBar(share: expenseShare),
+                    if (stat.maintenanceExpense > 0) ...[
+                      const SizedBox(height: 7),
+                      _maintenanceNote(),
+                    ],
+                  ],
+                ],
+              ),
             ),
-            if (isActive) ...[
-              const SizedBox(height: 12),
-              Container(height: 1, color: _C.divider),
-              const SizedBox(height: 12),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _header(Vehicles v, bool isActive) {
+    return Row(
+      children: [
+        Container(
+          width: 34,
+          height: 34,
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: isActive
+                  ? const [_C.accentLight, _C.accent]
+                  : [Colors.grey.shade300, Colors.grey.shade400],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(9),
+            boxShadow: isActive
+                ? [
+                    BoxShadow(
+                      color: _C.accent.withValues(alpha: 0.22),
+                      blurRadius: 6,
+                      offset: const Offset(0, 2),
+                    ),
+                  ]
+                : null,
+          ),
+          child: const Icon(
+            Icons.directions_car_rounded,
+            color: Colors.white,
+            size: 17,
+          ),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                v.name ?? 'Unknown',
+                style: const TextStyle(
+                  fontSize: 13.5,
+                  fontWeight: FontWeight.w800,
+                  color: _C.text1,
+                  letterSpacing: -0.3,
+                  height: 1.15,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 2),
               Row(
                 children: [
-                  Expanded(
-                    child: _miniStat(
-                      label: 'Revenue',
-                      value: '₹${_formatCompact(stat.revenue)}',
-                      color: _C.green,
-                      bg: _C.greenSoft,
-                      icon: Icons.south_west_rounded,
-                    ),
+                  const Icon(
+                    Icons.credit_card_rounded,
+                    size: 10,
+                    color: _C.text2,
                   ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: _miniStat(
-                      label: 'Expense',
-                      value: '₹${_formatCompact(stat.expense)}',
-                      color: _C.orange,
-                      bg: _C.orangeSoft,
-                      icon: Icons.north_east_rounded,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: _miniStat(
-                      label: 'Net',
-                      value:
-                          '${isProfit ? '' : '−'}₹${_formatCompact(net.abs())}',
-                      color: isProfit ? _C.green : _C.red,
-                      bg: isProfit ? _C.greenSoft : _C.redSoft,
-                      icon: isProfit
-                          ? Icons.trending_up_rounded
-                          : Icons.trending_down_rounded,
+                  const SizedBox(width: 3),
+                  Flexible(
+                    child: Text(
+                      v.number ?? 'No plate',
+                      style: const TextStyle(
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.w700,
+                        color: _C.text2,
+                        letterSpacing: 0.4,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 12),
-              // Expense-share meter: the orange slice = expense as a share of
-              // revenue. A nearly-full bar means the vehicle is barely earning.
-              _ExpenseShareBar(share: expenseShare),
-              if (stat.maintenanceExpense > 0) ...[
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    const Icon(
-                      Icons.build_rounded,
-                      size: 11,
-                      color: _C.text2,
-                    ),
-                    const SizedBox(width: 5),
-                    Expanded(
-                      child: Text(
-                        'Includes ₹${_formatCompact(stat.maintenanceExpense)} in maintenance',
-                        style: const TextStyle(
-                          fontSize: 10.5,
-                          color: _C.text2,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
             ],
-          ],
+          ),
         ),
-      ),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          decoration: BoxDecoration(
+            color: isActive ? _C.accentSoft : _C.surfaceLight,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: isActive
+                  ? _C.accent.withValues(alpha: 0.30)
+                  : _C.divider,
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                stat.tripCount > 0
+                    ? Icons.route_rounded
+                    : (stat.maintenanceExpense > 0
+                        ? Icons.build_rounded
+                        : Icons.do_not_disturb_alt_rounded),
+                size: 10,
+                color: isActive ? _C.accent : _C.text3,
+              ),
+              const SizedBox(width: 3),
+              Text(
+                stat.tripCount > 0
+                    ? '${stat.tripCount} trip${stat.tripCount == 1 ? '' : 's'}'
+                    : (stat.maintenanceExpense > 0
+                        ? 'Service'
+                        : 'Idle'),
+                style: TextStyle(
+                  fontSize: 9.5,
+                  fontWeight: FontWeight.w800,
+                  color: isActive ? _C.accent : _C.text3,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _statsRow(bool isProfit, double net) {
+    return Row(
+      children: [
+        Expanded(
+          child: _miniStat(
+            label: 'Revenue',
+            value: '₹${_formatCompact(stat.revenue)}',
+            color: _C.green,
+            bg: _C.greenSoft,
+            icon: Icons.south_west_rounded,
+          ),
+        ),
+        const SizedBox(width: 6),
+        Expanded(
+          child: _miniStat(
+            label: 'Expense',
+            value: '₹${_formatCompact(stat.expense)}',
+            color: _C.orange,
+            bg: _C.orangeSoft,
+            icon: Icons.north_east_rounded,
+          ),
+        ),
+        const SizedBox(width: 6),
+        Expanded(
+          child: _miniStat(
+            label: 'Net',
+            value: '${isProfit ? '' : '−'}₹${_formatCompact(net.abs())}',
+            color: isProfit ? _C.green : _C.red,
+            bg: isProfit ? _C.greenSoft : _C.redSoft,
+            icon: isProfit
+                ? Icons.trending_up_rounded
+                : Icons.trending_down_rounded,
+          ),
+        ),
+      ],
     );
   }
 
@@ -908,10 +1321,11 @@ class _VehicleRevenueCard extends StatelessWidget {
     required IconData icon,
   }) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 7),
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 6),
       decoration: BoxDecoration(
         color: bg,
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(9),
+        border: Border.all(color: color.withValues(alpha: 0.15)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -925,21 +1339,22 @@ class _VehicleRevenueCard extends StatelessWidget {
                 label,
                 style: TextStyle(
                   color: color,
-                  fontSize: 9.5,
-                  fontWeight: FontWeight.w700,
+                  fontSize: 9,
+                  fontWeight: FontWeight.w800,
                   letterSpacing: 0.2,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 3),
+          const SizedBox(height: 2),
           Text(
             value,
             style: TextStyle(
-              fontSize: 13,
+              fontSize: 12.5,
               fontWeight: FontWeight.w800,
               color: color,
-              letterSpacing: -0.2,
+              letterSpacing: -0.3,
+              height: 1.1,
             ),
             overflow: TextOverflow.ellipsis,
             maxLines: 1,
@@ -948,25 +1363,79 @@ class _VehicleRevenueCard extends StatelessWidget {
       ),
     );
   }
+
+  Widget _maintenanceNote() {
+    return Row(
+      children: [
+        const Icon(Icons.build_rounded, size: 10, color: _C.orange),
+        const SizedBox(width: 5),
+        Expanded(
+          child: Text(
+            'Includes ₹${_formatCompact(stat.maintenanceExpense)} in maintenance',
+            style: const TextStyle(
+              fontSize: 10,
+              color: _C.text2,
+              fontWeight: FontWeight.w600,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+      ],
+    );
+  }
 }
 
+// ─────────────────────────────────────────────────────────
+// EXPENSE-SHARE METER
+// Orange fraction of the bar = expense as a share of revenue.
+// A near-full bar means the vehicle is barely earning.
+// ─────────────────────────────────────────────────────────
 class _ExpenseShareBar extends StatelessWidget {
   final double share;
   const _ExpenseShareBar({required this.share});
 
   @override
   Widget build(BuildContext context) {
+    final pct = (share * 100).clamp(0, 100).toStringAsFixed(0);
+    final isHeavy = share >= 0.7;
     return Row(
       children: [
+        const Text(
+          'Spent',
+          style: TextStyle(
+            fontSize: 9.5,
+            fontWeight: FontWeight.w700,
+            color: _C.text2,
+            letterSpacing: 0.2,
+          ),
+        ),
+        const SizedBox(width: 8),
         Expanded(
           child: ClipRRect(
-            borderRadius: BorderRadius.circular(6),
+            borderRadius: BorderRadius.circular(20),
             child: Stack(
               children: [
-                Container(height: 6, color: _C.greenSoft),
-                FractionallySizedBox(
-                  widthFactor: share,
-                  child: Container(height: 6, color: _C.orange),
+                Container(height: 5, color: _C.dividerLight),
+                TweenAnimationBuilder<double>(
+                  tween: Tween(begin: 0, end: share),
+                  duration: const Duration(milliseconds: 450),
+                  curve: Curves.easeOutCubic,
+                  builder: (_, w, __) => FractionallySizedBox(
+                    widthFactor: w,
+                    child: Container(
+                      height: 5,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: isHeavy
+                              ? const [_C.red, Color(0xFFD63030)]
+                              : const [_C.orange, Color(0xFFD97706)],
+                          begin: Alignment.centerLeft,
+                          end: Alignment.centerRight,
+                        ),
+                      ),
+                    ),
+                  ),
                 ),
               ],
             ),
@@ -974,11 +1443,11 @@ class _ExpenseShareBar extends StatelessWidget {
         ),
         const SizedBox(width: 8),
         Text(
-          '${(share * 100).toStringAsFixed(0)}% spent',
-          style: const TextStyle(
-            fontSize: 10.5,
-            color: _C.text2,
-            fontWeight: FontWeight.w600,
+          '$pct%',
+          style: TextStyle(
+            fontSize: 10,
+            fontWeight: FontWeight.w800,
+            color: isHeavy ? _C.red : _C.text1,
           ),
         ),
       ],

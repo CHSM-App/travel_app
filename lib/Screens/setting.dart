@@ -156,7 +156,7 @@ class _ModernSettingsPageState extends ConsumerState<ModernSettingsPage>
                       const SizedBox(height: 24),
 
                       _buildLogoutButton(),
-                      const SizedBox(height: 32),
+                      const SizedBox(height: 110),
                     ]),
                   ),
                 ),
@@ -310,26 +310,6 @@ class _ModernSettingsPageState extends ConsumerState<ModernSettingsPage>
                   child: const Text('Admin', style: TextStyle(fontSize: 11, color: Colors.white, fontWeight: FontWeight.w600)),
                 ),
               ],
-            ),
-          ),
-
-          // Edit button
-          GestureDetector(
-            onTap: () async {
-              await Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfilePage()));
-              if (!mounted) return;
-              final adminId = ref.read(loginViewModelProvider).adminId;
-              if (adminId > 0) {
-                await ref.read(loginViewModelProvider.notifier).adminProfile(adminId);
-              }
-            },
-            child: Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.18),
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: const Icon(Icons.edit_rounded, color: Colors.white, size: 18),
             ),
           ),
         ],
