@@ -74,6 +74,16 @@ class _CustomerListPageState extends ConsumerState<CustomerListPage>
     ref.read(customerViewModelProvider.notifier).fetchCustomerslist(agencyId);
   }
 
+  // Opens the Add Customer form, then refreshes the list so the new customer
+  // shows without a manual pull-to-refresh.
+  Future<void> _openAddCustomer() async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const AddCustomerPage()),
+    );
+    if (result != null && mounted) _refresh();
+  }
+
   String _initials(String? name) {
     if (name == null || name.trim().isEmpty) return '?';
     final parts = name.trim().split(' ');
@@ -497,7 +507,10 @@ class _CustomerListPageState extends ConsumerState<CustomerListPage>
     return Scaffold(
       backgroundColor: _C.bg,
       body: SafeArea(
-        child: Column(
+        bottom: false,
+        child: Stack(
+          children: [
+            Column(
           children: [
 
             // ── Header ──────────────────────────────────────────────────────
@@ -699,6 +712,25 @@ class _CustomerListPageState extends ConsumerState<CustomerListPage>
                     ),
                   );
                 },
+              ),
+            ),
+          ],
+        ),
+            // Plain circular "+" FAB — adds a customer. Lifted to clear the
+            // floating pill nav.
+            Positioned(
+              right: 20,
+              bottom: 90,
+              child: FloatingActionButton(
+                heroTag: 'customerAddFab',
+                onPressed: _openAddCustomer,
+                backgroundColor: _C.indigo,
+                shape: const CircleBorder(),
+                child: const Icon(
+                  Icons.add_rounded,
+                  color: Colors.white,
+                  size: 26,
+                ),
               ),
             ),
           ],

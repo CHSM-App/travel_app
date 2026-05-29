@@ -90,6 +90,19 @@ class _VehiclePageState extends ConsumerState<VehiclePage>
     ]);
   }
 
+  // Opens the right "add" form for the active tab (Vehicle vs Driver), then
+  // refreshes the lists so the new item shows without a manual pull-to-refresh.
+  Future<void> _openAdd() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) =>
+            _isVehicleTab ? const AddVehiclePage() : const AddDriverPage(),
+      ),
+    );
+    if (mounted) _refreshData();
+  }
+
   String _initials(String? name) {
     if (name == null || name.trim().isEmpty) return '?';
     final parts = name
@@ -1339,7 +1352,10 @@ class _VehiclePageState extends ConsumerState<VehiclePage>
     return Scaffold(
       backgroundColor: _C.bg,
       body: SafeArea(
-        child: Column(
+        bottom: false,
+        child: Stack(
+          children: [
+            Column(
           children: [
             _buildHeader(),
             Expanded(
@@ -1443,6 +1459,25 @@ class _VehiclePageState extends ConsumerState<VehiclePage>
                     },
                   ),
                 ],
+              ),
+            ),
+          ],
+        ),
+            // Plain circular "+" FAB — adds a Vehicle or Driver depending on
+            // the active tab. Lifted to clear the floating pill nav.
+            Positioned(
+              right: 20,
+              bottom: 90,
+              child: FloatingActionButton(
+                heroTag: 'fleetAddFab',
+                onPressed: _openAdd,
+                backgroundColor: AppColors.brandPrimary,
+                shape: const CircleBorder(),
+                child: const Icon(
+                  Icons.add_rounded,
+                  color: Colors.white,
+                  size: 26,
+                ),
               ),
             ),
           ],

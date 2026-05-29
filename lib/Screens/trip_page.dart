@@ -347,21 +347,15 @@ class _TripPageState extends ConsumerState<TripPage> {
             Positioned(
               right: 20,
               bottom: 90,
-              child: FloatingActionButton.extended(
+              child: FloatingActionButton(
+                heroTag: 'tripAddFab',
                 onPressed: _openAddTrip,
                 backgroundColor: AppColors.brandPrimary,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                icon: const Icon(Icons.add_rounded,
-                    color: Colors.white, size: 20),
-                label: const Text(
-                  'Add Trip',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 14,
-                  ),
+                shape: const CircleBorder(),
+                child: const Icon(
+                  Icons.add_rounded,
+                  color: Colors.white,
+                  size: 26,
                 ),
               ),
             ),

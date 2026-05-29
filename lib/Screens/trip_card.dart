@@ -43,6 +43,25 @@ class TripCard extends ConsumerWidget {
     final period = date.hour >= 12 ? 'PM' : 'AM';
     return "$hour:$minute $period";
   }
+
+  // Footer line describing when payment was taken. Returns null when there's
+  // nothing meaningful to show — a fully unpaid trip, or a paid trip whose
+  // payment_date the backend hasn't recorded yet.
+  //   • Partially Paid → "Last payment received on <date> <time>"
+  //   • Paid           → "Payment completed on <date> <time>"
+  String? _paymentDateLine(String status) {
+    final d = bookinginfo.paymentDate;
+    if (d == null) return null;
+    final when = "${_formatDate(d)} • ${_formatTime(d)}";
+    switch (status.toLowerCase()) {
+      case 'partially paid':
+        return "Last payment received on $when";
+      case 'paid':
+        return "Payment completed on $when";
+      default:
+        return null;
+    }
+  }
 String get paymentStatus {
   final approved = bookinginfo.amountApprove ?? 0;
   final received = bookinginfo.amountReceived ?? 0;
@@ -1165,6 +1184,7 @@ final receivedController = TextEditingController(
     final statusColor = _paymentColor(status);
     final statusBg = _paymentBg(status);
     final statusIcon = _paymentIcon(status);
+    final paymentLine = _paymentDateLine(status);
     final screenW = MediaQuery.of(context).size.width;
     final isSmall = screenW < 360;
 
@@ -1367,6 +1387,32 @@ final receivedController = TextEditingController(
                 ),
               ],
             ),
+
+            // ─ ROW 3: When payment was taken (partially paid / paid only) ──
+            if (paymentLine != null) ...[
+              const SizedBox(height: 7),
+              Row(
+                children: [
+                  Icon(
+                    Icons.event_available_rounded,
+                    size: 11,
+                    color: statusColor,
+                  ),
+                  const SizedBox(width: 4),
+                  Expanded(
+                    child: Text(
+                      paymentLine,
+                      style: TextStyle(
+                        fontSize: isSmall ? 10 : 10.5,
+                        color: _textSec,
+                        fontWeight: FontWeight.w600,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ],
         ),
       ),

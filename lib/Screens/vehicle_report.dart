@@ -220,8 +220,9 @@ class _VehicleReportPageState extends ConsumerState<VehicleReportPage> {
     return unique.values.toList();
   }
 
-  double _revenueOf(BookingInfo t) =>
-      t.amountReceived ?? t.amountApprove ?? 0.0;
+  // Revenue = money actually collected, never the quoted fare. Unpaid trips
+  // contribute 0 until payment is recorded.
+  double _revenueOf(BookingInfo t) => t.amountReceived ?? 0.0;
   double _expenseOf(BookingInfo t) =>
       (t.tollCharges ?? 0.0) +
       (t.repairingCharges ?? 0.0) +
@@ -296,8 +297,12 @@ class _VehicleReportPageState extends ConsumerState<VehicleReportPage> {
                   }
                   final now = DateTime.now();
                   final allTrips = _allTrips(tripState);
+                  // Attribute financial activity to the day payment was
+                  // collected (paymentDate), so this matches the dashboard's
+                  // payment-based revenue. For the "all" period every trip is
+                  // included regardless of payment state.
                   final inPeriod = allTrips
-                      .where((t) => _period.matches(t.bookingDate, now))
+                      .where((t) => _period.matches(t.paymentDate, now))
                       .toList();
                   final maintenance = _maintenanceByVehicle();
                   final stats =

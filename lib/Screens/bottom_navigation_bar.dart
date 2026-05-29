@@ -2,9 +2,6 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:travel_agency_app/Screens/add_customer.dart';
-import 'package:travel_agency_app/Screens/add_driver.dart';
-import 'package:travel_agency_app/Screens/add_vehicle.dart';
 import 'package:travel_agency_app/Screens/customer_page.dart';
 import 'package:travel_agency_app/Screens/dashbord.dart';
 import 'package:travel_agency_app/Screens/setting.dart';
@@ -132,12 +129,14 @@ class _MainBottomNavState extends ConsumerState<MainBottomNav>
 
     final loginState = ref.watch(loginViewModelProvider);
     String userName = "Admin";
+    String agencyName = "";
     String initials = "A";
     String? profileImageUrl;
 
     final profileList = loginState.adminProfile.valueOrNull;
     if (profileList != null && profileList.isNotEmpty) {
       userName = profileList.first.name ?? "Admin";
+      agencyName = profileList.first.agencyName?.trim() ?? "";
       if (userName.isNotEmpty) initials = userName[0].toUpperCase();
 
       final rawImageUrl = profileList.first.imageUrl?.trim();
@@ -246,22 +245,31 @@ class _MainBottomNavState extends ConsumerState<MainBottomNav>
                               crossAxisAlignment: CrossAxisAlignment.start,
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                const Text(
-                                  "Welcome Back 👋",
-                                  style: TextStyle(
-                                      color: Colors.white70,
-                                      fontSize: 12,
-                                      letterSpacing: 0.3),
+                                Text(
+                                  userName.isNotEmpty
+                                      ? "Welcome back, $userName 👋"
+                                      : "Welcome back 👋",
+                                  style: const TextStyle(
+                                    color: Colors.white70,
+                                    fontSize: 12,
+                                    letterSpacing: 0.3,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                 ),
                                 const SizedBox(height: 1),
                                 Text(
-                                  userName,
+                                  agencyName.isNotEmpty
+                                      ? agencyName
+                                      : userName,
                                   style: const TextStyle(
                                     color: Colors.white,
-                                    fontSize: 16,
+                                    fontSize: 18,
                                     fontWeight: FontWeight.w800,
                                     letterSpacing: -0.2,
                                   ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                 ),
                               ],
                             ),
@@ -286,46 +294,9 @@ class _MainBottomNavState extends ConsumerState<MainBottomNav>
                 ),
               ),
 
-              // Context-sensitive add FAB for Customers / Vehicles tabs.
-              if (selectedIndex == 2 || selectedIndex == 3)
-                Positioned(
-                  right: 20,
-                  bottom: 90,
-                  child: FloatingActionButton.extended(
-                    onPressed: () {
-                      if (selectedIndex == 3) {
-                        Navigator.push(
-                            context, _slideUpRoute(const AddCustomerPage()));
-                      } else if (selectedIndex == 2) {
-                        if (vehicleTabIndex == 0) {
-                          Navigator.push(
-                              context, _slideUpRoute(const AddVehiclePage()));
-                        } else {
-                          Navigator.push(
-                              context, _slideUpRoute(const AddDriverPage()));
-                        }
-                      }
-                    },
-                    backgroundColor: AppColors.brandPrimary,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    icon: const Icon(Icons.add_rounded,
-                        color: Colors.white, size: 20),
-                    label: Text(
-                      selectedIndex == 3
-                          ? "Add Customer"
-                          : vehicleTabIndex == 0
-                              ? "Add Vehicle"
-                              : "Add Driver",
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ),
-                ),
+              // Each tab that supports adding an item now owns its own plain
+              // circular "+" FAB (Trips, Fleet, Customers), so the bottom nav
+              // no longer renders a shared add button here.
 
               // Floating glassmorphic pill nav with draggable indicator.
               Positioned(
@@ -541,32 +512,6 @@ class _MainBottomNavState extends ConsumerState<MainBottomNav>
       ),
     );
   }
-}
-
-// ── Telegram-style slide-up route ─────────────────────────
-// Pushes a page that animates up from the bottom of the screen instead of
-// the default right-to-left platform transition.
-Route<T> _slideUpRoute<T>(Widget child) {
-  return PageRouteBuilder<T>(
-    transitionDuration: const Duration(milliseconds: 320),
-    reverseTransitionDuration: const Duration(milliseconds: 260),
-    opaque: true,
-    pageBuilder: (_, __, ___) => child,
-    transitionsBuilder: (_, animation, __, page) {
-      final curved = CurvedAnimation(
-        parent: animation,
-        curve: Curves.easeOutCubic,
-        reverseCurve: Curves.easeInCubic,
-      );
-      return SlideTransition(
-        position: Tween<Offset>(
-          begin: const Offset(0, 1),
-          end: Offset.zero,
-        ).animate(curved),
-        child: FadeTransition(opacity: curved, child: page),
-      );
-    },
-  );
 }
 
 // ── Data Model ────────────────────────────────────────────

@@ -44,6 +44,9 @@ BookingInfo _$BookingInfoFromJson(Map<String, dynamic> json) => BookingInfo(
   fuelType: json['FuelType'] as String?,
   capacity: (json['capacity'] as num?)?.toInt(),
   pendingAmount: (json['pending_amount'] as num?)?.toDouble(),
+  paymentDate: json['payment_date'] == null
+      ? null
+      : DateTime.parse(json['payment_date'] as String),
 );
 
 Map<String, dynamic> _$BookingInfoToJson(BookingInfo instance) =>
@@ -79,4 +82,5 @@ Map<String, dynamic> _$BookingInfoToJson(BookingInfo instance) =>
       'capacity': instance.capacity,
       'payment_status': instance.payment_status,
       'pending_amount': instance.pendingAmount,
+      'payment_date': instance.paymentDate?.toIso8601String(),
     };

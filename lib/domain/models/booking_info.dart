@@ -96,6 +96,12 @@ class BookingInfo {
   @JsonKey(name: 'pending_amount')
   final double? pendingAmount;
 
+  // Set by the DB (GETDATE()) the moment a trip is marked paid. Null while the
+  // trip is unpaid / upcoming — revenue is realised on this date, not the
+  // booking date.
+  @JsonKey(name: 'payment_date')
+  final DateTime? paymentDate;
+
 
   BookingInfo({
     this.tripId,
@@ -128,7 +134,8 @@ class BookingInfo {
     this.mileage,
     this.fuelType,
     this.capacity,
-    this.pendingAmount
+    this.pendingAmount,
+    this.paymentDate,
   });
 
 

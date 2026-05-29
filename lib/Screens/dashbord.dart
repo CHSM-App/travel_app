@@ -9,7 +9,10 @@ import 'package:travel_agency_app/Screens/vehicle_report.dart';
 import 'package:travel_agency_app/core/theme/app_colors.dart';
 import 'package:travel_agency_app/core/widgets/skeleton.dart';
 import 'package:travel_agency_app/domain/models/booking_info.dart';
+import 'package:travel_agency_app/domain/models/services.dart';
+import 'package:travel_agency_app/domain/models/vehicles.dart';
 import 'package:travel_agency_app/domain/viewModel/trippage_viewmodel.dart';
+import 'package:travel_agency_app/presentation/providers/usecase_provider.dart';
 import 'package:travel_agency_app/presentation/providers/viewmodel_provider.dart';
 
 class TravelAdminDashboard extends ConsumerStatefulWidget {
@@ -26,6 +29,11 @@ class TravelAdminDashboard extends ConsumerStatefulWidget {
 }
 
 class _TravelAdminDashboardState extends ConsumerState<TravelAdminDashboard> {
+  // Service / maintenance records keyed by vehicleId. Loaded separately from
+  // trips because maintenance costs are tracked per-vehicle, not per-trip.
+  // We hold the full list and filter to "today" at render time.
+  Map<int, List<Services>> _servicesByVehicle = const {};
+
   @override
   void initState() {
     super.initState();
@@ -43,6 +51,7 @@ class _TravelAdminDashboardState extends ConsumerState<TravelAdminDashboard> {
     notifier.historyList(agencyId);
     notifier.unpaidList(agencyId);
     notifier.cancelledList(agencyId);
+    _loadMaintenance(agencyId);
   }
 
   // Triggered by RefreshIndicator. Awaits all five fetches so the spinner
@@ -57,7 +66,60 @@ class _TravelAdminDashboardState extends ConsumerState<TravelAdminDashboard> {
       notifier.historyList(agencyId),
       notifier.unpaidList(agencyId),
       notifier.cancelledList(agencyId),
+      _loadMaintenance(agencyId),
     ]);
+  }
+
+  /// Loads the vehicle list, then pulls each vehicle's service records in
+  /// parallel so today's maintenance can be folded into expenditure. Uses the
+  /// use case directly (not the view model) to avoid clobbering the shared
+  /// `fetchServiceRecords` state the vehicle_details Maintenance tab relies on.
+  Future<void> _loadMaintenance(String agencyId) async {
+    if (agencyId.trim().isEmpty) return;
+    final vn = ref.read(tripBookingViewModelProvider.notifier);
+    await vn.vehicleList(agencyId);
+    if (!mounted) return;
+    final vehicles = ref
+            .read(tripBookingViewModelProvider)
+            .fetchVehicleList
+            .asData
+            ?.value ??
+        const <Vehicles>[];
+    final ids =
+        vehicles.map((v) => v.vehicleId).whereType<int>().toList(growable: false);
+    if (ids.isEmpty) return;
+    final useCase = ref.read(addVehicleUseCaseProvider);
+    final results = await Future.wait(
+      ids.map((id) async {
+        try {
+          return await useCase.getServiceRecords(agencyId, id);
+        } catch (_) {
+          // One vehicle's fetch failing shouldn't blank the whole figure.
+          return <Services>[];
+        }
+      }),
+    );
+    if (!mounted) return;
+    final map = <int, List<Services>>{};
+    for (var i = 0; i < ids.length; i++) {
+      map[ids[i]] = results[i];
+    }
+    setState(() => _servicesByVehicle = map);
+  }
+
+  // Sum of service costs whose serviceDate falls on today, across all vehicles.
+  double _todayMaintenance() {
+    final now = DateTime.now();
+    var total = 0.0;
+    for (final services in _servicesByVehicle.values) {
+      for (final s in services) {
+        final d = s.serviceDate;
+        if (d != null && _isSameDay(d, now)) {
+          total += s.serviceCost ?? 0.0;
+        }
+      }
+    }
+    return total;
   }
 
   bool _isSameDay(DateTime a, DateTime b) =>
@@ -88,20 +150,31 @@ class _TravelAdminDashboardState extends ConsumerState<TravelAdminDashboard> {
     return unique.values.toList();
   }
 
-  _DashboardStats _todayStats(List<BookingInfo> rows) {
+  _DashboardStats _todayStats(List<BookingInfo> rows, double maintenanceToday) {
     final now = DateTime.now();
     var bookings = 0;
     var revenue = 0.0;
-    var expenditure = 0.0;
+    // Seed expenditure with today's vehicle maintenance, then add trip-level
+    // costs (toll/repairing/driver) collected today below.
+    var expenditure = maintenanceToday;
 
     for (final row in rows) {
-      final date = row.bookingDate;
-      if (date == null || !_isSameDay(date, now)) continue;
-      bookings += 1;
-      revenue += row.amountReceived ?? row.amountApprove ?? 0.0;
-      expenditure += (row.tollCharges ?? 0.0) +
-          (row.repairingCharges ?? 0.0) +
-          (row.driverCharges ?? 0.0);
+      // "Today Bookings" = trips booked today, regardless of payment.
+      final booked = row.bookingDate;
+      if (booked != null && _isSameDay(booked, now)) {
+        bookings += 1;
+      }
+
+      // Revenue & expenditure are realised on the day payment is collected
+      // (paymentDate), not the booking date. A future / unpaid booking has no
+      // paymentDate yet, so it contributes nothing until it's actually paid.
+      final paid = row.paymentDate;
+      if (paid != null && _isSameDay(paid, now)) {
+        revenue += row.amountReceived ?? 0.0;
+        expenditure += (row.tollCharges ?? 0.0) +
+            (row.repairingCharges ?? 0.0) +
+            (row.driverCharges ?? 0.0);
+      }
     }
 
     return _DashboardStats(
@@ -125,8 +198,9 @@ class _TravelAdminDashboardState extends ConsumerState<TravelAdminDashboard> {
         tripState.historyList.hasError ||
         tripState.unpaidList.hasError ||
         tripState.cancelledList.hasError;
-    final todayStats = mergedTrips.isNotEmpty
-        ? _todayStats(mergedTrips)
+    final maintenanceToday = _todayMaintenance();
+    final todayStats = (mergedTrips.isNotEmpty || maintenanceToday > 0)
+        ? _todayStats(mergedTrips, maintenanceToday)
         : _DashboardStats(isLoading: anyLoading, hasError: anyError);
 
     final sw = MediaQuery.of(context).size.width;
@@ -985,16 +1059,6 @@ class _PageTitle extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                "Dashboard",
-                style: TextStyle(
-                  fontSize: isSmall ? 20 : 26,
-                  fontWeight: FontWeight.w800,
-                  color: TravelAdminDashboard.darkBlue,
-                  letterSpacing: -0.5,
-                ),
-              ),
-              const SizedBox(height: 3),
               Text(
                 "Your agency at a glance",
                 style: TextStyle(
