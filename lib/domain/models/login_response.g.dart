@@ -16,6 +16,7 @@ LoginResponse _$LoginResponseFromJson(Map<String, dynamic> json) =>
       mobile: json['mobile'] as String?,
       agencyId: json['agency_id'] as String?,
       imageUrl: json['image_url'] as String?,
+      perKmCharge: (json['per_km_charge'] as num?)?.toDouble(),
     );
 
 Map<String, dynamic> _$LoginResponseToJson(LoginResponse instance) =>
@@ -28,4 +29,5 @@ Map<String, dynamic> _$LoginResponseToJson(LoginResponse instance) =>
       'mobile': instance.mobile,
       'agency_id': instance.agencyId,
       'image_url': instance.imageUrl,
+      'per_km_charge': instance.perKmCharge,
     };

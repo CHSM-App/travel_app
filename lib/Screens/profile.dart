@@ -29,6 +29,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
   final addressController = TextEditingController();
   final agencyController  = TextEditingController();
   final cityController    = TextEditingController();
+  final perKmController   = TextEditingController();
 
   File?   _profileImage;
   String? _imageUrl;
@@ -71,6 +72,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
     addressController.dispose();
     agencyController.dispose();
     cityController.dispose();
+    perKmController.dispose();
     super.dispose();
   }
 
@@ -87,6 +89,12 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
         agencyController.text = p.agencyName ?? '';
       }
       if (cityController.text.isEmpty) cityController.text = p.city ?? '';
+      if (perKmController.text.isEmpty && p.perKmCharge != null) {
+        // Show whole rupees when integral, else keep up to 2 decimals.
+        final r = p.perKmCharge!;
+        perKmController.text =
+            r == r.roundToDouble() ? r.toStringAsFixed(0) : r.toStringAsFixed(2);
+      }
       _didPopulateInitialProfile = true;
     }
 
@@ -239,10 +247,16 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
       address: addressController.text,
       agencyName: agencyController.text,
       city: cityController.text,
+      perKmCharge: double.tryParse(perKmController.text.trim()),
     );
 
     final res = await ref.read(loginViewModelProvider.notifier).addAdmin(info);
     if (res?.success == 1) {
+      // Keep the live per-km rate in sync so the booking form auto-calc uses
+      // the new value right away, without requiring a re-login.
+      await ref
+          .read(loginViewModelProvider.notifier)
+          .setPerKmCharge(double.tryParse(perKmController.text.trim()));
       await ref.read(loginViewModelProvider.notifier).adminProfile(adminId);
       _snack('Profile updated successfully');
     } else {
@@ -420,6 +434,29 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
                                   addressController,
                                   'Address',
                                   Icons.home_outlined,
+                                ),
+                                _FieldItem(
+                                  perKmController,
+                                  'Charge per KM (₹)',
+                                  Icons.currency_rupee_rounded,
+                                  type: const TextInputType.numberWithOptions(
+                                    decimal: true,
+                                  ),
+                                  fmt: [
+                                    FilteringTextInputFormatter.allow(
+                                      RegExp(r'[\d.]'),
+                                    ),
+                                  ],
+                                  validate: (v) {
+                                    if (v == null || v.trim().isEmpty) {
+                                      return 'Required';
+                                    }
+                                    final rate = double.tryParse(v.trim());
+                                    if (rate == null || rate <= 0) {
+                                      return 'Enter a valid rate';
+                                    }
+                                    return null;
+                                  },
                                 ),
                               ],
                             ),
@@ -749,8 +786,10 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
       controller: f.ctrl,
       keyboardType: f.type,
       maxLines: 1,
-      inputFormatters:
-          f.max != null ? [LengthLimitingTextInputFormatter(f.max!)] : null,
+      inputFormatters: [
+        if (f.max != null) LengthLimitingTextInputFormatter(f.max!),
+        ...?f.fmt,
+      ],
       validator:
           f.validate ?? (v) => (v == null || v.isEmpty) ? 'Required' : null,
       style: const TextStyle(
@@ -882,10 +921,11 @@ class _FieldItem {
   final IconData icon;
   final TextInputType? type;
   final int? max;
+  final List<TextInputFormatter>? fmt;
   final String? Function(String?)? validate;
 
   const _FieldItem(this.ctrl, this.label, this.icon,
-      {this.type, this.max, this.validate});
+      {this.type, this.max, this.fmt, this.validate});
 }
 
 // ── Image picker sheet ────────────────────────────────────────────

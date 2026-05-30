@@ -28,6 +28,11 @@ class LoginResponse {
     @JsonKey(name: 'image_url')
   final String? imageUrl;
 
+  /// Agency's default per-kilometre charge, returned on login so the booking
+  /// form can auto-calculate Trip Charges.
+  @JsonKey(name: 'per_km_charge')
+  final double? perKmCharge;
+
   LoginResponse({
     required this.success,
     required this.message,
@@ -37,7 +42,7 @@ class LoginResponse {
     this.mobile,
     this.agencyId,
     this.imageUrl,
-    
+    this.perKmCharge,
   });
 
   factory LoginResponse.fromJson(Map<String, dynamic> json)

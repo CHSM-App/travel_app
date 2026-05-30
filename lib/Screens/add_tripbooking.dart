@@ -964,6 +964,7 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
         _routeDurationText = result.durationText;
         _lastDistanceRoute = route;
         _recalcFuel();
+        _recalcCharges();
       } else {
         _snack("Couldn't find road distance for this route");
       }
@@ -1037,6 +1038,20 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
     return type.isEmpty
         ? "Fuel Required  •  $amount"
         : "Fuel Required  •  $amount  ·  $type";
+  }
+
+  // Auto-fill Trip Charges from the agency's per-km rate (set at signup):
+  // charge = distance × rate. The field stays editable so the admin can adjust
+  // for discounts; this just seeds a sensible default when the route changes.
+  void _recalcCharges() {
+    final dist = double.tryParse(distance.text.trim());
+    if (dist == null) return;
+    final rate = ref.read(loginViewModelProvider).perKmCharge;
+    if (rate == null || rate <= 0) return;
+    final total = dist * rate;
+    charges.text = total == total.roundToDouble()
+        ? total.toStringAsFixed(0)
+        : total.toStringAsFixed(2);
   }
 
   // Fill the Fuel Required field from the SELECTED vehicle (this is the value

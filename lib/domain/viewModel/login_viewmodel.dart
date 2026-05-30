@@ -16,6 +16,7 @@ class LoginState {
   final String? email;
   final String? mobile;
   final String? agencyId;
+  final double? perKmCharge;
 
   final AsyncValue<List<LoginInfo>> adminProfile;
 
@@ -27,6 +28,7 @@ class LoginState {
     this.email,
     this.mobile,
     this.agencyId,
+    this.perKmCharge,
 
     this.adminProfile = const AsyncValue.loading(),
   });
@@ -39,6 +41,7 @@ class LoginState {
     String? email,
     String? mobile,
     String? agencyId,
+    double? perKmCharge,
 
     AsyncValue<List<LoginInfo>>? adminProfile,
   }) {
@@ -50,6 +53,7 @@ class LoginState {
       email: email ?? this.email,
       mobile: mobile ?? this.mobile,
       agencyId: agencyId ?? this.agencyId,
+      perKmCharge: perKmCharge ?? this.perKmCharge,
 
       adminProfile: adminProfile ?? this.adminProfile,
     );
@@ -75,6 +79,8 @@ class LoginViewModel extends StateNotifier<LoginState> {
     final email = await TokenStorage.getValue('email');
     final mobile = await TokenStorage.getValue('mobile');
     final agencyId = await TokenStorage.getValue('agency_id');
+    final perKmStr = await TokenStorage.getValue('per_km_charge');
+    final perKm = double.tryParse(perKmStr ?? '');
 
     state = state.copyWith(
       adminId: adminId,
@@ -82,6 +88,7 @@ class LoginViewModel extends StateNotifier<LoginState> {
       name: name,
       email: email,
       mobile: mobile,
+      perKmCharge: perKm,
     );
   }
 
@@ -104,6 +111,11 @@ class LoginViewModel extends StateNotifier<LoginState> {
         await TokenStorage.saveValue('mobile', response.mobile ?? "");
 
         await TokenStorage.saveValue('agency_id', response.agencyId ?? "");
+
+        await TokenStorage.saveValue(
+          'per_km_charge',
+          response.perKmCharge?.toString() ?? "",
+        );
         // LOAD INTO STATE
         await loadFromStorage();
       }
@@ -153,6 +165,13 @@ class LoginViewModel extends StateNotifier<LoginState> {
 
       return LoginResponse(success: 0, message: e.toString());
     }
+  }
+
+  /// Persist a freshly-edited per-km rate to secure storage and live state so
+  /// the booking form's auto-calc picks it up immediately (without re-login).
+  Future<void> setPerKmCharge(double? rate) async {
+    await TokenStorage.saveValue('per_km_charge', rate?.toString() ?? "");
+    state = state.copyWith(perKmCharge: rate);
   }
 
   //--------------------------------------------------

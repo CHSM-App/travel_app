@@ -22,6 +22,7 @@ class _SignUpPageState extends ConsumerState<SignUpPage>
   final TextEditingController _addressController = TextEditingController();
   final TextEditingController _agencyController = TextEditingController();
   final TextEditingController _cityController = TextEditingController();
+  final TextEditingController _perKmController = TextEditingController();
   final TextEditingController _mobileController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
@@ -64,6 +65,7 @@ class _SignUpPageState extends ConsumerState<SignUpPage>
     _addressController.dispose();
     _agencyController.dispose();
     _cityController.dispose();
+    _perKmController.dispose();
     _mobileController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
@@ -90,6 +92,7 @@ class _SignUpPageState extends ConsumerState<SignUpPage>
       mobile: _mobileController.text.trim(),
       email: _emailController.text.trim(),
       password: _passwordController.text.trim(),
+      perKmCharge: double.tryParse(_perKmController.text.trim()),
     );
 
     final response =
@@ -350,6 +353,32 @@ class _SignUpPageState extends ConsumerState<SignUpPage>
                                 validator: (v) => v == null || v.isEmpty
                                     ? "City is required"
                                     : null,
+                              ),
+                              const SizedBox(height: 16),
+                              _buildLabel("Charge per KM (₹)"),
+                              const SizedBox(height: 8),
+                              _buildField(
+                                controller: _perKmController,
+                                hint: "e.g. 12 — used to auto-calc trip charges",
+                                icon: Icons.currency_rupee_rounded,
+                                keyboard: const TextInputType.numberWithOptions(
+                                  decimal: true,
+                                ),
+                                inputFormatters: [
+                                  FilteringTextInputFormatter.allow(
+                                    RegExp(r'[\d.]'),
+                                  ),
+                                ],
+                                validator: (v) {
+                                  if (v == null || v.trim().isEmpty) {
+                                    return "Per-km charge is required";
+                                  }
+                                  final rate = double.tryParse(v.trim());
+                                  if (rate == null || rate <= 0) {
+                                    return "Enter a valid rate";
+                                  }
+                                  return null;
+                                },
                               ),
                             ],
                           ),

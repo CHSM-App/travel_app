@@ -33,6 +33,12 @@ class LoginInfo {
   final String? city;
   @JsonKey(name: 'image_url')
   final String? imageUrl;
+
+  /// Default charge per kilometre for this agency, captured at signup and used
+  /// to auto-fill the Trip Charges field (distance × rate) when booking.
+  @JsonKey(name: 'per_km_charge')
+  final double? perKmCharge;
+
   LoginInfo({
     this.adminId,
      this.name,
@@ -44,6 +50,7 @@ class LoginInfo {
     this.city,
     this.agencyId,
     this.imageUrl,
+    this.perKmCharge,
   });
   factory LoginInfo.fromJson(Map<String, dynamic> json) =>
       _$LoginInfoFromJson(json);
