@@ -60,6 +60,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
     _animCtrl.forward();
   }
 
+
   @override
   void dispose() {
     _animCtrl.dispose();
@@ -71,6 +72,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
     cityController.dispose();
     super.dispose();
   }
+
 
   void _populateProfile(LoginInfo p) {
     if (!_didPopulateInitialProfile) {
@@ -125,6 +127,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
   //     ),
   //   );
   // }
+  
   void _showImageOptions() {
     HapticFeedback.lightImpact();
     showModalBottomSheet(

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -77,6 +79,10 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
   bool _fetchingDistance = false;
   String? _routeDistanceText; // e.g. "173 km"
   String? _routeDurationText; // e.g. "3 hours 46 mins"
+  Timer? _distanceDebounce; // debounces the distance fetch while typing
+  // Remembers the last route we fetched distance for, so we don't re-call the
+  // API for a route that hasn't actually changed.
+  String? _lastDistanceRoute;
   // FuelTypeId → name (e.g. 1 → "Petrol"). The available-vehicles API returns
   // only the id, so we map it to a readable name using the fuel-type list.
   Map<int, String> _fuelTypeNames = {};
@@ -145,13 +151,23 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
     pickup.addListener(_onRouteChanged);
     drop.addListener(_onRouteChanged);
 
-    // Fetch road distance once the user leaves a location field (also fires
-    // when a suggestion is tapped, since that unfocuses the field).
+    // RawAutocomplete only opens its overlay when the TEXT changes, never on a
+    // plain focus gain — so an empty field shows no "recent locations" until you
+    // type. Re-assigning the controller value on focus nudges it to recompute
+    // and open the overlay. On focus LOSS we also try a distance fetch.
     pickupFocus.addListener(() {
-      if (!pickupFocus.hasFocus) _maybeFetchDistance();
+      if (pickupFocus.hasFocus) {
+        _nudgeAutocomplete(pickup);
+      } else {
+        _maybeFetchDistance();
+      }
     });
     dropFocus.addListener(() {
-      if (!dropFocus.hasFocus) _maybeFetchDistance();
+      if (dropFocus.hasFocus) {
+        _nudgeAutocomplete(drop);
+      } else {
+        _maybeFetchDistance();
+      }
     });
 
     // Detach from the picked customer the moment the admin edits any of the
@@ -162,9 +178,15 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
     customerPhone.addListener(_onCustomerPhoneChanged);
     customerAddress.addListener(_onCustomerFieldChanged);
 
-    Future.microtask(() {
+    Future.microtask(() async {
       final n = ref.read(tripBookingViewModelProvider.notifier);
-      final aid = ref.read(loginViewModelProvider).agencyId ?? '';
+      var aid = ref.read(loginViewModelProvider).agencyId ?? '';
+      // On a cold start (app reopened) the agencyId may not be in memory yet —
+      // hydrate it from storage so route history/suggestions actually load.
+      if (aid.isEmpty) {
+        await ref.read(loginViewModelProvider.notifier).loadFromStorage();
+        aid = ref.read(loginViewModelProvider).agencyId ?? '';
+      }
       n.customerList(aid);
       n.loadRouteHistory(aid);
       // Pull active + upcoming trips too so location autocomplete can suggest
@@ -172,22 +194,32 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
       final tn = ref.read(tripPageViewModelProvider.notifier);
       tn.activeList(aid);
       tn.upcomingList(aid);
+      tn.unpaidList(aid);
+      tn.cancelledList(aid);
       // Load fuel-type names so the vehicle dropdown can show Petrol/Diesel/etc.
       ref.read(addVehicleViewModelProvider.notifier).fetchVehicleFuelTypeList();
-      if (widget.booking != null && startDt != null && endDt != null) {
+      if (widget.booking != null && startDt != null) {
+        // End is optional; fall back to a 24h window for the conflict query.
+        final effectiveEnd = endDt ?? startDt!.add(const Duration(hours: 24));
         n.fetchAvailableVehicles(
           aid,
           startDt!,
-          endDt!,
+          effectiveEnd,
           widget.booking!.tripId!,
         );
-        n.fetchAvailableDrivers(aid, startDt!, endDt!, widget.booking?.tripId);
+        n.fetchAvailableDrivers(
+          aid,
+          startDt!,
+          effectiveEnd,
+          widget.booking?.tripId,
+        );
       }
     });
   }
 
   @override
   void dispose() {
+    _distanceDebounce?.cancel();
     pickup.removeListener(_onRouteChanged);
     drop.removeListener(_onRouteChanged);
     customerName.removeListener(_onCustomerFieldChanged);
@@ -204,9 +236,25 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
     super.dispose();
   }
 
-  // Rebuild so the fare-suggestion chip reflects the current route text.
+  // Rebuild so the fare-suggestion chip reflects the current route text, and
+  // (debounced) fetch the road distance once both ends are filled. This is the
+  // reliable trigger — focus-loss alone misses cases like tapping a suggestion
+  // or moving straight to another section.
   void _onRouteChanged() {
     if (mounted) setState(() {});
+    _distanceDebounce?.cancel();
+    if (pickup.text.trim().isEmpty || drop.text.trim().isEmpty) return;
+    _distanceDebounce = Timer(
+      const Duration(milliseconds: 700),
+      _maybeFetchDistance,
+    );
+  }
+
+  // Forces RawAutocomplete to recompute + open its overlay even when the field
+  // is empty (it normally only reacts to text edits, not focus). Re-assigning
+  // the same value notifies the controller's listeners without changing text.
+  void _nudgeAutocomplete(TextEditingController ctrl) {
+    ctrl.value = ctrl.value.copyWith();
   }
 
   // Autofill all three customer fields from a picked suggestion. The listener
@@ -555,7 +603,7 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
         endDate.text = DateFormat("MMM dd, yyyy  •  hh:mm a").format(dt);
       }
     });
-    if (startDt != null && endDt != null) _fetch();
+    if (startDt != null) _fetch();
   }
 
   // Combined date + time picker in one bottom sheet. The calendar drives the
@@ -884,8 +932,12 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
   void _fetch() {
     final aid = ref.read(loginViewModelProvider).agencyId ?? '';
     final n = ref.read(tripBookingViewModelProvider.notifier);
-    n.fetchAvailableVehicles(aid, startDt!, endDt!, null);
-    n.fetchAvailableDrivers(aid, startDt!, endDt!, null);
+    // End datetime is optional. For the availability/conflict check we still
+    // need an end bound, so when it's not set we assume a 24h window from the
+    // start. This only affects the conflict query — the stored end stays null.
+    final effectiveEnd = endDt ?? startDt!.add(const Duration(hours: 24));
+    n.fetchAvailableVehicles(aid, startDt!, effectiveEnd, null);
+    n.fetchAvailableDrivers(aid, startDt!, effectiveEnd, null);
   }
 
   // Calls our backend for the road distance when BOTH locations are filled,
@@ -897,6 +949,11 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
     if (from.isEmpty || to.isEmpty) return;
     if (_fetchingDistance) return;
 
+    // Skip if we already have a distance for this exact route (avoids the
+    // debounce + focus-loss both firing the same call).
+    final route = "${from.toLowerCase()}→${to.toLowerCase()}";
+    if (route == _lastDistanceRoute && distance.text.trim().isNotEmpty) return;
+
     setState(() => _fetchingDistance = true);
     try {
       final result = await DistanceService.getDistance(from, to);
@@ -905,6 +962,7 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
         distance.text = result.km.toStringAsFixed(1);
         _routeDistanceText = result.distanceText;
         _routeDurationText = result.durationText;
+        _lastDistanceRoute = route;
         _recalcFuel();
       } else {
         _snack("Couldn't find road distance for this route");
@@ -995,9 +1053,10 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
     fuelReq.text = fuel.toStringAsFixed(2);
   }
 
-  // Read-only chip showing the fetched route distance + estimated drive time.
+  // Read-only chip showing the estimated drive time for the fetched route.
+  // Distance is already shown in the Distance field, so it's not repeated here.
   Widget _routeInfoChip() {
-    if (_routeDistanceText == null) return const SizedBox.shrink();
+    if (_routeDurationText == null) return const SizedBox.shrink();
     return Padding(
       padding: const EdgeInsets.only(top: 12),
       child: Container(
@@ -1016,38 +1075,33 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
                 borderRadius: BorderRadius.circular(8),
               ),
               child: const Icon(
-                Icons.route_rounded,
+                Icons.schedule_rounded,
                 size: 14,
                 color: _C.accent,
               ),
             ),
             const SizedBox(width: 10),
-            const Icon(Icons.straighten_rounded, size: 13, color: _C.text2),
-            const SizedBox(width: 4),
-            Text(
-              _routeDistanceText!,
-              style: const TextStyle(
+            const Text(
+              "Est. drive time",
+              style: TextStyle(
                 fontSize: 12.5,
-                fontWeight: FontWeight.w700,
-                color: _C.text1,
+                color: _C.text2,
+                fontWeight: FontWeight.w500,
               ),
             ),
-            if (_routeDurationText != null) ...[
-              const SizedBox(width: 14),
-              const Icon(Icons.schedule_rounded, size: 13, color: _C.text2),
-              const SizedBox(width: 4),
-              Flexible(
-                child: Text(
-                  _routeDurationText!,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontSize: 12.5,
-                    fontWeight: FontWeight.w700,
-                    color: _C.text1,
-                  ),
+            const Spacer(),
+            Flexible(
+              child: Text(
+                _routeDurationText!,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.right,
+                style: const TextStyle(
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w800,
+                  color: _C.text1,
                 ),
               ),
-            ],
+            ),
           ],
         ),
       ),
@@ -1060,7 +1114,7 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
       MaterialPageRoute(builder: (_) => const AddVehiclePage()),
     );
 
-    if (mounted && startDt != null && endDt != null) {
+    if (mounted && startDt != null) {
       _fetch();
     }
   }
@@ -1071,7 +1125,7 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
       MaterialPageRoute(builder: (_) => const AddDriverPage()),
     );
 
-    if (mounted && startDt != null && endDt != null) {
+    if (mounted && startDt != null) {
       _fetch();
     }
   }
@@ -1079,8 +1133,8 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
   // ── Save ───────────────────────────────────────────────────────────────────
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
-    if (startDt == null || endDt == null) {
-      _snack("Select start & end date/time");
+    if (startDt == null) {
+      _snack("Select start date/time");
       return;
     }
     if (selVehicle == null || selDriver == null) {
@@ -1177,19 +1231,26 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
           f.FuelTypeId!: f.FuelType!.trim(),
     };
 
-    // Trips we mine for route + fare memory. Active and upcoming trips count
-    // alongside completed ones — fromHistory keys off `amountApprove` (the
-    // quoted fare at booking time), which is set the moment a trip is booked,
-    // so an in-flight trip is just as useful as a finished one here.
+    // Trips we mine for route + fare memory. We pull from EVERY trip list —
+    // active, upcoming, unpaid, cancelled and completed history — so location
+    // suggestions cover any route the agency has ever booked, not just paid
+    // ones. Fare suggestion (fromHistory) further filters to trips that carry a
+    // real `amountApprove`, so including extra lists here is safe.
     final history =
         state.routeHistory.asData?.value ?? const <BookingInfo>[];
     final activeTrips =
         tripState.activeList.asData?.value ?? const <BookingInfo>[];
     final upcomingTrips =
         tripState.upcomingList.asData?.value ?? const <BookingInfo>[];
+    final unpaidTrips =
+        tripState.unpaidList.asData?.value ?? const <BookingInfo>[];
+    final cancelledTrips =
+        tripState.cancelledList.asData?.value ?? const <BookingInfo>[];
     final routeTrips = <BookingInfo>[
       ...activeTrips,
       ...upcomingTrips,
+      ...unpaidTrips,
+      ...cancelledTrips,
       ...history,
     ];
 
@@ -1448,12 +1509,18 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
                               ),
                               const SizedBox(height: 10),
                               _dateTile(
-                                label: "End Date & Time",
+                                label: "End Date & Time (Optional)",
                                 ctrl: endDate,
                                 icon: Icons.stop_circle_rounded,
                                 color: _C.red,
                                 bg: _C.redSoft,
                                 onTap: () => _pickDt(false),
+                                onClear: () {
+                                  setState(() {
+                                    endDt = null;
+                                    endDate.clear();
+                                  });
+                                },
                               ),
                               if (startDt != null && endDt != null) ...[
                                 const SizedBox(height: 12),
@@ -1480,11 +1547,11 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
                               // ── Vehicle ──────────────────────────────────────────
                               _assignLabel("Vehicle"),
                               const SizedBox(height: 6),
-                              if (startDt == null || endDt == null)
+                              if (startDt == null)
                                 _lockedTile(
                                   "Vehicle",
                                   Icons.directions_car_rounded,
-                                  "Set trip schedule to unlock vehicles",
+                                  "Set start date/time to unlock vehicles",
                                 )
                               else
                                 state.availableVehicles.when(
@@ -1585,11 +1652,11 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
                               // ── Driver ───────────────────────────────────────────
                               _assignLabel("Driver"),
                               const SizedBox(height: 6),
-                              if (startDt == null || endDt == null)
+                              if (startDt == null)
                                 _lockedTile(
                                   "Driver",
                                   Icons.person_pin_circle_rounded,
-                                  "Set trip schedule to unlock drivers",
+                                  "Set start date/time to unlock drivers",
                                 )
                               else
                                 state.availableDrivers.when(
@@ -1920,17 +1987,10 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
                       ),
                       child: Row(
                         children: [
-                          Container(
-                            padding: const EdgeInsets.all(6),
-                            decoration: BoxDecoration(
-                              color: iconBg,
-                              borderRadius: BorderRadius.circular(7),
-                            ),
-                            child: Icon(
-                              Icons.location_on_rounded,
-                              size: 12,
-                              color: iconColor,
-                            ),
+                          const Icon(
+                            Icons.location_on_outlined,
+                            size: 16,
+                            color: _C.text2,
                           ),
                           const SizedBox(width: 10),
                           Expanded(
@@ -2048,6 +2108,7 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
     required Color color,
     required Color bg,
     required VoidCallback onTap,
+    VoidCallback? onClear,
   }) {
     final has = ctrl.text.isNotEmpty;
     return GestureDetector(
@@ -2107,6 +2168,24 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
                 ],
               ),
             ),
+            if (has && onClear != null)
+              GestureDetector(
+                onTap: onClear,
+                child: Container(
+                  width: 28,
+                  height: 28,
+                  margin: const EdgeInsets.only(right: 6),
+                  decoration: BoxDecoration(
+                    color: _C.text2.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(
+                    Icons.close_rounded,
+                    size: 16,
+                    color: _C.text2.withOpacity(0.6),
+                  ),
+                ),
+              ),
             Container(
               width: 28,
               height: 28,

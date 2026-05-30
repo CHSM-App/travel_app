@@ -56,6 +56,10 @@ class TripbookingUsecase {
     return repository.updatePaymentStatus(tripbooking);
   }
 
+  Future<dynamic> endTrip(BookingInfo tripbooking) {
+    return repository.endTrip(tripbooking);
+  }
+
   Future<dynamic> updateTripBooking(int tripId, TripBooking booking) {
     return repository.updateTripBooking(tripId, booking);
   }

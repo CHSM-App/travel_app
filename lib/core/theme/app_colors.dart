@@ -144,4 +144,5 @@ class AppColors {
 
   /// Slate-200. Hairline borders, dividers, card outlines.
   static const Color border = Color(0xFFE2E8F0);
+  
 }

@@ -44,20 +44,24 @@ class TripCard extends ConsumerWidget {
     return "$hour:$minute $period";
   }
 
-  // Footer line describing when payment was taken. Returns null when there's
-  // nothing meaningful to show — a fully unpaid trip, or a paid trip whose
-  // payment_date the backend hasn't recorded yet.
-  //   • Partially Paid → "Last payment received on <date> <time>"
-  //   • Paid           → "Payment completed on <date> <time>"
+  // Footer line describing the last payment taken: amount received + when.
+  // Returns null when there's nothing meaningful to show — a fully unpaid trip,
+  // or a paid trip whose payment_date the backend hasn't recorded yet.
+  //   • Partially Paid → "Last payment ₹<amount> on <date> <time>"
+  //   • Paid           → "Last payment ₹<amount> on <date> <time>"
   String? _paymentDateLine(String status) {
     final d = bookinginfo.paymentDate;
     if (d == null) return null;
+    final received = bookinginfo.amountReceived ?? 0;
+    // Whole rupees when integral, else keep up to 2 decimals.
+    final amount = received == received.roundToDouble()
+        ? received.toStringAsFixed(0)
+        : received.toStringAsFixed(2);
     final when = "${_formatDate(d)} • ${_formatTime(d)}";
     switch (status.toLowerCase()) {
       case 'partially paid':
-        return "Last payment received on $when";
       case 'paid':
-        return "Payment completed on $when";
+        return "Last payment ₹$amount received on $when";
       default:
         return null;
     }
@@ -944,6 +948,59 @@ final receivedController = TextEditingController(
                             ),
                           ),
 
+                          // ── End Trip Button (Only for Active) ──
+                          // Closes out an in-progress trip: stamps the end time
+                          // and records payment in one step, then moves it to
+                          // unpaid / paid. This is how open-ended (no end set)
+                          // trips get completed.
+                          if (bookinginfo.status == 1) ...[
+                            const SizedBox(height: 20),
+                            GestureDetector(
+                              onTap: () {
+                                Navigator.pop(ctx);
+                                _showEndTripSheet(context, ref);
+                              },
+                              child: Container(
+                                width: double.infinity,
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 16,
+                                ),
+                                decoration: BoxDecoration(
+                                  gradient: const LinearGradient(
+                                    colors: [Color(0xFF2DB976), Color(0xFF1E9E5F)],
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                  ),
+                                  borderRadius: BorderRadius.circular(16),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: const Color(0xFF2DB976).withOpacity(0.35),
+                                      blurRadius: 14,
+                                      offset: const Offset(0, 5),
+                                    ),
+                                  ],
+                                ),
+                                child: const Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      Icons.flag_circle_rounded,
+                                      color: Colors.white,
+                                    ),
+                                    SizedBox(width: 8),
+                                    Text(
+                                      "End Trip",
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
+
                           // ── Cancel Trip Button (Only for Active / Upcoming) ──
                           if (isActiveOrUpcoming) ...[
                             const SizedBox(height: 20),
@@ -1172,6 +1229,581 @@ final receivedController = TextEditingController(
               ),
             ),
           ),
+        );
+      },
+    );
+  }
+
+  // ── End Trip bottom sheet ──────────────────────────────────────────────
+  // One focused step to close out an active trip: confirm when it ended
+  // (defaults to now) and record what was collected. Status is derived on the
+  // backend from amount received vs the approved fare.
+  void _showEndTripSheet(BuildContext context, WidgetRef ref) {
+    // End datetime must be on the IST timeline regardless of device timezone.
+    // Build a wall-clock DateTime from UTC + 5:30, so the value shown and sent
+    // is always IST. It serializes without a timezone marker, so the backend
+    // stores the exact IST wall-clock (same as start_datetime).
+    final istNow =
+        DateTime.now().toUtc().add(const Duration(hours: 5, minutes: 30));
+    DateTime endSel = DateTime(
+      istNow.year,
+      istNow.month,
+      istNow.day,
+      istNow.hour,
+      istNow.minute,
+    );
+    final approved = bookinginfo.amountApprove ?? 0;
+    final tollCtrl = TextEditingController(
+      text: bookinginfo.tollCharges?.toString() ?? "",
+    );
+    final repairCtrl = TextEditingController(
+      text: bookinginfo.repairingCharges?.toString() ?? "",
+    );
+    final driverCtrl = TextEditingController(
+      text: bookinginfo.driverCharges?.toString() ?? "",
+    );
+    final receivedCtrl = TextEditingController(
+      text: approved == 0 ? "" : approved.toStringAsFixed(0),
+    );
+    bool submitting = false;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      barrierColor: Colors.black.withOpacity(0.55),
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (ctx, setSheet) {
+            final screenH = MediaQuery.of(ctx).size.height;
+
+            // Live figures recomputed on every keystroke (fields call setSheet).
+            final received = double.tryParse(receivedCtrl.text) ?? 0;
+            final balanceRaw = approved - received;
+            final balance = balanceRaw < 0 ? 0.0 : balanceRaw;
+
+            // Live payment-status preview — mirrors the backend rule
+            // (received >= approved → Paid, else partial / unpaid).
+            late final String payLabel;
+            late final Color payColor;
+            late final Color payBg;
+            late final IconData payIcon;
+            if (approved > 0 && received >= approved) {
+              payLabel = "Paid";
+              payColor = _success;
+              payBg = _successSoft;
+              payIcon = Icons.check_circle_rounded;
+            } else if (received > 0) {
+              payLabel = "Partially Paid";
+              payColor = _warning;
+              payBg = _warningSoft;
+              payIcon = Icons.timelapse_rounded;
+            } else {
+              payLabel = "Unpaid";
+              payColor = _danger;
+              payBg = _dangerSoft;
+              payIcon = Icons.cancel_rounded;
+            }
+
+            Widget money(
+              TextEditingController c,
+              String label,
+              IconData icon, {
+              bool highlight = false,
+            }) {
+              final accent = highlight ? AppColors.brandPrimary : _textSec;
+              return TextField(
+                controller: c,
+                keyboardType: TextInputType.number,
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                onChanged: (_) => setSheet(() {}),
+                style: const TextStyle(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 14,
+                  color: _textPrimary,
+                ),
+                decoration: InputDecoration(
+                  labelText: label,
+                  labelStyle: TextStyle(fontSize: 12.5, color: accent),
+                  prefixText: "₹ ",
+                  prefixStyle:
+                      TextStyle(fontWeight: FontWeight.w700, color: accent),
+                  prefixIcon: Icon(icon, size: 18, color: accent),
+                  isDense: true,
+                  filled: true,
+                  fillColor: highlight
+                      ? AppColors.brandSoft.withOpacity(0.5)
+                      : Colors.grey.shade50,
+                  contentPadding:
+                      const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(
+                      color: highlight
+                          ? AppColors.brandPrimary.withOpacity(0.35)
+                          : _divider,
+                    ),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(
+                      color: AppColors.brandPrimary,
+                      width: 1.5,
+                    ),
+                  ),
+                ),
+              );
+            }
+
+            Widget sectionLabel(String t) => Padding(
+                  padding: const EdgeInsets.only(left: 2, bottom: 8),
+                  child: Text(
+                    t,
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 0.6,
+                      color: _textSec,
+                    ),
+                  ),
+                );
+
+            Widget card({required Widget child}) => Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: _divider),
+                  ),
+                  child: child,
+                );
+
+            Widget summaryRow(String label, String value,
+                    {Color? color, bool bold = false}) =>
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        label,
+                        style: TextStyle(
+                          fontSize: 12.5,
+                          color: _textSec,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      Text(
+                        value,
+                        style: TextStyle(
+                          fontSize: 13.5,
+                          color: color ?? _textPrimary,
+                          fontWeight: bold ? FontWeight.w800 : FontWeight.w700,
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+
+            Future<void> pickEnd() async {
+              final d = await showDatePicker(
+                context: ctx,
+                initialDate: endSel,
+                firstDate: bookinginfo.startDateTime ?? DateTime(2020),
+                lastDate: DateTime(2100),
+              );
+              if (d == null) return;
+              final t = await showTimePicker(
+                context: ctx,
+                initialTime: TimeOfDay.fromDateTime(endSel),
+              );
+              if (t == null) return;
+              setSheet(() {
+                endSel = DateTime(d.year, d.month, d.day, t.hour, t.minute);
+              });
+            }
+
+            Future<void> submit() async {
+              final tripId = bookinginfo.tripId;
+              if (tripId == null) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text("Invalid Trip ID")),
+                );
+                return;
+              }
+              setSheet(() => submitting = true);
+              final updated = BookingInfo(
+                tripId: tripId,
+                endDateTime: endSel,
+                tollCharges: double.tryParse(tollCtrl.text) ?? 0,
+                repairingCharges: double.tryParse(repairCtrl.text) ?? 0,
+                driverCharges: double.tryParse(driverCtrl.text) ?? 0,
+                amountReceived: double.tryParse(receivedCtrl.text) ?? 0,
+              );
+              await ref
+                  .read(tripPageViewModelProvider.notifier)
+                  .endTrip(updated);
+              if (onTripUpdated != null) await onTripUpdated!();
+              if (ctx.mounted) Navigator.pop(ctx);
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text("Trip ended — marked as $payLabel"),
+                  backgroundColor: _success,
+                ),
+              );
+            }
+
+            return Padding(
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(ctx).viewInsets.bottom,
+              ),
+              child: ConstrainedBox(
+                constraints: BoxConstraints(maxHeight: screenH * 0.92),
+                child: Container(
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFF7F8FC),
+                    borderRadius:
+                        BorderRadius.vertical(top: Radius.circular(26)),
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // ── Gradient header ──────────────────────────────────
+                      Container(
+                        padding: const EdgeInsets.fromLTRB(18, 12, 14, 18),
+                        decoration: const BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              AppColors.brandPrimary,
+                              AppColors.brandPrimaryDark,
+                            ],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          borderRadius:
+                              BorderRadius.vertical(top: Radius.circular(26)),
+                        ),
+                        child: Column(
+                          children: [
+                            Center(
+                              child: Container(
+                                width: 40,
+                                height: 4,
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withOpacity(0.4),
+                                  borderRadius: BorderRadius.circular(2),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 14),
+                            Row(
+                              children: [
+                                Container(
+                                  width: 44,
+                                  height: 44,
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withOpacity(0.18),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(
+                                    Icons.flag_circle_rounded,
+                                    color: Colors.white,
+                                    size: 26,
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      const Text(
+                                        "End Trip",
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.w800,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        "${bookinginfo.pickupLocation ?? '--'}  →  ${bookinginfo.dropLocation ?? '--'}",
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: TextStyle(
+                                          color: Colors.white.withOpacity(0.85),
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                GestureDetector(
+                                  onTap: () => Navigator.pop(ctx),
+                                  child: Container(
+                                    width: 30,
+                                    height: 30,
+                                    decoration: BoxDecoration(
+                                      color: Colors.white.withOpacity(0.18),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: const Icon(
+                                      Icons.close_rounded,
+                                      color: Colors.white,
+                                      size: 16,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      // ── Scrollable body ──────────────────────────────────
+                      Flexible(
+                        child: SingleChildScrollView(
+                          padding: const EdgeInsets.fromLTRB(16, 18, 16, 16),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              sectionLabel("WHEN DID IT END?"),
+                              GestureDetector(
+                                onTap: pickEnd,
+                                child: card(
+                                  child: Row(
+                                    children: [
+                                      Container(
+                                        width: 40,
+                                        height: 40,
+                                        decoration: BoxDecoration(
+                                          color: AppColors.brandSoft,
+                                          borderRadius:
+                                              BorderRadius.circular(10),
+                                        ),
+                                        child: const Icon(
+                                          Icons.event_available_rounded,
+                                          size: 20,
+                                          color: AppColors.brandPrimary,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              "Trip ended at",
+                                              style: TextStyle(
+                                                fontSize: 11,
+                                                color: _textSec,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 2),
+                                            Text(
+                                              "${_formatDate(endSel)}  •  ${_formatTime(endSel)}",
+                                              style: const TextStyle(
+                                                fontSize: 14.5,
+                                                fontWeight: FontWeight.w800,
+                                                color: _textPrimary,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 10,
+                                          vertical: 6,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: AppColors.brandSoft,
+                                          borderRadius:
+                                              BorderRadius.circular(8),
+                                        ),
+                                        child: const Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Icon(
+                                              Icons.edit_calendar_rounded,
+                                              size: 14,
+                                              color: AppColors.brandPrimary,
+                                            ),
+                                            SizedBox(width: 4),
+                                            Text(
+                                              "Change",
+                                              style: TextStyle(
+                                                fontSize: 11.5,
+                                                fontWeight: FontWeight.w700,
+                                                color: AppColors.brandPrimary,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 18),
+
+                              sectionLabel("CHARGES"),
+                              card(
+                                child: Column(
+                                  children: [
+                                    money(tollCtrl, "Toll Charges",
+                                        Icons.toll_rounded),
+                                    const SizedBox(height: 10),
+                                    money(repairCtrl, "Repair Charges",
+                                        Icons.build_rounded),
+                                    const SizedBox(height: 10),
+                                    money(driverCtrl, "Driver Charges",
+                                        Icons.payments_rounded),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(height: 18),
+
+                              sectionLabel("PAYMENT"),
+                              card(
+                                child: Column(
+                                  children: [
+                                    money(
+                                      receivedCtrl,
+                                      "Amount Received",
+                                      Icons.account_balance_wallet_rounded,
+                                      highlight: true,
+                                    ),
+                                    const SizedBox(height: 14),
+                                    summaryRow("Approved fare",
+                                        "₹${approved.toStringAsFixed(0)}"),
+                                    summaryRow(
+                                      "Received",
+                                      "₹${received.toStringAsFixed(0)}",
+                                      color: _success,
+                                    ),
+                                    Divider(height: 18, color: _divider),
+                                    summaryRow(
+                                      "Balance due",
+                                      "₹${balance.toStringAsFixed(0)}",
+                                      color: balance > 0 ? _danger : _success,
+                                      bold: true,
+                                    ),
+                                    const SizedBox(height: 12),
+                                    Row(
+                                      children: [
+                                        Text(
+                                          "Trip will be marked",
+                                          style: TextStyle(
+                                            fontSize: 12.5,
+                                            color: _textSec,
+                                          ),
+                                        ),
+                                        const Spacer(),
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 10,
+                                            vertical: 5,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: payBg,
+                                            borderRadius:
+                                                BorderRadius.circular(20),
+                                          ),
+                                          child: Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Icon(payIcon,
+                                                  size: 13, color: payColor),
+                                              const SizedBox(width: 5),
+                                              Text(
+                                                payLabel,
+                                                style: TextStyle(
+                                                  fontSize: 12,
+                                                  fontWeight: FontWeight.w700,
+                                                  color: payColor,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(height: 22),
+
+                              GestureDetector(
+                                onTap: submitting ? null : submit,
+                                child: Container(
+                                  width: double.infinity,
+                                  padding:
+                                      const EdgeInsets.symmetric(vertical: 16),
+                                  decoration: BoxDecoration(
+                                    gradient: const LinearGradient(
+                                      colors: [
+                                        Color(0xFF2DB976),
+                                        Color(0xFF1E9E5F),
+                                      ],
+                                    ),
+                                    borderRadius: BorderRadius.circular(16),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: _success.withOpacity(0.3),
+                                        blurRadius: 14,
+                                        offset: const Offset(0, 6),
+                                      ),
+                                    ],
+                                  ),
+                                  child: Center(
+                                    child: submitting
+                                        ? const SizedBox(
+                                            width: 20,
+                                            height: 20,
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2,
+                                              color: Colors.white,
+                                            ),
+                                          )
+                                        : const Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.center,
+                                            children: [
+                                              Icon(
+                                                Icons.check_circle_rounded,
+                                                color: Colors.white,
+                                                size: 20,
+                                              ),
+                                              SizedBox(width: 8),
+                                              Text(
+                                                "Confirm & End Trip",
+                                                style: TextStyle(
+                                                  color: Colors.white,
+                                                  fontWeight: FontWeight.w800,
+                                                  fontSize: 15,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                  ),
+                                ),
+                              ),
+                              SizedBox(
+                                height: MediaQuery.of(ctx).padding.bottom + 8,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
         );
       },
     );

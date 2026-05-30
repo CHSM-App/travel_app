@@ -188,6 +188,19 @@ class TripPageViewModel extends StateNotifier<TripPageState> {
     }
   }
 
+  /// Ends an active trip: stamps the end datetime (defaulting to now on the
+  /// backend if not supplied), records final charges + amount received, and
+  /// moves the trip to unpaid / paid based on what was collected.
+  Future<void> endTrip(BookingInfo bookinginfo) async {
+    state = state.copyWith(isLoading: true, error: null);
+    try {
+      final result = await usecase.endTrip(bookinginfo);
+      state = state.copyWith(isLoading: false, data: result);
+    } catch (e) {
+      state = state.copyWith(isLoading: false, error: e.toString());
+    }
+  }
+
   
 }
 

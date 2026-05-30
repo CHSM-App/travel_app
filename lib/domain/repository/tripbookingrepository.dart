@@ -29,6 +29,8 @@ abstract class Tripbookingrepository {
 
   Future<dynamic> updatePaymentStatus(BookingInfo tripbooking);
 
+  Future<dynamic> endTrip(BookingInfo tripbooking);
+
   Future<dynamic> updateTripBooking(int tripId, TripBooking booking);
 
   Future<dynamic> cancelTrip(int trip_id);
