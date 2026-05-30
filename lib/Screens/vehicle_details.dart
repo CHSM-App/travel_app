@@ -21,7 +21,6 @@ abstract class _C {
   static const g3 = AppColors.brandPrimary;
   static const accent = AppColors.brandPrimary;
   static const indigo = AppColors.brandPrimary;
-  static const violet = Color(0xFF7C3AED);
   static const green = Color(0xFF059669);
   static const red = Color(0xFFDC2626);
   static const redSoft = Color(0xFFFEE2E2);
@@ -64,7 +63,6 @@ class _VehicleManagePageState extends ConsumerState<VehicleManagePage>
 
   int _month = DateTime.now().month - 1;
   int _year = DateTime.now().year;
-  int _prevTabIndex = 0;
 
   static const _months = [
     'Jan',
@@ -87,7 +85,7 @@ class _VehicleManagePageState extends ConsumerState<VehicleManagePage>
 
     _currentStatus = widget.vehicle.StatusId ?? 1;
 
-    _tab = TabController(length: 3, vsync: this)..addListener(_onTabChanged);
+    _tab = TabController(length: 2, vsync: this)..addListener(_onTabChanged);
 
     // Header entrance
     _headerAnim = AnimationController(
@@ -165,12 +163,11 @@ class _VehicleManagePageState extends ConsumerState<VehicleManagePage>
 
   void _onTabChanged() {
     setState(() {});
-    if (_tab.index == 2) {
+    if (_tab.index == 1) {
       _fabAnim.forward();
     } else {
       _fabAnim.reverse();
     }
-    _prevTabIndex = _tab.index;
   }
 
 Future<void> _toggleVehicleStatus() async {
@@ -255,7 +252,6 @@ Future<void> _toggleVehicleStatus() async {
           controller: _tab,
           physics: const BouncingScrollPhysics(),
           children: [
-            _OverviewTab(vehicle: widget.vehicle, fmt: _fmt, ctx: context),
             _TripsTab(vehicle: widget.vehicle, fmt: _fmt),
             _MaintTab(
               vehicle: widget.vehicle,
@@ -321,7 +317,7 @@ Widget _buildHeader() {
         SafeArea(
           bottom: false,
           child: Padding(
-            padding: EdgeInsets.fromLTRB(18, top > 0 ? 2 : 10, 18, 22),
+            padding: EdgeInsets.fromLTRB(18, top > 0 ? 2 : 8, 18, 16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -357,7 +353,7 @@ Widget _buildHeader() {
                   ),
                 ),
 
-                const SizedBox(height: 20),
+                const SizedBox(height: 14),
 
                 /// IDENTITY ROW
                 FadeTransition(
@@ -377,10 +373,10 @@ Widget _buildHeader() {
                             ),
                           ),
                           child: Container(
-                            width: 62,
-                            height: 62,
+                            width: 52,
+                            height: 52,
                             decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(20),
+                              borderRadius: BorderRadius.circular(16),
                               gradient: const LinearGradient(
                                 begin: Alignment.topLeft,
                                 end: Alignment.bottomRight,
@@ -393,7 +389,7 @@ Widget _buildHeader() {
                             child: const Icon(
                               Icons.directions_car_rounded,
                               color: Colors.white,
-                              size: 28,
+                              size: 24,
                             ),
                           ),
                         ),
@@ -408,7 +404,7 @@ Widget _buildHeader() {
                               _StaggeredText(
                                 text: widget.vehicle.name ?? 'Unknown Vehicle',
                                 style: const TextStyle(
-                                  fontSize: 22,
+                                  fontSize: 19,
                                   fontWeight: FontWeight.w800,
                                   color: Colors.white,
                                 ),
@@ -443,7 +439,7 @@ Widget _buildHeader() {
                   ),
                 ),
 
-                const SizedBox(height: 18),
+                const SizedBox(height: 14),
 
                 /// STATS STRIP (UNCHANGED)
                 FadeTransition(
@@ -452,7 +448,7 @@ Widget _buildHeader() {
                     position: _statsSlide,
                     child: Container(
                       padding: const EdgeInsets.symmetric(
-                        vertical: 14,
+                        vertical: 11,
                         horizontal: 4,
                       ),
                       decoration: BoxDecoration(
@@ -1354,9 +1350,8 @@ class _PremiumTabBar extends SliverPersistentHeaderDelegate {
   final TabController ctrl;
   const _PremiumTabBar(this.ctrl);
 
-  static const _labels = ['Overview', 'Trips', 'Maintenance'];
+  static const _labels = ['Trips', 'Maintenance'];
   static const _icons = [
-    Icons.dashboard_rounded,
     Icons.route_rounded,
     Icons.build_rounded,
   ];
@@ -1429,153 +1424,6 @@ class _PremiumTabBar extends SliverPersistentHeaderDelegate {
 
   @override
   bool shouldRebuild(_) => false;
-}
-
-// ════════════════════════════════════════════════════════════════════════════
-// TAB 1 — OVERVIEW
-// ════════════════════════════════════════════════════════════════════════════
-class _OverviewTab extends StatelessWidget {
-  final Vehicles vehicle;
-  final String Function(double) fmt;
-  final BuildContext ctx;
-  const _OverviewTab({
-    required this.vehicle,
-    required this.fmt,
-    required this.ctx,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final rows = [
-      _RowData(
-        Icons.directions_car_rounded,
-        'Vehicle Name',
-        vehicle.name ?? '—',
-        _C.accent,
-      ),
-      _RowData(
-        Icons.pin_outlined,
-        'Vehicle Number',
-        vehicle.number ?? '—',
-        _C.indigo,
-      ),
-      _RowData(
-        Icons.local_gas_station_rounded,
-        'Fuel Type',
-        vehicle.FuelType ?? '—',
-        _C.orange,
-      ),
-      _RowData(
-        Icons.people_rounded,
-        'Seating',
-        '${vehicle.capacity ?? "--"} seats',
-        _C.green,
-      ),
-      _RowData(
-        Icons.speed_rounded,
-        'Mileage',
-        vehicle.mileage != null ? '${vehicle.mileage} km/l' : '—',
-        _C.violet,
-      ),
-    ];
-
-    return ListView(
-      physics: const BouncingScrollPhysics(),
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
-      children: [
-        Container(
-          decoration: BoxDecoration(
-            color: _C.surface,
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: _C.divider),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.05),
-                blurRadius: 12,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: Column(
-            children: rows.asMap().entries.map((e) {
-              final i = e.key;
-              final r = e.value;
-              return _AnimatedListItem(
-                delay: Duration(milliseconds: 60 * i),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    _dRow(r.icon, r.label, r.value, r.color),
-                    if (i < rows.length - 1)
-                      Divider(height: 1, indent: 62, color: _C.divider),
-                  ],
-                ),
-              );
-            }).toList(),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _dRow(IconData icon, String label, String value, Color color) =>
-      Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
-        child: Row(
-          children: [
-            Container(
-              width: 34,
-              height: 34,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [color.withOpacity(0.15), color.withOpacity(0.05)],
-                ),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Icon(icon, size: 15, color: color),
-            ),
-            const SizedBox(width: 12),
-            Text(
-              label,
-              style: const TextStyle(
-                fontSize: 12,
-                color: _C.text2,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-            const Spacer(),
-            Text(
-              value,
-              style: const TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w700,
-                color: _C.text1,
-              ),
-            ),
-            const SizedBox(width: 2),
-            Icon(Icons.chevron_right_rounded, size: 14, color: _C.divider),
-          ],
-        ),
-      );
-
-  Widget _label(String t) => Text(
-    t,
-    style: const TextStyle(
-      fontSize: 11,
-      fontWeight: FontWeight.w700,
-      color: _C.text2,
-      letterSpacing: 0.8,
-    ),
-  );
-}
-
-class _RowData {
-  final IconData icon;
-  final String label, value;
-  final Color color;
-  const _RowData(this.icon, this.label, this.value, this.color);
 }
 
 // ── Animated list item ─────────────────────────────────────────────────────
