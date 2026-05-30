@@ -4,24 +4,26 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:travel_agency_app/Screens/add_driver.dart';
 import 'package:travel_agency_app/Screens/add_vehicle.dart';
+import 'package:travel_agency_app/core/network/distance_service.dart';
 import 'package:travel_agency_app/core/theme/app_colors.dart';
 import 'package:travel_agency_app/domain/models/booking_info.dart';
 import 'package:travel_agency_app/domain/models/customers.dart';
+import 'package:travel_agency_app/domain/models/vehicles.dart';
 import 'package:travel_agency_app/domain/models/route_fare_suggestion.dart';
 import 'package:travel_agency_app/domain/models/tripbooking_info.dart';
 import 'package:travel_agency_app/presentation/providers/viewmodel_provider.dart';
 
 // ─── Design Tokens ─────────────────────────────────────────────────────────
 class _C {
-  static const bg = Color(0xFFF2F4F8);
+  static const bg = Color(0xFFF5F6FA);
   static const surface = Color(0xFFFFFFFF);
-  static const surfaceLight = Color(0xFFF0F3FA);
+  static const surfaceLight = Color(0xFFF3F5FB);
   static const accent = AppColors.brandPrimary;
   static const accentSoft = AppColors.brandSoft;
   static const accentDark = AppColors.brandPrimaryDark;
   static const text1 = Color(0xFF1A1D2E);
   static const text2 = Color(0xFF7B82A0);
-  static const divider = Color(0xFFE4E8F0);
+  static const divider = Color(0xFFE8ECF4);
   static const green = Color(0xFF2DB976);
   static const greenSoft = Color(0xFFE8F8F1);
   static const red = Color(0xFFE53935);
@@ -72,6 +74,12 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
   DateTime? startDt, endDt;
   int? selVehicle, selDriver, selCustomer;
   bool _saving = false;
+  bool _fetchingDistance = false;
+  String? _routeDistanceText; // e.g. "173 km"
+  String? _routeDurationText; // e.g. "3 hours 46 mins"
+  // FuelTypeId → name (e.g. 1 → "Petrol"). The available-vehicles API returns
+  // only the id, so we map it to a readable name using the fuel-type list.
+  Map<int, String> _fuelTypeNames = {};
 
   String? selVehicleLabel, selDriverLabel;
 
@@ -137,6 +145,15 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
     pickup.addListener(_onRouteChanged);
     drop.addListener(_onRouteChanged);
 
+    // Fetch road distance once the user leaves a location field (also fires
+    // when a suggestion is tapped, since that unfocuses the field).
+    pickupFocus.addListener(() {
+      if (!pickupFocus.hasFocus) _maybeFetchDistance();
+    });
+    dropFocus.addListener(() {
+      if (!dropFocus.hasFocus) _maybeFetchDistance();
+    });
+
     // Detach from the picked customer the moment the admin edits any of the
     // autofilled fields — saving will then create a new customer instead.
     // Phone gets its own handler that ALSO wipes name/address, so re-searching
@@ -155,6 +172,8 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
       final tn = ref.read(tripPageViewModelProvider.notifier);
       tn.activeList(aid);
       tn.upcomingList(aid);
+      // Load fuel-type names so the vehicle dropdown can show Petrol/Diesel/etc.
+      ref.read(addVehicleViewModelProvider.notifier).fetchVehicleFuelTypeList();
       if (widget.booking != null && startDt != null && endDt != null) {
         n.fetchAvailableVehicles(
           aid,
@@ -441,7 +460,7 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           decoration: BoxDecoration(
             color: _C.purpleSoft,
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(14),
             border: Border.all(color: _C.purple.withOpacity(0.25)),
           ),
           child: Row(
@@ -869,6 +888,172 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
     n.fetchAvailableDrivers(aid, startDt!, endDt!, null);
   }
 
+  // Calls our backend for the road distance when BOTH locations are filled,
+  // fills the Distance field, stores the pretty distance/duration text for the
+  // info chip, then recomputes fuel.
+  Future<void> _maybeFetchDistance() async {
+    final from = pickup.text.trim();
+    final to = drop.text.trim();
+    if (from.isEmpty || to.isEmpty) return;
+    if (_fetchingDistance) return;
+
+    setState(() => _fetchingDistance = true);
+    try {
+      final result = await DistanceService.getDistance(from, to);
+      if (!mounted) return;
+      if (result != null) {
+        distance.text = result.km.toStringAsFixed(1);
+        _routeDistanceText = result.distanceText;
+        _routeDurationText = result.durationText;
+        _recalcFuel();
+      } else {
+        _snack("Couldn't find road distance for this route");
+      }
+    } catch (_) {
+      if (mounted) _snack("Failed to fetch distance");
+    } finally {
+      if (mounted) setState(() => _fetchingDistance = false);
+    }
+  }
+
+  // Fuel (litres) for ONE vehicle at the current distance, or null if it can't
+  // be computed (no distance yet, or the vehicle's mileage is missing/invalid).
+  double? _fuelFor(Vehicles v) {
+    final dist = double.tryParse(distance.text.trim());
+    if (dist == null) return null;
+    final mileage = double.tryParse(v.mileage ?? '');
+    if (mileage == null || mileage <= 0) return null;
+    return dist / mileage; // litres = km / (km per litre)
+  }
+
+  // Vehicles sorted by fuel required ascending (most economical first).
+  // Vehicles whose fuel can't be computed (no distance/mileage) sink to the end.
+  List<Vehicles> _vehiclesByFuelAsc(List<Vehicles> list) {
+    final sorted = List<Vehicles>.from(list);
+    sorted.sort((a, b) {
+      final fa = _fuelFor(a);
+      final fb = _fuelFor(b);
+      if (fa == null && fb == null) return 0;
+      if (fa == null) return 1; // a goes after b
+      if (fb == null) return -1; // a goes before b
+      return fa.compareTo(fb);
+    });
+    return sorted;
+  }
+
+  // Dropdown subtitle shown under each vehicle name: its fuel type plus, once a
+  // distance is known, the estimated fuel required. Returns null only when
+  // neither piece of info is available.
+  // Resolves a vehicle's fuel-type name (API value, else id → name fallback).
+  String _fuelTypeName(Vehicles v) {
+    var type = (v.FuelType ?? '').trim();
+    if (type.isEmpty && v.FuelTypeId != null) {
+      type = _fuelTypeNames[v.FuelTypeId] ?? '';
+    }
+    return type;
+  }
+
+  // CNG is dispensed by weight (kg); everything else (petrol/diesel) by litres.
+  String _fuelUnit(String type) =>
+      type.toLowerCase().contains('cng') ? 'kg' : 'L';
+
+  // Unit for the currently selected vehicle, used by the Fuel Required field.
+  String _selectedFuelUnit() {
+    final vehicles =
+        ref.read(tripBookingViewModelProvider).availableVehicles.value ??
+            const <Vehicles>[];
+    final match = vehicles.where((e) => e.vehicleId == selVehicle);
+    if (match.isEmpty) return 'L';
+    return _fuelUnit(_fuelTypeName(match.first));
+  }
+
+  String? _fuelLabelFor(Vehicles v) {
+    final type = _fuelTypeName(v);
+    final fuel = _fuelFor(v);
+    if (type.isEmpty && fuel == null) return null;
+    if (fuel == null) {
+      // No distance yet — show only the fuel type.
+      return "Fuel  •  $type";
+    }
+    final amount = "${fuel.toStringAsFixed(2)} ${_fuelUnit(type)}";
+    return type.isEmpty
+        ? "Fuel Required  •  $amount"
+        : "Fuel Required  •  $amount  ·  $type";
+  }
+
+  // Fill the Fuel Required field from the SELECTED vehicle (this is the value
+  // saved to the DB). Each vehicle has its own estimate in the dropdown.
+  void _recalcFuel() {
+    final vehicles =
+        ref.read(tripBookingViewModelProvider).availableVehicles.value ??
+            const <Vehicles>[];
+    final match = vehicles.where((e) => e.vehicleId == selVehicle);
+    if (match.isEmpty) return; // no vehicle chosen yet
+
+    final fuel = _fuelFor(match.first);
+    if (fuel == null) return;
+    fuelReq.text = fuel.toStringAsFixed(2);
+  }
+
+  // Read-only chip showing the fetched route distance + estimated drive time.
+  Widget _routeInfoChip() {
+    if (_routeDistanceText == null) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.only(top: 12),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        decoration: BoxDecoration(
+          color: _C.accentSoft,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: _C.accent.withOpacity(0.25)),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: _C.accent.withOpacity(0.12),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Icon(
+                Icons.route_rounded,
+                size: 14,
+                color: _C.accent,
+              ),
+            ),
+            const SizedBox(width: 10),
+            const Icon(Icons.straighten_rounded, size: 13, color: _C.text2),
+            const SizedBox(width: 4),
+            Text(
+              _routeDistanceText!,
+              style: const TextStyle(
+                fontSize: 12.5,
+                fontWeight: FontWeight.w700,
+                color: _C.text1,
+              ),
+            ),
+            if (_routeDurationText != null) ...[
+              const SizedBox(width: 14),
+              const Icon(Icons.schedule_rounded, size: 13, color: _C.text2),
+              const SizedBox(width: 4),
+              Flexible(
+                child: Text(
+                  _routeDurationText!,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w700,
+                    color: _C.text1,
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
   Future<void> _goAddVehicle() async {
     await Navigator.push(
       context,
@@ -977,6 +1162,20 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
     final tripState = ref.watch(tripPageViewModelProvider);
     final isEdit = widget.booking != null;
     final pb = MediaQuery.of(context).padding.bottom;
+
+    // Build FuelTypeId → name map from the loaded fuel-type list so the vehicle
+    // dropdown can show the fuel type even when the API only returns the id.
+    final fuelTypes = ref
+            .watch(addVehicleViewModelProvider)
+            .fetchFuelTypeList
+            .asData
+            ?.value ??
+        const [];
+    _fuelTypeNames = {
+      for (final f in fuelTypes)
+        if (f.FuelTypeId != null && (f.FuelType ?? '').trim().isNotEmpty)
+          f.FuelTypeId!: f.FuelType!.trim(),
+    };
 
     // Trips we mine for route + fare memory. Active and upcoming trips count
     // alongside completed ones — fromHistory keys off `amountApprove` (the
@@ -1189,23 +1388,20 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
                                     RegExp(r'[\d.]'),
                                   ),
                                 ],
+                                suffixIcon: _fetchingDistance
+                                    ? const Padding(
+                                        padding: EdgeInsets.all(14),
+                                        child: SizedBox(
+                                          width: 16,
+                                          height: 16,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                          ),
+                                        ),
+                                      )
+                                    : null,
                               ),
-                              const SizedBox(height: 10),
-                              _inputField(
-                                label: "Fuel Required (L)",
-                                ctrl: fuelReq,
-                                icon: Icons.local_gas_station_rounded,
-                                iconColor: _C.orange,
-                                iconBg: _C.orangeSoft,
-                                keyboard: const TextInputType.numberWithOptions(
-                                  decimal: true,
-                                ),
-                                fmt: [
-                                  FilteringTextInputFormatter.allow(
-                                    RegExp(r'[\d.]'),
-                                  ),
-                                ],
-                              ),
+                              _routeInfoChip(),
                               const SizedBox(height: 10),
                               _inputField(
                                 label: "Trip Charges",
@@ -1331,13 +1527,13 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
                                       bg: _C.accentSoft,
                                       onAdd: (_) => _goAddVehicle(),
                                       addLabel: "Add Vehicle",
-                                      items: list
+                                      items: _vehiclesByFuelAsc(list)
                                           .map(
                                             (e) => _DropItem(
                                               value: e.vehicleId!,
                                               label:
                                                   "${e.name ?? ''} (${e.number ?? ''})",
-                                              subtitle: "Vehicle",
+                                              subtitle: _fuelLabelFor(e),
                                               icon:
                                                   Icons.directions_car_rounded,
                                               color: _C.accent,
@@ -1347,6 +1543,7 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
                                       onSelect: (val, label) => setState(() {
                                         selVehicle = val;
                                         selVehicleLabel = label;
+                                        _recalcFuel();
                                       }),
                                       hasError: selVehicle == null,
                                     );
@@ -1357,6 +1554,31 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
                                   error: (_, __) =>
                                       _errorTile("Failed to load vehicles"),
                                 ),
+
+                              // Fuel needed for the SELECTED vehicle (this is the
+                              // value saved to the DB). Shown once a vehicle is
+                              // chosen; auto-filled from distance ÷ mileage.
+                              if (selVehicle != null) ...[
+                                const SizedBox(height: 14),
+                                _assignLabel("Fuel Required"),
+                                const SizedBox(height: 6),
+                                _inputField(
+                                  label: "Fuel Required (${_selectedFuelUnit()})",
+                                  ctrl: fuelReq,
+                                  icon: Icons.local_gas_station_rounded,
+                                  iconColor: _C.orange,
+                                  iconBg: _C.orangeSoft,
+                                  keyboard:
+                                      const TextInputType.numberWithOptions(
+                                    decimal: true,
+                                  ),
+                                  fmt: [
+                                    FilteringTextInputFormatter.allow(
+                                      RegExp(r'[\d.]'),
+                                    ),
+                                  ],
+                                ),
+                              ],
 
                               const SizedBox(height: 14),
 
@@ -1454,71 +1676,87 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
   // ══════════════════════════════════════════════════════════════════════════
   Widget _topBar(bool isEdit) {
     return Container(
-      color: _C.surface,
-      child: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
-            child: Row(
-              children: [
-                GestureDetector(
-                  onTap: () => Navigator.pop(context),
-                  child: Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      color: _C.surfaceLight,
-                      borderRadius: BorderRadius.circular(11),
-                      border: Border.all(color: _C.divider),
-                    ),
-                    child: const Icon(
-                      Icons.arrow_back_ios_new_rounded,
-                      color: _C.text2,
-                      size: 16,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        isEdit ? "Edit Booking" : "New Booking",
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w800,
-                          color: _C.text1,
-                          letterSpacing: -0.4,
-                        ),
-                      ),
-                      Text(
-                        isEdit
-                            ? "Update trip details"
-                            : "Fill in all trip details",
-                        style: const TextStyle(fontSize: 12, color: _C.text2),
-                      ),
-                    ],
-                  ),
-                ),
-                // Container(
-                //   width: 40, height: 40,
-                //   decoration: BoxDecoration(
-                //     gradient: const LinearGradient(
-                //       colors: [AppColors.brandPrimaryLight, _C.accent],
-                //       begin: Alignment.topLeft, end: Alignment.bottomRight),
-                //     borderRadius: BorderRadius.circular(11),
-                //     boxShadow: [BoxShadow(color: _C.accent.withOpacity(0.3),
-                //         blurRadius: 8, offset: const Offset(0, 3))],
-                //   ),
-                //   child: Icon(isEdit ? Icons.edit_road_rounded : Icons.add_road_rounded,
-                //       color: Colors.white, size: 18),
-                // ),
-              ],
-            ),
+      decoration: BoxDecoration(
+        color: _C.surface,
+        boxShadow: [
+          BoxShadow(
+            color: _C.text1.withOpacity(0.04),
+            blurRadius: 14,
+            offset: const Offset(0, 4),
           ),
-          const Divider(height: 1, color: _C.divider),
         ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(14, 12, 16, 14),
+        child: Row(
+          children: [
+            GestureDetector(
+              onTap: () => Navigator.pop(context),
+              child: Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                  color: _C.surfaceLight,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: _C.divider),
+                ),
+                child: const Icon(
+                  Icons.arrow_back_ios_new_rounded,
+                  color: _C.text1,
+                  size: 16,
+                ),
+              ),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    isEdit ? "Edit Booking" : "New Booking",
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w800,
+                      color: _C.text1,
+                      letterSpacing: -0.5,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    isEdit
+                        ? "Update trip details"
+                        : "Fill in all trip details",
+                    style: const TextStyle(fontSize: 12.5, color: _C.text2),
+                  ),
+                ],
+              ),
+            ),
+            Container(
+              width: 42,
+              height: 42,
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [AppColors.brandPrimaryLight, _C.accent],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(14),
+                boxShadow: [
+                  BoxShadow(
+                    color: _C.accent.withOpacity(0.3),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Icon(
+                isEdit ? Icons.edit_road_rounded : Icons.add_road_rounded,
+                color: Colors.white,
+                size: 20,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -1537,13 +1775,13 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
     return Container(
       decoration: BoxDecoration(
         color: _C.surface,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(20),
         border: Border.all(color: _C.divider),
         boxShadow: [
           BoxShadow(
-            color: _C.accent.withOpacity(0.06),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
+            color: _C.text1.withOpacity(0.04),
+            blurRadius: 18,
+            offset: const Offset(0, 8),
           ),
         ],
       ),
@@ -1551,54 +1789,47 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(14, 13, 14, 12),
+            padding: const EdgeInsets.fromLTRB(16, 15, 14, 14),
             child: Row(
               children: [
                 Container(
-                  width: 26,
-                  height: 26,
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [iconColor.withOpacity(0.85), iconColor],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    borderRadius: BorderRadius.circular(8),
-                    boxShadow: [
-                      BoxShadow(
-                        color: iconColor.withOpacity(0.3),
-                        blurRadius: 6,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: Center(
-                    child: Text(
-                      badge,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w900,
-                        fontSize: 10,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Container(
-                  padding: const EdgeInsets.all(6),
+                  width: 38,
+                  height: 38,
                   decoration: BoxDecoration(
                     color: iconBg,
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(12),
                   ),
-                  child: Icon(icon, size: 14, color: iconColor),
+                  child: Icon(icon, size: 18, color: iconColor),
                 ),
-                const SizedBox(width: 8),
-                Text(
-                  label,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                    color: _C.text1,
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    label,
+                    style: const TextStyle(
+                      fontSize: 15.5,
+                      fontWeight: FontWeight.w800,
+                      color: _C.text1,
+                      letterSpacing: -0.2,
+                    ),
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 5,
+                  ),
+                  decoration: BoxDecoration(
+                    color: iconColor.withOpacity(0.10),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    "STEP $badge",
+                    style: TextStyle(
+                      color: iconColor,
+                      fontWeight: FontWeight.w800,
+                      fontSize: 9.5,
+                      letterSpacing: 0.6,
+                    ),
                   ),
                 ),
               ],
@@ -1606,7 +1837,7 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
           ),
           Container(height: 1, color: _C.divider),
           Padding(
-            padding: const EdgeInsets.fromLTRB(14, 14, 14, 16),
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 18),
             child: child,
           ),
         ],
@@ -1769,38 +2000,38 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
           fontSize: 14,
         ),
         prefixIcon: Padding(
-          padding: const EdgeInsets.all(10),
+          padding: const EdgeInsets.all(9),
           child: Container(
-            width: 30,
-            height: 30,
+            width: 34,
+            height: 34,
             decoration: BoxDecoration(
               color: iconBg,
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(10),
             ),
-            child: Icon(icon, size: 14, color: iconColor),
+            child: Icon(icon, size: 15, color: iconColor),
           ),
         ),
         suffixIcon: suffixIcon,
         filled: true,
         fillColor: _C.surfaceLight,
         contentPadding: const EdgeInsets.symmetric(
-          vertical: 14,
+          vertical: 16,
           horizontal: 14,
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(14),
           borderSide: const BorderSide(color: _C.divider),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(14),
           borderSide: const BorderSide(color: _C.accent, width: 1.5),
         ),
         errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(14),
           borderSide: const BorderSide(color: _C.red),
         ),
         focusedErrorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(14),
           borderSide: const BorderSide(color: _C.red, width: 1.5),
         ),
       ),
@@ -1827,7 +2058,7 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
         padding: const EdgeInsets.all(13),
         decoration: BoxDecoration(
           color: has ? color.withOpacity(0.05) : _C.surfaceLight,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(14),
           border: Border.all(
             color: has ? color.withOpacity(0.4) : _C.divider,
             width: has ? 1.5 : 1.0,
@@ -1908,7 +2139,7 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
         color: inv ? _C.redSoft : _C.greenSoft,
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(12),
         border: Border.all(color: (inv ? _C.red : _C.green).withOpacity(0.25)),
       ),
       child: Row(
@@ -1968,7 +2199,7 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
       width: double.infinity,
       decoration: BoxDecoration(
         color: bg.withOpacity(0.6),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(14),
         border: Border.all(color: color.withOpacity(0.25)),
       ),
       child: Column(
@@ -2104,7 +2335,7 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
               color: hasVal ? color.withOpacity(0.05) : _C.surfaceLight,
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(14),
               border: Border.all(
                 color: hasError && !hasVal
                     ? _C.red.withOpacity(0.5)
@@ -2250,7 +2481,7 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
     padding: const EdgeInsets.all(12),
     decoration: BoxDecoration(
       color: _C.surfaceLight,
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(14),
       border: Border.all(color: _C.divider),
     ),
     child: Row(
@@ -2280,7 +2511,7 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
     padding: const EdgeInsets.all(13),
     decoration: BoxDecoration(
       color: _C.surfaceLight,
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(14),
       border: Border.all(color: _C.divider),
     ),
     child: Row(
@@ -2305,7 +2536,7 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
     padding: const EdgeInsets.all(12),
     decoration: BoxDecoration(
       color: _C.redSoft,
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(14),
       border: Border.all(color: _C.red.withOpacity(0.2)),
     ),
     child: Row(
@@ -2373,13 +2604,12 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
           //         border: Border.all(color: _C.divider)),
           //     child: const Icon(Icons.close_rounded, color: _C.text2, size: 20)),
           // ),
-          const SizedBox(width: 12),
           Expanded(
             child: GestureDetector(
               onTap: _saving ? null : _save,
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
-                height: 48,
+                height: 54,
                 decoration: BoxDecoration(
                   gradient: _saving
                       ? LinearGradient(
@@ -2390,14 +2620,14 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
                         ),
-                  borderRadius: BorderRadius.circular(13),
+                  borderRadius: BorderRadius.circular(16),
                   boxShadow: _saving
                       ? []
                       : [
                           BoxShadow(
                             color: _C.accent.withOpacity(0.35),
-                            blurRadius: 12,
-                            offset: const Offset(0, 4),
+                            blurRadius: 16,
+                            offset: const Offset(0, 6),
                           ),
                         ],
                 ),
@@ -2406,8 +2636,8 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
                   children: [
                     if (_saving)
                       const SizedBox(
-                        width: 17,
-                        height: 17,
+                        width: 18,
+                        height: 18,
                         child: CircularProgressIndicator(
                           strokeWidth: 2.5,
                           color: Colors.white,
@@ -2419,9 +2649,9 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
                             ? Icons.update_rounded
                             : Icons.check_circle_rounded,
                         color: Colors.white,
-                        size: 19,
+                        size: 20,
                       ),
-                    const SizedBox(width: 9),
+                    const SizedBox(width: 10),
                     Text(
                       _saving
                           ? "Saving..."
@@ -2430,8 +2660,9 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
                           : "Save Booking",
                       style: const TextStyle(
                         color: Colors.white,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 14.5,
+                        fontWeight: FontWeight.w800,
+                        fontSize: 15,
+                        letterSpacing: 0.2,
                       ),
                     ),
                   ],
@@ -2829,22 +3060,37 @@ class _DropSheetState<T> extends State<_DropSheet<T>> {
                                       Row(
                                         children: [
                                           Icon(
-                                            item.subtitle!.startsWith('0') ||
-                                                    item.subtitle!.startsWith(
-                                                      '+',
-                                                    )
-                                                ? Icons.phone_rounded
-                                                : Icons.badge_rounded,
+                                            item.subtitle!.startsWith('Fuel')
+                                                ? Icons.local_gas_station_rounded
+                                                : (item.subtitle!.startsWith(
+                                                            '0',
+                                                          ) ||
+                                                          item.subtitle!
+                                                              .startsWith('+'))
+                                                    ? Icons.phone_rounded
+                                                    : Icons.badge_rounded,
                                             size: 11,
-                                            color: _C.text2,
+                                            color:
+                                                item.subtitle!.startsWith('Fuel')
+                                                    ? _C.orange
+                                                    : _C.text2,
                                           ),
                                           const SizedBox(width: 4),
                                           Text(
                                             item.subtitle!,
-                                            style: const TextStyle(
+                                            style: TextStyle(
                                               fontSize: 11.5,
-                                              color: _C.text2,
-                                              fontWeight: FontWeight.w500,
+                                              color: item.subtitle!.startsWith(
+                                                'Fuel',
+                                              )
+                                                  ? _C.orange
+                                                  : _C.text2,
+                                              fontWeight:
+                                                  item.subtitle!.startsWith(
+                                                'Fuel',
+                                              )
+                                                      ? FontWeight.w800
+                                                      : FontWeight.w500,
                                             ),
                                           ),
                                         ],
