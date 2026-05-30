@@ -848,7 +848,7 @@ class _TravelReportPageState extends ConsumerState<TravelReportPage>
               }
               if (asyncVal.hasError) {
                 ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                  content: Text('Cannot generate PDF: ${asyncVal.error}'),
+                  content: Text(friendlyErrorMessage(asyncVal.error ?? 'Cannot generate PDF')),
                   backgroundColor: _red,
                   behavior: SnackBarBehavior.floating,
                 ));

@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:travel_agency_app/Screens/trip_card.dart';
 import 'package:travel_agency_app/core/theme/app_colors.dart';
+import 'package:travel_agency_app/core/widgets/error_view.dart';
 import 'package:travel_agency_app/core/widgets/skeleton.dart';
 import 'package:travel_agency_app/domain/models/booking_info.dart';
 import 'package:travel_agency_app/domain/models/drivers.dart';
@@ -309,7 +310,7 @@ Widget _buildStats(AsyncValue<List<BookingInfo>> tripState) {
           ],
         ),
       ),
-      error: (e, _) => Center(child: Text('$e')),
+      error: (e, _) => NetworkErrorView(error: e),
       data: (trips) {
         if (trips.isEmpty) {
           return const Center(

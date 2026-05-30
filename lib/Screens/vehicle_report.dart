@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:travel_agency_app/core/network/error_messages.dart';
 import 'package:travel_agency_app/core/theme/app_colors.dart';
 import 'package:travel_agency_app/domain/models/booking_info.dart';
 import 'package:travel_agency_app/domain/models/services.dart';
@@ -285,8 +286,10 @@ class _VehicleReportPageState extends ConsumerState<VehicleReportPage> {
             Expanded(
               child: vehicleState.when(
                 loading: () => _loadingState(),
-                error: (e, _) =>
-                    _errorState('Failed to load vehicles\n$e'),
+                error: (e, _) => _errorState(
+                  friendlyErrorMessage(e),
+                  offline: isNetworkError(e),
+                ),
                 data: (vehicles) {
                   if (vehicles.isEmpty) {
                     return _emptyState(
@@ -675,7 +678,7 @@ class _VehicleReportPageState extends ConsumerState<VehicleReportPage> {
     );
   }
 
-  Widget _errorState(String msg) => Center(
+  Widget _errorState(String msg, {bool offline = false}) => Center(
         child: Padding(
           padding: const EdgeInsets.all(40),
           child: Column(
@@ -683,20 +686,20 @@ class _VehicleReportPageState extends ConsumerState<VehicleReportPage> {
             children: [
               Container(
                 padding: const EdgeInsets.all(18),
-                decoration: const BoxDecoration(
-                  color: _C.redSoft,
+                decoration: BoxDecoration(
+                  color: offline ? Colors.grey.shade100 : _C.redSoft,
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(
-                  Icons.cloud_off_rounded,
-                  color: _C.red,
+                child: Icon(
+                  offline ? Icons.wifi_off_rounded : Icons.cloud_off_rounded,
+                  color: offline ? Colors.grey.shade500 : _C.red,
                   size: 30,
                 ),
               ),
               const SizedBox(height: 14),
-              const Text(
-                'Something went wrong',
-                style: TextStyle(
+              Text(
+                offline ? 'You appear to be offline' : 'Something went wrong',
+                style: const TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w800,
                   color: _C.text1,

@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:travel_agency_app/Screens/add_customer.dart';
 import 'package:travel_agency_app/Screens/trip_card.dart';
+import 'package:travel_agency_app/core/network/error_messages.dart';
 import 'package:travel_agency_app/core/theme/app_colors.dart';
 import 'package:travel_agency_app/core/widgets/skeleton.dart';
 import 'package:travel_agency_app/domain/models/booking_info.dart';
@@ -637,6 +638,7 @@ Widget _compactStat(
   }
 
   Widget _errorState(Object e) {
+    final offline = isNetworkError(e);
     return Center(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 36),
@@ -646,16 +648,19 @@ Widget _compactStat(
             Container(
               padding: const EdgeInsets.all(18),
               decoration: BoxDecoration(
-                color: Colors.red.shade50,
+                color: offline ? Colors.grey.shade100 : Colors.red.shade50,
                 shape: BoxShape.circle,
               ),
-              child: Icon(Icons.cloud_off_rounded,
-                  color: Colors.red.shade300, size: 28),
+              child: Icon(
+                offline ? Icons.wifi_off_rounded : Icons.cloud_off_rounded,
+                color: offline ? Colors.grey.shade500 : Colors.red.shade300,
+                size: 28,
+              ),
             ),
             const SizedBox(height: 14),
-            const Text(
-              "Couldn't load trips",
-              style: TextStyle(
+            Text(
+              offline ? "You appear to be offline" : "Couldn't load trips",
+              style: const TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w700,
                 color: _textPrimary,
@@ -663,7 +668,7 @@ Widget _compactStat(
             ),
             const SizedBox(height: 6),
             Text(
-              '$e',
+              friendlyErrorMessage(e),
               textAlign: TextAlign.center,
               style: const TextStyle(fontSize: 12, color: _textSecondary),
             ),

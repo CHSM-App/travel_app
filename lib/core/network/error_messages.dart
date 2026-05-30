@@ -1,5 +1,32 @@
 import 'package:dio/dio.dart';
 
+/// Shown whenever the failure is a transport/network problem. Matches the
+/// offline wording used on the Trips page so the whole app reads consistently.
+const String kOfflineMessage =
+    'You appear to be offline. Check your connection and try again.';
+
+/// True when [e] is a transport-level failure (no connection, timeout, or a
+/// device socket error wrapped as `unknown`). Use this in full-screen error
+/// states that want to show a wifi-off icon + offline copy, like the Trips page.
+bool isNetworkError(Object e) {
+  if (e is! DioException) return false;
+  switch (e.type) {
+    case DioExceptionType.connectionError:
+    case DioExceptionType.connectionTimeout:
+    case DioExceptionType.sendTimeout:
+    case DioExceptionType.receiveTimeout:
+      return true;
+    case DioExceptionType.unknown:
+      final lower = (e.message ?? '').toLowerCase();
+      return lower.contains('socket') ||
+          lower.contains('failed host lookup') ||
+          lower.contains('connection') ||
+          lower.contains('network');
+    default:
+      return false;
+  }
+}
+
 /// Thrown by viewmodels when the server returned HTTP 200 but the body
 /// signalled a domain-level failure (e.g. a stored procedure rejecting the
 /// request with `success = 0`). Carries the message verbatim so the UI can
@@ -30,7 +57,7 @@ String friendlyErrorMessage(Object e) {
       case DioExceptionType.connectionTimeout:
       case DioExceptionType.sendTimeout:
       case DioExceptionType.receiveTimeout:
-        return 'No internet connection';
+        return kOfflineMessage;
       case DioExceptionType.badCertificate:
         return 'Secure connection failed';
       case DioExceptionType.badResponse:
@@ -53,7 +80,7 @@ String friendlyErrorMessage(Object e) {
             lower.contains('failed host lookup') ||
             lower.contains('connection') ||
             lower.contains('network')) {
-          return 'No internet connection';
+          return kOfflineMessage;
         }
         // Anything that looks like a real, short, human-readable reason
         // gets surfaced verbatim so the user sees *why* — instead of the

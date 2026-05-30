@@ -5,6 +5,7 @@ import 'package:travel_agency_app/Screens/trip_card.dart';
 import 'package:travel_agency_app/Screens/add_vehicle.dart';
 import 'package:travel_agency_app/core/network/error_messages.dart';
 import 'package:travel_agency_app/core/theme/app_colors.dart';
+import 'package:travel_agency_app/core/widgets/error_view.dart';
 import 'package:travel_agency_app/core/widgets/skeleton.dart';
 import 'package:travel_agency_app/domain/models/services.dart';
 import 'package:travel_agency_app/domain/models/vehicles.dart';
@@ -207,7 +208,7 @@ Future<void> _toggleVehicleStatus() async {
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text("Failed to update status: $e"),
+          content: Text(friendlyErrorMessage(e)),
           backgroundColor: Colors.red,
         ),
       );
@@ -886,9 +887,7 @@ Widget _buildHeader() {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
                                         content: Text(
-                                          isEdit
-                                              ? "Failed to update service: $e"
-                                              : "Failed to add service: $e",
+                                          friendlyErrorMessage(e),
                                         ),
                                         backgroundColor: Colors.red,
                                       ),
@@ -1783,7 +1782,7 @@ class _MaintTabState extends ConsumerState<_MaintTab>
               if (mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    content: Text("Failed to delete service: $e"),
+                    content: Text(friendlyErrorMessage(e)),
                     backgroundColor: Colors.red,
                   ),
                 );
@@ -1922,7 +1921,7 @@ class _MaintTabState extends ConsumerState<_MaintTab>
                 SkeletonListItem(hasTrailingLine: false),
               ],
             ),
-            error: (e, _) => Center(child: Text("Error: $e")),
+            error: (e, _) => NetworkErrorView(error: e),
             data: (services) {
               final filteredServices = services.where((s) {
                 if (s.serviceDate == null) return false;
