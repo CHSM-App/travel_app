@@ -7,6 +7,7 @@ import 'package:travel_agency_app/core/network/error_messages.dart';
 import 'package:travel_agency_app/core/theme/app_colors.dart';
 import 'package:travel_agency_app/core/widgets/error_view.dart';
 import 'package:travel_agency_app/core/widgets/skeleton.dart';
+import 'package:travel_agency_app/domain/models/booking_info.dart';
 import 'package:travel_agency_app/domain/models/services.dart';
 import 'package:travel_agency_app/domain/models/vehicles.dart';
 import 'package:travel_agency_app/presentation/providers/viewmodel_provider.dart';
@@ -1477,6 +1478,40 @@ class _AnimatedListItemState extends State<_AnimatedListItem>
 // ════════════════════════════════════════════════════════════════════════════
 // TAB 2 — TRIPS
 // ════════════════════════════════════════════════════════════════════════════
+
+/// Client-side status filter for the per-vehicle trip list. All trips for the
+/// vehicle are fetched once, so filtering happens in memory — mirroring the
+/// status filter in [TripPage] but keyed on [BookingInfo.status]:
+/// 1 = Active, 2 = Unpaid, 3 = Upcoming, 4 = Complete, 5 = Cancelled.
+enum _VehicleTripFilter {
+  all('All', Icons.list_alt_rounded),
+  active('Active', Icons.directions_car_rounded),
+  upcoming('Upcoming', Icons.schedule_rounded),
+  completed('Completed', Icons.task_alt_rounded),
+  cancelled('Cancelled', Icons.cancel_rounded);
+
+  const _VehicleTripFilter(this.label, this.icon);
+
+  final String label;
+  final IconData icon;
+
+  bool matches(BookingInfo t) {
+    switch (this) {
+      case _VehicleTripFilter.all:
+        return true;
+      case _VehicleTripFilter.active:
+        return t.status == 1;
+      case _VehicleTripFilter.upcoming:
+        return t.status == 3;
+      case _VehicleTripFilter.completed:
+        // Completed covers both the unpaid (2) and fully paid/complete (4) buckets.
+        return t.status == 2 || t.status == 4;
+      case _VehicleTripFilter.cancelled:
+        return t.status == 5;
+    }
+  }
+}
+
 class _TripsTab extends ConsumerStatefulWidget {
   final Vehicles vehicle;
   final String Function(double) fmt;
@@ -1487,6 +1522,8 @@ class _TripsTab extends ConsumerStatefulWidget {
 }
 
 class _TripsTabState extends ConsumerState<_TripsTab> {
+  _VehicleTripFilter _filter = _VehicleTripFilter.all;
+
   @override
   void initState() {
     super.initState();
@@ -1575,6 +1612,12 @@ class _TripsTabState extends ConsumerState<_TripsTab> {
           (s, t) => s + (t.amountApprove ?? 0),
         );
 
+        // Apply the in-memory status filter to the already-fetched list. The
+        // stats strip above stays an all-trips overview; only the list below
+        // reacts to the selected filter.
+        final filtered =
+            trips.where((t) => _filter.matches(t)).toList();
+
         return Column(
           children: [
             _AnimatedListItem(
@@ -1607,20 +1650,26 @@ class _TripsTabState extends ConsumerState<_TripsTab> {
                 ),
               ),
             ),
+
+            // ── Status filter chips ──────────────────────────────────────
+            _buildFilterChips(trips),
+
             Expanded(
-              child: ListView.builder(
-                physics: const BouncingScrollPhysics(),
-                padding: const EdgeInsets.fromLTRB(0, 2, 0, 100),
-                itemCount: trips.length,
-                itemBuilder: (_, i) => _AnimatedListItem(
-                  delay: Duration(milliseconds: 50 + 40 * i),
-                  child: TripCard(
-                    key: ValueKey(trips[i].tripId),
-                    bookinginfo: trips[i],
-                    status: trips[i].status?? 0,
-                  ),
-                ),
-              ),
+              child: filtered.isEmpty
+                  ? _filteredEmptyState()
+                  : ListView.builder(
+                      physics: const BouncingScrollPhysics(),
+                      padding: const EdgeInsets.fromLTRB(0, 2, 0, 100),
+                      itemCount: filtered.length,
+                      itemBuilder: (_, i) => _AnimatedListItem(
+                        delay: Duration(milliseconds: 50 + 40 * i),
+                        child: TripCard(
+                          key: ValueKey(filtered[i].tripId),
+                          bookinginfo: filtered[i],
+                          status: filtered[i].status ?? 0,
+                        ),
+                      ),
+                    ),
             ),
           ],
         );
@@ -1669,6 +1718,103 @@ class _TripsTabState extends ConsumerState<_TripsTab> {
     margin: const EdgeInsets.symmetric(horizontal: 2),
     color: _C.divider,
   );
+
+  // ── Status filter chips ────────────────────────────────────────────────
+  Widget _buildFilterChips(List<BookingInfo> trips) {
+    return SizedBox(
+      height: 38,
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        physics: const BouncingScrollPhysics(),
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+        itemCount: _VehicleTripFilter.values.length,
+        itemBuilder: (context, index) {
+          final filter = _VehicleTripFilter.values[index];
+          final isSelected = filter == _filter;
+          final count = filter == _VehicleTripFilter.all
+              ? trips.length
+              : trips.where(filter.matches).length;
+
+          return GestureDetector(
+            onTap: () {
+              if (filter != _filter) setState(() => _filter = filter);
+            },
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 250),
+              curve: Curves.easeOutCubic,
+              margin: const EdgeInsets.only(right: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 14),
+              decoration: BoxDecoration(
+                color: isSelected ? _C.accent : _C.surface,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: isSelected ? _C.accent : _C.divider,
+                ),
+                boxShadow: isSelected
+                    ? [
+                        BoxShadow(
+                          color: _C.accent.withOpacity(0.30),
+                          blurRadius: 8,
+                          offset: const Offset(0, 3),
+                        ),
+                      ]
+                    : [],
+              ),
+              alignment: Alignment.center,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    filter.icon,
+                    size: 14,
+                    color: isSelected ? Colors.white : _C.text2,
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    '${filter.label} ($count)',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: isSelected ? Colors.white : _C.text1,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  // Shown when the vehicle has trips but none match the active filter.
+  Widget _filteredEmptyState() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(_filter.icon, size: 56, color: _C.accent.withOpacity(0.5)),
+            const SizedBox(height: 14),
+            Text(
+              'No ${_filter.label.toLowerCase()} trips',
+              style: const TextStyle(
+                fontSize: 17,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 6),
+            const Text(
+              'Try a different filter.',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 13, color: Colors.grey),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 // ════════════════════════════════════════════════════════════════════════════

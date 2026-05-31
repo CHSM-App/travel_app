@@ -84,6 +84,14 @@ class _CustomerListPageState extends ConsumerState<CustomerListPage>
     if (result != null && mounted) _refresh();
   }
 
+  // Compact rupee label: ₹1.2L / ₹45.0K / ₹850. Keeps long balances from
+  // blowing out the card width.
+  String _money(double v) {
+    if (v >= 100000) return '₹${(v / 100000).toStringAsFixed(1)}L';
+    if (v >= 1000) return '₹${(v / 1000).toStringAsFixed(1)}K';
+    return '₹${v.toStringAsFixed(0)}';
+  }
+
   String _initials(String? name) {
     if (name == null || name.trim().isEmpty) return '?';
     final parts = name.trim().split(' ');
@@ -221,29 +229,42 @@ class _CustomerListPageState extends ConsumerState<CustomerListPage>
                                 overflow: TextOverflow.ellipsis,
                               ),
                               const SizedBox(height: 5),
-                              Row(
+                              // Chips flow left-to-right and wrap onto the next
+                              // line when they don't fit, so the pending badge
+                              // sits beside the address but never overflows on
+                              // narrow screens / long addresses.
+                              Wrap(
+                                spacing: 6,
+                                runSpacing: 6,
+                                crossAxisAlignment: WrapCrossAlignment.center,
                                 children: [
                                   if (customer.phone != null &&
-                                      customer.phone!.isNotEmpty) ...[
+                                      customer.phone!.isNotEmpty)
                                     _InfoChip(
                                       icon: Icons.phone_rounded,
                                       label: customer.phone!,
                                       iconColor: _C.indigo,
                                       bgColor: _C.indigoLight,
                                     ),
-                                    const SizedBox(width: 6),
-                                  ],
                                   if (customer.address != null &&
                                       customer.address!.isNotEmpty)
-                                    Flexible(
-                                      child: _InfoChip(
-                                        icon: Icons.location_on_rounded,
-                                        label: customer.address!,
-                                        iconColor: _C.slate500,
-                                        bgColor: _C.slate100,
-                                        maxWidth: double.infinity,
-                                        ellipsis: true,
-                                      ),
+                                    _InfoChip(
+                                      icon: Icons.location_on_rounded,
+                                      label: customer.address!,
+                                      iconColor: _C.slate500,
+                                      bgColor: _C.slate100,
+                                      maxWidth: 200,
+                                      ellipsis: true,
+                                    ),
+                                  // Outstanding balance — only when the customer
+                                  // owes money.
+                                  if ((customer.pendingAmount ?? 0) > 0)
+                                    _InfoChip(
+                                      icon: Icons.account_balance_wallet_rounded,
+                                      label:
+                                          'Pending ${_money(customer.pendingAmount!)}',
+                                      iconColor: _C.error,
+                                      bgColor: _C.errorLight,
                                     ),
                                 ],
                               ),

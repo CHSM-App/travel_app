@@ -27,6 +27,11 @@ class Customer {
   @JsonKey(name: 'agency_id')
   String? agencyId;
 
+  // Outstanding balance across this customer's non-cancelled trips, supplied by
+  // the CustomerList query. Null when the backend doesn't return it.
+  @JsonKey(name: 'pending_amount')
+  double? pendingAmount;
+
   Customer({
     this.customerId,
     this.name,
@@ -36,6 +41,7 @@ class Customer {
     this.licenceExpiry,
     this.documents,
     this.agencyId,
+    this.pendingAmount,
   });
 
   factory Customer.fromJson(Map<String, dynamic> json) => Customer(
@@ -58,6 +64,8 @@ class Customer {
           'IdProof',
         ]),
         agencyId: _readString(json, const ['agency_id', 'agencyId']),
+        pendingAmount:
+            _readDouble(json, const ['pending_amount', 'pendingAmount']),
       );
 
   Map<String, dynamic> toJson() => {
@@ -76,6 +84,7 @@ class Customer {
         'documents': documents,
         'agency_id': agencyId,
         'agencyId': agencyId,
+        'pending_amount': pendingAmount,
       };
 
   static int? _readInt(Map<String, dynamic> json, List<String> keys) {
@@ -85,6 +94,17 @@ class Customer {
       if (value is int) return value;
       if (value is num) return value.toInt();
       final parsed = int.tryParse(value.toString());
+      if (parsed != null) return parsed;
+    }
+    return null;
+  }
+
+  static double? _readDouble(Map<String, dynamic> json, List<String> keys) {
+    for (final key in keys) {
+      final value = json[key];
+      if (value == null) continue;
+      if (value is num) return value.toDouble();
+      final parsed = double.tryParse(value.toString());
       if (parsed != null) return parsed;
     }
     return null;

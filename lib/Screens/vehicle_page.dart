@@ -688,24 +688,52 @@ class _VehiclePageState extends ConsumerState<VehiclePage>
                       ),
                       overflow: TextOverflow.ellipsis,
                     ),
-                    if (d.phone != null && d.phone!.isNotEmpty) ...[
+                    if ((d.phone != null && d.phone!.isNotEmpty) ||
+                        (d.address != null && d.address!.isNotEmpty)) ...[
                       const SizedBox(height: 3),
                       Row(
                         children: [
-                          const Icon(
-                            Icons.phone_rounded,
-                            size: 11,
-                            color: _C.accent,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            d.phone!,
-                            style: const TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600,
+                          if (d.phone != null && d.phone!.isNotEmpty) ...[
+                            const Icon(
+                              Icons.phone_rounded,
+                              size: 11,
+                              color: _C.accent,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              d.phone!,
+                              style: const TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                color: _C.text2,
+                              ),
+                            ),
+                          ],
+                          if (d.phone != null &&
+                              d.phone!.isNotEmpty &&
+                              d.address != null &&
+                              d.address!.isNotEmpty)
+                            const SizedBox(width: 10),
+                          if (d.address != null && d.address!.isNotEmpty) ...[
+                            const Icon(
+                              Icons.location_on_rounded,
+                              size: 11,
                               color: _C.text2,
                             ),
-                          ),
+                            const SizedBox(width: 4),
+                            Expanded(
+                              child: Text(
+                                d.address!,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w500,
+                                  color: _C.text2,
+                                ),
+                              ),
+                            ),
+                          ],
                         ],
                       ),
                     ],
