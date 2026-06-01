@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/gestures.dart' show PointerScrollEvent;
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -730,15 +731,18 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
                             ),
                           ),
                           const Spacer(),
-                          _timeUnit(
-                            value: displayHour.toString(),
-                            onUp: () => setSt(() {
-                              selectedHour = (selectedHour + 1) % 24;
-                            }),
-                            onDown: () => setSt(() {
-                              selectedHour = (selectedHour - 1 + 24) % 24;
-                            }),
+                          _ScrollTypeTimeField(
+                            value: displayHour,
+                            min: 1,
+                            max: 12,
                             accent: accent,
+                            onChanged: (h) => setSt(() {
+                              // Preserve the current AM/PM while mapping the
+                              // 1–12 display value back to 24-hour.
+                              final pm = selectedHour >= 12;
+                              final base = h % 12; // 12 → 0
+                              selectedHour = pm ? base + 12 : base;
+                            }),
                           ),
                           const Padding(
                             padding: EdgeInsets.symmetric(horizontal: 4),
@@ -751,18 +755,14 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
                               ),
                             ),
                           ),
-                          _timeUnit(
-                            value: selectedMinute
-                                .toString()
-                                .padLeft(2, '0'),
-                            onUp: () => setSt(() {
-                              selectedMinute = (selectedMinute + 1) % 60;
-                            }),
-                            onDown: () => setSt(() {
-                              selectedMinute =
-                                  (selectedMinute - 1 + 60) % 60;
-                            }),
+                          _ScrollTypeTimeField(
+                            value: selectedMinute,
+                            min: 0,
+                            max: 59,
+                            pad2: true,
                             accent: accent,
+                            onChanged: (m) =>
+                                setSt(() => selectedMinute = m),
                           ),
                           const SizedBox(width: 10),
                           GestureDetector(
@@ -880,54 +880,6 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
     );
   }
 
-  Widget _timeUnit({
-    required String value,
-    required VoidCallback onUp,
-    required VoidCallback onDown,
-    required Color accent,
-  }) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        InkWell(
-          onTap: onUp,
-          borderRadius: BorderRadius.circular(6),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-            child: Icon(
-              Icons.keyboard_arrow_up_rounded,
-              size: 18,
-              color: accent,
-            ),
-          ),
-        ),
-        Container(
-          width: 36,
-          alignment: Alignment.center,
-          child: Text(
-            value,
-            style: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w800,
-              color: _C.text1,
-            ),
-          ),
-        ),
-        InkWell(
-          onTap: onDown,
-          borderRadius: BorderRadius.circular(6),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-            child: Icon(
-              Icons.keyboard_arrow_down_rounded,
-              size: 18,
-              color: accent,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
 
   void _fetch() {
     final aid = ref.read(loginViewModelProvider).agencyId ?? '';
@@ -3390,4 +3342,162 @@ class _FadeSlide extends StatelessWidget {
       ),
     ),
   );
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+//  SCROLLABLE + TYPABLE TIME FIELD
+//  A single hour/minute unit the operator can: (a) type into directly,
+//  (b) drag up/down to change, (c) scroll with a mouse wheel, or (d) nudge with
+//  the up/down chevrons. Values wrap within [min, max].
+// ════════════════════════════════════════════════════════════════════════════
+class _ScrollTypeTimeField extends StatefulWidget {
+  final int value;
+  final int min;
+  final int max;
+  final bool pad2;
+  final Color accent;
+  final ValueChanged<int> onChanged;
+
+  const _ScrollTypeTimeField({
+    required this.value,
+    required this.min,
+    required this.max,
+    required this.accent,
+    required this.onChanged,
+    this.pad2 = false,
+  });
+
+  @override
+  State<_ScrollTypeTimeField> createState() => _ScrollTypeTimeFieldState();
+}
+
+class _ScrollTypeTimeFieldState extends State<_ScrollTypeTimeField> {
+  late final TextEditingController _c;
+  final _focus = FocusNode();
+  double _dragAcc = 0;
+
+  String _fmt(int v) =>
+      widget.pad2 ? v.toString().padLeft(2, '0') : v.toString();
+
+  @override
+  void initState() {
+    super.initState();
+    _c = TextEditingController(text: _fmt(widget.value));
+    _focus.addListener(() {
+      if (!_focus.hasFocus) _commit();
+    });
+  }
+
+  @override
+  void didUpdateWidget(covariant _ScrollTypeTimeField old) {
+    super.didUpdateWidget(old);
+    // Reflect external changes (scroll/chevrons/other unit) unless the user is
+    // mid-typing in this field.
+    if (!_focus.hasFocus && widget.value != old.value) {
+      _c.text = _fmt(widget.value);
+    }
+  }
+
+  @override
+  void dispose() {
+    _c.dispose();
+    _focus.dispose();
+    super.dispose();
+  }
+
+  void _step(int delta) {
+    final range = widget.max - widget.min + 1;
+    final next =
+        ((widget.value + delta - widget.min) % range + range) % range +
+            widget.min;
+    if (!_focus.hasFocus) _c.text = _fmt(next);
+    widget.onChanged(next);
+  }
+
+  void _commit() {
+    final parsed = int.tryParse(_c.text.trim());
+    final clamped = (parsed ?? widget.value).clamp(widget.min, widget.max);
+    _c.text = _fmt(clamped);
+    if (clamped != widget.value) widget.onChanged(clamped);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final accent = widget.accent;
+    return Listener(
+      onPointerSignal: (e) {
+        if (e is PointerScrollEvent) {
+          _step(e.scrollDelta.dy > 0 ? -1 : 1);
+        }
+      },
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onVerticalDragUpdate: (d) {
+          _dragAcc += d.primaryDelta ?? 0;
+          if (_dragAcc <= -6) {
+            _step(1); // drag up → increase
+            _dragAcc = 0;
+          } else if (_dragAcc >= 6) {
+            _step(-1); // drag down → decrease
+            _dragAcc = 0;
+          }
+        },
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            InkWell(
+              onTap: () => _step(1),
+              borderRadius: BorderRadius.circular(6),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                child: Icon(Icons.keyboard_arrow_up_rounded,
+                    size: 18, color: accent),
+              ),
+            ),
+            SizedBox(
+              width: 40,
+              child: TextField(
+                controller: _c,
+                focusNode: _focus,
+                textAlign: TextAlign.center,
+                keyboardType: TextInputType.number,
+                maxLength: 2,
+                cursorColor: accent,
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                onChanged: (t) {
+                  final p = int.tryParse(t.trim());
+                  if (p != null && p >= widget.min && p <= widget.max) {
+                    widget.onChanged(p);
+                  }
+                },
+                onSubmitted: (_) => _commit(),
+                decoration: const InputDecoration(
+                  isDense: true,
+                  counterText: '',
+                  border: InputBorder.none,
+                  enabledBorder: InputBorder.none,
+                  focusedBorder: InputBorder.none,
+                  contentPadding: EdgeInsets.symmetric(vertical: 2),
+                ),
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800,
+                  color: _C.text1,
+                ),
+              ),
+            ),
+            InkWell(
+              onTap: () => _step(-1),
+              borderRadius: BorderRadius.circular(6),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                child: Icon(Icons.keyboard_arrow_down_rounded,
+                    size: 18, color: accent),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }

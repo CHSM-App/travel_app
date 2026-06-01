@@ -44,28 +44,24 @@ class TripCard extends ConsumerWidget {
     return "$hour:$minute $period";
   }
 
-  // Footer line describing the last payment taken: amount received + when.
-  // Returns null when there's nothing meaningful to show — a fully unpaid trip,
-  // or a paid trip whose payment_date the backend hasn't recorded yet.
-  //   • Partially Paid → "Last payment ₹<amount> on <date> <time>"
-  //   • Paid           → "Last payment ₹<amount> on <date> <time>"
-  String? _paymentDateLine(String status) {
-    final d = bookinginfo.paymentDate;
-    if (d == null) return null;
-    final received = bookinginfo.amountReceived ?? 0;
-    // Whole rupees when integral, else keep up to 2 decimals.
-    final amount = received == received.roundToDouble()
-        ? received.toStringAsFixed(0)
-        : received.toStringAsFixed(2);
-    final when = "${_formatDate(d)} • ${_formatTime(d)}";
-    switch (status.toLowerCase()) {
-      case 'partially paid':
-      case 'paid':
-        return "Last payment ₹$amount received on $when";
-      default:
-        return null;
-    }
+  // "31 May, 9:14 AM" — compact day + short month + time, as in the card design.
+  static const List<String> _months = [
+    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+  ];
+  String _prettyDateTime(DateTime? date) {
+    if (date == null) return '--';
+    return "${date.day} ${_months[date.month - 1]}, ${_formatTime(date)}";
   }
+
+  // Initials for the customer avatar (e.g. "Akshit Raut" → "AR").
+  String _initials(String? name) {
+    if (name == null || name.trim().isEmpty) return '?';
+    final parts = name.trim().split(RegExp(r'\s+'));
+    if (parts.length == 1) return parts.first.substring(0, 1).toUpperCase();
+    return (parts[0].substring(0, 1) + parts[1].substring(0, 1)).toUpperCase();
+  }
+
 String get paymentStatus {
   final approved = bookinginfo.amountApprove ?? 0;
   final received = bookinginfo.amountReceived ?? 0;
@@ -173,7 +169,7 @@ final receivedController = TextEditingController(
         final valueFontSize = isSmall ? 12.0 : 12.5;
         final iconSize = isSmall ? 13.0 : 14.0;
         final labelWidth = isSmall ? 60.0 : 68.0;
-        final sectionGap = isSmall ? 10.0 : 14.0;
+        final sectionGap = isSmall ? 8.0 : 10.0;
         final fieldVertPad = isSmall ? 11.0 : 13.0;
 
 
@@ -239,7 +235,7 @@ final receivedController = TextEditingController(
 
         Widget detailRow(String lbl, String val, IconData icon, Color color) {
           return Padding(
-            padding: EdgeInsets.symmetric(vertical: isSmall ? 6 : 7),
+            padding: EdgeInsets.symmetric(vertical: isSmall ? 4 : 5),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -705,90 +701,6 @@ final receivedController = TextEditingController(
         32 + MediaQuery.of(ctx).padding.bottom,
       ),
                         children: [
-                          // ── Trip Info ──────────────────────────────────────
-                          infoBlock(
-                            label: "TRIP INFO",
-                            icon: Icons.route_rounded,
-                            color: AppColors.brandPrimary,
-                            rows: [
-                              detailRow(
-                                "Pickup",
-                                bookinginfo.pickupLocation ?? "--",
-                                Icons.trip_origin,
-                                AppColors.brandPrimary,
-                              ),
-                              rowDivider(),
-                              detailRow(
-                                "Drop",
-                                bookinginfo.dropLocation ?? "--",
-                                Icons.location_on,
-                                AppColors.brandPrimary,
-                              ),
-                              rowDivider(),
-                              detailRow(
-                                "Start",
-                                "${_formatDate(bookinginfo.startDateTime)}  ${_formatTime(bookinginfo.startDateTime)}",
-                                Icons.calendar_today_outlined,
-                                AppColors.brandPrimary,
-                              ),
-                              rowDivider(),
-                              detailRow(
-                                "End",
-                                "${_formatDate(bookinginfo.endDateTime)}  ${_formatTime(bookinginfo.endDateTime)}",
-                                Icons.calendar_today_outlined,
-                                AppColors.brandPrimary,
-                              ),
-                              rowDivider(),
-                              detailRow(
-                                "Distance",
-                                "${bookinginfo.distance?.toString() ?? "--"} km",
-                                Icons.straighten,
-                                AppColors.brandPrimary,
-                              ),
-                            ],
-                          ),
-
-                          SizedBox(height: sectionGap),
-                          // ── Customer + Driver ──────────────────────────────
-                          customerDriverRow(),
-                          SizedBox(height: sectionGap),
-                          // ── Vehicle Info ───────────────────────────────────
-                          infoBlock(
-                            label: "VEHICLE",
-                            icon: Icons.directions_car_outlined,
-                            color: const Color(0xFF06D6A0),
-                            rows: [
-                              detailRow(
-                                "Vehicle",
-                                bookinginfo.vehicle_info ?? "--",
-                                Icons.local_shipping_outlined,
-                                const Color(0xFF06D6A0),
-                              ),
-                              rowDivider(),
-                              detailRow(
-                                "Capacity",
-                                bookinginfo.capacity?.toString() ?? "--",
-                                Icons.group_outlined,
-                                const Color(0xFF06D6A0),
-                              ),
-                              rowDivider(),
-                              detailRow(
-                                "Fuel",
-                                bookinginfo.fuelType ?? "--",
-                                Icons.local_gas_station_outlined,
-                                const Color(0xFF06D6A0),
-                              ),
-                              rowDivider(),
-                              detailRow(
-                                "Mileage",
-                                bookinginfo.mileage ?? "--",
-                                Icons.speed_outlined,
-                                const Color(0xFF06D6A0),
-                              ),
-                            ],
-                          ),
-
-                          SizedBox(height: sectionGap),
                           // ── Payment & Charges ──────────────────────────────
                           Container(
                             decoration: BoxDecoration(
@@ -1220,6 +1132,91 @@ final receivedController = TextEditingController(
                                 ),
                               ),
                           ],
+
+                          SizedBox(height: sectionGap),
+                          // ── Trip Info ──────────────────────────────────────
+                          infoBlock(
+                            label: "TRIP INFO",
+                            icon: Icons.route_rounded,
+                            color: AppColors.brandPrimary,
+                            rows: [
+                              detailRow(
+                                "Pickup",
+                                bookinginfo.pickupLocation ?? "--",
+                                Icons.trip_origin,
+                                AppColors.brandPrimary,
+                              ),
+                              rowDivider(),
+                              detailRow(
+                                "Drop",
+                                bookinginfo.dropLocation ?? "--",
+                                Icons.location_on,
+                                AppColors.brandPrimary,
+                              ),
+                              rowDivider(),
+                              detailRow(
+                                "Start",
+                                "${_formatDate(bookinginfo.startDateTime)}  ${_formatTime(bookinginfo.startDateTime)}",
+                                Icons.calendar_today_outlined,
+                                AppColors.brandPrimary,
+                              ),
+                              rowDivider(),
+                              detailRow(
+                                "End",
+                                "${_formatDate(bookinginfo.endDateTime)}  ${_formatTime(bookinginfo.endDateTime)}",
+                                Icons.calendar_today_outlined,
+                                AppColors.brandPrimary,
+                              ),
+                              rowDivider(),
+                              detailRow(
+                                "Distance",
+                                "${bookinginfo.distance?.toString() ?? "--"} km",
+                                Icons.straighten,
+                                AppColors.brandPrimary,
+                              ),
+                            ],
+                          ),
+
+                          SizedBox(height: sectionGap),
+                          // ── Customer + Driver ──────────────────────────────
+                          customerDriverRow(),
+
+                          SizedBox(height: sectionGap),
+                          // ── Vehicle Info ───────────────────────────────────
+                          infoBlock(
+                            label: "VEHICLE",
+                            icon: Icons.directions_car_outlined,
+                            color: const Color(0xFF06D6A0),
+                            rows: [
+                              detailRow(
+                                "Vehicle",
+                                bookinginfo.vehicle_info ?? "--",
+                                Icons.local_shipping_outlined,
+                                const Color(0xFF06D6A0),
+                              ),
+                              rowDivider(),
+                              detailRow(
+                                "Capacity",
+                                bookinginfo.capacity?.toString() ?? "--",
+                                Icons.group_outlined,
+                                const Color(0xFF06D6A0),
+                              ),
+                              rowDivider(),
+                              detailRow(
+                                "Fuel",
+                                bookinginfo.fuelType ?? "--",
+                                Icons.local_gas_station_outlined,
+                                const Color(0xFF06D6A0),
+                              ),
+                              rowDivider(),
+                              detailRow(
+                                "Mileage",
+                                bookinginfo.mileage ?? "--",
+                                Icons.speed_outlined,
+                                const Color(0xFF06D6A0),
+                              ),
+                            ],
+                          ),
                         ],
                       ),
   ),
@@ -1816,9 +1813,30 @@ final receivedController = TextEditingController(
     final statusColor = _paymentColor(status);
     final statusBg = _paymentBg(status);
     final statusIcon = _paymentIcon(status);
-    final paymentLine = _paymentDateLine(status);
     final screenW = MediaQuery.of(context).size.width;
     final isSmall = screenW < 360;
+
+    // Pending balance, shown only for unpaid trips (status 2 = the Unpaid tab).
+    final bool isUnpaidTab = bookinginfo.status == 2;
+    final double pendingAmt =
+        (bookinginfo.amountApprove ?? 0) - (bookinginfo.amountReceived ?? 0);
+    final String pendingText = pendingAmt == pendingAmt.roundToDouble()
+        ? pendingAmt.toStringAsFixed(0)
+        : pendingAmt.toStringAsFixed(2);
+
+    // Split "Ertiga MH07A1245" → name + registration plate (last token with a
+    // digit). Falls back to showing the whole string as the name.
+    final String rawVehicle = (bookinginfo.vehicle_info ?? 'Vehicle N/A').trim();
+    String vehicleName = rawVehicle;
+    String? vehicleReg;
+    final int spaceIdx = rawVehicle.lastIndexOf(' ');
+    if (spaceIdx > 0) {
+      final last = rawVehicle.substring(spaceIdx + 1);
+      if (RegExp(r'\d').hasMatch(last)) {
+        vehicleName = rawVehicle.substring(0, spaceIdx);
+        vehicleReg = last;
+      }
+    }
 
     return GestureDetector(
       onTap: () {
@@ -1826,7 +1844,7 @@ final receivedController = TextEditingController(
       },
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(14),
@@ -1842,49 +1860,76 @@ final receivedController = TextEditingController(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // ─ ROW 1: Vehicle · Route · Amount ───────────────────
+            // ─ HEADER: Vehicle icon · name/reg · route · status · menu ─
             Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Container(
-                  width: 30,
-                  height: 30,
+                  width: 38,
+                  height: 38,
                   decoration: BoxDecoration(
-                    color: _accent,
-                    borderRadius: BorderRadius.circular(8),
+                    color: _accentSoft,
+                    borderRadius: BorderRadius.circular(10),
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.directions_car_rounded,
-                    color: Colors.white,
-                    size: 16,
+                    color: _accent,
+                    size: 20,
                   ),
                 ),
-                const SizedBox(width: 8),
-
+                const SizedBox(width: 10),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text(
-                        bookinginfo.vehicle_info ?? 'Vehicle N/A',
-                        style: TextStyle(
-                          fontSize: isSmall ? 12 : 13,
-                          fontWeight: FontWeight.w800,
-                          color: _textPrimary,
-                        ),
-                        overflow: TextOverflow.ellipsis,
+                      // Vehicle name · registration
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.baseline,
+                        textBaseline: TextBaseline.alphabetic,
+                        children: [
+                          Flexible(
+                            child: Text(
+                              vehicleName,
+                              style: TextStyle(
+                                fontSize: isSmall ? 14 : 15,
+                                fontWeight: FontWeight.w800,
+                                color: _textPrimary,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          if (vehicleReg != null) ...[
+                            Text(
+                              "  ·  ",
+                              style: TextStyle(
+                                fontSize: isSmall ? 11 : 12,
+                                color: _textSec,
+                              ),
+                            ),
+                            Flexible(
+                              child: Text(
+                                vehicleReg,
+                                style: TextStyle(
+                                  fontSize: isSmall ? 11 : 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: _textSec,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ],
                       ),
-                      const SizedBox(height: 2),
+                      const SizedBox(height: 3),
+                      // Route
                       Row(
                         children: [
-                          Icon(Icons.location_on, size: 9, color: _accent),
-                          const SizedBox(width: 3),
                           Flexible(
                             child: Text(
                               bookinginfo.pickupLocation ?? '--',
                               style: TextStyle(
-                                fontSize: isSmall ? 10 : 11,
+                                fontSize: isSmall ? 11 : 12,
                                 color: _textSec,
                                 fontWeight: FontWeight.w500,
                               ),
@@ -1892,10 +1937,10 @@ final receivedController = TextEditingController(
                             ),
                           ),
                           Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 3),
+                            padding: const EdgeInsets.symmetric(horizontal: 4),
                             child: Icon(
                               Icons.arrow_forward_rounded,
-                              size: 9,
+                              size: 11,
                               color: _textSec,
                             ),
                           ),
@@ -1903,7 +1948,7 @@ final receivedController = TextEditingController(
                             child: Text(
                               bookinginfo.dropLocation ?? '--',
                               style: TextStyle(
-                                fontSize: isSmall ? 10 : 11,
+                                fontSize: isSmall ? 11 : 12,
                                 color: _textSec,
                                 fontWeight: FontWeight.w500,
                               ),
@@ -1915,136 +1960,152 @@ final receivedController = TextEditingController(
                     ],
                   ),
                 ),
-
                 const SizedBox(width: 8),
-
-                Text(
-                  "₹${bookinginfo.amountApprove ?? 0}",
-                  style: TextStyle(
-                    fontSize: isSmall ? 13 : 14,
-                    fontWeight: FontWeight.w900,
-                    color: _success,
-                  ),
+                // Status pill + overflow
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 3,
+                      ),
+                      decoration: BoxDecoration(
+                        color: statusBg,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(statusIcon, size: 11, color: statusColor),
+                          const SizedBox(width: 3),
+                          Text(
+                            status,
+                            style: TextStyle(
+                              fontSize: 10.5,
+                              fontWeight: FontWeight.w700,
+                              color: statusColor,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
 
-            const SizedBox(height: 7),
+            const SizedBox(height: 10),
 
             Divider(height: 1, color: _divider),
 
-            const SizedBox(height: 7),
+            const SizedBox(height: 10),
 
+            // ─ FOOTER: Customer avatar/name/date · Total/Due ─────
             Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                // const SizedBox(width: 38),
-                Expanded(
-                  child: Row(
-                    children: [
-                      Icon(Icons.person_rounded, size: 12, color: _accent),
-                      const SizedBox(width: 4),
-                      Flexible(
-                        child: Text(
-                          bookinginfo.customer_name ?? '--',
-                          style: TextStyle(
-                            fontSize: isSmall ? 10 : 11,
-                            fontWeight: FontWeight.w600,
-                            color: _textPrimary,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 6),
-                        child: Container(
-                          width: 3,
-                          height: 3,
-                          decoration: BoxDecoration(
-                            color: _divider,
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                      ),
-
-                      Icon(
-                        Icons.calendar_today_rounded,
-                        size: 11,
-                        color: _warning,
-                      ),
-                      const SizedBox(width: 4),
-                      Expanded(
-                        child: Text(
-                          "${_formatDate(bookinginfo.startDateTime)} ${_formatTime(bookinginfo.startDateTime)}",
-                          style: TextStyle(
-                            fontSize: isSmall ? 10 : 11,
-                            color: _textSec,
-                            fontWeight: FontWeight.w500,
-                          ),
-                          softWrap: true,
-                          maxLines: 2, // allow 2 lines
-                          overflow: TextOverflow.visible,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
+                // Avatar
                 Container(
-                  margin: const EdgeInsets.only(left: 8),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 3,
-                  ),
+                  width: 32,
+                  height: 32,
+                  alignment: Alignment.center,
                   decoration: BoxDecoration(
-                    color: statusBg,
-                    borderRadius: BorderRadius.circular(20),
+                    color: _accentSoft,
+                    shape: BoxShape.circle,
                   ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(statusIcon, size: 10, color: statusColor),
-                      const SizedBox(width: 3),
-                      Text(
-                        status,
-                        style: TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w700,
-                          color: statusColor,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-
-            // ─ ROW 3: When payment was taken (partially paid / paid only) ──
-            if (paymentLine != null) ...[
-              const SizedBox(height: 7),
-              Row(
-                children: [
-                  Icon(
-                    Icons.event_available_rounded,
-                    size: 11,
-                    color: statusColor,
-                  ),
-                  const SizedBox(width: 4),
-                  Expanded(
-                    child: Text(
-                      paymentLine,
-                      style: TextStyle(
-                        fontSize: isSmall ? 10 : 10.5,
-                        color: _textSec,
-                        fontWeight: FontWeight.w600,
-                      ),
-                      overflow: TextOverflow.ellipsis,
+                  child: Text(
+                    _initials(bookinginfo.customer_name),
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w800,
+                      color: _accent,
                     ),
                   ),
+                ),
+                const SizedBox(width: 9),
+                // Name + date
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        bookinginfo.customer_name ?? '--',
+                        style: TextStyle(
+                          fontSize: isSmall ? 12 : 13,
+                          fontWeight: FontWeight.w700,
+                          color: _textPrimary,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        _prettyDateTime(bookinginfo.startDateTime),
+                        style: TextStyle(
+                          fontSize: isSmall ? 10.5 : 11.5,
+                          color: _textSec,
+                          fontWeight: FontWeight.w500,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                // Total
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      "Total",
+                      style: TextStyle(
+                        fontSize: 9.5,
+                        color: _textSec,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(height: 1),
+                    Text(
+                      "₹${bookinginfo.amountApprove ?? 0}",
+                      style: TextStyle(
+                        fontSize: isSmall ? 13 : 14.5,
+                        fontWeight: FontWeight.w800,
+                        color: _textPrimary,
+                      ),
+                    ),
+                  ],
+                ),
+                // Due (only when there's a pending balance)
+                if (isUnpaidTab && pendingAmt > 0) ...[
+                  const SizedBox(width: 16),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        "Due",
+                        style: TextStyle(
+                          fontSize: 9.5,
+                          color: _textSec,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const SizedBox(height: 1),
+                      Text(
+                        "₹$pendingText",
+                        style: TextStyle(
+                          fontSize: isSmall ? 13 : 14.5,
+                          fontWeight: FontWeight.w800,
+                          color: _danger,
+                        ),
+                      ),
+                    ],
+                  ),
                 ],
-              ),
-            ],
+              ],
+            ),
           ],
         ),
       ),

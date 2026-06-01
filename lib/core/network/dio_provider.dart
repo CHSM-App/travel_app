@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:travel_agency_app/core/network/interceptor.dart';
+import 'package:travel_agency_app/core/network/retry_interceptor.dart';
 import 'package:travel_agency_app/core/network/network_state_notifier.dart';
 import 'package:travel_agency_app/core/storage/constant.dart';
 
@@ -45,6 +46,11 @@ final dioProvider = Provider<Dio>((ref) {
       },
     ),
   );
+
+  // Auto-retry transient backend failures (timeouts, connection drops, 5xx)
+  // with exponential backoff. Added last so token refresh (401) is resolved
+  // first; only genuine backend/transport errors reach the retry logic.
+  dio.interceptors.add(RetryInterceptor(dio: dio));
 
   return dio;
 });
