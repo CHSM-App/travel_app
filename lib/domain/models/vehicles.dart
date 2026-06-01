@@ -20,6 +20,11 @@ class Vehicles {
   final String? StatusName;
   final String? agencyId;
 
+  /// Per-kilometre charge for this vehicle, used to auto-fill the Trip Charges
+  /// field (distance × rate) when booking. Null when not set.
+  @JsonKey(name: 'per_km_charge')
+  final double? perKmCharge;
+
    @JsonKey(name: 'active_status')
   final int? activeStatus;
 
@@ -39,6 +44,7 @@ class Vehicles {
     this.Type,
     this.StatusName,
       this.agencyId,
+      this.perKmCharge,
       this.activeStatus
   });
 
@@ -81,6 +87,8 @@ class Vehicles {
         Type: _readString(json, const ['Type', 'type']),
         StatusName: _readString(json, const ['StatusName', 'statusName']),
         agencyId: _readString(json, const ['agencyId', 'agency_id']),
+        perKmCharge: _readDouble(
+            json, const ['per_km_charge', 'perKmCharge', 'PerKmCharge']),
       );
 
   Map<String, dynamic> toJson() => <String, dynamic>{
@@ -116,6 +124,7 @@ class Vehicles {
         'StatusName': StatusName,
         'agency_id': agencyId,
         'agencyId': agencyId,
+        'per_km_charge': perKmCharge,
       };
 
   static int? _readInt(Map<String, dynamic> json, List<String> keys) {
@@ -138,6 +147,17 @@ class Vehicles {
       if (text.isNotEmpty && text.toLowerCase() != 'null') {
         return text;
       }
+    }
+    return null;
+  }
+
+  static double? _readDouble(Map<String, dynamic> json, List<String> keys) {
+    for (final key in keys) {
+      final value = json[key];
+      if (value == null) continue;
+      if (value is num) return value.toDouble();
+      final parsed = double.tryParse(value.toString());
+      if (parsed != null) return parsed;
     }
     return null;
   }

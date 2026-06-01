@@ -24,12 +24,14 @@ class RouteFareSuggestion {
       (s ?? '').trim().toLowerCase().replaceAll(RegExp(r'\s+'), ' ');
 
   /// Builds a suggestion from a customer's trip history for the given route.
-  /// Returns null when the route is incomplete or the customer has no prior
-  /// billed trip on it.
+  /// Returns null when the route is incomplete or there's no prior billed trip
+  /// on it. When [vehicleId] is provided, only trips made with that vehicle are
+  /// considered, so the suggested fare reflects the selected vehicle.
   static RouteFareSuggestion? fromHistory(
     List<BookingInfo> history, {
     required String pickup,
     required String drop,
+    int? vehicleId,
   }) {
     final p = _norm(pickup);
     final d = _norm(drop);
@@ -38,6 +40,7 @@ class RouteFareSuggestion {
     final matches = history.where((t) {
       final amount = t.amountApprove ?? 0;
       return amount > 0 &&
+          (vehicleId == null || t.vehicleId == vehicleId) &&
           _norm(t.pickupLocation) == p &&
           _norm(t.dropLocation) == d;
     }).toList();

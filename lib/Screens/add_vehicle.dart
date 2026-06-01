@@ -36,6 +36,7 @@ class _AddVehiclePageState extends ConsumerState<AddVehiclePage>
   final number = TextEditingController();
   final capacity = TextEditingController();
   final mileage = TextEditingController();
+  final perKm = TextEditingController();
 
   // ── RC Document State ──
   File? _selectedRcFile;
@@ -75,6 +76,11 @@ class _AddVehiclePageState extends ConsumerState<AddVehiclePage>
       number.text = v.number ?? '';
       capacity.text = v.capacity?.toString() ?? '';
       mileage.text = v.mileage ?? '';
+      perKm.text = v.perKmCharge != null
+          ? (v.perKmCharge == v.perKmCharge!.roundToDouble()
+              ? v.perKmCharge!.toStringAsFixed(0)
+              : v.perKmCharge!.toString())
+          : '';
 
       // ── FIX: Properly set existing RC URL for image display ──
       _existingRcRaw = v.rcdocuments;
@@ -106,6 +112,7 @@ class _AddVehiclePageState extends ConsumerState<AddVehiclePage>
     number.dispose();
     capacity.dispose();
     mileage.dispose();
+    perKm.dispose();
     super.dispose();
   }
 
@@ -198,6 +205,7 @@ class _AddVehiclePageState extends ConsumerState<AddVehiclePage>
       StatusId: 1,
       rcdocuments: (!_rcRemoved && _selectedRcFile == null) ? _existingRcRaw : null,
       agencyId: agencyId,
+      perKmCharge: double.tryParse(perKm.text.trim()),
     );
 
     _saveVehicle(vehicle);
@@ -360,6 +368,22 @@ class _AddVehiclePageState extends ConsumerState<AddVehiclePage>
               ),
             ),
           ],
+        ),
+        const SizedBox(height: 16),
+        _buildField(
+          controller: perKm,
+          label: 'Charge per KM',
+          hint: 'e.g. 12 — used to auto-calc trip charges',
+          icon: Icons.currency_rupee_rounded,
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          suffix: '₹/km',
+          required: false,
+          validator: (v) {
+            if (v == null || v.trim().isEmpty) return null; // optional
+            final rate = double.tryParse(v.trim());
+            if (rate == null || rate < 0) return 'Enter a valid rate';
+            return null;
+          },
         ),
         const SizedBox(height: 16),
         _buildRcDocumentPicker(),
@@ -1253,6 +1277,7 @@ class _AddVehiclePageState extends ConsumerState<AddVehiclePage>
     bool readOnly = false,
     bool required = true,
     ValueChanged<String>? onChanged,
+    String? Function(String?)? validator,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1276,10 +1301,11 @@ class _AddVehiclePageState extends ConsumerState<AddVehiclePage>
             fontWeight: FontWeight.w500,
             color: readOnly ? Colors.grey.shade500 : _textDark,
           ),
-          validator: required
-              ? (v) =>
-                  v == null || v.isEmpty ? 'This field is required' : null
-              : null,
+          validator: validator ??
+              (required
+                  ? (v) =>
+                      v == null || v.isEmpty ? 'This field is required' : null
+                  : null),
           decoration: InputDecoration(
             hintText: hint,
             hintStyle:

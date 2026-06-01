@@ -1040,18 +1040,77 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
         : "Fuel Required  •  $amount  ·  $type";
   }
 
-  // Auto-fill Trip Charges from the agency's per-km rate (set at signup):
+  // Auto-fill Trip Charges from the SELECTED vehicle's per-km rate:
   // charge = distance × rate. The field stays editable so the admin can adjust
-  // for discounts; this just seeds a sensible default when the route changes.
+  // for discounts; this just seeds a sensible default when the route or the
+  // chosen vehicle changes.
   void _recalcCharges() {
     final dist = double.tryParse(distance.text.trim());
     if (dist == null) return;
-    final rate = ref.read(loginViewModelProvider).perKmCharge;
+
+    final vehicles =
+        ref.read(tripBookingViewModelProvider).availableVehicles.value ??
+            const <Vehicles>[];
+    final match = vehicles.where((e) => e.vehicleId == selVehicle);
+    if (match.isEmpty) return; // no vehicle chosen yet
+
+    final rate = match.first.perKmCharge;
     if (rate == null || rate <= 0) return;
     final total = dist * rate;
     charges.text = total == total.roundToDouble()
         ? total.toStringAsFixed(0)
         : total.toStringAsFixed(2);
+  }
+
+  // Compact "₹26/km × 50 km" breakdown shown beside the Trip Charges field so
+  // the admin can see how the auto-filled amount was derived. Returns an empty
+  // box when there's no rate/distance yet. Text wraps (never ellipsised) so it
+  // stays fully visible on narrow screens.
+  Widget _chargeBreakdown() {
+    final vehicles =
+        ref.read(tripBookingViewModelProvider).availableVehicles.value ??
+            const <Vehicles>[];
+    final match = vehicles.where((e) => e.vehicleId == selVehicle);
+    final rate = match.isEmpty ? null : match.first.perKmCharge;
+    final dist = double.tryParse(distance.text.trim());
+    if (rate == null || rate <= 0 || dist == null || dist <= 0) {
+      return const SizedBox.shrink();
+    }
+
+    String fmt(double v) =>
+        v == v.roundToDouble() ? v.toStringAsFixed(0) : v.toStringAsFixed(2);
+
+    return Flexible(
+      child: Padding(
+        padding: const EdgeInsets.only(left: 8),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+          decoration: BoxDecoration(
+            color: _C.purpleSoft,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: _C.purple.withOpacity(0.25)),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.calculate_rounded, size: 14, color: _C.purple),
+              const SizedBox(width: 6),
+              Flexible(
+                child: Text(
+                  "₹${fmt(rate)}/km × ${fmt(dist)} km",
+                  softWrap: true,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: _C.purple,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   // Fill the Fuel Required field from the SELECTED vehicle (this is the value
@@ -1203,9 +1262,9 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
       customerid: customerId,
       pickuplocation: pickup.text,
       droplocation: drop.text,
-      distance: double.parse(distance.text),
-      fuelrequired: double.parse(fuelReq.text),
-      tripcharges: double.parse(charges.text),
+      distance: double.tryParse(distance.text.trim()) ?? 0,
+      fuelrequired: double.tryParse(fuelReq.text.trim()) ?? 0,
+      tripcharges: double.tryParse(charges.text.trim()) ?? 0,
       startDateTime: startDt,
       endDateTime: endDt,
       status: widget.booking?.status ?? 3,
@@ -1273,6 +1332,8 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
       routeTrips,
       pickup: pickup.text,
       drop: drop.text,
+      // Only suggest fares from past trips made with the chosen vehicle.
+      vehicleId: selVehicle,
     );
 
     final pickupOptions =
@@ -1419,15 +1480,60 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
 
                       const SizedBox(height: 12),
 
-                      // ── 02  ROUTE ────────────────────────────────────────────
+                      // ── 02  SCHEDULE ─────────────────────────────────────────
                       _FadeSlide(
                         anim: _anims[1],
+                        child: _sectionCard(
+                          icon: Icons.calendar_month_rounded,
+                          label: "Trip Schedule",
+                          iconColor: _C.purple,
+                          iconBg: _C.purpleSoft,
+                          badge: "02",
+                          child: Column(
+                            children: [
+                              _dateTile(
+                                label: "Start Date & Time",
+                                ctrl: startDate,
+                                icon: Icons.play_circle_rounded,
+                                color: _C.green,
+                                bg: _C.greenSoft,
+                                onTap: () => _pickDt(true),
+                              ),
+                              const SizedBox(height: 10),
+                              _dateTile(
+                                label: "End Date & Time (Optional)",
+                                ctrl: endDate,
+                                icon: Icons.stop_circle_rounded,
+                                color: _C.red,
+                                bg: _C.redSoft,
+                                onTap: () => _pickDt(false),
+                                onClear: () {
+                                  setState(() {
+                                    endDt = null;
+                                    endDate.clear();
+                                  });
+                                },
+                              ),
+                              if (startDt != null && endDt != null) ...[
+                                const SizedBox(height: 12),
+                                _durationBanner(),
+                              ],
+                            ],
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(height: 12),
+
+                      // ── 03  ROUTE ────────────────────────────────────────────
+                      _FadeSlide(
+                        anim: _anims[2],
                         child: _sectionCard(
                           icon: Icons.route_rounded,
                           label: "Route Details",
                           iconColor: _C.accent,
                           iconBg: _C.accentSoft,
-                          badge: "02",
+                          badge: "03",
                           child: Column(
                             children: [
                               _locationAutocomplete(
@@ -1478,69 +1584,6 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
                                     : null,
                               ),
                               _routeInfoChip(),
-                              const SizedBox(height: 10),
-                              _inputField(
-                                label: "Trip Charges",
-                                ctrl: charges,
-                                icon: Icons.currency_rupee_rounded,
-                                iconColor: _C.purple,
-                                iconBg: _C.purpleSoft,
-                                prefix: "₹  ",
-                                keyboard: const TextInputType.numberWithOptions(
-                                  decimal: true,
-                                ),
-                                fmt: [
-                                  FilteringTextInputFormatter.allow(
-                                    RegExp(r'[\d.]'),
-                                  ),
-                                ],
-                              ),
-                              _fareChip(fare),
-                            ],
-                          ),
-                        ),
-                      ),
-
-                      const SizedBox(height: 12),
-
-                      // ── 03  SCHEDULE ─────────────────────────────────────────
-                      _FadeSlide(
-                        anim: _anims[2],
-                        child: _sectionCard(
-                          icon: Icons.calendar_month_rounded,
-                          label: "Trip Schedule",
-                          iconColor: _C.purple,
-                          iconBg: _C.purpleSoft,
-                          badge: "03",
-                          child: Column(
-                            children: [
-                              _dateTile(
-                                label: "Start Date & Time",
-                                ctrl: startDate,
-                                icon: Icons.play_circle_rounded,
-                                color: _C.green,
-                                bg: _C.greenSoft,
-                                onTap: () => _pickDt(true),
-                              ),
-                              const SizedBox(height: 10),
-                              _dateTile(
-                                label: "End Date & Time (Optional)",
-                                ctrl: endDate,
-                                icon: Icons.stop_circle_rounded,
-                                color: _C.red,
-                                bg: _C.redSoft,
-                                onTap: () => _pickDt(false),
-                                onClear: () {
-                                  setState(() {
-                                    endDt = null;
-                                    endDate.clear();
-                                  });
-                                },
-                              ),
-                              if (startDt != null && endDt != null) ...[
-                                const SizedBox(height: 12),
-                                _durationBanner(),
-                              ],
                             ],
                           ),
                         ),
@@ -1626,6 +1669,7 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
                                         selVehicle = val;
                                         selVehicleLabel = label;
                                         _recalcFuel();
+                                        _recalcCharges();
                                       }),
                                       hasError: selVehicle == null,
                                     );
@@ -1660,6 +1704,40 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
                                     ),
                                   ],
                                 ),
+                                // Trip Charges — auto-filled from the selected
+                                // vehicle's per-km rate (distance × rate), shown
+                                // here like Fuel Required. Still editable, with a
+                                // breakdown chip beside it showing the maths.
+                                const SizedBox(height: 14),
+                                _assignLabel("Trip Charges"),
+                                const SizedBox(height: 6),
+                                Row(
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.center,
+                                  children: [
+                                    Expanded(
+                                      child: _inputField(
+                                        label: "Trip Charges",
+                                        ctrl: charges,
+                                        icon: Icons.currency_rupee_rounded,
+                                        iconColor: _C.purple,
+                                        iconBg: _C.purpleSoft,
+                                        prefix: "₹  ",
+                                        keyboard: const TextInputType
+                                            .numberWithOptions(decimal: true),
+                                        fmt: [
+                                          FilteringTextInputFormatter.allow(
+                                            RegExp(r'[\d.]'),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    _chargeBreakdown(),
+                                  ],
+                                ),
+                                // Route fare suggestion — tapping it seeds the
+                                // Trip Charges field above.
+                                _fareChip(fare),
                               ],
 
                               const SizedBox(height: 14),
