@@ -7,6 +7,7 @@ import 'package:travel_agency_app/core/network/error_messages.dart';
 import 'package:travel_agency_app/core/theme/app_colors.dart';
 import 'package:travel_agency_app/core/widgets/error_view.dart';
 import 'package:travel_agency_app/core/widgets/skeleton.dart';
+import 'package:travel_agency_app/core/widgets/trip_filter.dart';
 import 'package:travel_agency_app/domain/models/booking_info.dart';
 import 'package:travel_agency_app/domain/models/services.dart';
 import 'package:travel_agency_app/domain/models/vehicles.dart';
@@ -1746,6 +1747,11 @@ class _TripsTab extends ConsumerStatefulWidget {
 class _TripsTabState extends ConsumerState<_TripsTab> {
   _VehicleTripFilter _filter = _VehicleTripFilter.all;
 
+  // Free-text search applied on top of the period (date) + status filters.
+  // The date filter is the period chips supplied by the parent tab.
+  final TextEditingController _searchCtrl = TextEditingController();
+  String _query = '';
+
   @override
   void initState() {
     super.initState();
@@ -1754,6 +1760,12 @@ class _TripsTabState extends ConsumerState<_TripsTab> {
           .read(addVehicleViewModelProvider.notifier)
           .getTripsByVehicle(widget.vehicle.vehicleId ?? 0),
     );
+  }
+
+  @override
+  void dispose() {
+    _searchCtrl.dispose();
+    super.dispose();
   }
 
   @override
@@ -1823,9 +1835,11 @@ class _TripsTabState extends ConsumerState<_TripsTab> {
           );
         }
 
-        // Apply the in-memory status filter to the already-fetched list.
-        final filtered =
-            trips.where((t) => _filter.matches(t)).toList();
+        // Search narrows the period-filtered list first; the status chips
+        // (and their counts) then operate on what remains.
+        final base =
+            trips.where((t) => tripMatchesQuery(t, _query)).toList();
+        final filtered = base.where((t) => _filter.matches(t)).toList();
 
         return Column(
           children: [
@@ -1839,8 +1853,19 @@ class _TripsTabState extends ConsumerState<_TripsTab> {
               ),
             ),
 
+            // ── Search ───────────────────────────────────────────────────
+            Container(
+              color: _C.surface,
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+              child: TripSearchField(
+                controller: _searchCtrl,
+                onChanged: (v) =>
+                    setState(() => _query = v.trim().toLowerCase()),
+              ),
+            ),
+
             // ── Status filter chips ──────────────────────────────────────
-            _buildFilterChips(trips),
+            _buildFilterChips(base),
 
             Expanded(
               child: filtered.isEmpty

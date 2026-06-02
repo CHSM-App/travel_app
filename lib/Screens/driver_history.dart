@@ -7,6 +7,7 @@ import 'package:travel_agency_app/core/storage/constant.dart';
 import 'package:travel_agency_app/core/theme/app_colors.dart';
 import 'package:travel_agency_app/core/widgets/error_view.dart';
 import 'package:travel_agency_app/core/widgets/skeleton.dart';
+import 'package:travel_agency_app/core/widgets/trip_filter.dart';
 import 'package:travel_agency_app/domain/models/booking_info.dart';
 import 'package:travel_agency_app/domain/models/drivers.dart';
 import 'package:travel_agency_app/presentation/providers/viewmodel_provider.dart';
@@ -65,6 +66,13 @@ class _DriverHistoryPageState
 
   _DriverTripFilter _filter = _DriverTripFilter.all;
 
+  // Date-range + free-text search applied on top of the status filter,
+  // mirroring TripPage.
+  TripDateRange _range = TripDateRange.all;
+  DateTimeRange? _customRange;
+  final TextEditingController _searchCtrl = TextEditingController();
+  String _query = '';
+
   static const Color _bg = Color(0xFFF2F4F8);
   static const Color _surface = Color(0xFFFFFFFF);
   static const Color _surfaceLight = Color(0xFFF0F3FA);
@@ -113,6 +121,7 @@ class _DriverHistoryPageState
   @override
   void dispose() {
     _entryController.dispose();
+    _searchCtrl.dispose();
     super.dispose();
   }
 
@@ -573,14 +582,22 @@ Widget _buildStats(AsyncValue<List<BookingInfo>> tripState) {
               child: Text("No trips for this driver"));
         }
 
-        final filtered =
-            trips.where((t) => _filter.matches(t)).toList();
+        // Date-range + search narrow the list first; the status chips (and
+        // their counts) then operate on what remains.
+        final now = DateTime.now();
+        final base = trips
+            .where((t) =>
+                _range.matches(tripSortKey(t), now, customRange: _customRange) &&
+                tripMatchesQuery(t, _query))
+            .toList();
+        final filtered = base.where((t) => _filter.matches(t)).toList();
 
         return RefreshIndicator(
           onRefresh: _refreshTrips,
           child: Column(
             children: [
-              _buildFilterChips(trips),
+              _buildSearchDateRow(),
+              _buildFilterChips(base),
               Expanded(
                 child: filtered.isEmpty
                     ? _filteredEmptyState()
@@ -599,6 +616,33 @@ Widget _buildStats(AsyncValue<List<BookingInfo>> tripState) {
           ),
         );
       },
+    );
+  }
+
+  // Search field + date-range filter, shown above the status chips.
+  Widget _buildSearchDateRow() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+      child: Row(
+        children: [
+          Expanded(
+            child: TripSearchField(
+              controller: _searchCtrl,
+              onChanged: (v) =>
+                  setState(() => _query = v.trim().toLowerCase()),
+            ),
+          ),
+          const SizedBox(width: 8),
+          TripDateFilterButton(
+            range: _range,
+            customRange: _customRange,
+            onChanged: (r, c) => setState(() {
+              _range = r;
+              _customRange = c;
+            }),
+          ),
+        ],
+      ),
     );
   }
 

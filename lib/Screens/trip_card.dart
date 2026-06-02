@@ -54,14 +54,6 @@ class TripCard extends ConsumerWidget {
     return "${date.day} ${_months[date.month - 1]}, ${_formatTime(date)}";
   }
 
-  // Initials for the customer avatar (e.g. "Akshit Raut" → "AR").
-  String _initials(String? name) {
-    if (name == null || name.trim().isEmpty) return '?';
-    final parts = name.trim().split(RegExp(r'\s+'));
-    if (parts.length == 1) return parts.first.substring(0, 1).toUpperCase();
-    return (parts[0].substring(0, 1) + parts[1].substring(0, 1)).toUpperCase();
-  }
-
 String get paymentStatus {
   final approved = bookinginfo.amountApprove ?? 0;
   final received = bookinginfo.amountReceived ?? 0;
@@ -2012,25 +2004,6 @@ final receivedController = TextEditingController(
             Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                // Avatar
-                Container(
-                  width: 32,
-                  height: 32,
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: _accentSoft,
-                    shape: BoxShape.circle,
-                  ),
-                  child: Text(
-                    _initials(bookinginfo.customer_name),
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w800,
-                      color: _accent,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 9),
                 // Name + date
                 Expanded(
                   child: Column(
