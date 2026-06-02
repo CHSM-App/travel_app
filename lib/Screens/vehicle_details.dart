@@ -33,6 +33,111 @@ abstract class _C {
   static const gold = Color(0xFFF59E0B);
 }
 
+/// Date-window filter for the P&L summary above the tabs.
+enum _PnlPeriod {
+  all('All', Icons.all_inclusive_rounded),
+  today('Today', Icons.today_rounded),
+  week('Week', Icons.view_week_rounded),
+  month('Month', Icons.calendar_month_rounded);
+
+  const _PnlPeriod(this.label, this.icon);
+  final String label;
+  final IconData icon;
+
+  bool matches(DateTime? d, DateTime now) {
+    if (this == _PnlPeriod.all) return true;
+    if (d == null) return false;
+    final dOnly = DateTime(d.year, d.month, d.day);
+    final today = DateTime(now.year, now.month, now.day);
+    switch (this) {
+      case _PnlPeriod.today:
+        return dOnly == today;
+      case _PnlPeriod.week:
+        final start = today.subtract(const Duration(days: 6));
+        return !dOnly.isBefore(start) && !dOnly.isAfter(today);
+      case _PnlPeriod.month:
+        return d.year == now.year && d.month == now.month;
+      case _PnlPeriod.all:
+        return true;
+    }
+  }
+}
+
+// Reusable All/Today/Week/Month segmented control, used inside the Revenue and
+// Expense tabs to drive the shared period filter.
+class _PeriodChips extends StatelessWidget {
+  final _PnlPeriod selected;
+  final ValueChanged<_PnlPeriod> onChanged;
+  const _PeriodChips({required this.selected, required this.onChanged});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: _C.surfaceAlt,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: _C.divider),
+      ),
+      child: Row(
+        children: [
+          for (final p in _PnlPeriod.values) Expanded(child: _chip(p)),
+        ],
+      ),
+    );
+  }
+
+  Widget _chip(_PnlPeriod p) {
+    final active = p == selected;
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () => onChanged(p),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 220),
+        curve: Curves.easeOutCubic,
+        padding: const EdgeInsets.symmetric(vertical: 9),
+        decoration: BoxDecoration(
+          gradient: active
+              ? const LinearGradient(
+                  colors: [AppColors.brandPrimaryLight, AppColors.brandPrimary],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                )
+              : null,
+          borderRadius: BorderRadius.circular(10),
+          boxShadow: active
+              ? [
+                  BoxShadow(
+                    color: _C.accent.withOpacity(0.25),
+                    blurRadius: 6,
+                    offset: const Offset(0, 2),
+                  ),
+                ]
+              : null,
+        ),
+        child: Center(
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(p.icon, size: 13, color: active ? Colors.white : _C.text2),
+              const SizedBox(width: 5),
+              Text(
+                p.label,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  color: active ? Colors.white : _C.text2,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 // ════════════════════════════════════════════════════════════════════════════
 class VehicleManagePage extends ConsumerStatefulWidget {
   final Vehicles vehicle;
@@ -48,7 +153,6 @@ class _VehicleManagePageState extends ConsumerState<VehicleManagePage>
 
   // ── Animation Controllers ──────────────────────────────────────────────
   late final AnimationController _headerAnim;
-  late final AnimationController _statsAnim;
   late final AnimationController _avatarAnim;
   late final AnimationController _fabAnim;
   late final AnimationController _pulseAnim;
@@ -56,30 +160,14 @@ class _VehicleManagePageState extends ConsumerState<VehicleManagePage>
   // ── Derived Animations ─────────────────────────────────────────────────
   late final Animation<double> _headerFade;
   late final Animation<Offset> _headerSlide;
-  late final Animation<double> _statsFade;
-  late final Animation<Offset> _statsSlide;
   late final Animation<double> _avatarScale;
   late final Animation<double> _avatarRotate;
   late final Animation<double> _fabScale;
   late final Animation<double> _pulseAnim1;
 
-  int _month = DateTime.now().month - 1;
-  int _year = DateTime.now().year;
-
-  static const _months = [
-    'Jan',
-    'Feb',
-    'Mar',
-    'Apr',
-    'May',
-    'Jun',
-    'Jul',
-    'Aug',
-    'Sep',
-    'Oct',
-    'Nov',
-    'Dec',
-  ];
+  // Shared period filter — driven from the Revenue / Expense tab chips and
+  // reflected in the P&L summary above the tabs.
+  _PnlPeriod _pnlPeriod = _PnlPeriod.month;
 
   @override
   void initState() {
@@ -87,7 +175,7 @@ class _VehicleManagePageState extends ConsumerState<VehicleManagePage>
 
     _currentStatus = widget.vehicle.StatusId ?? 1;
 
-    _tab = TabController(length: 2, vsync: this)..addListener(_onTabChanged);
+    _tab = TabController(length: 3, vsync: this)..addListener(_onTabChanged);
 
     // Header entrance
     _headerAnim = AnimationController(
@@ -106,21 +194,6 @@ class _VehicleManagePageState extends ConsumerState<VehicleManagePage>
             curve: const Interval(0.0, 0.7, curve: Curves.easeOutCubic),
           ),
         );
-
-    // Stats strip entrance (delayed)
-    _statsAnim = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 600),
-    );
-    Future.delayed(const Duration(milliseconds: 350), () {
-      if (mounted) _statsAnim.forward();
-    });
-
-    _statsFade = CurvedAnimation(parent: _statsAnim, curve: Curves.easeOut);
-    _statsSlide = Tween<Offset>(
-      begin: const Offset(0, 0.3),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(parent: _statsAnim, curve: Curves.easeOutCubic));
 
     // Avatar spring entrance
     _avatarAnim = AnimationController(
@@ -161,11 +234,23 @@ class _VehicleManagePageState extends ConsumerState<VehicleManagePage>
       begin: 0.6,
       end: 1.0,
     ).animate(CurvedAnimation(parent: _pulseAnim, curve: Curves.easeInOut));
+
+    // Prefetch trips + services so the P&L summary above the tabs is populated
+    // regardless of which tab is active. Both calls are idempotent and shared
+    // with the tabs.
+    Future.microtask(() {
+      final agencyId = ref.read(loginViewModelProvider).agencyId ?? '';
+      final vid = widget.vehicle.vehicleId ?? 0;
+      ref.read(addVehicleViewModelProvider.notifier).getTripsByVehicle(vid);
+      ref
+          .read(addVehicleViewModelProvider.notifier)
+          .getServiceRecords(agencyId, vid);
+    });
   }
 
   void _onTabChanged() {
     setState(() {});
-    if (_tab.index == 1) {
+    if (_tab.index == 2) {
       _fabAnim.forward();
     } else {
       _fabAnim.reverse();
@@ -221,7 +306,6 @@ Future<void> _toggleVehicleStatus() async {
   void dispose() {
     _tab.dispose();
     _headerAnim.dispose();
-    _statsAnim.dispose();
     _avatarAnim.dispose();
     _fabAnim.dispose();
     _pulseAnim.dispose();
@@ -234,6 +318,206 @@ Future<void> _toggleVehicleStatus() async {
     return '₹${v.toStringAsFixed(0)}';
   }
 
+  // ── P&L SUMMARY (period chips + net profit/loss hero) ─────────────────────
+  Widget _buildPnlSummary() {
+    final tripsAsync = ref.watch(
+      addVehicleViewModelProvider.select((s) => s.fetchTripsByVehicleId),
+    );
+    final servicesAsync = ref.watch(
+      addVehicleViewModelProvider.select((s) => s.fetchServiceRecords),
+    );
+    final trips = tripsAsync.asData?.value ?? const <BookingInfo>[];
+    final services = servicesAsync.asData?.value ?? const <Services>[];
+    final now = DateTime.now();
+
+    // Revenue = money received; trip expense = toll + repair + driver; both
+    // attributed by payment/start/booking date. Maintenance from service costs.
+    final periodTrips = trips.where((t) {
+      final d = t.paymentDate ?? t.startDateTime ?? t.bookingDate;
+      return _pnlPeriod.matches(d, now);
+    }).toList();
+    final revenue =
+        periodTrips.fold<double>(0, (s, t) => s + (t.amountReceived ?? 0));
+    // Trips that still have an outstanding balance (received < approved).
+    final unpaidCount = periodTrips
+        .where((t) => (t.amountApprove ?? 0) > (t.amountReceived ?? 0))
+        .length;
+    final tripExpense = periodTrips.fold<double>(
+      0,
+      (s, t) =>
+          s +
+          (t.tollCharges ?? 0) +
+          (t.repairingCharges ?? 0) +
+          (t.driverCharges ?? 0),
+    );
+    final maintenance = services
+        .where((s) => _pnlPeriod.matches(s.serviceDate, now))
+        .fold<double>(0, (sum, e) => sum + (e.serviceCost ?? 0));
+    final expense = tripExpense + maintenance;
+    final net = revenue - expense;
+    final isProfit = net >= 0;
+    final margin = revenue > 0 ? (net / revenue * 100) : 0.0;
+
+    return Container(
+      color: _C.bg,
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
+      child: Column(
+        children: [
+          // Hero net profit/loss card (period is controlled from the
+          // Revenue / Expense tabs).
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.fromLTRB(18, 16, 18, 16),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [AppColors.brandPrimary, AppColors.brandPrimaryDark],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: _C.accent.withOpacity(0.30),
+                  blurRadius: 18,
+                  offset: const Offset(0, 8),
+                ),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.baseline,
+                  textBaseline: TextBaseline.alphabetic,
+                  children: [
+                    Text(
+                      '${isProfit ? '' : '−'}${_fmt(net.abs())}',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 24,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: -0.8,
+                        height: 1,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 3),
+                      child: Text(
+                        isProfit ? 'net profit' : 'net loss',
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(0.82),
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    const Spacer(),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.20),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            isProfit
+                                ? Icons.trending_up_rounded
+                                : Icons.trending_down_rounded,
+                            color: Colors.white,
+                            size: 11,
+                          ),
+                          const SizedBox(width: 3),
+                          Text(
+                            '${isProfit ? '+' : ''}${margin.toStringAsFixed(1)}%',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 10,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 14),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _pnlStat('Revenue', _fmt(revenue),
+                          Icons.south_west_rounded),
+                    ),
+                    _pnlDivider(),
+                    Expanded(
+                      child: _pnlStat('Expense', _fmt(expense),
+                          Icons.north_east_rounded),
+                    ),
+                    _pnlDivider(),
+                    Expanded(
+                      child: _pnlStat('Trips', '${periodTrips.length}',
+                          Icons.receipt_long_rounded),
+                    ),
+                    _pnlDivider(),
+                    Expanded(
+                      child: _pnlStat('Unpaid', '$unpaidCount',
+                          Icons.pending_actions_rounded),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _pnlDivider() => Container(
+        width: 1,
+        height: 30,
+        margin: const EdgeInsets.symmetric(horizontal: 8),
+        color: Colors.white.withOpacity(0.18),
+      );
+
+  Widget _pnlStat(String label, String value, IconData icon) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Row(
+          children: [
+            Icon(icon, size: 11, color: Colors.white.withOpacity(0.85)),
+            const SizedBox(width: 4),
+            Text(
+              label,
+              style: TextStyle(
+                color: Colors.white.withOpacity(0.82),
+                fontSize: 10,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 3),
+        Text(
+          value,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 15.5,
+            fontWeight: FontWeight.w800,
+            letterSpacing: -0.4,
+          ),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     SystemChrome.setSystemUIOverlayStyle(
@@ -243,26 +527,34 @@ Future<void> _toggleVehicleStatus() async {
       ),
     );
 
+    // Built here (not lazily in the sliver callback) so the ref.watch inside
+    // registers as a dependency of this build.
+    final pnlSummary = _buildPnlSummary();
+
     return Scaffold(
       backgroundColor: _C.bg,
       body: NestedScrollView(
         headerSliverBuilder: (_, __) => [
           SliverToBoxAdapter(child: _buildHeader()),
+          SliverToBoxAdapter(child: pnlSummary),
           SliverPersistentHeader(pinned: true, delegate: _PremiumTabBar(_tab)),
         ],
         body: TabBarView(
           controller: _tab,
           physics: const BouncingScrollPhysics(),
           children: [
-            _TripsTab(vehicle: widget.vehicle, fmt: _fmt),
+            _OverviewTab(vehicle: widget.vehicle),
+            _TripsTab(
+              vehicle: widget.vehicle,
+              fmt: _fmt,
+              period: _pnlPeriod,
+              onPeriodChanged: (p) => setState(() => _pnlPeriod = p),
+            ),
             _MaintTab(
               vehicle: widget.vehicle,
-              month: _month,
-              year: _year,
-              months: _months,
               fmt: _fmt,
-              onMonth: (m) => setState(() => _month = m),
-              onYear: (y) => setState(() => _year = y),
+              period: _pnlPeriod,
+              onPeriodChanged: (p) => setState(() => _pnlPeriod = p),
               // FIX: pass null for new service, pass existing service for edit
               onEditService: (service) => _showAddServiceSheet(context, service),
             ),
@@ -441,50 +733,6 @@ Widget _buildHeader() {
                   ),
                 ),
 
-                const SizedBox(height: 14),
-
-                /// STATS STRIP (UNCHANGED)
-                FadeTransition(
-                  opacity: _statsFade,
-                  child: SlideTransition(
-                    position: _statsSlide,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        vertical: 11,
-                        horizontal: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.08),
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: IntrinsicHeight(
-                        child: Row(
-                          children: [
-                            _hStat(
-                              '${widget.vehicle.capacity ?? "--"}',
-                              'Seats',
-                              Icons.people_rounded,
-                            ),
-                            _hStatDivider(),
-                            _hStat(
-                              widget.vehicle.mileage != null
-                                  ? '${widget.vehicle.mileage}'
-                                  : '--',
-                              'km / l',
-                              Icons.speed_rounded,
-                            ),
-                            _hStatDivider(),
-                            _hStat(
-                              widget.vehicle.FuelType ?? '--',
-                              'Fuel',
-                              Icons.local_gas_station_rounded,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
               ],
             ),
           ),
@@ -528,40 +776,6 @@ Widget _buildHeader() {
           ],
         ),
       );
-
-  Widget _hStat(String value, String label, IconData icon) => Expanded(
-    child: Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(icon, size: 13, color: Colors.white.withOpacity(0.5)),
-        const SizedBox(height: 5),
-        Text(
-          value,
-          style: const TextStyle(
-            fontSize: 15,
-            fontWeight: FontWeight.w800,
-            color: Colors.white,
-            letterSpacing: -0.3,
-          ),
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-        ),
-        const SizedBox(height: 1),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 9,
-            color: Colors.white.withOpacity(0.5),
-            fontWeight: FontWeight.w500,
-            letterSpacing: 0.3,
-          ),
-        ),
-      ],
-    ),
-  );
-
-  Widget _hStatDivider() =>
-      Container(width: 1, height: 36, color: Colors.white.withOpacity(0.12));
 
   // ── FAB ───────────────────────────────────────────────────────────
   Widget? _fab() {
@@ -1350,10 +1564,11 @@ class _PremiumTabBar extends SliverPersistentHeaderDelegate {
   final TabController ctrl;
   const _PremiumTabBar(this.ctrl);
 
-  static const _labels = ['Trips', 'Maintenance'];
+  static const _labels = ['Overview', 'Revenue', 'Expense'];
   static const _icons = [
-    Icons.route_rounded,
-    Icons.build_rounded,
+    Icons.directions_car_rounded,
+    Icons.south_west_rounded,
+    Icons.north_east_rounded,
   ];
 
   @override
@@ -1515,7 +1730,14 @@ enum _VehicleTripFilter {
 class _TripsTab extends ConsumerStatefulWidget {
   final Vehicles vehicle;
   final String Function(double) fmt;
-  const _TripsTab({required this.vehicle, required this.fmt});
+  final _PnlPeriod period;
+  final ValueChanged<_PnlPeriod> onPeriodChanged;
+  const _TripsTab({
+    required this.vehicle,
+    required this.fmt,
+    required this.period,
+    required this.onPeriodChanged,
+  });
 
   @override
   ConsumerState<_TripsTab> createState() => _TripsTabState();
@@ -1534,12 +1756,6 @@ class _TripsTabState extends ConsumerState<_TripsTab> {
     );
   }
 
-  String _fmt(double v) {
-    if (v >= 100000) return '₹${(v / 100000).toStringAsFixed(1)}L';
-    if (v >= 1000) return '₹${(v / 1000).toStringAsFixed(1)}K';
-    return '₹${v.toStringAsFixed(0)}';
-  }
-
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(addVehicleViewModelProvider).fetchTripsByVehicleId;
@@ -1556,8 +1772,16 @@ class _TripsTabState extends ConsumerState<_TripsTab> {
         ],
       ),
       error: (e, _) => _errState(friendlyErrorMessage(e)),
-      data: (trips) {
-        if (trips.isEmpty) {
+      data: (allTrips) {
+        // Date-window filter (All / Today / Week / Month), matched on
+        // payment/start/booking date.
+        final now = DateTime.now();
+        final trips = allTrips.where((t) {
+          final d = t.paymentDate ?? t.startDateTime ?? t.bookingDate;
+          return widget.period.matches(d, now);
+        }).toList();
+
+        if (allTrips.isEmpty) {
           return LayoutBuilder(
             builder: (context, constraints) {
               return SingleChildScrollView(
@@ -1599,55 +1823,19 @@ class _TripsTabState extends ConsumerState<_TripsTab> {
           );
         }
 
-        final total = trips.length;
-        final paid = trips
-            .where(
-              (t) =>
-                  (t.amountReceived ?? 0) >= (t.amountApprove ?? 0) &&
-                  (t.amountApprove ?? 0) > 0,
-            )
-            .length;
-        final revenue = trips.fold<double>(
-          0,
-          (s, t) => s + (t.amountApprove ?? 0),
-        );
-
-        // Apply the in-memory status filter to the already-fetched list. The
-        // stats strip above stays an all-trips overview; only the list below
-        // reacts to the selected filter.
+        // Apply the in-memory status filter to the already-fetched list.
         final filtered =
             trips.where((t) => _filter.matches(t)).toList();
 
         return Column(
           children: [
-            _AnimatedListItem(
-              delay: const Duration(milliseconds: 0),
-              child: Container(
-                margin: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                decoration: BoxDecoration(
-                  color: _C.surface,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: _C.divider),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.04),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: IntrinsicHeight(
-                  child: Row(
-                    children: [
-                      _stat('$total', 'Total Trips', _C.indigo),
-                      _vd(),
-                      _stat('$paid', 'Paid', _C.green),
-                      _vd(),
-                      _stat(_fmt(revenue), 'Revenue', _C.accent),
-                    ],
-                  ),
-                ),
+            // ── Date-window filter ───────────────────────────────────────
+            Container(
+              color: _C.surface,
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+              child: _PeriodChips(
+                selected: widget.period,
+                onChanged: widget.onPeriodChanged,
               ),
             ),
 
@@ -1676,48 +1864,6 @@ class _TripsTabState extends ConsumerState<_TripsTab> {
       },
     );
   }
-
-  Widget _stat(String v, String l, Color c) => Expanded(
-    child: Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        TweenAnimationBuilder<double>(
-          tween: Tween(begin: 0.0, end: 1.0),
-          duration: const Duration(milliseconds: 600),
-          curve: Curves.easeOutCubic,
-          builder: (_, val, child) => Opacity(opacity: val, child: child),
-          child: Text(
-            v,
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w800,
-              color: c,
-              letterSpacing: -0.4,
-            ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ),
-        const SizedBox(height: 3),
-        Text(
-          l,
-          style: const TextStyle(
-            fontSize: 9,
-            color: _C.text2,
-            fontWeight: FontWeight.w600,
-            letterSpacing: 0.3,
-          ),
-        ),
-      ],
-    ),
-  );
-
-  Widget _vd() => Container(
-    width: 1,
-    height: 32,
-    margin: const EdgeInsets.symmetric(horizontal: 2),
-    color: _C.divider,
-  );
 
   // ── Status filter chips ────────────────────────────────────────────────
   Widget _buildFilterChips(List<BookingInfo> trips) {
@@ -1822,21 +1968,17 @@ class _TripsTabState extends ConsumerState<_TripsTab> {
 // ════════════════════════════════════════════════════════════════════════════
 class _MaintTab extends ConsumerStatefulWidget {
   final Vehicles vehicle;
-  final int month, year;
-  final List<String> months;
   final String Function(double) fmt;
-  final ValueChanged<int> onMonth, onYear;
+  final _PnlPeriod period;
+  final ValueChanged<_PnlPeriod> onPeriodChanged;
   // FIX: callback now receives a Services object for edit, called with null for add
   final void Function(Services? service) onEditService;
 
   const _MaintTab({
     required this.vehicle,
-    required this.month,
-    required this.year,
-    required this.months,
     required this.fmt,
-    required this.onMonth,
-    required this.onYear,
+    required this.period,
+    required this.onPeriodChanged,
     required this.onEditService,
   });
 
@@ -1844,18 +1986,10 @@ class _MaintTab extends ConsumerStatefulWidget {
   ConsumerState<_MaintTab> createState() => _MaintTabState();
 }
 
-class _MaintTabState extends ConsumerState<_MaintTab>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _listAnim;
-
+class _MaintTabState extends ConsumerState<_MaintTab> {
   @override
   void initState() {
     super.initState();
-    _listAnim = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 300),
-    );
-
     Future.microtask(() {
       ref
           .read(addVehicleViewModelProvider.notifier)
@@ -1863,17 +1997,11 @@ class _MaintTabState extends ConsumerState<_MaintTab>
             ref.read(loginViewModelProvider).agencyId ?? '',
             widget.vehicle.vehicleId ?? 0,
           );
+      // Trips power the toll / repair / driver rows of the expense breakdown.
+      ref
+          .read(addVehicleViewModelProvider.notifier)
+          .getTripsByVehicle(widget.vehicle.vehicleId ?? 0);
     });
-  }
-
-  @override
-  void dispose() {
-    _listAnim.dispose();
-    super.dispose();
-  }
-
-  void _triggerListAnim() {
-    _listAnim.forward(from: 0);
   }
 
   void _confirmDelete(BuildContext context, Services service) {
@@ -1952,105 +2080,21 @@ class _MaintTabState extends ConsumerState<_MaintTab>
     final serviceAsync = ref.watch(
       addVehicleViewModelProvider.select((s) => s.fetchServiceRecords),
     );
+    final tripsAsync = ref.watch(
+      addVehicleViewModelProvider.select((s) => s.fetchTripsByVehicleId),
+    );
+    final trips = tripsAsync.asData?.value ?? const <BookingInfo>[];
+    final now = DateTime.now();
 
     return Column(
       children: [
-        // Year + month selector
+        // ── Date-window filter ───────────────────────────────────────────
         Container(
           color: _C.surface,
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 14),
-          child: Column(
-            children: [
-              Row(
-                children: [
-                  _yBtn(Icons.chevron_left_rounded, () {
-                    widget.onYear(widget.year - 1);
-                    _triggerListAnim();
-                  }),
-                  Expanded(
-                    child: Center(
-                      child: AnimatedSwitcher(
-                        duration: const Duration(milliseconds: 250),
-                        transitionBuilder: (child, anim) => FadeTransition(
-                          opacity: anim,
-                          child: SlideTransition(
-                            position: Tween<Offset>(
-                              begin: const Offset(0, -0.3),
-                              end: Offset.zero,
-                            ).animate(anim),
-                            child: child,
-                          ),
-                        ),
-                        child: Text(
-                          '${widget.year}',
-                          key: ValueKey(widget.year),
-                          style: const TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w800,
-                            color: _C.text1,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                  _yBtn(Icons.chevron_right_rounded, () {
-                    widget.onYear(widget.year + 1);
-                    _triggerListAnim();
-                  }),
-                ],
-              ),
-
-              const SizedBox(height: 12),
-
-              SizedBox(
-                height: 36,
-                child: ListView.builder(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: widget.months.length,
-                  itemBuilder: (context, index) {
-                    final isSelected = index == widget.month;
-                    return GestureDetector(
-                      onTap: () {
-                        widget.onMonth(index);
-                        _triggerListAnim();
-                      },
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 250),
-                        curve: Curves.easeOutCubic,
-                        margin: const EdgeInsets.only(right: 8),
-                        padding: const EdgeInsets.symmetric(horizontal: 14),
-                        decoration: BoxDecoration(
-                          color: isSelected ? _C.orange : _C.surfaceAlt,
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(
-                            color: isSelected ? _C.orange : _C.divider,
-                          ),
-                          boxShadow: isSelected
-                              ? [
-                                  BoxShadow(
-                                    color: _C.orange.withOpacity(0.30),
-                                    blurRadius: 8,
-                                    offset: const Offset(0, 3),
-                                  ),
-                                ]
-                              : [],
-                        ),
-                        alignment: Alignment.center,
-                        child: AnimatedDefaultTextStyle(
-                          duration: const Duration(milliseconds: 200),
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: isSelected ? Colors.white : _C.text1,
-                          ),
-                          child: Text(widget.months[index]),
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ),
-            ],
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+          child: _PeriodChips(
+            selected: widget.period,
+            onChanged: widget.onPeriodChanged,
           ),
         ),
 
@@ -2069,95 +2113,40 @@ class _MaintTabState extends ConsumerState<_MaintTab>
             ),
             error: (e, _) => NetworkErrorView(error: e),
             data: (services) {
-              final filteredServices = services.where((s) {
-                if (s.serviceDate == null) return false;
-                return s.serviceDate!.month == widget.month + 1 &&
-                    s.serviceDate!.year == widget.year;
-              }).toList();
+              final filteredServices = services
+                  .where((s) => widget.period.matches(s.serviceDate, now))
+                  .toList();
 
-              final monthlyTotal = filteredServices.fold<double>(
+              // Maintenance cost for the selected period (from service records).
+              final maintenance = filteredServices.fold<double>(
                 0.0,
                 (sum, s) => sum + (s.serviceCost ?? 0.0),
               );
 
-              final yearlyTotal = services
-                  .where((s) =>
-                      s.serviceDate != null &&
-                      s.serviceDate!.year == widget.year)
-                  .fold<double>(0.0, (sum, s) => sum + (s.serviceCost ?? 0.0));
+              // Trip-level expenses (toll / repair / driver) for trips that
+              // fall in the selected period, matched on payment/start/booking
+              // date so unpaid trips still count once they have a date.
+              bool inPeriod(BookingInfo t) {
+                final d = t.paymentDate ?? t.startDateTime ?? t.bookingDate;
+                return widget.period.matches(d, now);
+              }
+
+              final periodTrips = trips.where(inPeriod).toList();
+              final toll = periodTrips.fold<double>(
+                  0.0, (sum, t) => sum + (t.tollCharges ?? 0.0));
+              final repair = periodTrips.fold<double>(
+                  0.0, (sum, t) => sum + (t.repairingCharges ?? 0.0));
+              final driver = periodTrips.fold<double>(
+                  0.0, (sum, t) => sum + (t.driverCharges ?? 0.0));
+              final totalExpense = toll + repair + driver + maintenance;
 
               return ListView(
                 padding: const EdgeInsets.fromLTRB(16, 14, 16, 100),
                 children: [
-                  // Summary cards
-                  Container(
-                    margin: const EdgeInsets.only(bottom: 16),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: Container(
-                            padding: const EdgeInsets.all(14),
-                            decoration: BoxDecoration(
-                              color: Colors.blue.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(14),
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text(
-                                  "Monthly Total",
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: Colors.grey,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  "₹ ${monthlyTotal.toStringAsFixed(0)}",
-                                  style: const TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-
-                        const SizedBox(width: 12),
-
-                        Expanded(
-                          child: Container(
-                            padding: const EdgeInsets.all(14),
-                            decoration: BoxDecoration(
-                              color: Colors.purple.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(14),
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text(
-                                  "Yearly Total",
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: Colors.grey,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  "₹ ${yearlyTotal.toStringAsFixed(0)}",
-                                  style: const TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+                  // Expense breakdown
+                  _breakdownCard(
+                      toll, repair, driver, maintenance, totalExpense),
+                  const SizedBox(height: 16),
 
                   // Empty state
                   if (filteredServices.isEmpty)
@@ -2180,7 +2169,7 @@ class _MaintTabState extends ConsumerState<_MaintTab>
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            "No maintenance in ${widget.months[widget.month]} ${widget.year}.",
+                            "No maintenance for ${widget.period.label}.",
                             textAlign: TextAlign.center,
                             style: const TextStyle(color: Colors.grey),
                           ),
@@ -2215,19 +2204,110 @@ class _MaintTabState extends ConsumerState<_MaintTab>
     );
   }
 
-  Widget _yBtn(IconData icon, VoidCallback fn) => _TapScaleButton(
-    onTap: fn,
-    child: Container(
-      width: 32,
-      height: 32,
+  // ── Expense breakdown (toll / repair / driver / maintenance) ──────────
+  Widget _breakdownCard(double toll, double repair, double driver,
+      double maintenance, double expense) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
       decoration: BoxDecoration(
-        color: _C.surfaceAlt,
-        borderRadius: BorderRadius.circular(9),
+        color: _C.surface,
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(color: _C.divider),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
-      child: Icon(icon, size: 16, color: _C.text1),
-    ),
-  );
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Expense Breakdown',
+            style: TextStyle(
+              fontSize: 13.5,
+              fontWeight: FontWeight.w800,
+              color: _C.text1,
+              letterSpacing: -0.2,
+            ),
+          ),
+          const SizedBox(height: 12),
+          _breakdownRow('Toll charges', toll, Icons.toll_rounded),
+          _breakdownRow('Repair charges', repair, Icons.build_rounded),
+          _breakdownRow('Driver charges', driver, Icons.payments_rounded),
+          _breakdownRow('Maintenance', maintenance, Icons.handyman_rounded),
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 10),
+            child: Divider(height: 1, color: _C.divider),
+          ),
+          Row(
+            children: [
+              const Text(
+                'Total expense',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w800,
+                  color: _C.text1,
+                ),
+              ),
+              const Spacer(),
+              Text(
+                widget.fmt(expense),
+                style: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w800,
+                  color: _C.orange,
+                  letterSpacing: -0.3,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _breakdownRow(String label, double value, IconData icon) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        children: [
+          Container(
+            width: 28,
+            height: 28,
+            decoration: BoxDecoration(
+              color: _C.orange.withOpacity(0.12),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(icon, size: 14, color: _C.orange),
+          ),
+          const SizedBox(width: 11),
+          Expanded(
+            child: Text(
+              label,
+              style: const TextStyle(
+                fontSize: 12.5,
+                fontWeight: FontWeight.w600,
+                color: _C.text2,
+              ),
+            ),
+          ),
+          Text(
+            widget.fmt(value),
+            style: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w800,
+              color: _C.text1,
+              letterSpacing: -0.3,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
   Widget _mCard(_MR r, Services service) {
     final bool isDone = r.done;
@@ -2382,37 +2462,6 @@ class _MR {
   const _MR(this.type, this.notes, this.date, this.cost, this.done, this.icon);
 }
 
-// ── Tap scale helper ───────────────────────────────────────────────────────
-class _TapScaleButton extends StatefulWidget {
-  final Widget child;
-  final VoidCallback onTap;
-  const _TapScaleButton({required this.child, required this.onTap});
-
-  @override
-  State<_TapScaleButton> createState() => _TapScaleButtonState();
-}
-
-class _TapScaleButtonState extends State<_TapScaleButton> {
-  bool _pressed = false;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTapDown: (_) => setState(() => _pressed = true),
-      onTapUp: (_) {
-        setState(() => _pressed = false);
-        widget.onTap();
-      },
-      onTapCancel: () => setState(() => _pressed = false),
-      child: AnimatedScale(
-        scale: _pressed ? 0.88 : 1.0,
-        duration: const Duration(milliseconds: 100),
-        child: widget.child,
-      ),
-    );
-  }
-}
-
 // ── Error State ────────────────────────────────────────────────────────────
 Widget _errState(String msg) => Center(
   child: Padding(
@@ -2456,3 +2505,150 @@ Widget _errState(String msg) => Center(
     ),
   ),
 );
+
+// ════════════════════════════════════════════════════════════════════════════
+// TAB 3 — OVERVIEW
+// Vehicle specs that used to live in the header stats strip — capacity,
+// mileage, fuel — plus the rest of the vehicle's identity, in a clean card.
+// ════════════════════════════════════════════════════════════════════════════
+class _OverviewTab extends StatelessWidget {
+  final Vehicles vehicle;
+  const _OverviewTab({required this.vehicle});
+
+  @override
+  Widget build(BuildContext context) {
+    final v = vehicle;
+    return ListView(
+      physics: const BouncingScrollPhysics(),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
+      children: [
+        _specCard(
+          title: 'Specifications',
+          rows: [
+            _SpecRow(
+              Icons.people_rounded,
+              'Seating Capacity',
+              v.capacity != null ? '${v.capacity} seats' : '--',
+            ),
+            _SpecRow(
+              Icons.speed_rounded,
+              'Mileage',
+              v.mileage != null ? '${v.mileage} km / l' : '--',
+            ),
+            _SpecRow(
+              Icons.local_gas_station_rounded,
+              'Fuel Type',
+              v.FuelType ?? '--',
+            ),
+          ],
+        ),
+        const SizedBox(height: 14),
+        _specCard(
+          title: 'Vehicle Details',
+          rows: [
+            _SpecRow(Icons.directions_car_rounded, 'Name', v.name ?? '--'),
+            _SpecRow(Icons.pin_rounded, 'Registration', v.number ?? '--'),
+            _SpecRow(Icons.category_rounded, 'Type', v.Type ?? '--'),
+            if (v.perKmCharge != null)
+              _SpecRow(
+                Icons.route_rounded,
+                'Per-km Charge',
+                '₹ ${v.perKmCharge!.toStringAsFixed(0)}',
+              ),
+            _SpecRow(
+              Icons.verified_rounded,
+              'Status',
+              v.StatusName ?? '--',
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _specCard({required String title, required List<_SpecRow> rows}) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 6),
+      decoration: BoxDecoration(
+        color: _C.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: _C.divider),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: const TextStyle(
+              fontSize: 13.5,
+              fontWeight: FontWeight.w800,
+              color: _C.text1,
+              letterSpacing: -0.2,
+            ),
+          ),
+          const SizedBox(height: 6),
+          for (var i = 0; i < rows.length; i++) ...[
+            if (i > 0) const Divider(height: 1, color: _C.divider),
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 10),
+              child: Row(
+                children: [
+                  Container(
+                    width: 32,
+                    height: 32,
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [
+                          AppColors.brandPrimaryLight,
+                          AppColors.brandPrimary,
+                        ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(9),
+                    ),
+                    child: Icon(rows[i].icon, size: 16, color: Colors.white),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      rows[i].label,
+                      style: const TextStyle(
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w600,
+                        color: _C.text2,
+                      ),
+                    ),
+                  ),
+                  Text(
+                    rows[i].value,
+                    style: const TextStyle(
+                      fontSize: 13.5,
+                      fontWeight: FontWeight.w800,
+                      color: _C.text1,
+                      letterSpacing: -0.2,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _SpecRow {
+  final IconData icon;
+  final String label;
+  final String value;
+  const _SpecRow(this.icon, this.label, this.value);
+}

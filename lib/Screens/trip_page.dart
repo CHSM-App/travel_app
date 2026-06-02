@@ -885,8 +885,10 @@ class _TripPageState extends ConsumerState<TripPage> {
     return items;
   }
 
+  // Trips are filtered, sorted and grouped by their START date (falling back to
+  // booking/end date only when start is missing).
   static DateTime? _sortKey(BookingInfo t) =>
-      t.bookingDate ?? t.startDateTime ?? t.endDateTime;
+      t.startDateTime ?? t.bookingDate ?? t.endDateTime;
 
   static const _weekdays = [
     'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun',

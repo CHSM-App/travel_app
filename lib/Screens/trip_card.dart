@@ -1155,6 +1155,13 @@ final receivedController = TextEditingController(
                               ),
                               rowDivider(),
                               detailRow(
+                                "Booked",
+                                _formatDate(bookinginfo.bookingDate),
+                                Icons.event_note_rounded,
+                                AppColors.brandPrimary,
+                              ),
+                              rowDivider(),
+                              detailRow(
                                 "Start",
                                 "${_formatDate(bookinginfo.startDateTime)}  ${_formatTime(bookinginfo.startDateTime)}",
                                 Icons.calendar_today_outlined,
