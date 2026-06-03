@@ -6,8 +6,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:travel_agency_app/Screens/add_customer.dart';
 import 'package:travel_agency_app/Screens/trip_card.dart';
-import 'package:travel_agency_app/core/network/error_messages.dart';
 import 'package:travel_agency_app/core/theme/app_colors.dart';
+import 'package:travel_agency_app/core/widgets/error_view.dart';
 import 'package:travel_agency_app/core/widgets/skeleton.dart';
 import 'package:travel_agency_app/core/widgets/trip_filter.dart';
 import 'package:travel_agency_app/domain/models/booking_info.dart';
@@ -741,7 +741,7 @@ class _CustomerHistState extends ConsumerState<CustomerHist>
   Widget _buildTripList(AsyncValue<List<BookingInfo>> state) {
     return state.when(
       loading: _loadingState,
-      error: (e, _) => _errorState(e),
+      error: (e, _) => NetworkErrorView(error: e, onRetry: _load),
       data: (trips) => trips.isEmpty ? _emptyState() : _tripsData(trips),
     );
   }
@@ -763,85 +763,6 @@ class _CustomerHistState extends ConsumerState<CustomerHist>
     );
   }
 
-  Widget _errorState(Object e) {
-    final offline = isNetworkError(e);
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 36),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(18),
-              decoration: BoxDecoration(
-                color: offline ? Colors.grey.shade100 : Colors.red.shade50,
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                offline ? Icons.wifi_off_rounded : Icons.cloud_off_rounded,
-                color: offline ? Colors.grey.shade500 : Colors.red.shade300,
-                size: 28,
-              ),
-            ),
-            const SizedBox(height: 14),
-            Text(
-              offline ? "You appear to be offline" : "Couldn't load trips",
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w700,
-                color: _textPrimary,
-              ),
-            ),
-            const SizedBox(height: 6),
-            Text(
-              friendlyErrorMessage(e),
-              textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 12, color: _textSecondary),
-            ),
-            const SizedBox(height: 20),
-            Semantics(
-              button: true,
-              label: 'Retry loading trips',
-              child: Material(
-                color: Colors.transparent,
-                child: Ink(
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [AppColors.brandPrimaryLight, AppColors.brandPrimary],
-                    ),
-                    borderRadius: BorderRadius.circular(30),
-                    boxShadow: [
-                      BoxShadow(
-                        color: _accent.withValues(alpha: 0.3),
-                        blurRadius: 12,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: InkWell(
-                    onTap: _load,
-                    borderRadius: BorderRadius.circular(30),
-                    child: const Padding(
-                      padding: EdgeInsets.symmetric(
-                          horizontal: 28, vertical: 12),
-                      child: Text(
-                        "Retry",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w800,
-                          fontSize: 13,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 
   Widget _emptyState() {
     return RefreshIndicator(

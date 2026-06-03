@@ -9,6 +9,7 @@ import 'package:pdf/widgets.dart' as pw;
 import 'package:share_plus/share_plus.dart' as share_plus;
 import 'package:travel_agency_app/core/network/error_messages.dart';
 import 'package:travel_agency_app/core/theme/app_colors.dart';
+import 'package:travel_agency_app/core/widgets/error_view.dart';
 import 'package:travel_agency_app/domain/models/reports_data.dart';
 import 'package:travel_agency_app/presentation/providers/viewmodel_provider.dart';
 
@@ -896,8 +897,11 @@ class _TravelReportPageState extends ConsumerState<TravelReportPage>
               final asyncVal = state.getByTab(tab.tabIndex);
               return asyncVal.when(
                 loading: () => _LoadingView(color: tab.color),
-                error: (e, _) => _ErrorView(color: tab.color, errorMessage: friendlyErrorMessage(e),
-                    onRetry: () => ref.read(reportViewModelProvider.notifier).reloadTab(widget.agencyId, tab.tabIndex)),
+                error: (e, _) => NetworkErrorView(
+                    error: e,
+                    onRetry: () => ref
+                        .read(reportViewModelProvider.notifier)
+                        .reloadTab(widget.agencyId, tab.tabIndex)),
                 data: (rawList) {
                   final filtered = _applyDateFilter(rawList, _filterType, _customStart, _customEnd);
                   switch (tab) {
@@ -1816,17 +1820,6 @@ class _LoadingView extends StatelessWidget {
   Widget build(BuildContext context) => Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [CircularProgressIndicator(color: color, strokeWidth: 2.5), const SizedBox(height: 14), const Text('Loading report…', style: TextStyle(color: _textGrey, fontSize: 13))]));
 }
 
-class _ErrorView extends StatelessWidget {
-  final Color color; final String? errorMessage; final VoidCallback onRetry;
-  const _ErrorView({required this.color, required this.onRetry, this.errorMessage});
-  @override
-  Widget build(BuildContext context) => Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-    Icon(Icons.error_outline_rounded, color: color, size: 48), const SizedBox(height: 12),
-    const Text('Something went wrong', style: TextStyle(color: _textDark, fontSize: 14, fontWeight: FontWeight.w600)),
-    if (errorMessage != null && errorMessage!.trim().isNotEmpty) ...[const SizedBox(height: 6), Padding(padding: const EdgeInsets.symmetric(horizontal: 20), child: Text(errorMessage!, textAlign: TextAlign.center, style: const TextStyle(color: _textGrey, fontSize: 12), maxLines: 3, overflow: TextOverflow.ellipsis))],
-    const SizedBox(height: 8), TextButton(onPressed: onRetry, child: Text('Retry', style: TextStyle(color: color, fontWeight: FontWeight.w700))),
-  ]));
-}
 
 Widget _noData(DateFilterType ft, Color color) => Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
   Container(padding: const EdgeInsets.all(20), decoration: BoxDecoration(color: color.withOpacity(0.1), shape: BoxShape.circle), child: Icon(Icons.search_off_rounded, color: color, size: 36)),

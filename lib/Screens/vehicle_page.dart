@@ -6,8 +6,8 @@ import 'package:travel_agency_app/Screens/add_driver.dart';
 import 'package:travel_agency_app/Screens/driver_history.dart';
 import 'package:travel_agency_app/Screens/vehicle_details.dart';
 import 'package:travel_agency_app/Screens/vehicle_report.dart';
-import 'package:travel_agency_app/core/network/error_messages.dart';
 import 'package:travel_agency_app/core/theme/app_colors.dart';
+import 'package:travel_agency_app/core/widgets/error_view.dart';
 import 'package:travel_agency_app/core/widgets/skeleton.dart';
 import 'package:travel_agency_app/domain/models/vehicles.dart';
 import 'package:travel_agency_app/domain/models/drivers.dart';
@@ -1093,40 +1093,6 @@ class _VehiclePageState extends ConsumerState<VehiclePage>
   );
 
   // ── Error ─────────────────────────────────────────────────────────
-  Widget _error(Object e) => Center(
-    child: Padding(
-      padding: const EdgeInsets.all(40),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(18),
-            decoration: const BoxDecoration(
-              color: _C.redSoft,
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(Icons.cloud_off_rounded, color: _C.red, size: 28),
-          ),
-          const SizedBox(height: 14),
-          const Text(
-            'Failed to load',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w700,
-              color: _C.text1,
-            ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            friendlyErrorMessage(e),
-            textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: 12, color: _C.text2),
-          ),
-        ],
-      ),
-    ),
-  );
-
   // ── Header ────────────────────────────────────────────────────────
   Widget _buildHeader() {
     return Container(
@@ -1398,7 +1364,8 @@ class _VehiclePageState extends ConsumerState<VehiclePage>
                   // ── VEHICLES ─────────────────────────────────────
                   vehicleState.when(
                     loading: () => _loading('Loading vehicles...'),
-                    error: (e, _) => _error(e),
+                    error: (e, _) =>
+                        NetworkErrorView(error: e, onRetry: _refreshData),
                     data: (vehicles) {
                       final q = _searchCtrl.text.toLowerCase();
                       final filtered = vehicles
@@ -1449,7 +1416,8 @@ class _VehiclePageState extends ConsumerState<VehiclePage>
                   // ── DRIVERS ──────────────────────────────────────
                   driverState.when(
                     loading: () => _loading('Loading drivers...'),
-                    error: (e, _) => _error(e),
+                    error: (e, _) =>
+                        NetworkErrorView(error: e, onRetry: _refreshData),
                     data: (drivers) {
                       final q = _searchCtrl.text.toLowerCase();
                       final filtered = drivers

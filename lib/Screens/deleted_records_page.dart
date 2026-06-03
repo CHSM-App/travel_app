@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:travel_agency_app/core/network/error_messages.dart';
 import 'package:travel_agency_app/core/theme/app_colors.dart';
+import 'package:travel_agency_app/core/widgets/error_view.dart';
 import 'package:travel_agency_app/core/widgets/skeleton.dart';
 import 'package:travel_agency_app/domain/models/drivers.dart';
 import 'package:travel_agency_app/domain/models/vehicles.dart';
@@ -714,65 +714,6 @@ class _DeletedRecordsPageState extends ConsumerState<DeletedRecordsPage>
     );
   }
 
-  Widget _errorState(Object error) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(28),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              width: 56,
-              height: 56,
-              decoration: BoxDecoration(
-                color: _redSoft,
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: const Icon(
-                Icons.error_outline_rounded,
-                color: _red,
-                size: 28,
-              ),
-            ),
-            const SizedBox(height: 14),
-            const Text(
-              'Something went wrong',
-              style: TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w700,
-                color: _text1,
-              ),
-            ),
-            const SizedBox(height: 6),
-            Text(
-              friendlyErrorMessage(error),
-              textAlign: TextAlign.center,
-              style: const TextStyle(color: _text2, fontSize: 12, height: 1.5),
-            ),
-            const SizedBox(height: 20),
-            TextButton(
-              onPressed: _loadDeletedItems,
-              style: TextButton.styleFrom(
-                backgroundColor: _accentLight,
-                foregroundColor: _accent,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 10,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              ),
-              child: const Text(
-                'Retry',
-                style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 
   Widget _emptyState({
     required IconData icon,
@@ -932,12 +873,18 @@ class _DeletedRecordsPageState extends ConsumerState<DeletedRecordsPage>
               children: [
                 vehicleState.when(
                   loading: () => _loadingState('Loading deleted vehicles…'),
-                  error: (e, _) => _errorState(e),
+                  error: (e, _) => NetworkErrorView(
+                    error: e,
+                    onRetry: _loadDeletedItems,
+                  ),
                   data: _vehiclesContent,
                 ),
                 driverState.when(
                   loading: () => _loadingState('Loading deleted drivers…'),
-                  error: (e, _) => _errorState(e),
+                  error: (e, _) => NetworkErrorView(
+                    error: e,
+                    onRetry: _loadDeletedItems,
+                  ),
                   data: _driversContent,
                 ),
               ],

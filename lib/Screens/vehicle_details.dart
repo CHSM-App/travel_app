@@ -23,8 +23,6 @@ abstract class _C {
   static const surface = Color(0xFFFFFFFF);
   static const accent = AppColors.brandPrimary;
   static const green = Color(0xFF059669);
-  static const red = Color(0xFFDC2626);
-  static const redSoft = Color(0xFFFEE2E2);
   static const orange = Color(0xFFEA580C);
   static const text1 = Color(0xFF0F1224);
   static const text2 = Color(0xFF6B7280);
@@ -1458,7 +1456,12 @@ class _TripsTabState extends ConsumerState<_TripsTab> {
           SkeletonListItem(),
         ],
       ),
-      error: (e, _) => _errState(friendlyErrorMessage(e)),
+      error: (e, _) => NetworkErrorView(
+        error: e,
+        onRetry: () async => ref
+            .read(addVehicleViewModelProvider.notifier)
+            .getTripsByVehicle(widget.vehicle.vehicleId ?? 0),
+      ),
       data: (allTrips) {
         if (allTrips.isEmpty) {
           return LayoutBuilder(
@@ -1860,7 +1863,19 @@ class _MaintTabState extends ConsumerState<_MaintTab> {
                 SkeletonListItem(hasTrailingLine: false),
               ],
             ),
-            error: (e, _) => NetworkErrorView(error: e),
+            error: (e, _) => NetworkErrorView(
+              error: e,
+              onRetry: () async {
+                final notifier =
+                    ref.read(addVehicleViewModelProvider.notifier);
+                await notifier.getServiceRecords(
+                  ref.read(loginViewModelProvider).agencyId ?? '',
+                  widget.vehicle.vehicleId ?? 0,
+                );
+                await notifier
+                    .getTripsByVehicle(widget.vehicle.vehicleId ?? 0);
+              },
+            ),
             data: (services) {
               final filteredServices = services
                   .where((s) => widget.range
@@ -2214,49 +2229,6 @@ class _MR {
 }
 
 // ── Error State ────────────────────────────────────────────────────────────
-Widget _errState(String msg) => Center(
-  child: Padding(
-    padding: const EdgeInsets.all(48),
-    child: TweenAnimationBuilder<double>(
-      tween: Tween(begin: 0.0, end: 1.0),
-      duration: const Duration(milliseconds: 450),
-      curve: Curves.easeOutCubic,
-      builder: (_, v, child) => Opacity(opacity: v, child: child),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: _C.redSoft,
-              shape: BoxShape.circle,
-              border: Border.all(color: _C.red.withOpacity(0.20)),
-            ),
-            child: const Icon(
-                Icons.cloud_off_rounded, color: _C.red, size: 26),
-          ),
-          const SizedBox(height: 14),
-          const Text(
-            'Failed to load',
-            style: TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w800,
-              color: _C.text1,
-            ),
-          ),
-          const SizedBox(height: 5),
-          Text(
-            msg,
-            textAlign: TextAlign.center,
-            style:
-                const TextStyle(fontSize: 11, color: _C.text2, height: 1.5),
-          ),
-        ],
-      ),
-    ),
-  ),
-);
-
 // ════════════════════════════════════════════════════════════════════════════
 // TAB 3 — OVERVIEW
 // Vehicle specs that used to live in the header stats strip — capacity,

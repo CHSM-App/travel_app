@@ -1310,7 +1310,7 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
                 tollCharges: toll,
                 repairingCharges: repair,
                 driverCharges: driverChg,
-                amountReceived: received,
+                amountReceived: received, 
               ),
             );
         completionRecorded = true;

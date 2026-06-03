@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:travel_agency_app/Screens/add_customer.dart';
 import 'package:travel_agency_app/Screens/customer_hist.dart';
-import 'package:travel_agency_app/core/network/error_messages.dart';
 import 'package:travel_agency_app/core/theme/app_colors.dart';
+import 'package:travel_agency_app/core/widgets/error_view.dart';
 import 'package:travel_agency_app/core/widgets/skeleton.dart';
 import 'package:travel_agency_app/domain/models/customers.dart';
 import 'package:travel_agency_app/presentation/providers/viewmodel_provider.dart';
@@ -674,49 +674,8 @@ class _CustomerListPageState extends ConsumerState<CustomerListPage>
                   ),
                 ),
 
-                error: (e, _) => Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(40),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(20),
-                          decoration: const BoxDecoration(
-                            color: _C.errorLight, shape: BoxShape.circle,
-                          ),
-                          child: const Icon(Icons.wifi_off_rounded,
-                              size: 36, color: _C.error),
-                        ),
-                        const SizedBox(height: 20),
-                        const Text('Something went wrong',
-                          style: TextStyle(
-                            fontSize: 17, fontWeight: FontWeight.w800,
-                            color: _C.slate900,
-                          )),
-                        const SizedBox(height: 8),
-                        Text(friendlyErrorMessage(e),
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            fontSize: 13, color: _C.slate500,
-                          )),
-                        const SizedBox(height: 24),
-                        FilledButton.icon(
-                          onPressed: _refresh,
-                          icon: const Icon(Icons.refresh_rounded, size: 18),
-                          label: const Text('Retry'),
-                          style: FilledButton.styleFrom(
-                            backgroundColor: _C.indigo,
-                            shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12)),
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 24, vertical: 12),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
+                error: (e, _) =>
+                    NetworkErrorView(error: e, onRetry: () async => _refresh()),
 
                 data: (customers) {
                   final filtered = _applyFilter(customers);

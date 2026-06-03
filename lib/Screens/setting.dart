@@ -7,6 +7,7 @@ import 'package:travel_agency_app/Screens/login.dart';
 import 'package:travel_agency_app/Screens/profile.dart';
 import 'package:travel_agency_app/core/network/token_provider.dart';
 import 'package:travel_agency_app/core/theme/app_colors.dart';
+import 'package:travel_agency_app/core/widgets/error_view.dart';
 import 'package:travel_agency_app/domain/models/login_info.dart';
 import 'package:travel_agency_app/domain/models/token_response.dart';
 import 'package:travel_agency_app/presentation/providers/viewmodel_provider.dart';
@@ -206,7 +207,13 @@ class _ModernSettingsPageState extends ConsumerState<ModernSettingsPage>
   Widget _buildProfileSection(AsyncValue<List<LoginInfo>> adminProfile) {
     return adminProfile.when(
       loading: () => _profileShimmer(),
-      error: (err, _) => _profileError(err),
+      error: (err, _) => NetworkErrorView(
+        error: err,
+        scrollable: false,
+        onRetry: () async => ref
+            .read(loginViewModelProvider.notifier)
+            .adminProfile(ref.read(loginViewModelProvider).adminId),
+      ),
       data: (list) => _profileCard(list.isNotEmpty ? list.first : null),
     );
   }
@@ -219,27 +226,6 @@ class _ModernSettingsPageState extends ConsumerState<ModernSettingsPage>
         borderRadius: BorderRadius.circular(24),
       ),
       child: const Center(child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5)),
-    );
-  }
-
-  Widget _profileError(Object err) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(colors: [_primary, _primaryDark]),
-        borderRadius: BorderRadius.circular(24),
-      ),
-      child: Column(
-        children: [
-          const Text('Could not load profile', style: TextStyle(color: Colors.white, fontSize: 15)),
-          const SizedBox(height: 10),
-          OutlinedButton(
-            style: OutlinedButton.styleFrom(side: const BorderSide(color: Colors.white70), foregroundColor: Colors.white),
-            onPressed: () => ref.read(loginViewModelProvider.notifier).adminProfile(ref.read(loginViewModelProvider).adminId),
-            child: const Text('Retry'),
-          ),
-        ],
-      ),
     );
   }
 

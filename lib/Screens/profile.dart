@@ -335,7 +335,12 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
       body: loginState.adminProfile.when(
         loading: () =>
             const Center(child: CircularProgressIndicator(color: _primary)),
-        error: (e, _) => NetworkErrorView(error: e),
+        error: (e, _) => NetworkErrorView(
+          error: e,
+          onRetry: () async => ref
+              .read(loginViewModelProvider.notifier)
+              .adminProfile(ref.read(loginViewModelProvider).adminId),
+        ),
         data: (list) {
           if (list.isNotEmpty) {
             WidgetsBinding.instance.addPostFrameCallback(

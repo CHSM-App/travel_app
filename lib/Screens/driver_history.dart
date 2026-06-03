@@ -874,7 +874,7 @@ class _DriverHistoryPageState
           ],
         ),
       ),
-      error: (e, _) => NetworkErrorView(error: e),
+      error: (e, _) => NetworkErrorView(error: e, onRetry: _refreshTrips),
       data: (trips) {
         if (trips.isEmpty) {
           return const Center(
