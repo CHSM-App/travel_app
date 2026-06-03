@@ -557,7 +557,12 @@ class _VehiclePageState extends ConsumerState<VehiclePage>
                                 Icons.speed_rounded,
                                 v.mileage != null ? '${v.mileage}' : '--',
                                 'km/l',
+                              ),_statChip(
+                                Icons.currency_rupee_rounded,
+                                v.perKmCharge != null ? '${v.perKmCharge}' : '--',
+                                '₹/km',
                               ),
+
                               _fuelBadge(v.FuelType),
                             ],
                           ),

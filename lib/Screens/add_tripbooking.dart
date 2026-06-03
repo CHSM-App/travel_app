@@ -1285,6 +1285,8 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
       agencyId: agencyId,
     );
 
+   
+
     final n = ref.read(tripBookingViewModelProvider.notifier);
     bool completionRecorded = false;
     try {
@@ -1295,16 +1297,16 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
         await n.addTripBooking(bk);
         // Recover the new trip id from the create response so we can complete it.
         tripId = _findTripId(ref.read(tripBookingViewModelProvider).data);
+        debugPrint("Created trip with id $tripId");
       }
 
       // For a back-dated trip, stamp the end time + final charges + amount
       // received using the same endTrip flow the trip card uses. This moves
       // the trip to Paid / Unpaid based on what was collected.
       if (completed && tripId != null) {
-        await ref.read(tripPageViewModelProvider.notifier).endTrip(
+        await ref.read(tripPageViewModelProvider.notifier).updatePaymentStatus(
               BookingInfo(
                 tripId: tripId,
-                endDateTime: endDt,
                 tollCharges: toll,
                 repairingCharges: repair,
                 driverCharges: driverChg,
