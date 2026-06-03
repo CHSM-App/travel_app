@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:travel_agency_app/Screens/trip_card.dart';
 import 'package:travel_agency_app/core/storage/constant.dart';
@@ -67,19 +70,32 @@ class _DriverHistoryPageState
   _DriverTripFilter _filter = _DriverTripFilter.all;
 
   // Date-range + free-text search applied on top of the status filter,
-  // mirroring TripPage.
+  // mirroring TripPage. Search is a toggled icon → field with a debounced query.
+  static const Duration _searchDebounce = Duration(milliseconds: 250);
   TripDateRange _range = TripDateRange.all;
   DateTimeRange? _customRange;
   final TextEditingController _searchCtrl = TextEditingController();
+  final FocusNode _searchFocus = FocusNode();
+  Timer? _debounceTimer;
+  bool _searchVisible = false;
   String _query = '';
 
   static const Color _bg = Color(0xFFF2F4F8);
   static const Color _surface = Color(0xFFFFFFFF);
   static const Color _surfaceLight = Color(0xFFF0F3FA);
   static const Color _accent = AppColors.brandPrimary;
+  static const Color _accentSoft = AppColors.brandSoft;
   static const Color _textPrimary = Color(0xFF1A1D2E);
   static const Color _textSecondary = Color(0xFF7B82A0);
   static const Color _divider = Color(0xFFE4E8F0);
+  static const Color _success = Color(0xFF2DB976);
+  static const Color _warning = Color(0xFFE67E22);
+
+  static final NumberFormat _money = NumberFormat.currency(
+    locale: 'en_IN',
+    symbol: '₹',
+    decimalDigits: 0,
+  );
 
   @override
   void initState() {
@@ -121,8 +137,37 @@ class _DriverHistoryPageState
   @override
   void dispose() {
     _entryController.dispose();
+    _debounceTimer?.cancel();
     _searchCtrl.dispose();
+    _searchFocus.dispose();
     super.dispose();
+  }
+
+  void _onSearchChanged(String value) {
+    _debounceTimer?.cancel();
+    _debounceTimer = Timer(_searchDebounce, () {
+      if (!mounted) return;
+      final normalized = value.trim().toLowerCase();
+      if (normalized == _query) return;
+      setState(() => _query = normalized);
+    });
+  }
+
+  void _toggleSearch() {
+    setState(() {
+      _searchVisible = !_searchVisible;
+      if (!_searchVisible) {
+        _debounceTimer?.cancel();
+        _searchCtrl.clear();
+        _query = '';
+        _searchFocus.unfocus();
+      }
+    });
+    if (_searchVisible) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _searchFocus.requestFocus();
+      });
+    }
   }
 
   @override
@@ -135,13 +180,34 @@ class _DriverHistoryPageState
       statusBarIconBrightness: Brightness.dark,
     ));
 
+    final topPad = MediaQuery.of(context).padding.top;
+
     return Scaffold(
       backgroundColor: _bg,
-      body: Column(
-        children: [
-          _buildHeader(state),
-          Expanded(child: _buildTripList(state)),
+      // Identity bar (name / phone / address) stays pinned at the top; the
+      // report card + licence scroll away, and the filter row sits at the top
+      // of the list body (non-scrollable) so trips get maximum visibility.
+      body: NestedScrollView(
+        headerSliverBuilder: (context, _) => [
+          SliverPersistentHeader(
+            pinned: true,
+            delegate: _StickyHeaderDelegate(
+              height: topPad + 64,
+              child: _buildIdentityBar(topPad),
+            ),
+          ),
+          // Filter chip row pinned directly under the identity bar so the
+          // status / date / search controls stay at the top while scrolling.
+          SliverPersistentHeader(
+            pinned: true,
+            delegate: _StickyHeaderDelegate(
+              height: 64,
+              child: _buildFilterRow(),
+            ),
+          ),
+          SliverToBoxAdapter(child: _buildReportSection(state)),
         ],
+        body: _buildTripList(state),
       ),
     );
   }
@@ -150,155 +216,166 @@ class _DriverHistoryPageState
   // HEADER
   // ─────────────────────────────────────────────────────────────
 
-  Widget _buildHeader(AsyncValue<List<BookingInfo>> tripState) {
-    final topPad = MediaQuery.of(context).padding.top;
+  // ── STICKY IDENTITY BAR ────────────────────────────────────────────
+  // Pinned at the top of the scroll view: back action plus the driver's
+  // name, phone and address — always visible while scrolling.
+  Widget _buildIdentityBar(double topPad) {
+    final driver = widget.driver;
+    final hasAddress =
+        driver.address != null && driver.address!.trim().isNotEmpty;
 
     return Container(
-      padding: EdgeInsets.fromLTRB(16, topPad + 8, 16, 14),
+      padding: EdgeInsets.fromLTRB(12, topPad + 8, 12, 8),
       decoration: BoxDecoration(
         color: _surface,
-        borderRadius:
-            const BorderRadius.vertical(bottom: Radius.circular(24)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-
-          /// Back + Label
-          Row(
-            children: [
-              GestureDetector(
-                onTap: () => Navigator.pop(context),
-                child: Container(
-                  width: 34,
-                  height: 34,
-                  decoration: BoxDecoration(
-                    color: _surfaceLight,
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: _divider),
-                  ),
-                  child: const Icon(
-                    Icons.arrow_back_ios_new_rounded,
-                    size: 13,
-                  ),
-                ),
-              ),
-              // const SizedBox(width: 14),
-              // const Text(
-              //   "Driver's History",
-              //   style: TextStyle(
-              //     fontSize: 11,
-              //     fontWeight: FontWeight.w700,
-              //     color: _accent,
-              //     letterSpacing: 2.2,
-              //   ),
-              // ),
-            ],
+        border: const Border(bottom: BorderSide(color: _divider)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
           ),
-
-          const SizedBox(height: 12),
-
-          /// Driver Info
-          SlideTransition(
-            position: _slideUp,
-            child: FadeTransition(
-              opacity: _fadeIn,
-              child: Row(
-                children: [
-
-                  /// Avatar
-                  ScaleTransition(
-                    scale: _avatarScale,
-                    child: Container(
-                      width: 46,
-                      height: 46,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(14),
-                        gradient: const LinearGradient(
-                          colors: [AppColors.brandPrimaryLight, AppColors.brandPrimaryDark],
-                        ),
-                      ),
-                      child: const Icon(
-                        Icons.person_rounded,
-                        color: Colors.white,
-                        size: 22,
+        ],
+      ),
+      child: Row(
+        children: [
+          _iconButton(
+            icon: Icons.arrow_back_ios_new_rounded,
+            label: 'Back',
+            onTap: () => Navigator.pop(context),
+          ),
+          const SizedBox(width: 10),
+          ScaleTransition(scale: _avatarScale, child: _smallAvatar()),
+          const SizedBox(width: 10),
+          Expanded(
+            child: SlideTransition(
+              position: _slideUp,
+              child: FadeTransition(
+                opacity: _fadeIn,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      driver.name ?? 'Unknown Driver',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 15.5,
+                        fontWeight: FontWeight.w800,
+                        color: _textPrimary,
+                        letterSpacing: 0.1,
                       ),
                     ),
-                  ),
-
-                  const SizedBox(width: 12),
-
-                  /// Name + Phone
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                    const SizedBox(height: 3),
+                    Row(
                       children: [
+                        const Icon(Icons.phone_rounded,
+                            size: 11, color: _textSecondary),
+                        const SizedBox(width: 4),
                         Text(
-                          widget.driver.name ?? 'Unknown Driver',
+                          driver.phone ?? '--',
                           style: const TextStyle(
-                            fontSize: 17,
-                            fontWeight: FontWeight.w800,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: _textSecondary,
                           ),
                         ),
-                        const SizedBox(height: 2),
-                        Row(
-                          children: [
-                            const Icon(
-                              Icons.phone_rounded,
-                              size: 12,
-                              color: _textSecondary,
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              widget.driver.phone ?? '',
+                        if (hasAddress) ...[
+                          const SizedBox(width: 8),
+                          const Icon(Icons.location_on_rounded,
+                              size: 11, color: _textSecondary),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: Text(
+                              driver.address!.trim(),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                               style: const TextStyle(
-                                fontSize: 12.5,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
                                 color: _textSecondary,
                               ),
                             ),
-                          ],
-                        ),
-                        if (widget.driver.address != null &&
-                            widget.driver.address!.isNotEmpty) ...[
-                          const SizedBox(height: 3),
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Icon(
-                                Icons.location_on_rounded,
-                                size: 12,
-                                color: _textSecondary,
-                              ),
-                              const SizedBox(width: 4),
-                              Expanded(
-                                child: Text(
-                                  widget.driver.address!,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(
-                                    fontSize: 12.5,
-                                    color: _textSecondary,
-                                  ),
-                                ),
-                              ),
-                            ],
                           ),
                         ],
-                        _buildLicenceRow(),
                       ],
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),
-
-          _buildLicence(),
-
-          const SizedBox(height: 12),
-
-          _buildStats(tripState),
         ],
+      ),
+    );
+  }
+
+  Widget _smallAvatar() => Container(
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          gradient: const LinearGradient(
+            colors: [AppColors.brandPrimaryLight, AppColors.brandPrimaryDark],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: _accent.withValues(alpha: 0.30),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: const Icon(Icons.person_rounded, color: Colors.white, size: 20),
+      );
+
+  Widget _iconButton({
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+    Color? iconColor,
+    Color? bgColor,
+  }) =>
+      Semantics(
+        button: true,
+        label: label,
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(11),
+            child: Container(
+              width: 38,
+              height: 38,
+              decoration: BoxDecoration(
+                color: bgColor ?? _surfaceLight,
+                borderRadius: BorderRadius.circular(11),
+                border: Border.all(color: _divider, width: 1.2),
+              ),
+              child: Icon(icon, color: iconColor ?? _textPrimary, size: 16),
+            ),
+          ),
+        ),
+      );
+
+  // Scrollable section beneath the pinned identity bar — report card +
+  // licence details. Scrolls away as the trip list scrolls.
+  Widget _buildReportSection(AsyncValue<List<BookingInfo>> tripState) {
+    return FadeTransition(
+      opacity: _fadeIn,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 14, 16, 4),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildReportCard(tripState),
+            _buildLicenceCard(),
+          ],
+        ),
       ),
     );
   }
@@ -487,67 +564,289 @@ class _DriverHistoryPageState
   // STATS
   // ─────────────────────────────────────────────────────────────
 
-Widget _buildStats(AsyncValue<List<BookingInfo>> tripState) {
-  return tripState.when(
-    loading: () => const SizedBox(height: 44),
-    error: (_, __) => const SizedBox.shrink(),
-    data: (trips) {
-
-      final total = trips.length;
-
-      final paid = trips.where((t) =>
-          (t.amountReceived ?? 0) >= (t.amountApprove ?? 0) &&
-          (t.amountApprove ?? 0) > 0
-      ).length;
-
-      final totalValue = trips.fold<double>(
-        0,
-        (sum, t) => sum + (t.amountApprove ?? 0),
-      );
-
-      return Container(
+  // ── REPORT CARD ────────────────────────────────────────────────────
+  // Account summary: revenue *received* (not approved) as the hero figure,
+  // with approved total, plus trips / paid / pending breakdown tiles.
+  Widget _buildReportCard(AsyncValue<List<BookingInfo>> tripState) {
+    return tripState.when(
+      loading: () => Container(
+        height: 132,
         decoration: BoxDecoration(
           color: _surfaceLight,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(18),
           border: Border.all(color: _divider),
         ),
-        child: Row(
-          children: [
-            _stat("$total", "Trips"),
-            _dividerLine(),
-            _stat("$paid", "Paid"),
-            _dividerLine(),
-            _stat("₹${totalValue.toStringAsFixed(0)}", "Total"),
-          ],
+        child: Center(
+          child: SizedBox(
+            width: 18,
+            height: 18,
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              color: _accent,
+              backgroundColor: _accent.withValues(alpha: 0.1),
+            ),
+          ),
         ),
-      );
-    },
-  );
-}
+      ),
+      error: (_, __) => const SizedBox.shrink(),
+      data: (allTrips) {
+        // The summary reflects the active date range + search, so the figures
+        // change as the date filter changes.
+        final now = DateTime.now();
+        final trips = allTrips
+            .where((t) =>
+                _range.matches(tripSortKey(t), now, customRange: _customRange) &&
+                tripMatchesQuery(t, _query))
+            .toList();
 
-  Widget _stat(String value, String label) {
+        final total = trips.length;
+        final paidCount = trips
+            .where((t) =>
+                (t.amountReceived ?? 0) >= (t.amountApprove ?? 0) &&
+                (t.amountApprove ?? 0) > 0)
+            .length;
+        final approved =
+            trips.fold<double>(0, (sum, t) => sum + (t.amountApprove ?? 0));
+        final received =
+            trips.fold<double>(0, (sum, t) => sum + (t.amountReceived ?? 0));
+        double pending = 0;
+        for (final t in trips) {
+          final due = (t.amountApprove ?? 0) - (t.amountReceived ?? 0);
+          if (due > 0) pending += due;
+        }
+
+        return Container(
+          clipBehavior: Clip.antiAlias,
+          decoration: BoxDecoration(
+            color: _surface,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: _divider, width: 1.2),
+            boxShadow: [
+              BoxShadow(
+                color: _accent.withValues(alpha: 0.07),
+                blurRadius: 16,
+                offset: const Offset(0, 6),
+              ),
+            ],
+          ),
+          child: Column(
+            children: [
+              // ── Hero: revenue received ──────────────────────────────
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [AppColors.brandPrimary, AppColors.brandPrimaryDark],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.trending_up_rounded,
+                                size: 13,
+                                color: Colors.white.withValues(alpha: 0.85),
+                              ),
+                              const SizedBox(width: 5),
+                              Text(
+                                'Revenue Received',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.white.withValues(alpha: 0.85),
+                                  letterSpacing: 0.3,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 5),
+                          FittedBox(
+                            fit: BoxFit.scaleDown,
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                              _money.format(received),
+                              style: const TextStyle(
+                                fontSize: 23,
+                                fontWeight: FontWeight.w800,
+                                color: Colors.white,
+                                letterSpacing: -0.5,
+                                height: 1,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 3),
+                          Text(
+                            'of ${_money.format(approved)} approved',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.white.withValues(alpha: 0.78),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.18),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.account_balance_wallet_rounded,
+                        color: Colors.white,
+                        size: 22,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              // ── Breakdown tiles ─────────────────────────────────────
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 6),
+                child: Row(
+                  children: [
+                    _reportTile(
+                      Icons.route_rounded,
+                      'Trips',
+                      '$total',
+                      _accent,
+                    ),
+                    _tileDivider(),
+                    _reportTile(
+                      Icons.check_circle_outline_rounded,
+                      'Paid',
+                      '$paidCount',
+                      _success,
+                    ),
+                    _tileDivider(),
+                    _reportTile(
+                      Icons.pending_actions_rounded,
+                      'Pending',
+                      _money.format(pending),
+                      pending > 0 ? _warning : _textSecondary,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _reportTile(IconData icon, String label, String value, Color color) {
     return Expanded(
       child: Padding(
-        padding:
-            const EdgeInsets.symmetric(vertical: 9, horizontal: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 6),
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Text(value,
+            Container(
+              padding: const EdgeInsets.all(7),
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(icon, size: 16, color: color),
+            ),
+            const SizedBox(height: 7),
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                value,
+                maxLines: 1,
                 style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w800)),
-            Text(label,
-                style: const TextStyle(
-                    fontSize: 10.5,
-                    color: _textSecondary)),
+                  fontSize: 14.5,
+                  fontWeight: FontWeight.w800,
+                  color: _textPrimary,
+                  height: 1.1,
+                ),
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontSize: 10.5,
+                color: _textSecondary,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
           ],
         ),
       ),
     );
   }
 
-  Widget _dividerLine() =>
-      Container(width: 1, height: 24, color: _divider);
+  Widget _tileDivider() {
+    return Container(width: 1, height: 40, color: _divider);
+  }
+
+  // Licence details card (number / expiry + document button), shown below the
+  // report card. Hidden entirely when the driver has no licence info or doc.
+  Widget _buildLicenceCard() {
+    final no = widget.driver.licenceNo;
+    final expiry = widget.driver.licenceExpiry;
+    final docUrl = _normalizeDocUrl(widget.driver.photo);
+    final hasInfo = (no != null && no.trim().isNotEmpty) || expiry != null;
+    final hasDoc = docUrl != null && docUrl.isNotEmpty;
+    if (!hasInfo && !hasDoc) return const SizedBox.shrink();
+
+    return Container(
+      margin: const EdgeInsets.only(top: 12),
+      padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+      decoration: BoxDecoration(
+        color: _surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: _divider),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: _accentSoft,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(Icons.badge_rounded, size: 13, color: _accent),
+              ),
+              const SizedBox(width: 8),
+              const Text(
+                'LICENCE',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.5,
+                  color: _textSecondary,
+                ),
+              ),
+            ],
+          ),
+          if (hasInfo) _buildLicenceRow(),
+          if (hasDoc) _buildLicence(),
+        ],
+      ),
+    );
+  }
 
   // ─────────────────────────────────────────────────────────────
   // TRIP LIST
@@ -592,124 +891,151 @@ Widget _buildStats(AsyncValue<List<BookingInfo>> tripState) {
             .toList();
         final filtered = base.where((t) => _filter.matches(t)).toList();
 
+        if (filtered.isEmpty) return _filteredEmptyState();
+
         return RefreshIndicator(
           onRefresh: _refreshTrips,
-          child: Column(
-            children: [
-              _buildSearchDateRow(),
-              _buildFilterChips(base),
-              Expanded(
-                child: filtered.isEmpty
-                    ? _filteredEmptyState()
-                    : ListView.builder(
-                        physics: const AlwaysScrollableScrollPhysics(),
-                        padding: const EdgeInsets.only(bottom: 24),
-                        itemCount: filtered.length,
-                        itemBuilder: (_, i) => TripCard(
-                          key: ValueKey(filtered[i].tripId),
-                          bookinginfo: filtered[i],
-                          status: filtered[i].status ?? 0,
-                        ),
-                      ),
-              ),
-            ],
+          color: _accent,
+          child: ListView.builder(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.only(bottom: 24),
+            itemCount: filtered.length,
+            itemBuilder: (_, i) => TripCard(
+              key: ValueKey(filtered[i].tripId),
+              bookinginfo: filtered[i],
+              status: filtered[i].status ?? 0,
+            ),
           ),
         );
       },
     );
   }
 
-  // Search field + date-range filter, shown above the status chips.
-  Widget _buildSearchDateRow() {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-      child: Row(
-        children: [
-          Expanded(
-            child: TripSearchField(
-              controller: _searchCtrl,
-              onChanged: (v) =>
-                  setState(() => _query = v.trim().toLowerCase()),
-            ),
-          ),
-          const SizedBox(width: 8),
-          TripDateFilterButton(
-            range: _range,
-            customRange: _customRange,
-            onChanged: (r, c) => setState(() {
-              _range = r;
-              _customRange = c;
-            }),
-          ),
-        ],
+  // ── FILTER ROW ─────────────────────────────────────────────────────
+  // Non-scrollable row at the top of the list: status dropdown + date filter
+  // + search icon, which toggles to a back button + search field. Mirrors
+  // TripPage / CustomerHist.
+  Widget _buildFilterRow() {
+    return Container(
+      decoration: const BoxDecoration(
+        color: _surface,
+        border: Border(bottom: BorderSide(color: _divider)),
+      ),
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+      child: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 180),
+        transitionBuilder: (child, anim) =>
+            FadeTransition(opacity: anim, child: child),
+        child: _searchVisible ? _buildSearchRow() : _buildPrimaryRow(),
       ),
     );
   }
 
-  // ── Status filter chips ───────────────────────────────────────
-  Widget _buildFilterChips(List<BookingInfo> trips) {
-    return SizedBox(
-      height: 38,
-      child: ListView.builder(
-        scrollDirection: Axis.horizontal,
-        physics: const BouncingScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-        itemCount: _DriverTripFilter.values.length,
-        itemBuilder: (context, index) {
-          final filter = _DriverTripFilter.values[index];
-          final isSelected = filter == _filter;
-          final count = filter == _DriverTripFilter.all
-              ? trips.length
-              : trips.where(filter.matches).length;
+  Widget _buildPrimaryRow() {
+    return Row(
+      key: const ValueKey('primary'),
+      children: [
+        _buildStatusDropdown(),
+        const Spacer(),
+        TripDateFilterButton(
+          range: _range,
+          customRange: _customRange,
+          onChanged: (r, c) => setState(() {
+            _range = r;
+            _customRange = c;
+          }),
+        ),
+        const SizedBox(width: 2),
+        IconButton(
+          icon: const Icon(Icons.search_rounded,
+              color: _textSecondary, size: 22),
+          tooltip: 'Search',
+          onPressed: _toggleSearch,
+        ),
+      ],
+    );
+  }
 
-          return GestureDetector(
-            onTap: () {
-              if (filter != _filter) setState(() => _filter = filter);
-            },
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 250),
-              curve: Curves.easeOutCubic,
-              margin: const EdgeInsets.only(right: 8),
-              padding: const EdgeInsets.symmetric(horizontal: 14),
-              decoration: BoxDecoration(
-                color: isSelected ? _accent : _surface,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color: isSelected ? _accent : _divider,
-                ),
-                boxShadow: isSelected
-                    ? [
-                        BoxShadow(
-                          color: _accent.withValues(alpha: 0.30),
-                          blurRadius: 8,
-                          offset: const Offset(0, 3),
-                        ),
-                      ]
-                    : [],
-              ),
-              alignment: Alignment.center,
-              child: Row(
+  Widget _buildSearchRow() {
+    return Row(
+      key: const ValueKey('search'),
+      children: [
+        IconButton(
+          icon: const Icon(Icons.arrow_back_rounded, color: _textSecondary),
+          onPressed: _toggleSearch,
+        ),
+        Expanded(
+          child: TripSearchField(
+            controller: _searchCtrl,
+            focusNode: _searchFocus,
+            onChanged: _onSearchChanged,
+          ),
+        ),
+      ],
+    );
+  }
+
+  // Status filter as a dropdown, styled like TripPage's status dropdown.
+  Widget _buildStatusDropdown() {
+    return Container(
+      height: 40,
+      padding: const EdgeInsets.symmetric(horizontal: 10),
+      decoration: BoxDecoration(
+        color: AppColors.brandPrimary,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<_DriverTripFilter>(
+          value: _filter,
+          isDense: true,
+          icon: const Icon(
+            Icons.keyboard_arrow_down_rounded,
+            color: Colors.white,
+            size: 20,
+          ),
+          dropdownColor: AppColors.brandPrimary,
+          borderRadius: BorderRadius.circular(10),
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+          ),
+          selectedItemBuilder: (context) => [
+            for (final f in _DriverTripFilter.values)
+              Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(
-                    filter.icon,
-                    size: 14,
-                    color: isSelected ? Colors.white : _textSecondary,
-                  ),
+                  const Icon(Icons.tune_rounded, size: 15, color: Colors.white),
                   const SizedBox(width: 6),
                   Text(
-                    '${filter.label} ($count)',
-                    style: TextStyle(
-                      fontSize: 12,
+                    'Status: ${f.label}',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 13,
                       fontWeight: FontWeight.w600,
-                      color: isSelected ? Colors.white : _textPrimary,
                     ),
                   ),
                 ],
               ),
-            ),
-          );
-        },
+          ],
+          items: [
+            for (final f in _DriverTripFilter.values)
+              DropdownMenuItem(
+                value: f,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(f.icon, size: 16, color: Colors.white),
+                    const SizedBox(width: 8),
+                    Text(f.label),
+                  ],
+                ),
+              ),
+          ],
+          onChanged: (value) {
+            if (value != null) setState(() => _filter = value);
+          },
+        ),
       ),
     );
   }
@@ -793,4 +1119,27 @@ class _FullscreenImagePage extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Fixed-height pinned sliver header used to keep the driver identity bar
+/// stuck to the top while the report card and trip list scroll.
+class _StickyHeaderDelegate extends SliverPersistentHeaderDelegate {
+  _StickyHeaderDelegate({required this.height, required this.child});
+
+  final double height;
+  final Widget child;
+
+  @override
+  double get minExtent => height;
+
+  @override
+  double get maxExtent => height;
+
+  @override
+  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) =>
+      SizedBox.expand(child: child);
+
+  @override
+  bool shouldRebuild(covariant _StickyHeaderDelegate oldDelegate) =>
+      oldDelegate.height != height || oldDelegate.child != child;
 }

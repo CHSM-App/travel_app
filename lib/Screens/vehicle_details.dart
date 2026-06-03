@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -17,13 +19,7 @@ import 'package:travel_agency_app/presentation/providers/viewmodel_provider.dart
 abstract class _C {
   static const bg = Color(0xFFF0F2F8);
   static const surface = Color(0xFFFFFFFF);
-  static const surfaceAlt = Color(0xFFF5F6FA);
-  static const g1 = Color(0xFF1A1F3A);
-  // Brand-indigo gradient companions. g2 = darker stop, g3 = mid, accent = primary.
-  static const g2 = AppColors.brandPrimaryDark;
-  static const g3 = AppColors.brandPrimary;
   static const accent = AppColors.brandPrimary;
-  static const indigo = AppColors.brandPrimary;
   static const green = Color(0xFF059669);
   static const red = Color(0xFFDC2626);
   static const redSoft = Color(0xFFFEE2E2);
@@ -31,112 +27,6 @@ abstract class _C {
   static const text1 = Color(0xFF0F1224);
   static const text2 = Color(0xFF6B7280);
   static const divider = Color(0xFFE5E7F0);
-  static const gold = Color(0xFFF59E0B);
-}
-
-/// Date-window filter for the P&L summary above the tabs.
-enum _PnlPeriod {
-  all('All', Icons.all_inclusive_rounded),
-  today('Today', Icons.today_rounded),
-  week('Week', Icons.view_week_rounded),
-  month('Month', Icons.calendar_month_rounded);
-
-  const _PnlPeriod(this.label, this.icon);
-  final String label;
-  final IconData icon;
-
-  bool matches(DateTime? d, DateTime now) {
-    if (this == _PnlPeriod.all) return true;
-    if (d == null) return false;
-    final dOnly = DateTime(d.year, d.month, d.day);
-    final today = DateTime(now.year, now.month, now.day);
-    switch (this) {
-      case _PnlPeriod.today:
-        return dOnly == today;
-      case _PnlPeriod.week:
-        final start = today.subtract(const Duration(days: 6));
-        return !dOnly.isBefore(start) && !dOnly.isAfter(today);
-      case _PnlPeriod.month:
-        return d.year == now.year && d.month == now.month;
-      case _PnlPeriod.all:
-        return true;
-    }
-  }
-}
-
-// Reusable All/Today/Week/Month segmented control, used inside the Revenue and
-// Expense tabs to drive the shared period filter.
-class _PeriodChips extends StatelessWidget {
-  final _PnlPeriod selected;
-  final ValueChanged<_PnlPeriod> onChanged;
-  const _PeriodChips({required this.selected, required this.onChanged});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(4),
-      decoration: BoxDecoration(
-        color: _C.surfaceAlt,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: _C.divider),
-      ),
-      child: Row(
-        children: [
-          for (final p in _PnlPeriod.values) Expanded(child: _chip(p)),
-        ],
-      ),
-    );
-  }
-
-  Widget _chip(_PnlPeriod p) {
-    final active = p == selected;
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: () => onChanged(p),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 220),
-        curve: Curves.easeOutCubic,
-        padding: const EdgeInsets.symmetric(vertical: 9),
-        decoration: BoxDecoration(
-          gradient: active
-              ? const LinearGradient(
-                  colors: [AppColors.brandPrimaryLight, AppColors.brandPrimary],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                )
-              : null,
-          borderRadius: BorderRadius.circular(10),
-          boxShadow: active
-              ? [
-                  BoxShadow(
-                    color: _C.accent.withOpacity(0.25),
-                    blurRadius: 6,
-                    offset: const Offset(0, 2),
-                  ),
-                ]
-              : null,
-        ),
-        child: Center(
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(p.icon, size: 13, color: active ? Colors.white : _C.text2),
-              const SizedBox(width: 5),
-              Text(
-                p.label,
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                  color: active ? Colors.white : _C.text2,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
 }
 
 // ════════════════════════════════════════════════════════════════════════════
@@ -166,9 +56,10 @@ class _VehicleManagePageState extends ConsumerState<VehicleManagePage>
   late final Animation<double> _fabScale;
   late final Animation<double> _pulseAnim1;
 
-  // Shared period filter — driven from the Revenue / Expense tab chips and
+  // Shared date filter — driven from the Revenue / Expense tab date button and
   // reflected in the P&L summary above the tabs.
-  _PnlPeriod _pnlPeriod = _PnlPeriod.month;
+  TripDateRange _range = TripDateRange.all;
+  DateTimeRange? _customRange;
 
   @override
   void initState() {
@@ -335,7 +226,7 @@ Future<void> _toggleVehicleStatus() async {
     // attributed by payment/start/booking date. Maintenance from service costs.
     final periodTrips = trips.where((t) {
       final d = t.paymentDate ?? t.startDateTime ?? t.bookingDate;
-      return _pnlPeriod.matches(d, now);
+      return _range.matches(d, now, customRange: _customRange);
     }).toList();
     final revenue =
         periodTrips.fold<double>(0, (s, t) => s + (t.amountReceived ?? 0));
@@ -352,7 +243,7 @@ Future<void> _toggleVehicleStatus() async {
           (t.driverCharges ?? 0),
     );
     final maintenance = services
-        .where((s) => _pnlPeriod.matches(s.serviceDate, now))
+        .where((s) => _range.matches(s.serviceDate, now, customRange: _customRange))
         .fold<double>(0, (sum, e) => sum + (e.serviceCost ?? 0));
     final expense = tripExpense + maintenance;
     final net = revenue - expense;
@@ -524,9 +415,11 @@ Future<void> _toggleVehicleStatus() async {
     SystemChrome.setSystemUIOverlayStyle(
       const SystemUiOverlayStyle(
         statusBarColor: Colors.transparent,
-        statusBarIconBrightness: Brightness.light,
+        statusBarIconBrightness: Brightness.dark,
       ),
     );
+
+    final topPad = MediaQuery.of(context).padding.top;
 
     // Built here (not lazily in the sliver callback) so the ref.watch inside
     // registers as a dependency of this build.
@@ -536,7 +429,15 @@ Future<void> _toggleVehicleStatus() async {
       backgroundColor: _C.bg,
       body: NestedScrollView(
         headerSliverBuilder: (_, __) => [
-          SliverToBoxAdapter(child: _buildHeader()),
+          // Compact white identity bar pinned at the top, matching the
+          // customer / driver history pages.
+          SliverPersistentHeader(
+            pinned: true,
+            delegate: _StickyHeaderDelegate(
+              height: topPad + 76,
+              child: _buildHeader(),
+            ),
+          ),
           SliverToBoxAdapter(child: pnlSummary),
           SliverPersistentHeader(pinned: true, delegate: _PremiumTabBar(_tab)),
         ],
@@ -548,14 +449,22 @@ Future<void> _toggleVehicleStatus() async {
             _TripsTab(
               vehicle: widget.vehicle,
               fmt: _fmt,
-              period: _pnlPeriod,
-              onPeriodChanged: (p) => setState(() => _pnlPeriod = p),
+              range: _range,
+              customRange: _customRange,
+              onRangeChanged: (r, c) => setState(() {
+                _range = r;
+                _customRange = c;
+              }),
             ),
             _MaintTab(
               vehicle: widget.vehicle,
               fmt: _fmt,
-              period: _pnlPeriod,
-              onPeriodChanged: (p) => setState(() => _pnlPeriod = p),
+              range: _range,
+              customRange: _customRange,
+              onRangeChanged: (r, c) => setState(() {
+                _range = r;
+                _customRange = c;
+              }),
               // FIX: pass null for new service, pass existing service for edit
               onEditService: (service) => _showAddServiceSheet(context, service),
             ),
@@ -568,160 +477,86 @@ Future<void> _toggleVehicleStatus() async {
 
 
 
-  // ── PREMIUM HEADER ────────────────────────────────────────────────
-Widget _buildHeader() {
-  final top = MediaQuery.of(context).padding.top;
-  final isEngaged = (_currentStatus) == 2;
+  // ── IDENTITY APP BAR ──────────────────────────────────────────────
+  // Compact white bar (back · avatar · name/registration · status · edit),
+  // pinned at the top — same style as the customer / driver history pages.
+  Widget _buildHeader() {
+    final top = MediaQuery.of(context).padding.top;
+    final isEngaged = _currentStatus == 2;
+    final hasNumber =
+        widget.vehicle.number != null && widget.vehicle.number!.trim().isNotEmpty;
 
-  return Container(
-    decoration: const BoxDecoration(
-      gradient: LinearGradient(
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-        colors: [_C.g1, _C.g2, _C.g3],
-        stops: [0.0, 0.5, 1.0],
+    return Container(
+      padding: EdgeInsets.fromLTRB(12, top + 8, 12, 10),
+      decoration: BoxDecoration(
+        color: _C.surface,
+        border: const Border(bottom: BorderSide(color: _C.divider)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
-    ),
-    child: Stack(
-      children: [
-        _AnimatedDecoCircle(
-          size: 180,
-          color: Colors.white,
-          opacity: 0.04,
-          right: -30,
-          top: -20,
-          delay: const Duration(milliseconds: 0),
-        ),
-        _AnimatedDecoCircle(
-          size: 80,
-          color: _C.accent,
-          opacity: 0.15,
-          right: 60,
-          top: 60,
-          delay: const Duration(milliseconds: 100),
-        ),
-        _AnimatedDecoCircle(
-          size: 140,
-          color: _C.indigo,
-          opacity: 0.12,
-          left: -40,
-          bottom: 10,
-          delay: const Duration(milliseconds: 200),
-        ),
-
-        SafeArea(
-          bottom: false,
-          child: Padding(
-            padding: EdgeInsets.fromLTRB(18, top > 0 ? 2 : 8, 18, 16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-
-                /// NAV ROW
-                FadeTransition(
-                  opacity: _headerFade,
-                  child: Row(
-                    children: [
-                      _AnimatedGlassBtn(
-                        icon: Icons.arrow_back_ios_new_rounded,
-                        onTap: () => Navigator.pop(context),
-                        delay: const Duration(milliseconds: 100),
+      child: FadeTransition(
+        opacity: _headerFade,
+        child: Row(
+          children: [
+            _navIconButton(
+              icon: Icons.arrow_back_ios_new_rounded,
+              onTap: () => Navigator.pop(context),
+            ),
+            const SizedBox(width: 10),
+            AnimatedBuilder(
+              animation: _avatarAnim,
+              builder: (_, child) => Transform.rotate(
+                angle: _avatarRotate.value,
+                child: Transform.scale(scale: _avatarScale.value, child: child),
+              ),
+              child: _smallAvatar(),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: SlideTransition(
+                position: _headerSlide,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      widget.vehicle.name ?? 'Unknown Vehicle',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w800,
+                        color: _C.text1,
+                        letterSpacing: 0.1,
                       ),
-                      const Spacer(),
-                      _AnimatedGlassBtn(
-                        icon: Icons.edit_rounded,
-                        onTap: () async {
-                          final r = await Navigator.push(
-                            context,
-                            _slidePageRoute(
-                              AddVehiclePage(
-                                vehicle: widget.vehicle,
-                                isEdit: true,
-                              ),
-                            ),
-                          );
-                          if (r == true && mounted) setState(() {});
-                        },
-                        delay: const Duration(milliseconds: 200),
-                      ),
-                    ],
-                  ),
-                ),
-
-                const SizedBox(height: 14),
-
-                /// IDENTITY ROW
-                FadeTransition(
-                  opacity: _headerFade,
-                  child: SlideTransition(
-                    position: _headerSlide,
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                    ),
+                    const SizedBox(height: 3),
+                    Row(
                       children: [
-                        AnimatedBuilder(
-                          animation: _avatarAnim,
-                          builder: (_, child) => Transform.rotate(
-                            angle: _avatarRotate.value,
-                            child: Transform.scale(
-                              scale: _avatarScale.value,
-                              child: child,
-                            ),
-                          ),
-                          child: Container(
-                            width: 52,
-                            height: 52,
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(16),
-                              gradient: const LinearGradient(
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                                colors: [
-                                  AppColors.brandPrimaryLight,
-                                  AppColors.brandPrimary,
-                                ],
+                        if (hasNumber) ...[
+                          const Icon(Icons.pin_outlined,
+                              size: 12, color: _C.text2),
+                          const SizedBox(width: 4),
+                          Flexible(
+                            child: Text(
+                              widget.vehicle.number!.trim(),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: _C.text2,
                               ),
                             ),
-                            child: const Icon(
-                              Icons.directions_car_rounded,
-                              color: Colors.white,
-                              size: 24,
-                            ),
                           ),
-                        ),
-
-                        const SizedBox(width: 14),
-
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const SizedBox(height: 2),
-                              _StaggeredText(
-                                text: widget.vehicle.name ?? 'Unknown Vehicle',
-                                style: const TextStyle(
-                                  fontSize: 19,
-                                  fontWeight: FontWeight.w800,
-                                  color: Colors.white,
-                                ),
-                                delay: const Duration(milliseconds: 300),
-                              ),
-                              const SizedBox(height: 6),
-                              Row(
-                                children: [
-                                  if (widget.vehicle.number != null)
-                                    _glassBadge(
-                                      Icons.pin_outlined,
-                                      widget.vehicle.number ?? '',
-                                      isGold: true,
-                                    ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
-
-                        const SizedBox(width: 8),
-
+                          const SizedBox(width: 8),
+                        ],
                         AnimatedBuilder(
                           animation: _pulseAnim1,
                           builder: (_, __) => _StatusBadge(
@@ -731,50 +566,70 @@ Widget _buildHeader() {
                         ),
                       ],
                     ),
-                  ),
+                  ],
                 ),
-
-              ],
-            ),
-          ),
-        ),
-      ],
-    ),
-  );
-}
-  Widget _glassBadge(IconData icon, String label, {bool isGold = false}) =>
-      Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-        decoration: BoxDecoration(
-          color: isGold
-              ? _C.gold.withOpacity(0.20)
-              : Colors.white.withOpacity(0.12),
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(
-            color: isGold
-                ? _C.gold.withOpacity(0.45)
-                : Colors.white.withOpacity(0.20),
-          ),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              icon,
-              size: 10,
-              color: isGold ? _C.gold : Colors.white.withOpacity(0.8),
-            ),
-            const SizedBox(width: 4),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w700,
-                color: isGold ? _C.gold : Colors.white.withOpacity(0.95),
-                letterSpacing: isGold ? 1.2 : 0.3,
               ),
             ),
+            const SizedBox(width: 8),
+            _navIconButton(
+              icon: Icons.edit_rounded,
+              iconColor: _C.accent,
+              bgColor: AppColors.brandSoft,
+              onTap: () async {
+                final r = await Navigator.push(
+                  context,
+                  _slidePageRoute(
+                    AddVehiclePage(vehicle: widget.vehicle, isEdit: true),
+                  ),
+                );
+                if (r == true && mounted) setState(() {});
+              },
+            ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _smallAvatar() => Container(
+        width: 44,
+        height: 44,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(14),
+          gradient: const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [AppColors.brandPrimaryLight, AppColors.brandPrimary],
+          ),
+        ),
+        child: const Icon(
+          Icons.directions_car_rounded,
+          color: Colors.white,
+          size: 22,
+        ),
+      );
+
+  Widget _navIconButton({
+    required IconData icon,
+    required VoidCallback onTap,
+    Color? iconColor,
+    Color? bgColor,
+  }) =>
+      Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(11),
+          child: Container(
+            width: 38,
+            height: 38,
+            decoration: BoxDecoration(
+              color: bgColor ?? _C.bg,
+              borderRadius: BorderRadius.circular(11),
+              border: Border.all(color: _C.divider, width: 1.2),
+            ),
+            child: Icon(icon, color: iconColor ?? _C.text1, size: 16),
+          ),
         ),
       );
 
@@ -1176,224 +1031,6 @@ Widget _buildHeader() {
   }
 }
 
-// ── Animated Deco Circle ───────────────────────────────────────────────────
-class _AnimatedDecoCircle extends StatefulWidget {
-  final double size;
-  final Color color;
-  final double opacity;
-  final double? right, left, top, bottom;
-  final Duration delay;
-
-  const _AnimatedDecoCircle({
-    required this.size,
-    required this.color,
-    required this.opacity,
-    this.right,
-    this.left,
-    this.top,
-    this.bottom,
-    required this.delay,
-  });
-
-  @override
-  State<_AnimatedDecoCircle> createState() => _AnimatedDecoCircleState();
-}
-
-class _AnimatedDecoCircleState extends State<_AnimatedDecoCircle>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _ctrl;
-  late final Animation<double> _scale;
-  late final Animation<double> _opacity;
-
-  @override
-  void initState() {
-    super.initState();
-    _ctrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 700),
-    );
-
-    _scale = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOutBack));
-    _opacity = CurvedAnimation(parent: _ctrl, curve: Curves.easeOut);
-
-    Future.delayed(widget.delay, () {
-      if (mounted) _ctrl.forward();
-    });
-  }
-
-  @override
-  void dispose() {
-    _ctrl.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Positioned(
-      right: widget.right,
-      left: widget.left,
-      top: widget.top,
-      bottom: widget.bottom,
-      child: AnimatedBuilder(
-        animation: _ctrl,
-        builder: (_, __) => Transform.scale(
-          scale: _scale.value,
-          child: Opacity(
-            opacity: _opacity.value,
-            child: Container(
-              width: widget.size,
-              height: widget.size,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: widget.color.withOpacity(widget.opacity),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-// ── Animated Glass Button ──────────────────────────────────────────────────
-class _AnimatedGlassBtn extends StatefulWidget {
-  final IconData icon;
-  final VoidCallback onTap;
-  final Duration delay;
-
-  const _AnimatedGlassBtn({
-    required this.icon,
-    required this.onTap,
-    required this.delay,
-  });
-
-  @override
-  State<_AnimatedGlassBtn> createState() => _AnimatedGlassBtnState();
-}
-
-class _AnimatedGlassBtnState extends State<_AnimatedGlassBtn>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _ctrl;
-  late final Animation<double> _scale;
-  bool _isPressed = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _ctrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 600),
-    );
-    _scale = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.elasticOut));
-    Future.delayed(widget.delay, () {
-      if (mounted) _ctrl.forward();
-    });
-  }
-
-  @override
-  void dispose() {
-    _ctrl.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _ctrl,
-      builder: (_, child) => Transform.scale(scale: _scale.value, child: child),
-      child: GestureDetector(
-        onTapDown: (_) => setState(() => _isPressed = true),
-        onTapUp: (_) {
-          setState(() => _isPressed = false);
-          widget.onTap();
-        },
-        onTapCancel: () => setState(() => _isPressed = false),
-        child: AnimatedScale(
-          scale: _isPressed ? 0.88 : 1.0,
-          duration: const Duration(milliseconds: 120),
-          curve: Curves.easeOut,
-          child: Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: _isPressed
-                  ? Colors.white.withOpacity(0.20)
-                  : Colors.white.withOpacity(0.12),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.white.withOpacity(0.20)),
-            ),
-            child: Icon(widget.icon, size: 15, color: Colors.white),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-// ── Staggered Text ─────────────────────────────────────────────────────────
-class _StaggeredText extends StatefulWidget {
-  final String text;
-  final TextStyle style;
-  final Duration delay;
-
-  const _StaggeredText({
-    required this.text,
-    required this.style,
-    required this.delay,
-  });
-
-  @override
-  State<_StaggeredText> createState() => _StaggeredTextState();
-}
-
-class _StaggeredTextState extends State<_StaggeredText>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _ctrl;
-  late final Animation<double> _fade;
-  late final Animation<Offset> _slide;
-
-  @override
-  void initState() {
-    super.initState();
-    _ctrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 500),
-    );
-    _fade = CurvedAnimation(parent: _ctrl, curve: Curves.easeOut);
-    _slide = Tween<Offset>(
-      begin: const Offset(0.1, 0),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOutCubic));
-
-    Future.delayed(widget.delay, () {
-      if (mounted) _ctrl.forward();
-    });
-  }
-
-  @override
-  void dispose() {
-    _ctrl.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return FadeTransition(
-      opacity: _fade,
-      child: SlideTransition(
-        position: _slide,
-        child: Text(widget.text, style: widget.style),
-      ),
-    );
-  }
-}
-
 // ── Status Badge ───────────────────────────────────────────────────────────
 class _StatusBadge extends StatelessWidget {
   final bool isEngaged;
@@ -1731,13 +1368,16 @@ enum _VehicleTripFilter {
 class _TripsTab extends ConsumerStatefulWidget {
   final Vehicles vehicle;
   final String Function(double) fmt;
-  final _PnlPeriod period;
-  final ValueChanged<_PnlPeriod> onPeriodChanged;
+  final TripDateRange range;
+  final DateTimeRange? customRange;
+  final void Function(TripDateRange range, DateTimeRange? customRange)
+      onRangeChanged;
   const _TripsTab({
     required this.vehicle,
     required this.fmt,
-    required this.period,
-    required this.onPeriodChanged,
+    required this.range,
+    required this.customRange,
+    required this.onRangeChanged,
   });
 
   @override
@@ -1747,9 +1387,13 @@ class _TripsTab extends ConsumerStatefulWidget {
 class _TripsTabState extends ConsumerState<_TripsTab> {
   _VehicleTripFilter _filter = _VehicleTripFilter.all;
 
-  // Free-text search applied on top of the period (date) + status filters.
-  // The date filter is the period chips supplied by the parent tab.
+  // Status dropdown + date filter (from the parent) + search toggle, mirroring
+  // TripPage / CustomerHist / DriverHistory.
+  static const Duration _searchDebounce = Duration(milliseconds: 250);
   final TextEditingController _searchCtrl = TextEditingController();
+  final FocusNode _searchFocus = FocusNode();
+  Timer? _debounceTimer;
+  bool _searchVisible = false;
   String _query = '';
 
   @override
@@ -1764,8 +1408,37 @@ class _TripsTabState extends ConsumerState<_TripsTab> {
 
   @override
   void dispose() {
+    _debounceTimer?.cancel();
     _searchCtrl.dispose();
+    _searchFocus.dispose();
     super.dispose();
+  }
+
+  void _onSearchChanged(String value) {
+    _debounceTimer?.cancel();
+    _debounceTimer = Timer(_searchDebounce, () {
+      if (!mounted) return;
+      final normalized = value.trim().toLowerCase();
+      if (normalized == _query) return;
+      setState(() => _query = normalized);
+    });
+  }
+
+  void _toggleSearch() {
+    setState(() {
+      _searchVisible = !_searchVisible;
+      if (!_searchVisible) {
+        _debounceTimer?.cancel();
+        _searchCtrl.clear();
+        _query = '';
+        _searchFocus.unfocus();
+      }
+    });
+    if (_searchVisible) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _searchFocus.requestFocus();
+      });
+    }
   }
 
   @override
@@ -1785,14 +1458,6 @@ class _TripsTabState extends ConsumerState<_TripsTab> {
       ),
       error: (e, _) => _errState(friendlyErrorMessage(e)),
       data: (allTrips) {
-        // Date-window filter (All / Today / Week / Month), matched on
-        // payment/start/booking date.
-        final now = DateTime.now();
-        final trips = allTrips.where((t) {
-          final d = t.paymentDate ?? t.startDateTime ?? t.bookingDate;
-          return widget.period.matches(d, now);
-        }).toList();
-
         if (allTrips.isEmpty) {
           return LayoutBuilder(
             builder: (context, constraints) {
@@ -1835,44 +1500,26 @@ class _TripsTabState extends ConsumerState<_TripsTab> {
           );
         }
 
-        // Search narrows the period-filtered list first; the status chips
-        // (and their counts) then operate on what remains.
-        final base =
-            trips.where((t) => tripMatchesQuery(t, _query)).toList();
+        // Date range + search narrow the list first; the status dropdown then
+        // operates on what remains.
+        final now = DateTime.now();
+        final base = allTrips.where((t) {
+          final d = t.paymentDate ?? t.startDateTime ?? t.bookingDate;
+          return widget.range
+                  .matches(d, now, customRange: widget.customRange) &&
+              tripMatchesQuery(t, _query);
+        }).toList();
         final filtered = base.where((t) => _filter.matches(t)).toList();
 
         return Column(
           children: [
-            // ── Date-window filter ───────────────────────────────────────
-            Container(
-              color: _C.surface,
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-              child: _PeriodChips(
-                selected: widget.period,
-                onChanged: widget.onPeriodChanged,
-              ),
-            ),
-
-            // ── Search ───────────────────────────────────────────────────
-            Container(
-              color: _C.surface,
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-              child: TripSearchField(
-                controller: _searchCtrl,
-                onChanged: (v) =>
-                    setState(() => _query = v.trim().toLowerCase()),
-              ),
-            ),
-
-            // ── Status filter chips ──────────────────────────────────────
-            _buildFilterChips(base),
-
+            _buildFilterRow(),
             Expanded(
               child: filtered.isEmpty
                   ? _filteredEmptyState()
                   : ListView.builder(
                       physics: const BouncingScrollPhysics(),
-                      padding: const EdgeInsets.fromLTRB(0, 2, 0, 100),
+                      padding: const EdgeInsets.fromLTRB(0, 8, 0, 100),
                       itemCount: filtered.length,
                       itemBuilder: (_, i) => _AnimatedListItem(
                         delay: Duration(milliseconds: 50 + 40 * i),
@@ -1890,70 +1537,124 @@ class _TripsTabState extends ConsumerState<_TripsTab> {
     );
   }
 
-  // ── Status filter chips ────────────────────────────────────────────────
-  Widget _buildFilterChips(List<BookingInfo> trips) {
-    return SizedBox(
-      height: 38,
-      child: ListView.builder(
-        scrollDirection: Axis.horizontal,
-        physics: const BouncingScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-        itemCount: _VehicleTripFilter.values.length,
-        itemBuilder: (context, index) {
-          final filter = _VehicleTripFilter.values[index];
-          final isSelected = filter == _filter;
-          final count = filter == _VehicleTripFilter.all
-              ? trips.length
-              : trips.where(filter.matches).length;
+  // ── Filter row: status dropdown + date filter + search toggle ───────────
+  Widget _buildFilterRow() {
+    return Container(
+      decoration: const BoxDecoration(
+        color: _C.surface,
+        border: Border(bottom: BorderSide(color: _C.divider)),
+      ),
+      padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
+      child: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 180),
+        transitionBuilder: (child, anim) =>
+            FadeTransition(opacity: anim, child: child),
+        child: _searchVisible ? _buildSearchRow() : _buildPrimaryRow(),
+      ),
+    );
+  }
 
-          return GestureDetector(
-            onTap: () {
-              if (filter != _filter) setState(() => _filter = filter);
-            },
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 250),
-              curve: Curves.easeOutCubic,
-              margin: const EdgeInsets.only(right: 8),
-              padding: const EdgeInsets.symmetric(horizontal: 14),
-              decoration: BoxDecoration(
-                color: isSelected ? _C.accent : _C.surface,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color: isSelected ? _C.accent : _C.divider,
-                ),
-                boxShadow: isSelected
-                    ? [
-                        BoxShadow(
-                          color: _C.accent.withOpacity(0.30),
-                          blurRadius: 8,
-                          offset: const Offset(0, 3),
-                        ),
-                      ]
-                    : [],
-              ),
-              alignment: Alignment.center,
-              child: Row(
+  Widget _buildPrimaryRow() {
+    return Row(
+      key: const ValueKey('primary'),
+      children: [
+        _buildStatusDropdown(),
+        const Spacer(),
+        TripDateFilterButton(
+          range: widget.range,
+          customRange: widget.customRange,
+          onChanged: widget.onRangeChanged,
+        ),
+        const SizedBox(width: 2),
+        IconButton(
+          icon: Icon(Icons.search_rounded, color: _C.text2, size: 22),
+          tooltip: 'Search',
+          onPressed: _toggleSearch,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSearchRow() {
+    return Row(
+      key: const ValueKey('search'),
+      children: [
+        IconButton(
+          icon: Icon(Icons.arrow_back_rounded, color: _C.text2),
+          onPressed: _toggleSearch,
+        ),
+        Expanded(
+          child: TripSearchField(
+            controller: _searchCtrl,
+            focusNode: _searchFocus,
+            onChanged: _onSearchChanged,
+          ),
+        ),
+      ],
+    );
+  }
+
+  // Status filter as a dropdown, styled like TripPage's status dropdown.
+  Widget _buildStatusDropdown() {
+    return Container(
+      height: 40,
+      padding: const EdgeInsets.symmetric(horizontal: 10),
+      decoration: BoxDecoration(
+        color: AppColors.brandPrimary,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<_VehicleTripFilter>(
+          value: _filter,
+          isDense: true,
+          icon: const Icon(
+            Icons.keyboard_arrow_down_rounded,
+            color: Colors.white,
+            size: 20,
+          ),
+          dropdownColor: AppColors.brandPrimary,
+          borderRadius: BorderRadius.circular(10),
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+          ),
+          selectedItemBuilder: (context) => [
+            for (final f in _VehicleTripFilter.values)
+              Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(
-                    filter.icon,
-                    size: 14,
-                    color: isSelected ? Colors.white : _C.text2,
-                  ),
+                  const Icon(Icons.tune_rounded, size: 15, color: Colors.white),
                   const SizedBox(width: 6),
                   Text(
-                    '${filter.label} ($count)',
-                    style: TextStyle(
-                      fontSize: 12,
+                    'Status: ${f.label}',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 13,
                       fontWeight: FontWeight.w600,
-                      color: isSelected ? Colors.white : _C.text1,
                     ),
                   ),
                 ],
               ),
-            ),
-          );
-        },
+          ],
+          items: [
+            for (final f in _VehicleTripFilter.values)
+              DropdownMenuItem(
+                value: f,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(f.icon, size: 16, color: Colors.white),
+                    const SizedBox(width: 8),
+                    Text(f.label),
+                  ],
+                ),
+              ),
+          ],
+          onChanged: (value) {
+            if (value != null) setState(() => _filter = value);
+          },
+        ),
       ),
     );
   }
@@ -1994,16 +1695,19 @@ class _TripsTabState extends ConsumerState<_TripsTab> {
 class _MaintTab extends ConsumerStatefulWidget {
   final Vehicles vehicle;
   final String Function(double) fmt;
-  final _PnlPeriod period;
-  final ValueChanged<_PnlPeriod> onPeriodChanged;
+  final TripDateRange range;
+  final DateTimeRange? customRange;
+  final void Function(TripDateRange range, DateTimeRange? customRange)
+      onRangeChanged;
   // FIX: callback now receives a Services object for edit, called with null for add
   final void Function(Services? service) onEditService;
 
   const _MaintTab({
     required this.vehicle,
     required this.fmt,
-    required this.period,
-    required this.onPeriodChanged,
+    required this.range,
+    required this.customRange,
+    required this.onRangeChanged,
     required this.onEditService,
   });
 
@@ -2113,17 +1817,35 @@ class _MaintTabState extends ConsumerState<_MaintTab> {
 
     return Column(
       children: [
-        // ── Date-window filter ───────────────────────────────────────────
+        // ── Date filter ──────────────────────────────────────────────────
         Container(
-          color: _C.surface,
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-          child: _PeriodChips(
-            selected: widget.period,
-            onChanged: widget.onPeriodChanged,
+          decoration: const BoxDecoration(
+            color: _C.surface,
+            border: Border(bottom: BorderSide(color: _C.divider)),
+          ),
+          padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
+          child: Row(
+            children: [
+              const Icon(Icons.calendar_month_rounded,
+                  size: 16, color: _C.text2),
+              const SizedBox(width: 8),
+              const Text(
+                'Filter by date',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  color: _C.text2,
+                ),
+              ),
+              const Spacer(),
+              TripDateFilterButton(
+                range: widget.range,
+                customRange: widget.customRange,
+                onChanged: widget.onRangeChanged,
+              ),
+            ],
           ),
         ),
-
-        Container(height: 1, color: _C.divider),
 
         Expanded(
           child: serviceAsync.when(
@@ -2139,7 +1861,8 @@ class _MaintTabState extends ConsumerState<_MaintTab> {
             error: (e, _) => NetworkErrorView(error: e),
             data: (services) {
               final filteredServices = services
-                  .where((s) => widget.period.matches(s.serviceDate, now))
+                  .where((s) => widget.range
+                      .matches(s.serviceDate, now, customRange: widget.customRange))
                   .toList();
 
               // Maintenance cost for the selected period (from service records).
@@ -2153,7 +1876,8 @@ class _MaintTabState extends ConsumerState<_MaintTab> {
               // date so unpaid trips still count once they have a date.
               bool inPeriod(BookingInfo t) {
                 final d = t.paymentDate ?? t.startDateTime ?? t.bookingDate;
-                return widget.period.matches(d, now);
+                return widget.range
+                    .matches(d, now, customRange: widget.customRange);
               }
 
               final periodTrips = trips.where(inPeriod).toList();
@@ -2194,7 +1918,7 @@ class _MaintTabState extends ConsumerState<_MaintTab> {
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            "No maintenance for ${widget.period.label}.",
+                            "No maintenance for ${widget.range.label}.",
                             textAlign: TextAlign.center,
                             style: const TextStyle(color: Colors.grey),
                           ),
@@ -2676,4 +2400,27 @@ class _SpecRow {
   final String label;
   final String value;
   const _SpecRow(this.icon, this.label, this.value);
+}
+
+/// Fixed-height pinned sliver header used to keep the vehicle identity bar
+/// stuck to the top while the P&L summary and tabs scroll.
+class _StickyHeaderDelegate extends SliverPersistentHeaderDelegate {
+  _StickyHeaderDelegate({required this.height, required this.child});
+
+  final double height;
+  final Widget child;
+
+  @override
+  double get minExtent => height;
+
+  @override
+  double get maxExtent => height;
+
+  @override
+  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) =>
+      SizedBox.expand(child: child);
+
+  @override
+  bool shouldRebuild(covariant _StickyHeaderDelegate oldDelegate) =>
+      oldDelegate.height != height || oldDelegate.child != child;
 }

@@ -303,6 +303,15 @@ class _CustomerHistState extends ConsumerState<CustomerHist>
                 child: _buildIdentityBar(topPad),
               ),
             ),
+            // Filter chip row pinned directly under the identity bar so the
+            // status / date / search controls stay at the top while scrolling.
+            SliverPersistentHeader(
+              pinned: true,
+              delegate: _StickyHeaderDelegate(
+                height: 64,
+                child: _buildFilterRow(),
+              ),
+            ),
             SliverToBoxAdapter(
               child: _buildReportSection(state.customerHist),
             ),
@@ -521,7 +530,10 @@ class _CustomerHistState extends ConsumerState<CustomerHist>
         ),
       ),
       error: (_, __) => const SizedBox.shrink(),
-      data: (trips) {
+      data: (allTrips) {
+        // The summary reflects the active date range + search, so the figures
+        // change as the date filter changes.
+        final trips = _dateAndQueryFiltered(allTrips);
         final total = trips.length;
         final paidCount = trips
             .where((t) =>
@@ -883,33 +895,28 @@ class _CustomerHistState extends ConsumerState<CustomerHist>
   Widget _tripsData(List<BookingInfo> trips) {
     final base = _dateAndQueryFiltered(trips);
     final filtered = _applyFilter(base);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _buildFilterRow(),
-        Expanded(
-          child: filtered.isEmpty
-              ? _filteredEmptyState()
-              : ListView.builder(
-                  physics: const BouncingScrollPhysics(),
-                  padding: const EdgeInsets.only(bottom: 24),
-                  itemCount: filtered.length,
-                  itemBuilder: (_, i) => TripCard(
-                    key: ValueKey(filtered[i].tripId),
-                    bookinginfo: filtered[i],
-                    status: filtered[i].status ?? 0,
-                  ),
-                ),
-        ),
-      ],
+    if (filtered.isEmpty) return _filteredEmptyState();
+    return ListView.builder(
+      physics: const BouncingScrollPhysics(),
+      padding: const EdgeInsets.only(bottom: 24),
+      itemCount: filtered.length,
+      itemBuilder: (_, i) => TripCard(
+        key: ValueKey(filtered[i].tripId),
+        bookinginfo: filtered[i],
+        status: filtered[i].status ?? 0,
+      ),
     );
   }
 
   // Filter row: status dropdown + date filter + search icon, which toggles to
   // a back button + search field. Mirrors TripPage.
   Widget _buildFilterRow() {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 14, 16, 6),
+    return Container(
+      decoration: const BoxDecoration(
+        color: _surface,
+        border: Border(bottom: BorderSide(color: _divider)),
+      ),
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
       child: AnimatedSwitcher(
         duration: const Duration(milliseconds: 180),
         transitionBuilder: (child, anim) =>
