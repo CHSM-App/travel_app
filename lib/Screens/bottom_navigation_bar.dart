@@ -429,6 +429,7 @@ class _MainBottomNavState extends ConsumerState<MainBottomNav>
                       });
                     },
                     child: Stack(
+                      alignment: Alignment.center,
                       children: [
                         AnimatedPositioned(
                           duration: _isDragging
@@ -481,6 +482,7 @@ class _MainBottomNavState extends ConsumerState<MainBottomNav>
         builder: (context, _) {
           return Column(
             mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
             mainAxisSize: MainAxisSize.min,
             children: [
               Transform.scale(
@@ -502,6 +504,7 @@ class _MainBottomNavState extends ConsumerState<MainBottomNav>
                 ),
                 child: Text(
                   item.label,
+                  textAlign: TextAlign.center,
                   overflow: TextOverflow.ellipsis,
                   maxLines: 1,
                 ),
