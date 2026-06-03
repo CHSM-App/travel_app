@@ -273,8 +273,8 @@ class _TravelAdminDashboardState extends ConsumerState<TravelAdminDashboard> {
                   _QuickActionsGrid(isSmall: isSmall),
                   SizedBox(height: sectionGap),
                   _SectionTitle(title: "Reports", isSmall: isSmall),
-                  SizedBox(height: isSmall ? 6 : 8),
-                  _BookingReportBanner(isSmall: isSmall),
+                  // SizedBox(height: isSmall ? 6 : 8),
+                  // _BookingReportBanner(isSmall: isSmall),
                   SizedBox(height: isSmall ? 8 : 10),
                   _VehicleReportBanner(isSmall: isSmall),
                   SizedBox(height: sectionGap),
@@ -760,122 +760,122 @@ class _NewBookingHero extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────
-// BOOKING REPORT BANNER
-// ─────────────────────────────────────────────────────────
-class _BookingReportBanner extends ConsumerWidget {
-  final bool isSmall;
-  const _BookingReportBanner({required this.isSmall});
+// // ─────────────────────────────────────────────────────────
+// // BOOKING REPORT BANNER
+// // ─────────────────────────────────────────────────────────
+// class _BookingReportBanner extends ConsumerWidget {
+//   final bool isSmall;
+//   const _BookingReportBanner({required this.isSmall});
 
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return GestureDetector(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => TravelReportPage(
-              agencyId: ref.read(loginViewModelProvider).agencyId ?? "",
-            ),
-          ),
-        );
-      },
-      child: Container(
-        width: double.infinity,
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(isSmall ? 14 : 16),
-          boxShadow: [
-            BoxShadow(
-              color: TravelAdminDashboard.primaryColor.withOpacity(0.08),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Padding(
-          padding: EdgeInsets.all(isSmall ? 10 : 12),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Container(
-                width: isSmall ? 36 : 42,
-                height: isSmall ? 36 : 42,
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [AppColors.brandPrimary, AppColors.brandPrimaryLight],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(isSmall ? 9 : 11),
-                  boxShadow: [
-                    BoxShadow(
-                      color: TravelAdminDashboard.primaryColor.withOpacity(0.25),
-                      blurRadius: 6,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Icon(
-                  Icons.bar_chart_outlined,
-                  color: Colors.white,
-                  size: isSmall ? 18 : 22,
-                ),
-              ),
-              SizedBox(width: isSmall ? 10 : 12),
+//   @override
+//   Widget build(BuildContext context, WidgetRef ref) {
+//     return GestureDetector(
+//       onTap: () {
+//         Navigator.push(
+//           context,
+//           MaterialPageRoute(
+//             builder: (_) => TravelReportPage(
+//               agencyId: ref.read(loginViewModelProvider).agencyId ?? "",
+//             ),
+//           ),
+//         );
+//       },
+//       child: Container(
+//         width: double.infinity,
+//         decoration: BoxDecoration(
+//           color: Colors.white,
+//           borderRadius: BorderRadius.circular(isSmall ? 14 : 16),
+//           boxShadow: [
+//             BoxShadow(
+//               color: TravelAdminDashboard.primaryColor.withOpacity(0.08),
+//               blurRadius: 12,
+//               offset: const Offset(0, 4),
+//             ),
+//           ],
+//         ),
+//         child: Padding(
+//           padding: EdgeInsets.all(isSmall ? 10 : 12),
+//           child: Row(
+//             crossAxisAlignment: CrossAxisAlignment.center,
+//             children: [
+//               Container(
+//                 width: isSmall ? 36 : 42,
+//                 height: isSmall ? 36 : 42,
+//                 decoration: BoxDecoration(
+//                   gradient: const LinearGradient(
+//                     colors: [AppColors.brandPrimary, AppColors.brandPrimaryLight],
+//                     begin: Alignment.topLeft,
+//                     end: Alignment.bottomRight,
+//                   ),
+//                   borderRadius: BorderRadius.circular(isSmall ? 9 : 11),
+//                   boxShadow: [
+//                     BoxShadow(
+//                       color: TravelAdminDashboard.primaryColor.withOpacity(0.25),
+//                       blurRadius: 6,
+//                       offset: const Offset(0, 2),
+//                     ),
+//                   ],
+//                 ),
+//                 child: Icon(
+//                   Icons.bar_chart_outlined,
+//                   color: Colors.white,
+//                   size: isSmall ? 18 : 22,
+//                 ),
+//               ),
+//               SizedBox(width: isSmall ? 10 : 12),
 
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      "Booking Report",
-                      style: TextStyle(
-                        fontSize: isSmall ? 13 : 15,
-                        fontWeight: FontWeight.w800,
-                        color: TravelAdminDashboard.darkBlue,
-                        letterSpacing: -0.2,
-                        height: 1.1,
-                      ),
-                    ),
-                    SizedBox(height: isSmall ? 2 : 3),
-                    Text(
-                      "Bookings, drivers, vehicles & revenue",
-                      style: TextStyle(
-                        fontSize: isSmall ? 9 : 10,
-                        color: Colors.grey.shade500,
-                        height: 1.3,
-                        fontWeight: FontWeight.w500,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                ),
-              ),
-              SizedBox(width: isSmall ? 6 : 8),
+//               Expanded(
+//                 child: Column(
+//                   crossAxisAlignment: CrossAxisAlignment.start,
+//                   mainAxisSize: MainAxisSize.min,
+//                   children: [
+//                     Text(
+//                       "Booking Report",
+//                       style: TextStyle(
+//                         fontSize: isSmall ? 13 : 15,
+//                         fontWeight: FontWeight.w800,
+//                         color: TravelAdminDashboard.darkBlue,
+//                         letterSpacing: -0.2,
+//                         height: 1.1,
+//                       ),
+//                     ),
+//                     SizedBox(height: isSmall ? 2 : 3),
+//                     Text(
+//                       "Bookings, drivers, vehicles & revenue",
+//                       style: TextStyle(
+//                         fontSize: isSmall ? 9 : 10,
+//                         color: Colors.grey.shade500,
+//                         height: 1.3,
+//                         fontWeight: FontWeight.w500,
+//                       ),
+//                       maxLines: 1,
+//                       overflow: TextOverflow.ellipsis,
+//                     ),
+//                   ],
+//                 ),
+//               ),
+//               SizedBox(width: isSmall ? 6 : 8),
 
-              Container(
-                width: isSmall ? 26 : 30,
-                height: isSmall ? 26 : 30,
-                decoration: const BoxDecoration(
-                  color: AppColors.brandSoft,
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  Icons.arrow_forward_rounded,
-                  color: TravelAdminDashboard.primaryColor,
-                  size: isSmall ? 14 : 16,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
+//               Container(
+//                 width: isSmall ? 26 : 30,
+//                 height: isSmall ? 26 : 30,
+//                 decoration: const BoxDecoration(
+//                   color: AppColors.brandSoft,
+//                   shape: BoxShape.circle,
+//                 ),
+//                 child: Icon(
+//                   Icons.arrow_forward_rounded,
+//                   color: TravelAdminDashboard.primaryColor,
+//                   size: isSmall ? 14 : 16,
+//                 ),
+//               ),
+//             ],
+//           ),
+//         ),
+//       ),
+//     );
+//   }
+// }
 
 // ─────────────────────────────────────────────────────────
 // VEHICLE REPORT BANNER

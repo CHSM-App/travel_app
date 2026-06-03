@@ -1825,17 +1825,17 @@ final receivedController = TextEditingController(
 
     // Split "Ertiga MH07A1245" → name + registration plate (last token with a
     // digit). Falls back to showing the whole string as the name.
-    final String rawVehicle = (bookinginfo.vehicle_info ?? 'Vehicle N/A').trim();
+    final String rawVehicle = (bookinginfo.vehicle_info ?? 'Vehicle N/A');
     String vehicleName = rawVehicle;
     String? vehicleReg;
-    final int spaceIdx = rawVehicle.lastIndexOf(' ');
-    if (spaceIdx > 0) {
-      final last = rawVehicle.substring(spaceIdx + 1);
-      if (RegExp(r'\d').hasMatch(last)) {
-        vehicleName = rawVehicle.substring(0, spaceIdx);
-        vehicleReg = last;
-      }
-    }
+    // final int spaceIdx = rawVehicle.lastIndexOf(' ');
+    // if (spaceIdx > 0) {
+    //   final last = rawVehicle.substring(spaceIdx + 1);
+    //   if (RegExp(r'\d').hasMatch(last)) {
+    //     vehicleName = rawVehicle.substring(0, spaceIdx);
+    //     vehicleReg = last;
+    //   }
+    // }
 
     return GestureDetector(
       onTap: () {

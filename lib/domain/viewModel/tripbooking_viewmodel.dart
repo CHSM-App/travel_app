@@ -13,7 +13,9 @@ class TripBookingState {
   final Map<String, dynamic>? data;
   final String? error;
   final AsyncValue<List<Drivers>> fetchDriverList;
+  final AsyncValue<List<Drivers>> fetchDeletedDriverList;
   final AsyncValue<List<Vehicles>> fetchVehicleList;
+  final AsyncValue<List<Vehicles>> fetchDeletedVehicleList;
   final AsyncValue<List<Customer>> fetchCustomerList;
   final AsyncValue<List<Vehicles>> availableVehicles;
 final AsyncValue<List<Drivers>> availableDrivers;
@@ -28,6 +30,8 @@ final AsyncValue<List<Drivers>> availableDrivers;
     this.fetchCustomerList = const AsyncValue.loading(),
     this.availableVehicles = const AsyncValue.loading(),
     this.availableDrivers = const AsyncValue.loading(),
+    this.fetchDeletedDriverList = const AsyncValue.loading(),
+    this.fetchDeletedVehicleList = const AsyncValue.loading(),
     this.routeHistory = const AsyncValue.data(<BookingInfo>[]),
     this.agencyId,
   });
@@ -41,6 +45,8 @@ final AsyncValue<List<Drivers>> availableDrivers;
     AsyncValue<List<Customer>>? fetchCustomerList,
     AsyncValue<List<Vehicles>>? availableVehicles,
     AsyncValue<List<Drivers>>? availableDrivers,
+    AsyncValue<List<Drivers>>? fetchDeletedDriverList,
+    AsyncValue<List<Vehicles>>? fetchDeletedVehicleList,
     AsyncValue<List<BookingInfo>>? routeHistory,
 
     String? agencyId,
@@ -55,6 +61,8 @@ final AsyncValue<List<Drivers>> availableDrivers;
       availableVehicles: availableVehicles ?? this.availableVehicles,
       availableDrivers: availableDrivers ?? this.availableDrivers,
       routeHistory: routeHistory ?? this.routeHistory,
+      fetchDeletedDriverList: fetchDeletedDriverList ?? this.fetchDeletedDriverList,
+      fetchDeletedVehicleList: fetchDeletedVehicleList ?? this.fetchDeletedVehicleList,
       agencyId: agencyId ?? this.agencyId,
     );
   }
@@ -91,20 +99,20 @@ class TripBookingViewModel extends StateNotifier<TripBookingState> {
   }
 
    Future<void> deletedDriverList(String agencyId) async {
-    state = state.copyWith(fetchDriverList: const AsyncValue.loading());
+    state = state.copyWith(fetchDeletedDriverList: const AsyncValue.loading());
     try {
       final result = await usecase.deletedDriverList(agencyId);
       state = state.copyWith(
-        fetchDriverList: AsyncValue.data(result),
+        fetchDeletedDriverList: AsyncValue.data(result),
         agencyId: agencyId,
       );
     } catch (e, st) {
-      state = state.copyWith(fetchDriverList: AsyncValue.error(e, st));
+      state = state.copyWith(fetchDeletedDriverList: AsyncValue.error(e, st));
     }
   }
 
   Future<void> vehicleList(String agencyId) async {
-    state = state.copyWith(isLoading: true);
+    state = state.copyWith(isLoading: true,);
     try {
       final result = await usecase.vehicleList(agencyId);
       // final result = await usecase.vehicleList(agencyId);
@@ -128,13 +136,13 @@ class TripBookingViewModel extends StateNotifier<TripBookingState> {
       // final result = await usecase.vehicleList(agencyId);
       state = state.copyWith(
         isLoading: false,
-        fetchVehicleList: AsyncValue.data(result),
+        fetchDeletedVehicleList: AsyncValue.data(result),
         agencyId: agencyId,
       );
     } catch (e, st) {
       state = state.copyWith(
         isLoading: false,
-        fetchVehicleList: AsyncValue.error(e, st),
+        fetchDeletedVehicleList: AsyncValue.error(e, st),
       );
     }
   }

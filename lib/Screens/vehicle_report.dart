@@ -28,7 +28,6 @@ class _C {
   static const greenSoft = Color(0xFFD1FAE5);
   static const red = Color(0xFFEF4444);
   static const redSoft = Color(0xFFFEE2E2);
-  static const bloodRed = Color(0xFF8B0000);
   static const orange = Color(0xFFF59E0B);
   static const orangeSoft = Color(0xFFFEF3C7);
   static const gold = Color(0xFFD4AF37);
@@ -1226,67 +1225,54 @@ class _VehicleRevenueCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Vehicle name + number — single blood-red pill card
+              // Vehicle name
+              Text(
+                v.name ?? 'Unknown',
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  color: _C.text2,
+                  letterSpacing: -0.1,
+                  height: 1.15,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 5),
+              // Registration number — the focal point of the card.
               Container(
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 6,
+                  horizontal: 9,
+                  vertical: 4,
                 ),
                 decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFFB71C1C), _C.bloodRed],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
+                  color: _C.accentSoft,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: _C.accent.withValues(alpha: 0.25),
                   ),
-                  borderRadius: BorderRadius.circular(10),
-                  boxShadow: [
-                    BoxShadow(
-                      color: _C.bloodRed.withValues(alpha: 0.30),
-                      blurRadius: 6,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
                 ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(
-                      v.name ?? 'Unknown',
-                      style: const TextStyle(
-                        fontSize: 13.5,
-                        fontWeight: FontWeight.w800,
-                        color: Colors.white,
-                        letterSpacing: -0.2,
-                        height: 1.15,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                    const Icon(
+                      Icons.credit_card_rounded,
+                      size: 13,
+                      color: _C.accent,
                     ),
-                    const SizedBox(height: 4),
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.credit_card_rounded,
-                          size: 10,
-                          color: Colors.white.withValues(alpha: 0.85),
+                    const SizedBox(width: 5),
+                    Flexible(
+                      child: Text(
+                        v.number ?? 'No plate',
+                        style: const TextStyle(
+                          fontSize: 13.5,
+                          fontWeight: FontWeight.w800,
+                          color: _C.accent,
+                          letterSpacing: 1.0,
                         ),
-                        const SizedBox(width: 4),
-                        Flexible(
-                          child: Text(
-                            v.number ?? 'No plate',
-                            style: TextStyle(
-                              fontSize: 10.5,
-                              fontWeight: FontWeight.w700,
-                              color: Colors.white.withValues(alpha: 0.92),
-                              letterSpacing: 0.6,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
                   ],
                 ),

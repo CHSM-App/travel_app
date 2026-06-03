@@ -3,9 +3,11 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:travel_agency_app/Screens/trip_card.dart';
 import 'package:travel_agency_app/Screens/add_vehicle.dart';
 import 'package:travel_agency_app/core/network/error_messages.dart';
+import 'package:travel_agency_app/core/storage/constant.dart';
 import 'package:travel_agency_app/core/theme/app_colors.dart';
 import 'package:travel_agency_app/core/widgets/error_view.dart';
 import 'package:travel_agency_app/core/widgets/skeleton.dart';
@@ -2298,12 +2300,13 @@ class _OverviewTab extends StatelessWidget {
             _SpecRow(Icons.directions_car_rounded, 'Name', v.name ?? '--'),
             _SpecRow(Icons.pin_rounded, 'Registration', v.number ?? '--'),
             _SpecRow(Icons.category_rounded, 'Type', v.Type ?? '--'),
-            if (v.perKmCharge != null)
-              _SpecRow(
-                Icons.route_rounded,
-                'Per-km Charge',
-                '₹ ${v.perKmCharge!.toStringAsFixed(0)}',
-              ),
+            _SpecRow(
+              Icons.route_rounded,
+              'Per-km Charge',
+              v.perKmCharge != null
+                  ? '₹ ${v.perKmCharge!.toStringAsFixed(0)} / km'
+                  : '--',
+            ),
             _SpecRow(
               Icons.verified_rounded,
               'Status',
@@ -2311,7 +2314,153 @@ class _OverviewTab extends StatelessWidget {
             ),
           ],
         ),
+        _buildDocumentsCard(context),
       ],
+    );
+  }
+
+  // ── Documents card (RC document viewer) ──────────────────────────────
+  Widget _buildDocumentsCard(BuildContext context) {
+    final url = _normalizeRcUrl(vehicle.rcdocuments);
+    if (url == null || url.isEmpty) return const SizedBox.shrink();
+    final isPdf = _isPdfUrl(url);
+
+    return Container(
+      margin: const EdgeInsets.only(top: 14),
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+      decoration: BoxDecoration(
+        color: _C.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: _C.divider),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Documents',
+            style: TextStyle(
+              fontSize: 13.5,
+              fontWeight: FontWeight.w800,
+              color: _C.text1,
+              letterSpacing: -0.2,
+            ),
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: () => _openDocument(context, url),
+              icon: Icon(
+                isPdf
+                    ? Icons.picture_as_pdf_rounded
+                    : Icons.visibility_rounded,
+                size: 18,
+              ),
+              label: const Text('View RC Document'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: _C.accent,
+                side: const BorderSide(color: _C.accent),
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                textStyle: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── Document helpers (mirror add_vehicle.dart) ───────────────────────
+  bool _isPdfUrl(String? url) {
+    if (url == null || url.trim().isEmpty) return false;
+    final parsed = Uri.tryParse(url.trim());
+    final path = Uri.decodeFull((parsed?.path ?? url)).toLowerCase();
+    return path.endsWith('.pdf');
+  }
+
+  // Turns whatever the API stored (a serialized list, a bare filename, a
+  // local path, or an absolute URL) into a fully-qualified document URL.
+  String? _normalizeRcUrl(String? rawUrl) {
+    if (rawUrl == null || rawUrl.trim().isEmpty) return null;
+    var cleaned = rawUrl.trim();
+
+    if (cleaned.startsWith('[') && cleaned.endsWith(']')) {
+      cleaned = cleaned.substring(1, cleaned.length - 1);
+    }
+    cleaned = cleaned.replaceAll('"', '').replaceAll("'", '').trim();
+    if (cleaned.contains(',')) {
+      cleaned = cleaned
+          .split(',')
+          .map((e) => e.trim())
+          .firstWhere((e) => e.isNotEmpty, orElse: () => cleaned);
+    }
+
+    cleaned = Uri.decodeFull(cleaned).replaceAll('\\', '/');
+
+    if (cleaned.startsWith('http://') || cleaned.startsWith('https://')) {
+      return cleaned;
+    }
+
+    final isFileNameOnly = !cleaned.contains('/') &&
+        RegExp(r'\.(jpg|jpeg|png|webp|heic|pdf)$', caseSensitive: false)
+            .hasMatch(cleaned);
+
+    final uploadsIdx = cleaned.toLowerCase().indexOf('uploads/');
+    if (uploadsIdx != -1) {
+      cleaned = cleaned.substring(uploadsIdx);
+    }
+    if (cleaned.startsWith('./')) cleaned = cleaned.substring(2);
+
+    final base = baseUrl.endsWith('/')
+        ? baseUrl.substring(0, baseUrl.length - 1)
+        : baseUrl;
+
+    if (isFileNameOnly) return '$base/uploads/VehicleDocuments/$cleaned';
+    if (cleaned.startsWith('/')) return '$base$cleaned';
+    return '$base/$cleaned';
+  }
+
+  Future<void> _openDocument(BuildContext context, String url) async {
+    // PDFs open in an external viewer/browser; images open fullscreen in-app.
+    if (_isPdfUrl(url)) {
+      final uri = Uri.tryParse(url);
+      if (uri == null) {
+        _snack(context, 'Invalid document URL');
+        return;
+      }
+      final launched =
+          await launchUrl(uri, mode: LaunchMode.externalApplication);
+      if (!launched) {
+        final retry = await launchUrl(uri, mode: LaunchMode.platformDefault);
+        if (!retry && context.mounted) {
+          _snack(context, 'Could not open document');
+        }
+      }
+      return;
+    }
+    if (!context.mounted) return;
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => _FullscreenImagePage(networkUrl: url)),
+    );
+  }
+
+  void _snack(BuildContext context, String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), backgroundColor: Colors.red.shade600),
     );
   }
 
@@ -2423,4 +2572,53 @@ class _StickyHeaderDelegate extends SliverPersistentHeaderDelegate {
   @override
   bool shouldRebuild(covariant _StickyHeaderDelegate oldDelegate) =>
       oldDelegate.height != height || oldDelegate.child != child;
+}
+
+// ── Fullscreen image viewer (RC document images) ────────────────────────────
+class _FullscreenImagePage extends StatelessWidget {
+  final String networkUrl;
+
+  const _FullscreenImagePage({required this.networkUrl});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.close_rounded, color: Colors.white),
+          onPressed: () => Navigator.pop(context),
+        ),
+      ),
+      body: Center(
+        child: InteractiveViewer(
+          minScale: 0.5,
+          maxScale: 4,
+          child: Image.network(
+            networkUrl,
+            fit: BoxFit.contain,
+            headers: const {'Cache-Control': 'no-cache'},
+            loadingBuilder: (context, child, progress) {
+              if (progress == null) return child;
+              return const CircularProgressIndicator(color: Colors.white);
+            },
+            errorBuilder: (_, __, ___) => const Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.broken_image_rounded,
+                    color: Colors.white54, size: 48),
+                SizedBox(height: 12),
+                Text(
+                  'Could not load document',
+                  style: TextStyle(color: Colors.white54),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }

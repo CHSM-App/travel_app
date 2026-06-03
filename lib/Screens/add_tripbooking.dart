@@ -74,7 +74,23 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
   final startDate = TextEditingController();
   final endDate = TextEditingController();
 
+  // Completion fields — only used/shown when the trip is back-dated (start in
+  // the past), i.e. the operator is logging a trip that already happened.
+  final tollCharges = TextEditingController();
+  final repairCharges = TextEditingController();
+  final driverCharges = TextEditingController();
+  final amountReceived = TextEditingController();
+
   DateTime? startDt, endDt;
+
+  // True when the selected start date is before today — the trip already
+  // happened, so we collect final charges + amount received and save it as a
+  // completed trip rather than an upcoming booking.
+  bool get _isCompletedTrip {
+    if (startDt == null) return false;
+    final now = DateTime.now();
+    return startDt!.isBefore(DateTime(now.year, now.month, now.day));
+  }
   int? selVehicle, selDriver, selCustomer;
   bool _saving = false;
   bool _fetchingDistance = false;
@@ -146,6 +162,11 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
         endDt = DateTime(e.year, e.month, e.day, e.hour, e.minute);
         endDate.text = DateFormat("MMM dd, yyyy  •  hh:mm a").format(endDt!);
       }
+      // Pre-fill completion charges when editing an already-recorded trip.
+      tollCharges.text = b.tollCharges?.toString() ?? '';
+      repairCharges.text = b.repairingCharges?.toString() ?? '';
+      driverCharges.text = b.driverCharges?.toString() ?? '';
+      amountReceived.text = b.amountReceived?.toString() ?? '';
     }
 
     // Recompute the fare suggestion whenever the route text changes.
@@ -178,6 +199,14 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
     customerName.addListener(_onCustomerFieldChanged);
     customerPhone.addListener(_onCustomerPhoneChanged);
     customerAddress.addListener(_onCustomerFieldChanged);
+
+    // Keep the completion summary (balance / payment status) live as the
+    // operator types the charges and amount received for a back-dated trip.
+    charges.addListener(_onCompletionAmountChanged);
+    tollCharges.addListener(_onCompletionAmountChanged);
+    repairCharges.addListener(_onCompletionAmountChanged);
+    driverCharges.addListener(_onCompletionAmountChanged);
+    amountReceived.addListener(_onCompletionAmountChanged);
 
     Future.microtask(() async {
       final n = ref.read(tripBookingViewModelProvider.notifier);
@@ -226,9 +255,18 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
     customerName.removeListener(_onCustomerFieldChanged);
     customerPhone.removeListener(_onCustomerPhoneChanged);
     customerAddress.removeListener(_onCustomerFieldChanged);
+    charges.removeListener(_onCompletionAmountChanged);
+    tollCharges.removeListener(_onCompletionAmountChanged);
+    repairCharges.removeListener(_onCompletionAmountChanged);
+    driverCharges.removeListener(_onCompletionAmountChanged);
+    amountReceived.removeListener(_onCompletionAmountChanged);
     customerName.dispose();
     customerPhone.dispose();
     customerAddress.dispose();
+    tollCharges.dispose();
+    repairCharges.dispose();
+    driverCharges.dispose();
+    amountReceived.dispose();
     pickupFocus.dispose();
     dropFocus.dispose();
     customerNameFocus.dispose();
@@ -268,6 +306,12 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
     customerAddress.text = c.address ?? '';
     _suppressCustomerFieldListener = false;
     setState(() => selCustomer = c.customerId);
+  }
+
+  // Rebuilds the completion summary (balance / payment-status preview) as the
+  // charges or received amount change. Only relevant for back-dated trips.
+  void _onCompletionAmountChanged() {
+    if (mounted) setState(() {});
   }
 
   void _onCustomerFieldChanged() {
@@ -576,17 +620,17 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
   // ── DateTime Picker ────────────────────────────────────────────────────────
   Future<void> _pickDt(bool isStart) async {
     final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    // Block past dates. End date additionally can't be before the picked start.
+    // Past dates are allowed so the operator can log a trip that already
+    // happened (a completed trip). The end date still can't precede the start.
     final earliest = isStart
-        ? today
-        : (startDt != null && startDt!.isAfter(today))
+        ? DateTime(now.year - 5)
+        : (startDt != null
             ? DateTime(startDt!.year, startDt!.month, startDt!.day)
-            : today;
+            : DateTime(now.year - 5));
     final existing = isStart ? startDt : endDt;
     final initial = (existing != null && !existing.isBefore(earliest))
         ? existing
-        : earliest;
+        : (isStart ? now : (startDt ?? now));
 
     final dt = await _showDateTimeSheet(
       earliest: earliest,
@@ -1167,6 +1211,11 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
       _snack("Select vehicle & driver");
       return;
     }
+    // A back-dated (completed) trip needs an end time to be logged.
+    if (_isCompletedTrip && endDt == null) {
+      _snack("Select end date/time for the completed trip");
+      return;
+    }
     setState(() => _saving = true);
     final agencyId = ref.read(loginViewModelProvider).agencyId ?? '';
 
@@ -1207,6 +1256,12 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
       return;
     }
 
+    final completed = _isCompletedTrip;
+    final toll = double.tryParse(tollCharges.text.trim()) ?? 0;
+    final repair = double.tryParse(repairCharges.text.trim()) ?? 0;
+    final driverChg = double.tryParse(driverCharges.text.trim()) ?? 0;
+    final received = double.tryParse(amountReceived.text.trim()) ?? 0;
+
     final bk = TripBooking(
       tripId: widget.booking?.tripId,
       vehicleid: selVehicle!,
@@ -1217,20 +1272,109 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
       distance: double.tryParse(distance.text.trim()) ?? 0,
       fuelrequired: double.tryParse(fuelReq.text.trim()) ?? 0,
       tripcharges: double.tryParse(charges.text.trim()) ?? 0,
+      tollcharges: completed ? toll : null,
+      repairingcharges: completed ? repair : null,
+      drivercharges: completed ? driverChg : null,
       startDateTime: startDt,
       endDateTime: endDt,
-      status: widget.booking?.status ?? 3,
+      // A back-dated trip is created as Active (1) so it can immediately be
+      // ended — which records the charges + payment and moves it to Paid /
+      // Unpaid. A normal future trip stays an upcoming booking (3).
+      status: widget.booking?.status ?? (completed ? 1 : 3),
       bookingdate: widget.booking?.bookingDate ?? DateTime.now(),
       agencyId: agencyId,
     );
+
     final n = ref.read(tripBookingViewModelProvider.notifier);
-    if (widget.booking != null)
-      await n.updateTripBooking(widget.booking?.tripId ?? 0, bk);
-    else
-      await n.addTripBooking(bk);
+    bool completionRecorded = false;
+    try {
+      int? tripId = widget.booking?.tripId;
+      if (widget.booking != null) {
+        await n.updateTripBooking(tripId ?? 0, bk);
+      } else {
+        await n.addTripBooking(bk);
+        // Recover the new trip id from the create response so we can complete it.
+        tripId = _findTripId(ref.read(tripBookingViewModelProvider).data);
+      }
+
+      // For a back-dated trip, stamp the end time + final charges + amount
+      // received using the same endTrip flow the trip card uses. This moves
+      // the trip to Paid / Unpaid based on what was collected.
+      if (completed && tripId != null) {
+        await ref.read(tripPageViewModelProvider.notifier).endTrip(
+              BookingInfo(
+                tripId: tripId,
+                endDateTime: endDt,
+                tollCharges: toll,
+                repairingCharges: repair,
+                driverCharges: driverChg,
+                amountReceived: received,
+              ),
+            );
+        completionRecorded = true;
+      }
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _saving = false);
+      _snack("Failed to save trip");
+      return;
+    }
+
     if (!mounted) return;
     setState(() => _saving = false);
+    // Trip was created but we couldn't auto-record payment (no id returned) —
+    // let the operator finish it from the trip card.
+    if (completed && !completionRecorded) {
+      _snack("Trip saved. Record charges & payment from the trip card.");
+    }
     Navigator.pop(context);
+  }
+
+  // Recursively pulls a trip id out of the create-trip API response, mirroring
+  // the customer-id extraction. Returns null when none is present.
+  int? _findTripId(dynamic node) {
+    if (node == null) return null;
+    if (node is int) return node;
+    if (node is num) return node.toInt();
+    if (node is String) {
+      final direct = int.tryParse(node.trim());
+      if (direct != null) return direct;
+      final digits = RegExp(r'\d+').firstMatch(node)?.group(0);
+      return digits != null ? int.tryParse(digits) : null;
+    }
+    if (node is Map) {
+      const keys = <String>[
+        'trip_id',
+        'tripId',
+        'TripId',
+        'tripID',
+        'TripID',
+        'id',
+        'ID',
+        'insertId',
+        'InsertId',
+        'insertedId',
+        'InsertedId',
+      ];
+      for (final k in keys) {
+        if (node.containsKey(k)) {
+          final found = _findTripId(node[k]);
+          if (found != null) return found;
+        }
+      }
+      for (final v in node.values) {
+        final found = _findTripId(v);
+        if (found != null) return found;
+      }
+      return null;
+    }
+    if (node is Iterable) {
+      for (final item in node) {
+        final found = _findTripId(item);
+        if (found != null) return found;
+      }
+    }
+    return null;
   }
 
   // ══════════════════════════════════════════════════════════════════════════
@@ -1771,6 +1915,15 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
                           ),
                         ),
                       ),
+
+                      // ── 05  TRIP COMPLETION (only for back-dated trips) ──────
+                      if (_isCompletedTrip) ...[
+                        const SizedBox(height: 12),
+                        _FadeSlide(
+                          anim: _anims[4],
+                          child: _completionCard(),
+                        ),
+                      ],
                     ],
                   ),
                 ),
@@ -2704,6 +2857,224 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
   // ══════════════════════════════════════════════════════════════════════════
   //  SAVE BAR
   // ══════════════════════════════════════════════════════════════════════════
+  // ══════════════════════════════════════════════════════════════════════════
+  //  TRIP COMPLETION  ← shown only for back-dated trips (start in the past)
+  // ══════════════════════════════════════════════════════════════════════════
+  Widget _completionCard() {
+    Widget chargeField(
+      String label,
+      TextEditingController ctrl,
+      IconData icon, {
+      Color color = _C.orange,
+      Color bg = _C.orangeSoft,
+    }) {
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _assignLabel(label),
+            const SizedBox(height: 6),
+            _inputField(
+              label: label,
+              ctrl: ctrl,
+              icon: icon,
+              iconColor: color,
+              iconBg: bg,
+              prefix: "₹  ",
+              keyboard: const TextInputType.numberWithOptions(decimal: true),
+              fmt: [FilteringTextInputFormatter.allow(RegExp(r'[\d.]'))],
+              // Optional — empty means zero, not a validation error.
+              validator: (_) => null,
+            ),
+          ],
+        ),
+      );
+    }
+
+    return _sectionCard(
+      icon: Icons.task_alt_rounded,
+      label: "Trip Completion",
+      iconColor: _C.green,
+      iconBg: _C.greenSoft,
+      badge: "05",
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            decoration: BoxDecoration(
+              color: _C.greenSoft,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: _C.green.withOpacity(0.25)),
+            ),
+            child: Row(
+              children: const [
+                Icon(Icons.info_outline_rounded, size: 16, color: _C.green),
+                SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    "This trip is in the past. Enter the final charges and "
+                    "amount received to log it as a completed trip.",
+                    style: TextStyle(
+                      fontSize: 11.5,
+                      color: _C.text1,
+                      fontWeight: FontWeight.w600,
+                      height: 1.4,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 14),
+          chargeField("Toll Charges", tollCharges, Icons.toll_rounded),
+          chargeField("Repair Charges", repairCharges, Icons.build_rounded),
+          chargeField(
+            "Driver Charges",
+            driverCharges,
+            Icons.payments_rounded,
+          ),
+          chargeField(
+            "Amount Received",
+            amountReceived,
+            Icons.account_balance_wallet_rounded,
+            color: _C.green,
+            bg: _C.greenSoft,
+          ),
+          _completionSummary(),
+        ],
+      ),
+    );
+  }
+
+  // Live balance + payment-status preview for the completion section. Approved
+  // fare comes from the Trip Charges field; received from the field above.
+  Widget _completionSummary() {
+    final approved = double.tryParse(charges.text.trim()) ?? 0;
+    final received = double.tryParse(amountReceived.text.trim()) ?? 0;
+    final balance = (approved - received) <= 0 ? 0.0 : approved - received;
+
+    late final String label;
+    late final Color color;
+    late final Color bg;
+    late final IconData icon;
+    if (approved > 0 && received >= approved) {
+      label = "Paid";
+      color = _C.green;
+      bg = _C.greenSoft;
+      icon = Icons.check_circle_rounded;
+    } else if (received > 0) {
+      label = "Partially Paid";
+      color = _C.orange;
+      bg = _C.orangeSoft;
+      icon = Icons.timelapse_rounded;
+    } else {
+      label = "Unpaid";
+      color = _C.red;
+      bg = _C.redSoft;
+      icon = Icons.cancel_rounded;
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+      decoration: BoxDecoration(
+        color: _C.surfaceLight,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: _C.divider),
+      ),
+      child: Column(
+        children: [
+          _summaryRow("Approved fare", "₹${_money(approved)}", _C.text2),
+          const SizedBox(height: 6),
+          _summaryRow("Received", "₹${_money(received)}", _C.green),
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 8),
+            child: Divider(height: 1, color: _C.divider),
+          ),
+          Row(
+            children: [
+              Text(
+                "Balance due",
+                style: TextStyle(
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w700,
+                  color: _C.text2,
+                ),
+              ),
+              const Spacer(),
+              Text(
+                "₹${_money(balance)}",
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w800,
+                  color: balance > 0 ? _C.red : _C.green,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Text(
+                "Trip will be saved as",
+                style: TextStyle(fontSize: 12, color: _C.text2),
+              ),
+              const Spacer(),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                decoration: BoxDecoration(
+                  color: bg,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(icon, size: 13, color: color),
+                    const SizedBox(width: 5),
+                    Text(
+                      label,
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: color,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _summaryRow(String label, String value, Color valueColor) {
+    return Row(
+      children: [
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 12.5,
+            color: _C.text2,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        const Spacer(),
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w700,
+            color: valueColor,
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _saveBar(bool isEdit, double pb) {
     return Container(
       padding: EdgeInsets.fromLTRB(16, 12, 16, 12 + pb),

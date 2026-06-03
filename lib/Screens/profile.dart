@@ -366,6 +366,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
                                 _FieldItem(
                                   nameController,
                                   'Full Name',
+                                  
                                   Icons.person_outline_rounded,
                                 ),
                                 _FieldItem(

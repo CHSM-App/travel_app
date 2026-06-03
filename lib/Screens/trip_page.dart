@@ -96,8 +96,8 @@ enum CompletedSubTab {
 enum DateRange {
   all('All', null, Icons.all_inclusive_rounded),
   today('Today', 0, Icons.today_rounded),
-  week('Week', 7, Icons.view_week_rounded),
-  month('Month', 30, Icons.calendar_month_rounded),
+  week('Last 7 Days', 7, Icons.view_week_rounded),
+  month('Last 30 Days', 30, Icons.calendar_month_rounded),
   custom('Custom', null, Icons.date_range_rounded);
 
   const DateRange(this.label, this.windowDays, this.icon);

@@ -899,8 +899,8 @@ class _DeletedRecordsPageState extends ConsumerState<DeletedRecordsPage>
   @override
   Widget build(BuildContext context) {
     final state       = ref.watch(tripBookingViewModelProvider);
-    final vehicleState = state.fetchVehicleList;
-    final driverState  = state.fetchDriverList;
+    final vehicleState = state.fetchDeletedVehicleList;
+    final driverState  = state.fetchDeletedDriverList;
 
     return Scaffold(
       backgroundColor: _bg,
