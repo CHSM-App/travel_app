@@ -2,6 +2,7 @@
 import 'dart:io';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:travel_agency_app/core/network/error_messages.dart';
 import 'package:travel_agency_app/core/storage/token_storage.dart';
 import 'package:travel_agency_app/domain/models/login_info.dart';
 import 'package:travel_agency_app/domain/models/login_response.dart';
@@ -124,9 +125,10 @@ class LoginViewModel extends StateNotifier<LoginState> {
 
       return response;
     } catch (e) {
-      state = state.copyWith(isLoading: false, error: e.toString());
+      final msg = friendlyErrorMessage(e);
+      state = state.copyWith(isLoading: false, error: msg);
 
-      return LoginResponse(success: 0, message: e.toString());
+      return LoginResponse(success: 0, message: msg);
     }
   }
 
@@ -141,9 +143,10 @@ class LoginViewModel extends StateNotifier<LoginState> {
 
       return response;
     } catch (e) {
-      state = state.copyWith(isLoading: false, error: e.toString());
+      final msg = friendlyErrorMessage(e);
+      state = state.copyWith(isLoading: false, error: msg);
 
-      return LoginResponse(success: 0, message: e.toString());
+      return LoginResponse(success: 0, message: msg);
     }
   }
 
@@ -161,9 +164,10 @@ class LoginViewModel extends StateNotifier<LoginState> {
 
       return response;
     } catch (e) {
-      state = state.copyWith(isLoading: false, error: e.toString());
+      final msg = friendlyErrorMessage(e);
+      state = state.copyWith(isLoading: false, error: msg);
 
-      return LoginResponse(success: 0, message: e.toString());
+      return LoginResponse(success: 0, message: msg);
     }
   }
 
@@ -211,7 +215,7 @@ class LoginViewModel extends StateNotifier<LoginState> {
       state = state.copyWith(isLoading: false);
       return response;
     } catch (e) {
-      state = state.copyWith(isLoading: false, error: e.toString());
+      state = state.copyWith(isLoading: false, error: friendlyErrorMessage(e));
       return null;
     }
   }
