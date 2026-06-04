@@ -3,12 +3,14 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:travel_agency_app/Screens/trip_card.dart';
 import 'package:travel_agency_app/Screens/add_vehicle.dart';
 import 'package:travel_agency_app/core/network/error_messages.dart';
 import 'package:travel_agency_app/core/storage/constant.dart';
 import 'package:travel_agency_app/core/theme/app_colors.dart';
+import 'package:travel_agency_app/core/utils/vehicle_report_export.dart';
 import 'package:travel_agency_app/core/widgets/error_view.dart';
 import 'package:travel_agency_app/core/widgets/skeleton.dart';
 import 'package:travel_agency_app/core/widgets/trip_filter.dart';
@@ -60,6 +62,9 @@ class _VehicleManagePageState extends ConsumerState<VehicleManagePage>
   // reflected in the P&L summary above the tabs.
   TripDateRange _range = TripDateRange.all;
   DateTimeRange? _customRange;
+
+  // True while a PDF/Excel report is being generated for this vehicle.
+  bool _exporting = false;
 
   @override
   void initState() {
@@ -210,6 +215,92 @@ Future<void> _toggleVehicleStatus() async {
     return '₹${v.toStringAsFixed(0)}';
   }
 
+  // ── Report export (this vehicle only) ─────────────────────────────────────
+  /// Concrete from–to label for the active [_range], mirroring
+  /// [TripDateRange.matches] so the document header matches what's on screen.
+  String _rangeLabel(DateTime now) {
+    final fmt = DateFormat('dd MMM yyyy');
+    final today = DateTime(now.year, now.month, now.day);
+    switch (_range) {
+      case TripDateRange.all:
+        return 'All time';
+      case TripDateRange.today:
+        return fmt.format(today);
+      case TripDateRange.week:
+        return '${fmt.format(today.subtract(const Duration(days: 6)))} - '
+            '${fmt.format(today)}';
+      case TripDateRange.month:
+        return '${fmt.format(today.subtract(const Duration(days: 29)))} - '
+            '${fmt.format(today)}';
+      case TripDateRange.custom:
+        final c = _customRange;
+        if (c == null) return 'All time';
+        return '${fmt.format(c.start)} - ${fmt.format(c.end)}';
+    }
+  }
+
+  /// Builds a single-vehicle [ReportSnapshot] from the loaded trips/services,
+  /// filtered to the active period, then runs the shared export flow.
+  Future<void> _exportReport() async {
+    if (_exporting) return;
+    final state = ref.read(addVehicleViewModelProvider);
+    final trips = state.fetchTripsByVehicleId.asData?.value ?? const <BookingInfo>[];
+    final services =
+        state.fetchServiceRecords.asData?.value ?? const <Services>[];
+    final now = DateTime.now();
+
+    final periodTrips = trips
+        .where((t) =>
+            _range.matches(tripSortKey(t), now, customRange: _customRange))
+        .toList()
+      ..sort((a, b) => (tripSortKey(b) ?? DateTime(0))
+          .compareTo(tripSortKey(a) ?? DateTime(0)));
+    final periodServices = services
+        .where((s) =>
+            _range.matches(s.serviceDate, now, customRange: _customRange))
+        .toList()
+      ..sort((a, b) => (b.serviceDate ?? DateTime(0))
+          .compareTo(a.serviceDate ?? DateTime(0)));
+
+    final revenue =
+        periodTrips.fold<double>(0, (s, t) => s + (t.amountReceived ?? 0));
+    final tripExpense = periodTrips.fold<double>(
+      0,
+      (s, t) =>
+          s +
+          (t.tollCharges ?? 0) +
+          (t.repairingCharges ?? 0) +
+          (t.driverCharges ?? 0),
+    );
+    final maintenance =
+        periodServices.fold<double>(0, (s, e) => s + (e.serviceCost ?? 0));
+
+    final stat = VehicleStat(
+      vehicle: widget.vehicle,
+      revenue: revenue,
+      tripExpense: tripExpense,
+      maintenanceExpense: maintenance,
+      tripCount: periodTrips.length,
+      trips: periodTrips,
+      services: periodServices,
+    );
+    final snap = ReportSnapshot(
+      title: '${widget.vehicle.name ?? 'Vehicle'} Report',
+      periodLabel: _range.label,
+      dateRangeLabel: _rangeLabel(now),
+      stats: [stat],
+      totalRevenue: revenue,
+      totalExpense: stat.expense,
+      activeVehicles: stat.hasActivity ? 1 : 0,
+      totalVehicles: 1,
+      tripCount: periodTrips.length,
+    );
+
+    setState(() => _exporting = true);
+    await runVehicleReportExport(context, snap);
+    if (mounted) setState(() => _exporting = false);
+  }
+
   // ── P&L SUMMARY (period chips + net profit/loss hero) ─────────────────────
   Widget _buildPnlSummary() {
     final tripsAsync = ref.watch(
@@ -222,10 +313,12 @@ Future<void> _toggleVehicleStatus() async {
     final services = servicesAsync.asData?.value ?? const <Services>[];
     final now = DateTime.now();
 
-    // Revenue = money received; trip expense = toll + repair + driver; both
-    // attributed by payment/start/booking date. Maintenance from service costs.
+    // Revenue = money received; trip expense = toll + repair + driver. Trips are
+    // bucketed by their own date (start → booking → end) — the same key the list
+    // shows and sorts by — so a date filter never pulls in a trip whose card
+    // shows a date outside the window. Maintenance from service costs.
     final periodTrips = trips.where((t) {
-      final d = t.paymentDate ?? t.startDateTime ?? t.bookingDate;
+      final d = tripSortKey(t);
       return _range.matches(d, now, customRange: _customRange);
     }).toList();
     final revenue =
@@ -570,6 +663,29 @@ Future<void> _toggleVehicleStatus() async {
                 ),
               ),
             ),
+            const SizedBox(width: 8),
+            // Export this vehicle's report (PDF / Excel) for the active period.
+            _exporting
+                ? Container(
+                    width: 38,
+                    height: 38,
+                    decoration: BoxDecoration(
+                      color: AppColors.brandSoft,
+                      borderRadius: BorderRadius.circular(11),
+                      border: Border.all(color: _C.divider, width: 1.2),
+                    ),
+                    padding: const EdgeInsets.all(10),
+                    child: const CircularProgressIndicator(
+                      strokeWidth: 2.2,
+                      valueColor: AlwaysStoppedAnimation(_C.accent),
+                    ),
+                  )
+                : _navIconButton(
+                    icon: Icons.ios_share_rounded,
+                    iconColor: _C.accent,
+                    bgColor: AppColors.brandSoft,
+                    onTap: _exportReport,
+                  ),
             const SizedBox(width: 8),
             _navIconButton(
               icon: Icons.edit_rounded,
@@ -1509,7 +1625,7 @@ class _TripsTabState extends ConsumerState<_TripsTab> {
         // operates on what remains.
         final now = DateTime.now();
         final base = allTrips.where((t) {
-          final d = t.paymentDate ?? t.startDateTime ?? t.bookingDate;
+          final d = tripSortKey(t);
           return widget.range
                   .matches(d, now, customRange: widget.customRange) &&
               tripMatchesQuery(t, _query);
@@ -1892,7 +2008,7 @@ class _MaintTabState extends ConsumerState<_MaintTab> {
               // fall in the selected period, matched on payment/start/booking
               // date so unpaid trips still count once they have a date.
               bool inPeriod(BookingInfo t) {
-                final d = t.paymentDate ?? t.startDateTime ?? t.bookingDate;
+                final d = tripSortKey(t);
                 return widget.range
                     .matches(d, now, customRange: widget.customRange);
               }

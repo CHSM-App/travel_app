@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
+import 'package:travel_agency_app/core/utils/vehicle_report_export.dart';
 import 'package:travel_agency_app/Screens/vehicle_details.dart';
 import 'package:travel_agency_app/core/theme/app_colors.dart';
 import 'package:travel_agency_app/core/widgets/error_view.dart';
+import 'package:travel_agency_app/core/widgets/trip_filter.dart' show tripSortKey;
 import 'package:travel_agency_app/domain/models/booking_info.dart';
 import 'package:travel_agency_app/domain/models/services.dart';
 import 'package:travel_agency_app/domain/models/vehicles.dart';
@@ -35,7 +38,7 @@ class _C {
 
 /// Date-window filter applied to the trip ledger. Defaults to "This Month"
 /// because that's the cadence the operator naturally thinks about money in.
-enum VehicleReportPeriod { all, today, week, month }
+enum VehicleReportPeriod { all, today, week, month, custom }
 
 extension on VehicleReportPeriod {
   String get label {
@@ -48,6 +51,8 @@ extension on VehicleReportPeriod {
         return 'Week';
       case VehicleReportPeriod.month:
         return 'Month';
+      case VehicleReportPeriod.custom:
+        return 'Custom';
     }
   }
 
@@ -61,6 +66,8 @@ extension on VehicleReportPeriod {
         return Icons.view_week_rounded;
       case VehicleReportPeriod.month:
         return Icons.calendar_month_rounded;
+      case VehicleReportPeriod.custom:
+        return Icons.date_range_rounded;
     }
   }
 
@@ -79,28 +86,57 @@ extension on VehicleReportPeriod {
         return d.year == now.year && d.month == now.month;
       case VehicleReportPeriod.all:
         return true;
+      case VehicleReportPeriod.custom:
+        // Custom bounds live on the page state, not the enum — the page guards
+        // this branch and never calls matches() for a custom period.
+        return true;
     }
+  }
+
+  /// Concrete [from, to] window this period covers. Returns (null, null) for
+  /// "All" (no bounds) and "Custom" (bounds supplied by the page). Mirrors the
+  /// logic in [matches] so the displayed range always matches what is included.
+  (DateTime?, DateTime?) range(DateTime now) {
+    final today = DateTime(now.year, now.month, now.day);
+    switch (this) {
+      case VehicleReportPeriod.all:
+      case VehicleReportPeriod.custom:
+        return (null, null);
+      case VehicleReportPeriod.today:
+        return (today, today);
+      case VehicleReportPeriod.week:
+        return (today.subtract(const Duration(days: 6)), today);
+      case VehicleReportPeriod.month:
+        return (
+          DateTime(now.year, now.month, 1),
+          DateTime(now.year, now.month + 1, 0),
+        );
+    }
+  }
+
+  /// Human-readable date window, e.g. "01 Jun 2026 - 04 Jun 2026".
+  String rangeLabel(DateTime now) {
+    final (start, end) = range(now);
+    if (start == null || end == null) return 'All time';
+    final fmt = DateFormat('dd MMM yyyy');
+    if (start == end) return fmt.format(start);
+    return '${fmt.format(start)} - ${fmt.format(end)}';
   }
 }
 
-class _VehicleStat {
-  final Vehicles vehicle;
-  final double revenue;
-  // Expenses captured on the trip itself: toll + repairing + driver charges.
-  final double tripExpense;
-  // Service / maintenance costs (from the vehicle_details Maintenance tab),
-  // attributed to the vehicle by serviceDate falling inside the report period.
-  final double maintenanceExpense;
-  final int tripCount;
-  const _VehicleStat(
-    this.vehicle,
-    this.revenue,
-    this.tripExpense,
-    this.maintenanceExpense,
-    this.tripCount,
-  );
-  double get expense => tripExpense + maintenanceExpense;
-  double get net => revenue - expense;
+/// Formats a custom [start]–[end] window (either bound may be open).
+String _formatCustomRange(DateTime? start, DateTime? end) {
+  if (start == null && end == null) return 'Select dates';
+  final fmt = DateFormat('dd MMM yyyy');
+  bool sameDay(DateTime a, DateTime b) =>
+      a.year == b.year && a.month == b.month && a.day == b.day;
+  if (start != null && end != null) {
+    return sameDay(start, end)
+        ? fmt.format(start)
+        : '${fmt.format(start)} - ${fmt.format(end)}';
+  }
+  if (start != null) return 'From ${fmt.format(start)}';
+  return 'Until ${fmt.format(end!)}';
 }
 
 class VehicleReportPage extends ConsumerStatefulWidget {
@@ -117,6 +153,81 @@ class VehicleReportPage extends ConsumerStatefulWidget {
 
 class _VehicleReportPageState extends ConsumerState<VehicleReportPage> {
   late VehicleReportPeriod _period = widget.initialPeriod;
+
+  // Bounds for the "Custom" period. Both date-only; either may be set without
+  // the other only transiently — the range picker always sets both.
+  DateTime? _customStart;
+  DateTime? _customEnd;
+
+  // True while a PDF/Excel file is being generated, to block double taps and
+  // drive the export button's spinner.
+  bool _exporting = false;
+
+  /// Date-only custom window, normalised so time-of-day never affects filtering.
+  (DateTime?, DateTime?) _customWindow() {
+    final s = _customStart, e = _customEnd;
+    return (
+      s == null ? null : DateTime(s.year, s.month, s.day),
+      e == null ? null : DateTime(e.year, e.month, e.day),
+    );
+  }
+
+  /// Whether [d] falls inside the active period (presets via the enum, custom
+  /// via the page-held bounds). Single gate used by every filter on this page.
+  bool _accept(DateTime? d, DateTime now) {
+    if (_period != VehicleReportPeriod.custom) {
+      return _period.matches(d, now);
+    }
+    final (start, end) = _customWindow();
+    if (start == null && end == null) return true;
+    if (d == null) return false;
+    final day = DateTime(d.year, d.month, d.day);
+    if (start != null && day.isBefore(start)) return false;
+    if (end != null && day.isAfter(end)) return false;
+    return true;
+  }
+
+  /// Label for the active window, e.g. "01 Jun 2026 - 30 Jun 2026".
+  String _activeRangeLabel(DateTime now) {
+    if (_period != VehicleReportPeriod.custom) return _period.rangeLabel(now);
+    return _formatCustomRange(_customStart, _customEnd);
+  }
+
+  /// Opens the material date-range picker; selecting a range also switches the
+  /// active period to Custom. Cancelling leaves the current period untouched.
+  Future<void> _pickCustomRange() async {
+    final now = DateTime.now();
+    final initial = (_customStart != null && _customEnd != null)
+        ? DateTimeRange(start: _customStart!, end: _customEnd!)
+        : DateTimeRange(
+            start: DateTime(now.year, now.month, 1),
+            end: DateTime(now.year, now.month, now.day),
+          );
+    final picked = await showDateRangePicker(
+      context: context,
+      firstDate: DateTime(2020),
+      lastDate: DateTime(now.year + 1, 12, 31),
+      initialDateRange: initial,
+      helpText: 'Select report range',
+      builder: (ctx, child) => Theme(
+        data: Theme.of(ctx).copyWith(
+          colorScheme: ColorScheme.light(
+            primary: _C.accent,
+            onPrimary: Colors.white,
+            surface: _C.surface,
+            onSurface: _C.text1,
+          ),
+        ),
+        child: child!,
+      ),
+    );
+    if (picked == null || !mounted) return;
+    setState(() {
+      _customStart = picked.start;
+      _customEnd = picked.end;
+      _period = VehicleReportPeriod.custom;
+    });
+  }
 
   // Service records keyed by vehicleId. We hold the full unfiltered list and
   // apply the period filter at render time, so toggling chips is instant.
@@ -180,17 +291,18 @@ class _VehicleReportPageState extends ConsumerState<VehicleReportPage> {
     setState(() => _servicesByVehicle = map);
   }
 
-  /// Total maintenance cost per vehicle, restricted to the current period.
-  Map<int, double> _maintenanceByVehicle() {
+  /// Period-filtered service records per vehicle, newest first. Drives both the
+  /// per-vehicle maintenance total and the detailed maintenance list in exports.
+  Map<int, List<Services>> _servicesInPeriod() {
     final now = DateTime.now();
-    final out = <int, double>{};
+    final out = <int, List<Services>>{};
     _servicesByVehicle.forEach((vehicleId, services) {
-      double sum = 0;
-      for (final s in services) {
-        if (!_period.matches(s.serviceDate, now)) continue;
-        sum += s.serviceCost ?? 0;
-      }
-      if (sum > 0) out[vehicleId] = sum;
+      final inPeriod = services
+          .where((s) => _accept(s.serviceDate, now))
+          .toList()
+        ..sort((a, b) => (b.serviceDate ?? DateTime(0))
+            .compareTo(a.serviceDate ?? DateTime(0)));
+      if (inPeriod.isNotEmpty) out[vehicleId] = inPeriod;
     });
     return out;
   }
@@ -230,36 +342,43 @@ class _VehicleReportPageState extends ConsumerState<VehicleReportPage> {
       (t.repairingCharges ?? 0.0) +
       (t.driverCharges ?? 0.0);
 
-  List<_VehicleStat> _statsByVehicle(
+  List<VehicleStat> _statsByVehicle(
     List<Vehicles> vehicles,
     List<BookingInfo> trips,
-    Map<int, double> maintenanceByVehicle,
+    Map<int, List<Services>> servicesInPeriod,
   ) {
-    final byId = <int, _VehicleStat>{};
-    // Seed every vehicle so idle vehicles still appear in the report.
-    for (final v in vehicles) {
-      final id = v.vehicleId;
-      if (id == null) continue;
-      byId[id] = _VehicleStat(v, 0, 0, maintenanceByVehicle[id] ?? 0, 0);
-    }
+    // Bucket the period trips by vehicle once.
+    final tripsById = <int, List<BookingInfo>>{};
     for (final t in trips) {
       final id = t.vehicleId;
       if (id == null) continue;
-      final cur = byId[id];
-      if (cur == null) continue;
-      byId[id] = _VehicleStat(
-        cur.vehicle,
-        cur.revenue + _revenueOf(t),
-        cur.tripExpense + _expenseOf(t),
-        cur.maintenanceExpense,
-        cur.tripCount + 1,
-      );
+      (tripsById[id] ??= <BookingInfo>[]).add(t);
     }
-    final list = byId.values.toList();
+
+    final list = <VehicleStat>[];
+    for (final v in vehicles) {
+      final id = v.vehicleId;
+      if (id == null) continue;
+      final vTrips = [...(tripsById[id] ?? const <BookingInfo>[])]
+        ..sort((a, b) => (tripSortKey(b) ?? DateTime(0))
+            .compareTo(tripSortKey(a) ?? DateTime(0)));
+      final vServices = servicesInPeriod[id] ?? const <Services>[];
+      list.add(VehicleStat(
+        vehicle: v,
+        revenue: vTrips.fold<double>(0, (s, t) => s + _revenueOf(t)),
+        tripExpense: vTrips.fold<double>(0, (s, t) => s + _expenseOf(t)),
+        maintenanceExpense:
+            vServices.fold<double>(0, (s, e) => s + (e.serviceCost ?? 0)),
+        tripCount: vTrips.length,
+        trips: vTrips,
+        services: vServices,
+      ));
+    }
+
     // Any financial activity in the period — a booked trip OR a maintenance
     // record — promotes a vehicle above truly idle ones. Within the active
     // set we sort by net desc so the most profitable surfaces first.
-    bool active(_VehicleStat s) => s.tripCount > 0 || s.maintenanceExpense > 0;
+    bool active(VehicleStat s) => s.tripCount > 0 || s.maintenanceExpense > 0;
     list.sort((a, b) {
       final aActive = active(a);
       final bActive = active(b);
@@ -270,9 +389,65 @@ class _VehicleReportPageState extends ConsumerState<VehicleReportPage> {
     return list;
   }
 
+  /// Builds the period-filtered snapshot the UI and exporters both consume.
+  ReportSnapshot _buildSnapshot(
+    List<Vehicles> vehicles,
+    TripPageState tripState,
+  ) {
+    final now = DateTime.now();
+    final allTrips = _allTrips(tripState);
+    // Bucket trips by their own date (start → booking → end), matching the
+    // vehicle_details screen, so the date window never pulls in a trip whose
+    // card shows a date outside the range.
+    final inPeriod =
+        allTrips.where((t) => _accept(tripSortKey(t), now)).toList();
+    final servicesInPeriod = _servicesInPeriod();
+    final stats = _statsByVehicle(vehicles, inPeriod, servicesInPeriod);
+    return ReportSnapshot(
+      title: 'Vehicle Report',
+      periodLabel: _period.label,
+      dateRangeLabel: _activeRangeLabel(now),
+      stats: stats,
+      totalRevenue: stats.fold<double>(0, (s, e) => s + e.revenue),
+      totalExpense: stats.fold<double>(0, (s, e) => s + e.expense),
+      activeVehicles: stats.where((s) => s.tripCount > 0).length,
+      totalVehicles: vehicles.length,
+      tripCount: inPeriod.length,
+    );
+  }
+
+  void _snack(String msg, {bool error = false}) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(msg),
+        backgroundColor: error ? _C.red : _C.text1,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+    );
+  }
+
+  // ── Export flow ────────────────────────────────────────────────────
+  /// Entry point from the app-bar button: validates data is ready, then hands
+  /// off to the shared chooser → generate → save → open/share flow.
+  Future<void> _onExportTap() async {
+    if (_exporting) return;
+    final vehicles =
+        ref.read(tripBookingViewModelProvider).fetchVehicleList.asData?.value;
+    if (vehicles == null || vehicles.isEmpty) {
+      _snack('No vehicles available to export');
+      return;
+    }
+    final snap = _buildSnapshot(vehicles, ref.read(tripPageViewModelProvider));
+    setState(() => _exporting = true);
+    await runVehicleReportExport(context, snap);
+    if (mounted) setState(() => _exporting = false);
+  }
+
   /// Opens the per-vehicle management page (trips, maintenance, overview and
   /// the P&L summary all live there now).
-  void _openVehicleDetail(_VehicleStat stat) {
+  void _openVehicleDetail(VehicleStat stat) {
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -308,25 +483,8 @@ class _VehicleReportPageState extends ConsumerState<VehicleReportPage> {
                       'Add a vehicle to start tracking revenue and expenses',
                     );
                   }
-                  final now = DateTime.now();
-                  final allTrips = _allTrips(tripState);
-                  // Attribute financial activity to the day payment was
-                  // collected (paymentDate), so this matches the dashboard's
-                  // payment-based revenue. For the "all" period every trip is
-                  // included regardless of payment state.
-                  final inPeriod = allTrips
-                      .where((t) => _period.matches(t.paymentDate, now))
-                      .toList();
-                  final maintenance = _maintenanceByVehicle();
-                  final stats =
-                      _statsByVehicle(vehicles, inPeriod, maintenance);
-                  final totalRev =
-                      stats.fold<double>(0, (s, e) => s + e.revenue);
-                  final totalExp =
-                      stats.fold<double>(0, (s, e) => s + e.expense);
-                  final activeVehicles =
-                      stats.where((s) => s.tripCount > 0).length;
-                  final tripCount = inPeriod.length;
+                  final snap = _buildSnapshot(vehicles, tripState);
+                  final stats = snap.stats;
 
                   return RefreshIndicator(
                     onRefresh: _refreshAll,
@@ -337,12 +495,13 @@ class _VehicleReportPageState extends ConsumerState<VehicleReportPage> {
                       padding: const EdgeInsets.fromLTRB(16, 14, 16, 110),
                       children: [
                         _OverallCard(
-                          revenue: totalRev,
-                          expense: totalExp,
-                          activeVehicles: activeVehicles,
-                          totalVehicles: vehicles.length,
-                          tripCount: tripCount,
+                          revenue: snap.totalRevenue,
+                          expense: snap.totalExpense,
+                          activeVehicles: snap.activeVehicles,
+                          totalVehicles: snap.totalVehicles,
+                          tripCount: snap.tripCount,
                           period: _period,
+                          dateRangeLabel: snap.dateRangeLabel,
                         ),
                         const SizedBox(height: 16),
                         _perVehicleHeader(stats.length),
@@ -497,28 +656,48 @@ class _VehicleReportPageState extends ConsumerState<VehicleReportPage> {
               ],
             ),
           ),
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [_C.accentLight, _C.accent],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
+          // Export button — opens the PDF / Excel chooser for the selected
+          // period. Shows a spinner while a file is being generated.
+          Material(
+            color: Colors.transparent,
+            borderRadius: BorderRadius.circular(12),
+            child: InkWell(
+              onTap: _exporting ? null : _onExportTap,
               borderRadius: BorderRadius.circular(12),
-              boxShadow: [
-                BoxShadow(
-                  color: _C.accent.withValues(alpha: 0.30),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
+              child: Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [_C.accentLight, _C.accent],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: _C.accent.withValues(alpha: 0.30),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-            child: const Icon(
-              Icons.analytics_rounded,
-              size: 18,
-              color: Colors.white,
+                alignment: Alignment.center,
+                child: _exporting
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2.2,
+                          valueColor: AlwaysStoppedAnimation(Colors.white),
+                        ),
+                      )
+                    : const Icon(
+                        Icons.ios_share_rounded,
+                        size: 18,
+                        color: Colors.white,
+                      ),
+              ),
             ),
           ),
         ],
@@ -552,11 +731,17 @@ class _VehicleReportPageState extends ConsumerState<VehicleReportPage> {
     final active = p == _period;
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
-      onTap: () => setState(() => _period = p),
+      onTap: () {
+        if (p == VehicleReportPeriod.custom) {
+          _pickCustomRange();
+        } else {
+          setState(() => _period = p);
+        }
+      },
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 220),
         curve: Curves.easeOutCubic,
-        padding: const EdgeInsets.symmetric(vertical: 9),
+        padding: const EdgeInsets.symmetric(vertical: 9, horizontal: 2),
         decoration: BoxDecoration(
           gradient: active
               ? const LinearGradient(
@@ -587,14 +772,18 @@ class _VehicleReportPageState extends ConsumerState<VehicleReportPage> {
                 size: 13,
                 color: active ? Colors.white : _C.text2,
               ),
-              const SizedBox(width: 5),
-              Text(
-                p.label,
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                  color: active ? Colors.white : _C.text2,
-                  letterSpacing: -0.1,
+              const SizedBox(width: 4),
+              Flexible(
+                child: Text(
+                  p.label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w700,
+                    color: active ? Colors.white : _C.text2,
+                    letterSpacing: -0.1,
+                  ),
                 ),
               ),
             ],
@@ -705,6 +894,7 @@ class _OverallCard extends StatelessWidget {
   final int totalVehicles;
   final int tripCount;
   final VehicleReportPeriod period;
+  final String dateRangeLabel;
 
   const _OverallCard({
     required this.revenue,
@@ -713,6 +903,7 @@ class _OverallCard extends StatelessWidget {
     required this.totalVehicles,
     required this.tripCount,
     required this.period,
+    required this.dateRangeLabel,
   });
 
   @override
@@ -834,6 +1025,27 @@ class _OverallCard extends StatelessWidget {
                               ),
                             ),
                           ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  // Concrete date window for the selected period.
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.event_rounded,
+                        size: 12,
+                        color: Colors.white.withValues(alpha: 0.82),
+                      ),
+                      const SizedBox(width: 5),
+                      Text(
+                        dateRangeLabel,
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.9),
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: 0.2,
                         ),
                       ),
                     ],
@@ -995,7 +1207,7 @@ class _OverallCard extends StatelessWidget {
 // when service costs are part of the picture.
 // ─────────────────────────────────────────────────────────
 class _VehicleRevenueCard extends StatelessWidget {
-  final _VehicleStat stat;
+  final VehicleStat stat;
   final int index;
   final bool isTopPerformer;
   final VoidCallback? onTap;
@@ -1500,3 +1712,4 @@ String _formatCompact(double v) {
   if (v.abs() >= 1e3) return '${(v / 1e3).toStringAsFixed(2)}K';
   return v.toStringAsFixed(0);
 }
+

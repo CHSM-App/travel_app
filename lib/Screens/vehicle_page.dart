@@ -116,47 +116,6 @@ class _VehiclePageState extends ConsumerState<VehiclePage>
         : parts[0][0].toUpperCase();
   }
 
-  // ── Status Badge ──────────────────────────────────────────────────
-  Widget _statusBadge(int? statusId) {
-    final isAvailable = statusId == 1;
-    final color = isAvailable ? _C.green : _C.orange;
-    final bg = isAvailable ? _C.greenSoft : _C.orangeSoft;
-    final label = isAvailable
-        ? 'Available'
-        : statusId == 2
-        ? 'Engaged'
-        : 'Unknown';
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: bg,
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 5,
-            height: 5,
-            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-          ),
-          const SizedBox(width: 4),
-          Text(
-            label,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              fontSize: 10,
-              fontWeight: FontWeight.w700,
-              color: color,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   // ── Fuel Badge ────────────────────────────────────────────────────
   Widget _fuelBadge(String? fuelType) {
     final fuel = (fuelType ?? '').toLowerCase();
@@ -335,30 +294,55 @@ class _VehiclePageState extends ConsumerState<VehiclePage>
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        // Vehicle icon
-                        Container(
-                          width: 42,
-                          height: 42,
-                          decoration: BoxDecoration(
-                            gradient: const LinearGradient(
-                              colors: [AppColors.brandPrimaryLight, _C.accent],
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                            ),
-                            borderRadius: BorderRadius.circular(12),
-                            boxShadow: [
-                              BoxShadow(
-                                color: _C.accent.withOpacity(0.25),
-                                blurRadius: 8,
-                                offset: const Offset(0, 3),
+                        // Vehicle icon with a status dot
+                        Stack(
+                          clipBehavior: Clip.none,
+                          children: [
+                            Container(
+                              width: 42,
+                              height: 42,
+                              decoration: BoxDecoration(
+                                gradient: const LinearGradient(
+                                  colors: [
+                                    AppColors.brandPrimaryLight,
+                                    _C.accent,
+                                  ],
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                ),
+                                borderRadius: BorderRadius.circular(12),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: _C.accent.withOpacity(0.25),
+                                    blurRadius: 8,
+                                    offset: const Offset(0, 3),
+                                  ),
+                                ],
                               ),
-                            ],
-                          ),
-                          child: const Icon(
-                            Icons.directions_car_rounded,
-                            color: Colors.white,
-                            size: 20,
-                          ),
+                              child: const Icon(
+                                Icons.directions_car_rounded,
+                                color: Colors.white,
+                                size: 20,
+                              ),
+                            ),
+                            // Status dot — green = available, orange = engaged
+                            Positioned(
+                              right: -2,
+                              bottom: -2,
+                              child: Container(
+                                width: 13,
+                                height: 13,
+                                decoration: BoxDecoration(
+                                  color: v.StatusId == 1 ? _C.green : _C.orange,
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: _C.surface,
+                                    width: 2,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                         const SizedBox(width: 12),
 
@@ -538,38 +522,27 @@ class _VehiclePageState extends ConsumerState<VehiclePage>
                     const SizedBox(height: 10),
 
                     // ── Row 2: Stats (Wrap so chips never overflow) ──
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.center,
+                    Wrap(
+                      spacing: 6,
+                      runSpacing: 6,
+                      crossAxisAlignment: WrapCrossAlignment.center,
                       children: [
-                        // Chips wrap if needed
-                        Expanded(
-                          child: Wrap(
-                            spacing: 6,
-                            runSpacing: 6,
-                            crossAxisAlignment: WrapCrossAlignment.center,
-                            children: [
-                              _statChip(
-                                Icons.event_seat_rounded,
-                                '${v.capacity ?? "--"}',
-                                'Seats',
-                              ),
-                              _statChip(
-                                Icons.speed_rounded,
-                                v.mileage != null ? '${v.mileage}' : '--',
-                                'km/l',
-                              ),_statChip(
-                                Icons.currency_rupee_rounded,
-                                v.perKmCharge != null ? '${v.perKmCharge}' : '--',
-                                '₹/km',
-                              ),
-
-                              _fuelBadge(v.FuelType),
-                            ],
-                          ),
+                        _statChip(
+                          Icons.event_seat_rounded,
+                          '${v.capacity ?? "--"}',
+                          'Seats',
                         ),
-                        const SizedBox(width: 8),
-                        // Status stays right-aligned
-                        _statusBadge(v.StatusId),
+                        _statChip(
+                          Icons.speed_rounded,
+                          v.mileage != null ? '${v.mileage}' : '--',
+                          'km/l',
+                        ),
+                        _statChip(
+                          Icons.currency_rupee_rounded,
+                          v.perKmCharge != null ? '${v.perKmCharge}' : '--',
+                          '₹/km',
+                        ),
+                        _fuelBadge(v.FuelType),
                       ],
                     ),
                   ],

@@ -49,7 +49,9 @@ dependencies:
   # print
   printing: ^5.12.0
   pdf: ^3.10.7
-  
+  excel: ^4.0.0
+  path_provider: ^2.1.4
+
 
   image_picker: ^1.0.7              # For camera and gallery
   file_picker: ^8.1.2
