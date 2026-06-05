@@ -339,7 +339,8 @@ class _VehicleReportPageState extends ConsumerState<VehicleReportPage> {
   double _expenseOf(BookingInfo t) =>
       (t.tollCharges ?? 0.0) +
       (t.repairingCharges ?? 0.0) +
-      (t.driverCharges ?? 0.0);
+      (t.driverCharges ?? 0.0) +
+      (t.fuelCharges ?? 0.0);
 
   List<VehicleStat> _statsByVehicle(
     List<Vehicles> vehicles,
@@ -1662,4 +1663,3 @@ String _formatCompact(double v) {
   if (v.abs() >= 1e3) return '${(v / 1e3).toStringAsFixed(2)}K';
   return v.toStringAsFixed(0);
 }
-

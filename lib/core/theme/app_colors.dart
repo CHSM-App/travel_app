@@ -73,90 +73,90 @@ import 'package:flutter/material.dart';
 
 /// Single source of truth for the app's brand colors.
 ///
-/// Reference theme — modeled on the supplied travel-app design: a deep
-/// indigo-navy header surface paired with a vivid rose-pink accent, on clean
-/// white/near-white surfaces. Category & status colors are individually vivid
-/// (blue / red / amber / green). Everything is a FLAT SOLID — the app uses
-/// no gradients.
+/// Warm Sand — a modern, minimal, aesthetic palette: warm-charcoal headers
+/// with a muted clay/terracotta accent, on soft cream surfaces. Restrained
+/// and editorial — lots of negative space, hairline borders, soft-tint chips
+/// instead of bold fills. Status colors are warmed/muted so they read as
+/// information, not decoration. Everything is a FLAT SOLID — no gradients.
 ///
-/// Two brand families now exist:
-///   • [brandHeader]  — the navy used for app bars, top headers and hero cards.
-///   • [brandPrimary] — the rose-pink accent for buttons, active nav, links,
+/// Two brand families:
+///   • [brandHeader]  — warm charcoal for app bars, top headers, hero cards.
+///   • [brandPrimary] — the muted clay accent for buttons, active nav, links,
 ///                      selected states and other interactive elements.
 class AppColors {
   AppColors._();
 
-  // ── Brand header (deep indigo-navy) ───────────────────────────────────────
+  // ── Brand header (warm charcoal) ──────────────────────────────────────────
 
-  /// Indigo-navy. App bars, top headers, hero/summary card backgrounds.
-  /// White text/icons sit on top of this.
-  static const Color brandHeader = Color(0xFF262445);
+  /// Warm charcoal. App bars, top headers, hero/summary card backgrounds.
+  /// Cream/white text sits on top of this.
+  static const Color brandHeader = Color(0xFF292420);
 
-  /// Darker navy for pressed / elevated header elements and shadows.
-  static const Color brandHeaderDark = Color(0xFF1C1A33);
+  /// Deeper warm charcoal for pressed / elevated header elements and shadows.
+  static const Color brandHeaderDark = Color(0xFF1C1813);
 
-  // ── Brand accent (rose-pink) ──────────────────────────────────────────────
+  // ── Brand accent (muted clay) ─────────────────────────────────────────────
 
-  /// Rose-pink. Primary interactive accent: primary buttons, active nav items,
-  /// links ("Show More"), selected states, location pins, chip outlines.
-  static const Color brandPrimary = Color(0xFFEC407A);
+  /// Clay / terracotta. Primary interactive accent: primary buttons, active
+  /// nav items, links, selected states, location pins, chip outlines.
+  static const Color brandPrimary = Color(0xFFB5651D);
 
-  /// Deeper pink. Pressed / hover state for pink accents.
-  static const Color brandPrimaryDark = Color(0xFFD81B60);
+  /// Deeper clay. Pressed / hover state for the accent.
+  static const Color brandPrimaryDark = Color(0xFF92500F);
 
-  /// Lighter pink companion. Subtle accents and soft pink fills. (Retained
-  /// for call sites that previously used a lighter brand tint; no gradients.)
-  static const Color brandPrimaryLight = Color(0xFFF06292);
+  /// Lighter clay companion. Subtle accents and soft fills. (Retained for call
+  /// sites that previously used a lighter brand tint; no gradients.)
+  static const Color brandPrimaryLight = Color(0xFFC98A4B);
 
-  /// Pink-50. Soft tinted background for chips, selected pills,
+  /// Warm sand tint. Soft background for chips, selected pills, icon chips
   /// and brand-tinted surfaces.
-  static const Color brandSoft = Color(0xFFFCE4EC);
+  static const Color brandSoft = Color(0xFFF6EEE6);
 
   // ── Semantic / category accents ───────────────────────────────────────────
-  // Vivid, individually-colored — also used for the category icons
-  // (Flights = info blue, Hotels = danger red, Destination = warning amber,
-  // Rent = success green). Each has a `*Soft` tint for chip/badge backgrounds.
+  // Warmed / muted so they read as information, not decoration. Each has a
+  // `*Soft` tint for chip/badge backgrounds (Flights = info, Hotels = danger,
+  // Destination = warning, Rent = success).
 
-  /// Green-500. Positive / done states: paid, completed trips; "Rent" category.
-  static const Color success = Color(0xFF22C55E);
+  /// Olive-green. Positive / done states: paid, completed trips; "Rent".
+  static const Color success = Color(0xFF4D7C0F);
 
-  /// Green-50. Soft background tint for success chips/badges.
-  static const Color successSoft = Color(0xFFDCFCE7);
+  /// Soft olive tint. Background for success chips/badges.
+  static const Color successSoft = Color(0xFFECF4DE);
 
-  /// Amber-500. Attention / pending states; "Destination" category.
-  static const Color warning = Color(0xFFF59E0B);
+  /// Warm amber. Attention / pending states; "Destination" category.
+  static const Color warning = Color(0xFFC2860B);
 
-  /// Amber-50. Soft background tint for warning chips/badges.
-  static const Color warningSoft = Color(0xFFFEF3C7);
+  /// Soft amber tint. Background for warning chips/badges.
+  static const Color warningSoft = Color(0xFFF7EDD6);
 
-  /// Red-500. Negative / terminal states: cancelled trips, errors; "Hotels".
-  static const Color danger = Color(0xFFEF4444);
+  /// Brick red. Negative / terminal states: cancelled trips, errors; "Hotels".
+  static const Color danger = Color(0xFFB91C1C);
 
-  /// Red-50. Soft background tint for danger chips/badges.
-  static const Color dangerSoft = Color(0xFFFEE2E2);
+  /// Soft red tint. Background for danger chips/badges.
+  static const Color dangerSoft = Color(0xFFF7E3E0);
 
-  /// Blue-500. In-progress / live states: active trips; "Flights" category.
-  static const Color info = Color(0xFF3B82F6);
+  /// Indigo-blue. In-progress / live states: active trips; "Flights".
+  static const Color info = Color(0xFF2563EB);
 
-  /// Blue-50. Soft background tint for info chips/badges.
-  static const Color infoSoft = Color(0xFFDBEAFE);
+  /// Soft blue tint. Background for info chips/badges.
+  static const Color infoSoft = Color(0xFFE4EAFB);
 
-  /// Amber/gold. Rating stars.
-  static const Color star = Color(0xFFFFB400);
+  /// Muted gold. Rating stars.
+  static const Color star = Color(0xFFCA8A04);
 
   // ── Neutrals / text ───────────────────────────────────────────────────────
 
-  /// Near-white. Default page / scaffold background (lets white cards lift).
-  static const Color surface = Color(0xFFF6F7FB);
+  /// Soft cream. Default page / scaffold background (lets white cards lift).
+  static const Color surface = Color(0xFFFAF7F2);
 
-  /// Ink navy. Primary text / headings.
-  static const Color textPrimary = Color(0xFF232136);
+  /// Warm ink. Primary text / headings.
+  static const Color textPrimary = Color(0xFF292420);
 
-  /// Slate-grey. Secondary text / captions / hints.
-  static const Color textSecondary = Color(0xFF8A90A0);
+  /// Warm grey. Secondary text / captions / hints.
+  static const Color textSecondary = Color(0xFF8A7F73);
 
   /// Hairline borders, dividers, card outlines.
-  static const Color border = Color(0xFFEEF0F5);
+  static const Color border = Color(0xFFECE4D9);
 
 }
 

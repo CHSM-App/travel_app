@@ -270,7 +270,8 @@ Future<void> _toggleVehicleStatus() async {
           s +
           (t.tollCharges ?? 0) +
           (t.repairingCharges ?? 0) +
-          (t.driverCharges ?? 0),
+          (t.driverCharges ?? 0) +
+          (t.fuelCharges ?? 0),
     );
     final maintenance =
         periodServices.fold<double>(0, (s, e) => s + (e.serviceCost ?? 0));
@@ -313,7 +314,7 @@ Future<void> _toggleVehicleStatus() async {
     final services = servicesAsync.asData?.value ?? const <Services>[];
     final now = DateTime.now();
 
-    // Revenue = money received; trip expense = toll + repair + driver. Trips are
+    // Revenue = money received; trip expense = toll + repair + driver + fuel. Trips are
     // bucketed by their own date (start → booking → end) — the same key the list
     // shows and sorts by — so a date filter never pulls in a trip whose card
     // shows a date outside the window. Maintenance from service costs.
@@ -333,7 +334,8 @@ Future<void> _toggleVehicleStatus() async {
           s +
           (t.tollCharges ?? 0) +
           (t.repairingCharges ?? 0) +
-          (t.driverCharges ?? 0),
+          (t.driverCharges ?? 0) +
+          (t.fuelCharges ?? 0),
     );
     final maintenance = services
         .where((s) => _range.matches(s.serviceDate, now, customRange: _customRange))
@@ -2000,14 +2002,16 @@ class _MaintTabState extends ConsumerState<_MaintTab> {
                   0.0, (sum, t) => sum + (t.repairingCharges ?? 0.0));
               final driver = periodTrips.fold<double>(
                   0.0, (sum, t) => sum + (t.driverCharges ?? 0.0));
-              final totalExpense = toll + repair + driver + maintenance;
+              final fuel = periodTrips.fold<double>(
+                  0.0, (sum, t) => sum + (t.fuelCharges ?? 0.0));
+              final totalExpense = toll + repair + driver + fuel + maintenance;
 
               return ListView(
                 padding: const EdgeInsets.fromLTRB(16, 14, 16, 100),
                 children: [
                   // Expense breakdown
                   _breakdownCard(
-                      toll, repair, driver, maintenance, totalExpense),
+                      toll, repair, driver, fuel, maintenance, totalExpense),
                   const SizedBox(height: 16),
 
                   // Empty state
@@ -2067,7 +2071,7 @@ class _MaintTabState extends ConsumerState<_MaintTab> {
   }
 
   // ── Expense breakdown (toll / repair / driver / maintenance) ──────────
-  Widget _breakdownCard(double toll, double repair, double driver,
+  Widget _breakdownCard(double toll, double repair, double driver, double fuel,
       double maintenance, double expense) {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
@@ -2100,6 +2104,7 @@ class _MaintTabState extends ConsumerState<_MaintTab> {
           _breakdownRow('Toll charges', toll, Icons.toll_rounded),
           _breakdownRow('Repair charges', repair, Icons.build_rounded),
           _breakdownRow('Driver charges', driver, Icons.payments_rounded),
+          _breakdownRow('Fuel charges', fuel, Icons.local_gas_station_rounded),
           _breakdownRow('Maintenance', maintenance, Icons.handyman_rounded),
           const Padding(
             padding: EdgeInsets.symmetric(vertical: 10),

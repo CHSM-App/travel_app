@@ -15,6 +15,7 @@ class TripBooking {
   final double? tollcharges;
   final double? repairingcharges;
   final double? drivercharges;
+  final double? fuelcharges;
 
   // @JsonKey(name: 'startdatetime')
   // final DateTime? startDateTime;
@@ -69,6 +70,7 @@ final DateTime? bookingdate;
     this.tollcharges,
     this.repairingcharges,
     this.drivercharges,
+    this.fuelcharges,
     this.startDateTime,
     this.endDateTime,
     this.status,

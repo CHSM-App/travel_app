@@ -79,6 +79,7 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
   final tollCharges = TextEditingController();
   final repairCharges = TextEditingController();
   final driverCharges = TextEditingController();
+  final fuelCharges = TextEditingController();
   final amountReceived = TextEditingController();
 
   DateTime? startDt, endDt;
@@ -166,6 +167,7 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
       tollCharges.text = b.tollCharges?.toString() ?? '';
       repairCharges.text = b.repairingCharges?.toString() ?? '';
       driverCharges.text = b.driverCharges?.toString() ?? '';
+      fuelCharges.text = b.fuelCharges?.toString() ?? '';
       amountReceived.text = b.amountReceived?.toString() ?? '';
     }
 
@@ -206,6 +208,7 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
     tollCharges.addListener(_onCompletionAmountChanged);
     repairCharges.addListener(_onCompletionAmountChanged);
     driverCharges.addListener(_onCompletionAmountChanged);
+    fuelCharges.addListener(_onCompletionAmountChanged);
     amountReceived.addListener(_onCompletionAmountChanged);
 
     Future.microtask(() async {
@@ -259,6 +262,7 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
     tollCharges.removeListener(_onCompletionAmountChanged);
     repairCharges.removeListener(_onCompletionAmountChanged);
     driverCharges.removeListener(_onCompletionAmountChanged);
+    fuelCharges.removeListener(_onCompletionAmountChanged);
     amountReceived.removeListener(_onCompletionAmountChanged);
     customerName.dispose();
     customerPhone.dispose();
@@ -266,6 +270,7 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
     tollCharges.dispose();
     repairCharges.dispose();
     driverCharges.dispose();
+    fuelCharges.dispose();
     amountReceived.dispose();
     pickupFocus.dispose();
     dropFocus.dispose();
@@ -1253,6 +1258,7 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
     final toll = double.tryParse(tollCharges.text.trim()) ?? 0;
     final repair = double.tryParse(repairCharges.text.trim()) ?? 0;
     final driverChg = double.tryParse(driverCharges.text.trim()) ?? 0;
+    final fuelChg = double.tryParse(fuelCharges.text.trim()) ?? 0;
     final received = double.tryParse(amountReceived.text.trim()) ?? 0;
 
     final bk = TripBooking(
@@ -1268,6 +1274,7 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
       tollcharges: completed ? toll : null,
       repairingcharges: completed ? repair : null,
       drivercharges: completed ? driverChg : null,
+      fuelcharges: completed ? fuelChg : null,
       startDateTime: startDt,
       endDateTime: endDt,
       // A back-dated trip is created as Active (1) so it can immediately be
@@ -1303,6 +1310,7 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
                 tollCharges: toll,
                 repairingCharges: repair,
                 driverCharges: driverChg,
+                fuelCharges: fuelChg,
                 amountReceived: received, 
               ),
             );
@@ -2914,6 +2922,11 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
             "Driver Charges",
             driverCharges,
             Icons.payments_rounded,
+          ),
+          chargeField(
+            "Fuel Charges",
+            fuelCharges,
+            Icons.local_gas_station_rounded,
           ),
           chargeField(
             "Amount Received",

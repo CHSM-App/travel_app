@@ -33,6 +33,9 @@ class BookingInfo {
   @JsonKey(name: 'driver_charges')
   final double? driverCharges;
 
+  @JsonKey(name: 'fuel_charges')
+  final double? fuelCharges;
+
    @JsonKey(name: 'booking_date')
   final DateTime? bookingDate;
 
@@ -114,6 +117,7 @@ class BookingInfo {
     this.tollCharges,
     this.repairingCharges,
     this.driverCharges,
+    this.fuelCharges,
     this.bookingDate,
     this.startDateTime,
     this.endDateTime,

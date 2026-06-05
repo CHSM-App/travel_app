@@ -155,7 +155,7 @@ class _TravelAdminDashboardState extends ConsumerState<TravelAdminDashboard> {
     var bookings = 0;
     var revenue = 0.0;
     // Seed expenditure with today's vehicle maintenance, then add trip-level
-    // costs (toll/repairing/driver) collected today below.
+    // costs (toll/repairing/driver/fuel) collected today below.
     var expenditure = maintenanceToday;
 
     for (final row in rows) {
@@ -173,7 +173,8 @@ class _TravelAdminDashboardState extends ConsumerState<TravelAdminDashboard> {
         revenue += row.amountReceived ?? 0.0;
         expenditure += (row.tollCharges ?? 0.0) +
             (row.repairingCharges ?? 0.0) +
-            (row.driverCharges ?? 0.0);
+            (row.driverCharges ?? 0.0) +
+            (row.fuelCharges ?? 0.0);
       }
     }
 
@@ -610,6 +611,10 @@ class _NewBookingHero extends StatelessWidget {
   final bool isSmall;
   const _NewBookingHero({required this.isSmall});
 
+  /// Airtel brand red — used only for this "New Booking" hero CTA so it stands
+  /// out as the primary call-to-action against the warm-charcoal headers.
+  static const Color _airtelRed = Color(0xFFED1C24);
+
   @override
   Widget build(BuildContext context) {
     return Material(
@@ -622,11 +627,11 @@ class _NewBookingHero extends StatelessWidget {
         ),
         child: Ink(
           decoration: BoxDecoration(
-            color: AppColors.brandHeader,
+            color: _airtelRed,
             borderRadius: BorderRadius.circular(isSmall ? 16 : 20),
             boxShadow: [
               BoxShadow(
-                color: TravelAdminDashboard.primaryColor.withOpacity(0.30),
+                color: _airtelRed.withOpacity(0.30),
                 blurRadius: 16,
                 offset: const Offset(0, 6),
               ),
@@ -737,7 +742,7 @@ class _NewBookingHero extends StatelessWidget {
                             style: TextStyle(
                               fontSize: isSmall ? 11 : 12,
                               fontWeight: FontWeight.w800,
-                              color: TravelAdminDashboard.primaryColor,
+                              color: _airtelRed,
                               letterSpacing: 0.1,
                             ),
                           ),
@@ -745,7 +750,7 @@ class _NewBookingHero extends StatelessWidget {
                           Icon(
                             Icons.arrow_forward_rounded,
                             size: isSmall ? 13 : 15,
-                            color: TravelAdminDashboard.primaryColor,
+                            color: _airtelRed,
                           ),
                         ],
                       ),

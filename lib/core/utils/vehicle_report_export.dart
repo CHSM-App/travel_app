@@ -61,6 +61,8 @@ class VehicleStat {
       trips.fold<double>(0, (s, t) => s + (t.repairingCharges ?? 0));
   double get driverCharges =>
       trips.fold<double>(0, (s, t) => s + (t.driverCharges ?? 0));
+  double get fuelCharges =>
+      trips.fold<double>(0, (s, t) => s + (t.fuelCharges ?? 0));
   bool get hasActivity =>
       tripCount > 0 || maintenanceExpense > 0 || services.isNotEmpty;
 }
@@ -665,6 +667,7 @@ class VehicleReportPdf {
         row('Toll Charges', s.toll),
         row('Repairing Charges', s.repair),
         row('Driver Charges', s.driverCharges),
+        row('Fuel Charges', s.fuelCharges),
         row('Maintenance', s.maintenanceExpense),
         row('Total Expense', s.expense, total: true),
       ],
@@ -1257,6 +1260,7 @@ class VehicleReportExcel {
     kv('Toll Charges', xls.DoubleCellValue(stat.toll));
     kv('Repairing Charges', xls.DoubleCellValue(stat.repair));
     kv('Driver Charges', xls.DoubleCellValue(stat.driverCharges));
+    kv('Fuel Charges', xls.DoubleCellValue(stat.fuelCharges));
     kv('Maintenance', xls.DoubleCellValue(stat.maintenanceExpense));
     sheet.appendRow([
       xls.TextCellValue('Total Expense'),

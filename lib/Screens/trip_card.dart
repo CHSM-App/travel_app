@@ -130,6 +130,9 @@ Color _paymentBg(String status) {
     final driverController = TextEditingController(
       text: bookinginfo.driverCharges?.toString() ?? "",
     );
+    final fuelController = TextEditingController(
+      text: bookinginfo.fuelCharges?.toString() ?? "",
+    );
 final approved = bookinginfo.amountApprove ?? 0;
 final received = bookinginfo.amountReceived ?? 0;
 final pending = approved - received;
@@ -424,6 +427,18 @@ final receivedController = TextEditingController(
                     const SizedBox(width: 12),
                     Expanded(
                       child: amountField(
+                        fuelController,
+                        "Fuel Charges",
+                        Icons.local_gas_station_outlined,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    Expanded(
+                      child: amountField(
                         receivedController,
                         "Amount Received",
                         Icons.account_balance_wallet_outlined,
@@ -449,6 +464,12 @@ final receivedController = TextEditingController(
                 driverController,
                 "Driver Charges",
                 Icons.payments_outlined,
+              ),
+              const SizedBox(height: 10),
+              amountField(
+                fuelController,
+                "Fuel Charges",
+                Icons.local_gas_station_outlined,
               ),
               const SizedBox(height: 10),
               amountField(
@@ -1008,6 +1029,9 @@ final receivedController = TextEditingController(
                                           driverController.text,
                                         ) ??
                                         0,
+                                    fuelCharges:
+                                        double.tryParse(fuelController.text) ??
+                                        0,
                                     amountReceived:
                                         double.tryParse(
                                           receivedController.text,
@@ -1238,6 +1262,9 @@ final receivedController = TextEditingController(
     final driverCtrl = TextEditingController(
       text: bookinginfo.driverCharges?.toString() ?? "",
     );
+    final fuelCtrl = TextEditingController(
+      text: bookinginfo.fuelCharges?.toString() ?? "",
+    );
     final receivedCtrl = TextEditingController(
       text: approved == 0 ? "" : approved.toStringAsFixed(0),
     );
@@ -1416,6 +1443,7 @@ final receivedController = TextEditingController(
                 tollCharges: double.tryParse(tollCtrl.text) ?? 0,
                 repairingCharges: double.tryParse(repairCtrl.text) ?? 0,
                 driverCharges: double.tryParse(driverCtrl.text) ?? 0,
+                fuelCharges: double.tryParse(fuelCtrl.text) ?? 0,
                 amountReceived: double.tryParse(receivedCtrl.text) ?? 0,
               );
               await ref
@@ -1631,6 +1659,9 @@ final receivedController = TextEditingController(
                                     const SizedBox(height: 10),
                                     money(driverCtrl, "Driver Charges",
                                         Icons.payments_rounded),
+                                    const SizedBox(height: 10),
+                                    money(fuelCtrl, "Fuel Charges",
+                                        Icons.local_gas_station_rounded),
                                   ],
                                 ),
                               ),

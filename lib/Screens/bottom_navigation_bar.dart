@@ -173,7 +173,7 @@ class _MainBottomNavState extends ConsumerState<MainBottomNav>
                 filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
                 child: Container(
                   decoration: BoxDecoration(
-                    color: AppColors.brandHeader,
+                    color: Color(0xff000c33),
                     boxShadow: [
                       BoxShadow(
                         color: AppColors.brandHeader.withOpacity(0.25),
