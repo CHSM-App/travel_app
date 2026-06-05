@@ -329,17 +329,25 @@ class _ActionNeededCard extends ConsumerWidget {
     }
 
     final now = DateTime.now();
-    final startsToday = upcoming.where((t) {
+    // The "Upcoming Trips" row surfaces tomorrow's pickups so the operator can
+    // prepare a day ahead — count trips whose start (or booking) day is tomorrow.
+    final tomorrow = DateTime(now.year, now.month, now.day)
+        .add(const Duration(days: 1));
+    final startsTomorrow = upcoming.where((t) {
       final d = t.startDateTime ?? t.bookingDate;
-      return d != null && _isSameDay(d, now);
+      return d != null && _isSameDay(d, tomorrow);
     }).length;
 
     final activeCount = active.length;
 
-    final totalAttention =
-        (duesTotal > 0 ? 1 : 0) + (startsToday > 0 ? 1 : 0) + (activeCount > 0 ? 1 : 0);
+    final totalAttention = (duesTotal > 0 ? 1 : 0) +
+        (startsTomorrow > 0 ? 1 : 0) +
+        (activeCount > 0 ? 1 : 0);
 
-    void goToTrips(String filter) {
+    // [date] pins the destination list to a single day; null clears any prior
+    // date filter back to "All".
+    void goToTrips(String filter, {DateTime? date}) {
+      ref.read(tripPageInitialDateProvider.notifier).state = date;
       ref.read(tripPageInitialFilterProvider.notifier).state = filter;
       ref.read(bottomNavIndexProvider.notifier).state = 1;
     }
@@ -457,15 +465,15 @@ class _ActionNeededCard extends ConsumerWidget {
               color: AppColors.warning,
               bg: AppColors.warningSoft,
               title: 'Upcoming Trips',
-              value: '$startsToday',
-              subtitle: startsToday == 0
-                  ? 'Nothing scheduled for today'
-                  : startsToday == 1
-                      ? '1 pickup to dispatch'
-                      : '$startsToday pickups to dispatch',
+              value: '$startsTomorrow',
+              subtitle: startsTomorrow == 0
+                  ? 'Nothing scheduled for tomorrow'
+                  : startsTomorrow == 1
+                      ? '1 pickup tomorrow'
+                      : '$startsTomorrow pickups tomorrow',
               isLoading: isLoading && upcoming.isEmpty,
-              muted: startsToday == 0,
-              onTap: () => goToTrips('upcoming'),
+              muted: startsTomorrow == 0,
+              onTap: () => goToTrips('upcoming', date: tomorrow),
             ),
           ],
         ),

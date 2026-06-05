@@ -160,7 +160,15 @@ class _TripPageState extends ConsumerState<TripPage> {
     if (resolved != null) {
       _selectedFilter = resolved.filter;
       if (resolved.subTab != null) _completedSubTab = resolved.subTab!;
+      // A companion date signal pins the list to a single day (e.g. tomorrow's
+      // pickups from the dashboard's "Upcoming Trips" row).
+      final initialDate = ref.read(tripPageInitialDateProvider);
+      if (initialDate != null) {
+        _selectedRange = DateRange.custom;
+        _customRange = _singleDayRange(initialDate);
+      }
       ref.read(tripPageInitialFilterProvider.notifier).state = null;
+      ref.read(tripPageInitialDateProvider.notifier).state = null;
     }
 
     Future.microtask(() => _loadListForFilter(_selectedFilter));
@@ -180,6 +188,28 @@ class _TripPageState extends ConsumerState<TripPage> {
     final f = TripFilter.fromKey(key);
     if (f == null) return null;
     return (filter: f, subTab: null);
+  }
+
+  /// A day-only [DateTimeRange] covering exactly [day] (start == end), used to
+  /// pin the date filter to a single calendar day.
+  DateTimeRange _singleDayRange(DateTime day) {
+    final d = DateTime(day.year, day.month, day.day);
+    return DateTimeRange(start: d, end: d);
+  }
+
+  /// Applies a deep-link's companion date signal: pin to a single day when
+  /// [day] is set, otherwise reset the range back to "All". Always wrapped in
+  /// setState since it runs after the page is mounted.
+  void _applyDeepLinkDate(DateTime? day) {
+    setState(() {
+      if (day == null) {
+        _selectedRange = DateRange.all;
+        _customRange = null;
+      } else {
+        _selectedRange = DateRange.custom;
+        _customRange = _singleDayRange(day);
+      }
+    });
   }
 
   @override
@@ -317,7 +347,11 @@ class _TripPageState extends ConsumerState<TripPage> {
       final resolved = _resolveDeepLink(next);
       if (resolved == null) return;
       _applyFilter(resolved.filter, subTab: resolved.subTab);
+      // Apply (or clear) the companion date filter so the deep-linked list lands
+      // in a predictable state — pinned to a single day, or back to "All".
+      _applyDeepLinkDate(ref.read(tripPageInitialDateProvider));
       ref.read(tripPageInitialFilterProvider.notifier).state = null;
+      ref.read(tripPageInitialDateProvider.notifier).state = null;
     });
 
     return Scaffold(

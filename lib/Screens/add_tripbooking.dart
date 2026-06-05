@@ -3757,7 +3757,14 @@ class _ScrollTypeTimeFieldState extends State<_ScrollTypeTimeField> {
     super.initState();
     _c = TextEditingController(text: _fmt(widget.value));
     _focus.addListener(() {
-      if (!_focus.hasFocus) _commit();
+      if (_focus.hasFocus) {
+        // Select the whole value on focus so a tap lets the user immediately
+        // type a new time instead of editing the existing digits.
+        _c.selection =
+            TextSelection(baseOffset: 0, extentOffset: _c.text.length);
+      } else {
+        _commit();
+      }
     });
   }
 
@@ -3837,6 +3844,8 @@ class _ScrollTypeTimeFieldState extends State<_ScrollTypeTimeField> {
                 maxLength: 2,
                 cursorColor: accent,
                 inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                onTap: () => _c.selection =
+                    TextSelection(baseOffset: 0, extentOffset: _c.text.length),
                 onChanged: (t) {
                   final p = int.tryParse(t.trim());
                   if (p != null && p >= widget.min && p <= widget.max) {

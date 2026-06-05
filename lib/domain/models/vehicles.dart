@@ -28,6 +28,16 @@ class Vehicles {
    @JsonKey(name: 'active_status')
   final int? activeStatus;
 
+  /// PUC (Pollution Under Control) certificate expiry date, captured at
+  /// registration. Null when not provided.
+  @JsonKey(name: 'puc_expiry')
+  final DateTime? pucExpiry;
+
+  /// Insurance policy expiry date, captured at registration. Null when not
+  /// provided.
+  @JsonKey(name: 'insurance_expiry')
+  final DateTime? insuranceExpiry;
+
   Vehicles({
     this.Vehicle_info,
     required this.vehicleId,
@@ -45,7 +55,9 @@ class Vehicles {
     this.StatusName,
       this.agencyId,
       this.perKmCharge,
-      this.activeStatus
+      this.activeStatus,
+      this.pucExpiry,
+      this.insuranceExpiry,
   });
 
   factory Vehicles.fromJson(Map<String, dynamic> json) => Vehicles(
@@ -89,6 +101,21 @@ class Vehicles {
         agencyId: _readString(json, const ['agencyId', 'agency_id']),
         perKmCharge: _readDouble(
             json, const ['per_km_charge', 'perKmCharge', 'PerKmCharge']),
+        pucExpiry: _readDate(json, const [
+          'puc_expiry',
+          'pucExpiry',
+          'PucExpiry',
+          'PUCExpiry',
+          'pucExpiryDate',
+          'puc_expiry_date',
+        ]),
+        insuranceExpiry: _readDate(json, const [
+          'insurance_expiry',
+          'insuranceExpiry',
+          'InsuranceExpiry',
+          'insuranceExpiryDate',
+          'insurance_expiry_date',
+        ]),
       );
 
   Map<String, dynamic> toJson() => <String, dynamic>{
@@ -125,7 +152,20 @@ class Vehicles {
         'agency_id': agencyId,
         'agencyId': agencyId,
         'per_km_charge': perKmCharge,
+        'puc_expiry': _formatDate(pucExpiry),
+        'pucExpiry': _formatDate(pucExpiry),
+        'insurance_expiry': _formatDate(insuranceExpiry),
+        'insuranceExpiry': _formatDate(insuranceExpiry),
       };
+
+  /// Formats a date as `yyyy-MM-dd` (date-only) for the API, or null when unset.
+  static String? _formatDate(DateTime? d) {
+    if (d == null) return null;
+    final y = d.year.toString().padLeft(4, '0');
+    final m = d.month.toString().padLeft(2, '0');
+    final day = d.day.toString().padLeft(2, '0');
+    return '$y-$m-$day';
+  }
 
   static int? _readInt(Map<String, dynamic> json, List<String> keys) {
     for (final key in keys) {
@@ -147,6 +187,19 @@ class Vehicles {
       if (text.isNotEmpty && text.toLowerCase() != 'null') {
         return text;
       }
+    }
+    return null;
+  }
+
+  static DateTime? _readDate(Map<String, dynamic> json, List<String> keys) {
+    for (final key in keys) {
+      final value = json[key];
+      if (value == null) continue;
+      if (value is DateTime) return value;
+      final text = value.toString().trim();
+      if (text.isEmpty || text.toLowerCase() == 'null') continue;
+      final parsed = DateTime.tryParse(text);
+      if (parsed != null) return parsed;
     }
     return null;
   }

@@ -1413,6 +1413,7 @@ final receivedController = TextEditingController(
               final t = await showTimePicker(
                 context: ctx,
                 initialTime: TimeOfDay.fromDateTime(endSel),
+                initialEntryMode: TimePickerEntryMode.input,
               );
               if (t == null) return;
               setSheet(() {

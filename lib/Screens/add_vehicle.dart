@@ -44,6 +44,10 @@ class _AddVehiclePageState extends ConsumerState<AddVehiclePage>
   String? _existingRcRaw;
   bool _rcRemoved = false;
 
+  // ── Compliance expiry dates (captured at registration) ──
+  DateTime? _pucExpiry;
+  DateTime? _insuranceExpiry;
+
   int? selectedTypeId;
   int? selectedFuelTypeId;
   // int? selectedStatusId;
@@ -90,6 +94,9 @@ class _AddVehiclePageState extends ConsumerState<AddVehiclePage>
       );
       _rcRemoved = false;
       _selectedRcFile = null;
+
+      _pucExpiry = v.pucExpiry;
+      _insuranceExpiry = v.insuranceExpiry;
 
       selectedTypeId = v.TypeId;
       selectedFuelTypeId = v.FuelTypeId;
@@ -170,23 +177,15 @@ class _AddVehiclePageState extends ConsumerState<AddVehiclePage>
     //   _showSnack('Please select status', isError: true);
     //   return;
     // }
-    final int? parsedCapacity = int.tryParse(capacity.text.trim());
-    if (parsedCapacity == null) {
+    // Goods carriers have no seating capacity — default to 0 and skip the check.
+    final int? parsedCapacity =
+        _isGoodsCarrier ? 0 : int.tryParse(capacity.text.trim());
+    if (!_isGoodsCarrier && parsedCapacity == null) {
       _showSnack('Enter valid capacity', isError: true);
       return;
     }
 
-    // ── RC Document required on ADD mode ──
-    if (!widget.isEdit && _selectedRcFile == null) {
-      _showSnack('RC Document is required', isError: true);
-      return;
-    }
-
-    // ── RC Document required if removed and nothing new selected ──
-    if (widget.isEdit && _rcRemoved && _selectedRcFile == null) {
-      _showSnack('Please upload RC Document', isError: true);
-      return;
-    }
+    // ── RC Document is optional — no upload is required to save a vehicle. ──
 
     final agencyId = ref.read(loginViewModelProvider).agencyId;
     if (agencyId == null || agencyId.trim().isEmpty || agencyId.trim().toLowerCase() == 'null') {
@@ -206,6 +205,8 @@ class _AddVehiclePageState extends ConsumerState<AddVehiclePage>
       rcdocuments: (!_rcRemoved && _selectedRcFile == null) ? _existingRcRaw : null,
       agencyId: agencyId,
       perKmCharge: double.tryParse(perKm.text.trim()),
+      pucExpiry: _pucExpiry,
+      insuranceExpiry: _insuranceExpiry,
     );
 
     _saveVehicle(vehicle);
@@ -321,6 +322,18 @@ class _AddVehiclePageState extends ConsumerState<AddVehiclePage>
     );
   }
 
+  // True when the selected vehicle type is a goods carrier (no passenger
+  // capacity). Resolves the selected id against the loaded type list.
+  bool get _isGoodsCarrier {
+    if (selectedTypeId == null) return false;
+    final types =
+        ref.read(addVehicleViewModelProvider).fetchVehicleTypeList.asData?.value;
+    if (types == null) return false;
+    final match = types.where((t) => t.TypeId == selectedTypeId);
+    if (match.isEmpty) return false;
+    return (match.first.Type ?? '').toLowerCase().contains('goods');
+  }
+
   // ─── DETAILS CARD ────────────────────────────────────────────────────────────
   Widget _buildDetailsCard() {
     return _formCard(
@@ -343,32 +356,45 @@ class _AddVehiclePageState extends ConsumerState<AddVehiclePage>
           readOnly: widget.isEdit,
         ),
         const SizedBox(height: 16),
-        Row(
-          children: [
-            Expanded(
-              child: _buildField(
-                controller: capacity,
-                label: 'Capacity',
-                hint: '0',
-                icon: Icons.people_rounded,
-                keyboardType: TextInputType.number,
-                suffix: 'Seats',
+        // Goods carriers don't carry passengers, so the seating Capacity field
+        // is hidden for them and Mileage takes the full width.
+        if (_isGoodsCarrier)
+          _buildField(
+            controller: mileage,
+            label: 'Mileage',
+            hint: '0.0',
+            icon: Icons.speed_rounded,
+            keyboardType:
+                const TextInputType.numberWithOptions(decimal: true),
+            suffix: 'km/l',
+          )
+        else
+          Row(
+            children: [
+              Expanded(
+                child: _buildField(
+                  controller: capacity,
+                  label: 'Capacity',
+                  hint: '0',
+                  icon: Icons.people_rounded,
+                  keyboardType: TextInputType.number,
+                  suffix: 'Seats',
+                ),
               ),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: _buildField(
-                controller: mileage,
-                label: 'Mileage',
-                hint: '0.0',
-                icon: Icons.speed_rounded,
-                keyboardType:
-                    const TextInputType.numberWithOptions(decimal: true),
-                suffix: 'km/l',
+              const SizedBox(width: 14),
+              Expanded(
+                child: _buildField(
+                  controller: mileage,
+                  label: 'Mileage',
+                  hint: '0.0',
+                  icon: Icons.speed_rounded,
+                  keyboardType:
+                      const TextInputType.numberWithOptions(decimal: true),
+                  suffix: 'km/l',
+                ),
               ),
-            ),
-          ],
-        ),
+            ],
+          ),
         const SizedBox(height: 16),
         _buildField(
           controller: perKm,
@@ -386,9 +412,118 @@ class _AddVehiclePageState extends ConsumerState<AddVehiclePage>
           },
         ),
         const SizedBox(height: 16),
+        // PUC and Insurance expiry sit in their own rows (stacked), just above
+        // the RC document field.
+        _buildDateField(
+          label: 'PUC Expiry',
+          icon: Icons.verified_user_rounded,
+          value: _pucExpiry,
+          onTap: () => _pickExpiryDate(
+            current: _pucExpiry,
+            onPicked: (d) => setState(() => _pucExpiry = d),
+          ),
+        ),
+        const SizedBox(height: 16),
+        _buildDateField(
+          label: 'Insurance Expiry',
+          icon: Icons.shield_rounded,
+          value: _insuranceExpiry,
+          onTap: () => _pickExpiryDate(
+            current: _insuranceExpiry,
+            onPicked: (d) => setState(() => _insuranceExpiry = d),
+          ),
+        ),
+        const SizedBox(height: 16),
         _buildRcDocumentPicker(),
       ],
     );
+  }
+
+  // Tappable date tile styled to match [_buildField]. Shows a placeholder until
+  // a date is chosen.
+  Widget _buildDateField({
+    required String label,
+    required IconData icon,
+    required DateTime? value,
+    required VoidCallback onTap,
+  }) {
+    final bool hasValue = value != null;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(left: 4, bottom: 6),
+          child: Text(label,
+              style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.grey.shade700)),
+        ),
+        InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(14),
+          child: Container(
+            decoration: BoxDecoration(
+              color: _surface,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: Colors.grey.shade200, width: 1),
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
+            child: Row(
+              children: [
+                Container(
+                  margin: const EdgeInsets.all(4),
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: _primary.withOpacity(0.08),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(icon, size: 18, color: _primary),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    hasValue ? _fmtDate(value) : 'Select date',
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w500,
+                      color: hasValue ? _textDark : Colors.grey.shade400,
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(right: 12),
+                  child: Icon(Icons.calendar_today_rounded,
+                      size: 18, color: Colors.grey.shade500),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  // dd MMM yyyy without pulling in intl.
+  static const _months = [
+    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+  ];
+  String _fmtDate(DateTime d) =>
+      '${d.day.toString().padLeft(2, '0')} ${_months[d.month - 1]} ${d.year}';
+
+  Future<void> _pickExpiryDate({
+    required DateTime? current,
+    required ValueChanged<DateTime> onPicked,
+  }) async {
+    final now = DateTime.now();
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: current ?? now,
+      firstDate: DateTime(now.year - 5),
+      lastDate: DateTime(now.year + 15),
+    );
+    if (picked != null) onPicked(picked);
   }
 
   // ─── RC DOCUMENT PICKER ───────────────────────────────────────────────────────
@@ -415,25 +550,15 @@ class _AddVehiclePageState extends ConsumerState<AddVehiclePage>
                 ),
               ),
               const SizedBox(width: 6),
-              // ── Required on Add, Optional on Edit ──
-              if (!widget.isEdit)
-                Text(
-                  '*',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.red.shade500,
-                    fontWeight: FontWeight.w700,
-                  ),
-                )
-              else
-                Text(
-                  '(Optional)',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey.shade400,
-                    fontWeight: FontWeight.w400,
-                  ),
+              // ── Optional on both Add and Edit ──
+              Text(
+                '(Optional)',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey.shade400,
+                  fontWeight: FontWeight.w400,
                 ),
+              ),
             ],
           ),
         ),
@@ -786,11 +911,7 @@ class _AddVehiclePageState extends ConsumerState<AddVehiclePage>
                 ),
                 if (!widget.isEdit) ...[
                   const SizedBox(width: 4),
-                  Text('*',
-                      style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.red.shade500,
-                          fontWeight: FontWeight.w700)),
+                  
                 ],
               ],
             ),
@@ -1266,6 +1387,34 @@ class _AddVehiclePageState extends ConsumerState<AddVehiclePage>
     );
   }
 
+  // Field label with an optional red asterisk for required fields.
+  Widget _fieldLabel(String label, {bool required = false}) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 4, bottom: 6),
+      child: RichText(
+        text: TextSpan(
+          text: label,
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: Colors.grey.shade700,
+          ),
+          children: required
+              ? [
+                  TextSpan(
+                    text: ' *',
+                    style: TextStyle(
+                      color: Colors.red.shade500,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ]
+              : null,
+        ),
+      ),
+    );
+  }
+
   Widget _buildField({
     required TextEditingController controller,
     required String label,
@@ -1282,14 +1431,7 @@ class _AddVehiclePageState extends ConsumerState<AddVehiclePage>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Padding(
-          padding: const EdgeInsets.only(left: 4, bottom: 6),
-          child: Text(label,
-              style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.grey.shade700)),
-        ),
+        _fieldLabel(label, required: required),
         TextFormField(
           controller: controller,
           keyboardType: keyboardType,
@@ -1418,6 +1560,7 @@ class _AddVehiclePageState extends ConsumerState<AddVehiclePage>
                 .toList(),
             onChanged: (v) => setState(() => selectedTypeId = v),
             validator: (v) => v == null ? 'Please select vehicle type' : null,
+            required: true,
           );
         },
       );
@@ -1450,6 +1593,7 @@ class _AddVehiclePageState extends ConsumerState<AddVehiclePage>
                 .toList(),
             onChanged: (v) => setState(() => selectedFuelTypeId = v),
             validator: (v) => v == null ? 'Please select fuel type' : null,
+            required: true,
           );
         },
       );
@@ -1494,18 +1638,12 @@ class _AddVehiclePageState extends ConsumerState<AddVehiclePage>
     required List<Widget> Function(BuildContext) selectedItemBuilder,
     required ValueChanged<T?> onChanged,
     required String? Function(T?) validator,
+    bool required = false,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Padding(
-          padding: const EdgeInsets.only(left: 4, bottom: 6),
-          child: Text(label,
-              style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.grey.shade700)),
-        ),
+        _fieldLabel(label, required: required),
         DropdownButtonFormField<T>(
           initialValue: value,
           items: items,

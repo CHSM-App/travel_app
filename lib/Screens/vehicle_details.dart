@@ -2361,6 +2361,23 @@ class _OverviewTab extends StatelessWidget {
       physics: const BouncingScrollPhysics(),
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
       children: [
+         const SizedBox(height: 14),
+        _specCard(
+          title: 'Compliance',
+          rows: [
+            _SpecRow(
+              Icons.eco_rounded,
+              'PUC Expiry',
+              _expiryText(v.pucExpiry),
+            ),
+            _SpecRow(
+              Icons.verified_user_rounded,
+              'Insurance Expiry',
+              _expiryText(v.insuranceExpiry),
+            ),
+          ],
+        ),
+         const SizedBox(height: 14),
         _specCard(
           title: 'Specifications',
           rows: [
@@ -2402,9 +2419,25 @@ class _OverviewTab extends StatelessWidget {
             ),
           ],
         ),
+       
         _buildDocumentsCard(context),
       ],
     );
+  }
+
+  // Formats a compliance expiry date as "dd MMM yyyy", appending a short status
+  // hint ("Expired" / "in N days") so the operator sees at a glance whether a
+  // certificate needs renewing. Returns "--" when the date isn't set.
+  String _expiryText(DateTime? date) {
+    if (date == null) return '--';
+    final formatted = DateFormat('dd MMM yyyy').format(date);
+    final today = DateTime.now();
+    final day = DateTime(date.year, date.month, date.day);
+    final diff = day.difference(DateTime(today.year, today.month, today.day)).inDays;
+    if (diff < 0) return '$formatted · Expired';
+    if (diff == 0) return '$formatted · Today';
+    if (diff <= 30) return '$formatted · in $diff ${diff == 1 ? 'day' : 'days'}';
+    return formatted;
   }
 
   // ── Documents card (RC document viewer) ──────────────────────────────
