@@ -39,7 +39,6 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
 
   // ── Design tokens ─────────────────────────────────
   static const _primary = AppColors.brandPrimary;
-  static const _primaryDk = AppColors.brandPrimaryDark;
   static const _primaryLt = AppColors.brandSoft;
   static const _bg = Color(0xFFF5F7FB);
   static const _textDark = Color(0xFF0F1729);
@@ -456,14 +455,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
     Widget avatarFallback() {
       return Container(
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              Colors.white.withOpacity(0.30),
-              Colors.white.withOpacity(0.12),
-            ],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
+          color: Colors.white.withOpacity(0.30),
         ),
         alignment: Alignment.center,
         child: Text(
@@ -480,11 +472,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
 
     return Container(
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [AppColors.brandPrimary, AppColors.brandPrimaryDark],
-        ),
+        color: AppColors.brandHeader,
         borderRadius: const BorderRadius.vertical(bottom: Radius.circular(22)),
         boxShadow: [
           BoxShadow(
@@ -821,13 +809,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
       width: double.infinity,
       height: 46,
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: _isSaving
-              ? [_primary.withOpacity(0.55), _primaryDk.withOpacity(0.55)]
-              : [_primary, _primaryDk],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
+        color: _isSaving ? _primary.withOpacity(0.55) : _primary,
         borderRadius: BorderRadius.circular(13),
         boxShadow: _isSaving
             ? []

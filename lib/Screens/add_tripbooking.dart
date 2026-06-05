@@ -882,14 +882,7 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
                             child: Container(
                               height: 46,
                               decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  colors: [
-                                    accent.withOpacity(0.85),
-                                    accent,
-                                  ],
-                                  begin: Alignment.topLeft,
-                                  end: Alignment.bottomRight,
-                                ),
+                                color: accent,
                                 borderRadius: BorderRadius.circular(12),
                                 boxShadow: [
                                   BoxShadow(
@@ -2002,11 +1995,7 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
               width: 42,
               height: 42,
               decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [AppColors.brandPrimaryLight, _C.accent],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
+                color: _C.accent,
                 borderRadius: BorderRadius.circular(14),
                 boxShadow: [
                   BoxShadow(
@@ -2533,11 +2522,7 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
                     width: 22,
                     height: 22,
                     decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [color.withOpacity(0.85), color],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
+                      color: color,
                       borderRadius: BorderRadius.circular(6),
                       boxShadow: [
                         BoxShadow(
@@ -2631,14 +2616,7 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
                   width: 38,
                   height: 38,
                   decoration: BoxDecoration(
-                    gradient: hasVal
-                        ? LinearGradient(
-                            colors: [color.withOpacity(0.8), color],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          )
-                        : null,
-                    color: hasVal ? null : bg,
+                    color: hasVal ? color : bg,
                     borderRadius: BorderRadius.circular(11),
                     boxShadow: hasVal
                         ? [
@@ -3108,15 +3086,7 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
                 duration: const Duration(milliseconds: 200),
                 height: 54,
                 decoration: BoxDecoration(
-                  gradient: _saving
-                      ? LinearGradient(
-                          colors: [Colors.grey.shade300, Colors.grey.shade400],
-                        )
-                      : const LinearGradient(
-                          colors: [AppColors.brandPrimaryLight, _C.accent],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
+                  color: _saving ? Colors.grey.shade400 : _C.accent,
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: _saving
                       ? []
@@ -3421,14 +3391,7 @@ class _DropSheetState<T> extends State<_DropSheet<T>> {
                                 vertical: 11,
                               ),
                               decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  colors: [
-                                    widget.color.withOpacity(0.85),
-                                    widget.color,
-                                  ],
-                                  begin: Alignment.topLeft,
-                                  end: Alignment.bottomRight,
-                                ),
+                                color: widget.color,
                                 borderRadius: BorderRadius.circular(11),
                                 boxShadow: [
                                   BoxShadow(
@@ -3489,23 +3452,7 @@ class _DropSheetState<T> extends State<_DropSheet<T>> {
                                 width: 42,
                                 height: 42,
                                 decoration: BoxDecoration(
-                                  gradient: isSelected
-                                      ? LinearGradient(
-                                          colors: [
-                                            widget.color.withOpacity(0.8),
-                                            widget.color,
-                                          ],
-                                          begin: Alignment.topLeft,
-                                          end: Alignment.bottomRight,
-                                        )
-                                      : const LinearGradient(
-                                          colors: [
-                                            AppColors.brandPrimaryLight,
-                                            _C.accent,
-                                          ],
-                                          begin: Alignment.topLeft,
-                                          end: Alignment.bottomRight,
-                                        ),
+                                  color: isSelected ? widget.color : _C.accent,
                                   borderRadius: BorderRadius.circular(12),
                                   boxShadow: [
                                     BoxShadow(
@@ -3647,11 +3594,7 @@ class _DropSheetState<T> extends State<_DropSheet<T>> {
                       width: 26,
                       height: 26,
                       decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [widget.color.withOpacity(0.8), widget.color],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
+                        color: widget.color,
                         borderRadius: BorderRadius.circular(7),
                         boxShadow: [
                           BoxShadow(

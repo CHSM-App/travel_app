@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:travel_agency_app/Screens/bottom_navigation_bar.dart';
 import 'package:travel_agency_app/Screens/login.dart';
 import 'package:travel_agency_app/core/network/token_provider.dart';
+import 'package:travel_agency_app/core/theme/app_colors.dart';
 import 'package:travel_agency_app/presentation/providers/viewmodel_provider.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
@@ -24,7 +25,18 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'Travel App',
       theme: ThemeData(
-        primarySwatch: Colors.red,
+        useMaterial3: true,
+        scaffoldBackgroundColor: AppColors.surface,
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: AppColors.brandPrimary,
+          primary: AppColors.brandPrimary,
+          surface: AppColors.surface,
+        ),
+        appBarTheme: const AppBarTheme(
+          backgroundColor: AppColors.brandHeader,
+          foregroundColor: Colors.white,
+          elevation: 0,
+        ),
       ),
 
       home: const SplashScreen(),

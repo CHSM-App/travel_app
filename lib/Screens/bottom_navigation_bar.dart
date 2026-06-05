@@ -13,7 +13,7 @@ import 'package:travel_agency_app/presentation/providers/viewmodel_provider.dart
 // ── Pill nav theme ──────────────────────────────────────────────────────────
 class NavTheme {
   static const navAccent = AppColors.brandPrimary;
-  static const navInactive = Color(0xFF1E293B);
+  static const navInactive = AppColors.textSecondary;
   // 10% alpha over brand primary — keep this in sync if brandPrimary changes.
   static const navActivePill = Color(0x1A4F46E5);
   static const navPillBg = Color(0x12FFFFFF);
@@ -33,8 +33,6 @@ class _MainBottomNavState extends ConsumerState<MainBottomNav>
     with TickerProviderStateMixin {
   int selectedIndex = 0;
   int vehicleTabIndex = 0;
-
-  static const primaryColor = AppColors.brandPrimary;
 
   // Drag state for the sliding active-tab indicator.
   bool _isDragging = false;
@@ -175,17 +173,10 @@ class _MainBottomNavState extends ConsumerState<MainBottomNav>
                 filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
                 child: Container(
                   decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        primaryColor.withOpacity(0.92),
-                        AppColors.brandPrimaryLight.withOpacity(0.90),
-                      ],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
+                    color: AppColors.brandHeader,
                     boxShadow: [
                       BoxShadow(
-                        color: primaryColor.withOpacity(0.25),
+                        color: AppColors.brandHeader.withOpacity(0.25),
                         blurRadius: 12,
                         offset: const Offset(0, 3),
                       ),

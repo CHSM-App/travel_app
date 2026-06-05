@@ -19,9 +19,8 @@ class _C {
   static const surface = Color(0xFFFFFFFF);
   static const surfaceLight = Color(0xFFF1F4FA);
   static const accent = AppColors.brandPrimary;
-  static const accentLight = AppColors.brandPrimaryLight;
-  static const accentDark = AppColors.brandPrimaryDark;
   static const accentSoft = AppColors.brandSoft;
+  static const header = AppColors.brandHeader;
   static const text1 = Color(0xFF0F1729);
   static const text2 = Color(0xFF6B7280);
   static const text3 = Color(0xFFA3ABBD);
@@ -536,11 +535,7 @@ class _VehicleReportPageState extends ConsumerState<VehicleReportPage> {
             width: 4,
             height: 18,
             decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [_C.accentLight, _C.accent],
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-              ),
+              color: _C.accent,
               borderRadius: BorderRadius.circular(4),
             ),
           ),
@@ -668,11 +663,7 @@ class _VehicleReportPageState extends ConsumerState<VehicleReportPage> {
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [_C.accentLight, _C.accent],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
+                  color: _C.accent,
                   borderRadius: BorderRadius.circular(12),
                   boxShadow: [
                     BoxShadow(
@@ -743,14 +734,7 @@ class _VehicleReportPageState extends ConsumerState<VehicleReportPage> {
         curve: Curves.easeOutCubic,
         padding: const EdgeInsets.symmetric(vertical: 9, horizontal: 2),
         decoration: BoxDecoration(
-          gradient: active
-              ? const LinearGradient(
-                  colors: [_C.accentLight, _C.accent],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                )
-              : null,
-          color: active ? null : Colors.transparent,
+          color: active ? _C.accent : Colors.transparent,
           borderRadius: BorderRadius.circular(10),
           boxShadow: active
               ? [
@@ -832,14 +816,7 @@ class _VehicleReportPageState extends ConsumerState<VehicleReportPage> {
               width: 88,
               height: 88,
               decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    _C.accentSoft,
-                    _C.accentSoft.withValues(alpha: 0.5),
-                  ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
+                color: _C.accentSoft,
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
@@ -916,20 +893,11 @@ class _OverallCard extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [
-            _C.accent,
-            _C.accentDark,
-            _C.accent,
-          ],
-          stops: [0.0, 0.55, 1.0],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
+        color: _C.header,
         borderRadius: BorderRadius.circular(22),
         boxShadow: [
           BoxShadow(
-            color: _C.accent.withValues(alpha: 0.32),
+            color: _C.header.withValues(alpha: 0.32),
             blurRadius: 22,
             offset: const Offset(0, 10),
           ),
@@ -1281,11 +1249,7 @@ class _VehicleRevenueCard extends StatelessWidget {
                     vertical: 2.5,
                   ),
                   decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFFF5C038), _C.gold],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
+                    color: _C.gold,
                     borderRadius: const BorderRadius.vertical(
                       bottom: Radius.circular(7),
                     ),
@@ -1364,13 +1328,7 @@ class _VehicleRevenueCard extends StatelessWidget {
           width: 34,
           height: 34,
           decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: isActive
-                  ? const [_C.accentLight, _C.accent]
-                  : [Colors.grey.shade300, Colors.grey.shade400],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
+            color: isActive ? _C.accent : Colors.grey.shade400,
             borderRadius: BorderRadius.circular(9),
             boxShadow: isActive
                 ? [
@@ -1676,15 +1634,7 @@ class _ExpenseShareBar extends StatelessWidget {
                     widthFactor: w,
                     child: Container(
                       height: 5,
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: isHeavy
-                              ? const [_C.red, Color(0xFFD63030)]
-                              : const [_C.orange, Color(0xFFD97706)],
-                          begin: Alignment.centerLeft,
-                          end: Alignment.centerRight,
-                        ),
-                      ),
+                      color: isHeavy ? _C.red : _C.orange,
                     ),
                   ),
                 ),

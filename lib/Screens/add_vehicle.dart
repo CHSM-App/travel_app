@@ -674,14 +674,7 @@ class _AddVehiclePageState extends ConsumerState<AddVehiclePage>
                       padding: const EdgeInsets.symmetric(
                           vertical: 6, horizontal: 12),
                       decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.bottomCenter,
-                          end: Alignment.topCenter,
-                          colors: [
-                            Colors.black.withOpacity(0.55),
-                            Colors.transparent,
-                          ],
-                        ),
+                        color: Colors.black.withOpacity(0.55),
                       ),
                       child: const Row(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -820,14 +813,7 @@ class _AddVehiclePageState extends ConsumerState<AddVehiclePage>
                           padding: const EdgeInsets.symmetric(
                               vertical: 6, horizontal: 12),
                           decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              begin: Alignment.bottomCenter,
-                              end: Alignment.topCenter,
-                              colors: [
-                                Colors.black.withOpacity(0.55),
-                                Colors.transparent,
-                              ],
-                            ),
+                            color: Colors.black.withOpacity(0.55),
                           ),
                           child: const Row(
                             mainAxisAlignment: MainAxisAlignment.center,
@@ -1369,11 +1355,7 @@ class _AddVehiclePageState extends ConsumerState<AddVehiclePage>
           width: 4,
           height: 18,
           decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [_primary, _accent],
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-            ),
+            color: _primary,
             borderRadius: BorderRadius.circular(4),
           ),
         ),

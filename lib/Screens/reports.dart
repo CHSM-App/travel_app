@@ -17,7 +17,6 @@ import 'package:travel_agency_app/presentation/providers/viewmodel_provider.dart
 //  DESIGN TOKENS
 // ─────────────────────────────────────────────────────────────
 const _primary  = AppColors.brandPrimary;
-const _darkBlue = Color(0xFF1A237E);
 const _bg       = Color(0xFFF0F4FF);
 const _white    = Color(0xFFFFFFFF);
 const _textDark = Color(0xFF1A1A2E);
@@ -1414,7 +1413,7 @@ class _ReportHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) => AnimatedContainer(
     duration: const Duration(milliseconds: 300),
-    decoration: BoxDecoration(gradient: LinearGradient(colors: [activeTab.color, Color.lerp(activeTab.color, _darkBlue, 0.45)!], begin: Alignment.topLeft, end: Alignment.bottomRight)),
+    decoration: const BoxDecoration(color: AppColors.brandHeader),
     padding: EdgeInsets.only(top: MediaQuery.of(context).padding.top + 10, left: 16, right: 16, bottom: 18),
     child: Row(children: [
       IconButton(icon: const Icon(Icons.arrow_back_ios_new_rounded, color: _white, size: 18), onPressed: () => Navigator.of(context).maybePop(), padding: EdgeInsets.zero, constraints: const BoxConstraints()),

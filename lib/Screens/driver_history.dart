@@ -317,11 +317,7 @@ class _DriverHistoryPageState
         height: 40,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          gradient: const LinearGradient(
-            colors: [AppColors.brandPrimaryLight, AppColors.brandPrimaryDark],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
+          color: AppColors.brandPrimary,
           boxShadow: [
             BoxShadow(
               color: _accent.withValues(alpha: 0.30),
@@ -636,11 +632,7 @@ class _DriverHistoryPageState
                 width: double.infinity,
                 padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
                 decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [AppColors.brandPrimary, AppColors.brandPrimaryDark],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
+                  color: AppColors.brandHeader,
                 ),
                 child: Row(
                   children: [

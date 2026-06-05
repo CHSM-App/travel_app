@@ -354,15 +354,11 @@ Future<void> _toggleVehicleStatus() async {
             width: double.infinity,
             padding: const EdgeInsets.fromLTRB(18, 16, 18, 16),
             decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [AppColors.brandPrimary, AppColors.brandPrimaryDark],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
+              color: AppColors.brandHeader,
               borderRadius: BorderRadius.circular(20),
               boxShadow: [
                 BoxShadow(
-                  color: _C.accent.withOpacity(0.30),
+                  color: AppColors.brandHeader.withOpacity(0.30),
                   blurRadius: 18,
                   offset: const Offset(0, 8),
                 ),
@@ -712,11 +708,7 @@ Future<void> _toggleVehicleStatus() async {
         height: 44,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(14),
-          gradient: const LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [AppColors.brandPrimaryLight, AppColors.brandPrimary],
-          ),
+          color: AppColors.brandPrimary,
         ),
         child: const Icon(
           Icons.directions_car_rounded,
@@ -756,9 +748,7 @@ Future<void> _toggleVehicleStatus() async {
       child: Container(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(16),
-          gradient: const LinearGradient(
-            colors: [AppColors.brandPrimaryLight, AppColors.brandPrimary],
-          ),
+          color: AppColors.brandPrimary,
           boxShadow: [
             BoxShadow(
               color: _C.accent.withOpacity(0.40),
@@ -839,11 +829,7 @@ Future<void> _toggleVehicleStatus() async {
                 ),
                 child: Container(
                   decoration: const BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [Color(0xFFF8F9FF), Colors.white],
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                    ),
+                    color: AppColors.surface,
                   ),
                   child: Column(
                     children: [
@@ -1289,11 +1275,7 @@ class _PressableButtonState extends State<_PressableButton>
           duration: const Duration(milliseconds: 150),
           padding: const EdgeInsets.symmetric(vertical: 14),
           decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: _pressed
-                  ? [AppColors.brandPrimary, AppColors.brandPrimary]
-                  : [AppColors.brandPrimaryLight, AppColors.brandPrimary],
-            ),
+            color: AppColors.brandPrimary,
             borderRadius: BorderRadius.circular(12),
             boxShadow: _pressed
                 ? []
@@ -1348,9 +1330,7 @@ class _PremiumTabBar extends SliverPersistentHeaderDelegate {
       tabAlignment: TabAlignment.fill,
       dividerColor: Colors.transparent,
       indicator: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [AppColors.brandPrimaryLight, AppColors.brandPrimary],
-        ),
+        color: AppColors.brandPrimary,
         borderRadius: BorderRadius.circular(8),
       ),
       indicatorSize: TabBarIndicatorSize.tab,
@@ -2623,14 +2603,7 @@ class _OverviewTab extends StatelessWidget {
                     width: 32,
                     height: 32,
                     decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [
-                          AppColors.brandPrimaryLight,
-                          AppColors.brandPrimary,
-                        ],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
+                      color: AppColors.brandPrimary,
                       borderRadius: BorderRadius.circular(9),
                     ),
                     child: Icon(rows[i].icon, size: 16, color: Colors.white),

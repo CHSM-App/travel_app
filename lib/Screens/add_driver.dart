@@ -992,11 +992,7 @@ class _AddDriverPageState extends ConsumerState<AddDriverPage>
         width: 4,
         height: 18,
         decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            colors: [_primary, _accent],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-          ),
+          color: _primary,
           borderRadius: BorderRadius.circular(4),
         ),
       ),

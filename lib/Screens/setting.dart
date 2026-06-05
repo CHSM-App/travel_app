@@ -30,7 +30,6 @@ class _ModernSettingsPageState extends ConsumerState<ModernSettingsPage>
 
   // App color palette — matches dashboard indigo theme
   static const Color _primary = AppColors.brandPrimary;
-  static const Color _primaryDark = AppColors.brandPrimaryDark;
   static const Color _primaryLight = AppColors.brandSoft;
   static const Color _surface = Color(0xFFF6F7FF);
   static const Color _cardBg = Colors.white;
@@ -222,7 +221,7 @@ class _ModernSettingsPageState extends ConsumerState<ModernSettingsPage>
     return Container(
       height: 110,
       decoration: BoxDecoration(
-        gradient: LinearGradient(colors: [_primary, _primaryDark]),
+        color: AppColors.brandHeader,
         borderRadius: BorderRadius.circular(24),
       ),
       child: const Center(child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5)),
@@ -236,11 +235,7 @@ class _ModernSettingsPageState extends ConsumerState<ModernSettingsPage>
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [AppColors.brandPrimary, AppColors.brandPrimaryDark],
-        ),
+        color: AppColors.brandHeader,
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
@@ -489,7 +484,7 @@ class _ModernSettingsPageState extends ConsumerState<ModernSettingsPage>
                 width: 70,
                 height: 70,
                 decoration: BoxDecoration(
-                  gradient: const LinearGradient(colors: [_primary, _primaryDark]),
+                  color: _primary,
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: const Icon(Icons.directions_car_rounded, color: Colors.white, size: 36),

@@ -191,11 +191,7 @@ class _SignUpPageState extends ConsumerState<SignUpPage>
                             width: 76,
                             height: 76,
                             decoration: BoxDecoration(
-                              gradient: const LinearGradient(
-                                colors: [primaryColor, AppColors.brandPrimaryLight],
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                              ),
+                              color: AppColors.brandPrimary,
                               borderRadius: BorderRadius.circular(22),
                               boxShadow: [
                                 BoxShadow(

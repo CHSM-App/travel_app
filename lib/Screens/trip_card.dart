@@ -494,15 +494,11 @@ final receivedController = TextEditingController(
                       margin: EdgeInsets.fromLTRB(hPad, 6, hPad, 4),
                       padding: EdgeInsets.all(isSmall ? 14 : 18),
                       decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [AppColors.brandPrimary, AppColors.brandPrimaryDark],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
+                        color: AppColors.brandHeader,
                         borderRadius: BorderRadius.circular(20),
                         boxShadow: [
                           BoxShadow(
-                            color: AppColors.brandPrimary.withOpacity(0.32),
+                            color: AppColors.brandHeader.withOpacity(0.32),
                             blurRadius: 18,
                             offset: const Offset(0, 7),
                           ),
@@ -754,12 +750,7 @@ final receivedController = TextEditingController(
                                           vertical: isSmall ? 12 : 14,
                                         ),
                                         decoration: BoxDecoration(
-                                          gradient: const LinearGradient(
-                                            colors: [
-                                              Color(0xFFD8F3DC),
-                                              Color(0xFFB7E4C7),
-                                            ],
-                                          ),
+                                          color: const Color(0xFFD8F3DC),
                                           borderRadius: BorderRadius.circular(
                                             12,
                                           ),
@@ -870,11 +861,7 @@ final receivedController = TextEditingController(
                                   vertical: 16,
                                 ),
                                 decoration: BoxDecoration(
-                                  gradient: const LinearGradient(
-                                    colors: [Color(0xFF2DB976), Color(0xFF1E9E5F)],
-                                    begin: Alignment.topLeft,
-                                    end: Alignment.bottomRight,
-                                  ),
+                                  color: const Color(0xFF2DB976),
                                   borderRadius: BorderRadius.circular(16),
                                   boxShadow: [
                                     BoxShadow(
@@ -1049,14 +1036,7 @@ final receivedController = TextEditingController(
                                     vertical: isSmall ? 14 : 16,
                                   ),
                                   decoration: BoxDecoration(
-                                    gradient: const LinearGradient(
-                                      colors: [
-                                        AppColors.brandPrimary,
-                                        AppColors.brandPrimaryDark,
-                                      ],
-                                      begin: Alignment.topLeft,
-                                      end: Alignment.bottomRight,
-                                    ),
+                                    color: AppColors.brandPrimary,
                                     borderRadius: BorderRadius.circular(16),
                                     boxShadow: [
                                       BoxShadow(
@@ -1470,14 +1450,7 @@ final receivedController = TextEditingController(
                       Container(
                         padding: const EdgeInsets.fromLTRB(18, 12, 14, 18),
                         decoration: const BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [
-                              AppColors.brandPrimary,
-                              AppColors.brandPrimaryDark,
-                            ],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          ),
+                          color: AppColors.brandHeader,
                           borderRadius:
                               BorderRadius.vertical(top: Radius.circular(26)),
                         ),
@@ -1740,12 +1713,7 @@ final receivedController = TextEditingController(
                                   padding:
                                       const EdgeInsets.symmetric(vertical: 16),
                                   decoration: BoxDecoration(
-                                    gradient: const LinearGradient(
-                                      colors: [
-                                        Color(0xFF2DB976),
-                                        Color(0xFF1E9E5F),
-                                      ],
-                                    ),
+                                    color: const Color(0xFF2DB976),
                                     borderRadius: BorderRadius.circular(16),
                                     boxShadow: [
                                       BoxShadow(

@@ -622,14 +622,7 @@ class _NewBookingHero extends StatelessWidget {
         ),
         child: Ink(
           decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [
-                AppColors.brandPrimary,
-                AppColors.brandPrimaryLight,
-              ],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
+            color: AppColors.brandHeader,
             borderRadius: BorderRadius.circular(isSmall ? 16 : 20),
             boxShadow: [
               BoxShadow(
@@ -899,7 +892,6 @@ class _VehicleReportBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     const accent = AppColors.brandPrimary;
-    const accentLight = AppColors.brandPrimaryLight;
     const accentSoft = AppColors.brandSoft;
 
     return GestureDetector(
@@ -933,11 +925,7 @@ class _VehicleReportBanner extends StatelessWidget {
                 width: isSmall ? 36 : 42,
                 height: isSmall ? 36 : 42,
                 decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [accentLight, accent],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
+                  color: accent,
                   borderRadius: BorderRadius.circular(isSmall ? 9 : 11),
                   boxShadow: [
                     BoxShadow(

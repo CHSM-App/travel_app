@@ -13,7 +13,6 @@ class HelpCenterPage extends StatefulWidget {
 class _HelpCenterPageState extends State<HelpCenterPage> {
   // ─── Palette (matches Settings screen) ─────────────────────────────
   static const Color _primary = AppColors.brandPrimary;
-  static const Color _primaryDark = AppColors.brandPrimaryDark;
   static const Color _primaryLight = AppColors.brandSoft;
   static const Color _surface = Color(0xFFF6F7FF);
   static const Color _cardBg = Colors.white;
@@ -107,11 +106,7 @@ class _HelpCenterPageState extends State<HelpCenterPage> {
       width: double.infinity,
       padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [_primary, _primaryDark],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
+        color: _primary,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(

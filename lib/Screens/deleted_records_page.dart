@@ -22,13 +22,11 @@ class _DeletedRecordsPageState extends ConsumerState<DeletedRecordsPage>
   static const _surfaceAlt  = Color(0xFFF0F3FA);
   static const _accent      = AppColors.brandPrimary;
   static const _accentLight = AppColors.brandSoft;
-  static const _accentGrad1 = AppColors.brandPrimaryLight;
   static const _text1       = Color(0xFF1A1D2E);
   static const _text2       = Color(0xFF7B82A0);
   static const _divider     = Color(0xFFE8EBF4);
   static const _red         = Color(0xFFE53935);
   static const _redSoft     = Color(0xFFFFEBEE);
-  static const _redGrad1    = Color(0xFFFF6B6B);
   static const _green       = Color(0xFF2DB976);
   static const _greenSoft   = Color(0xFFE8F8F1);
   static const _diesel      = Color(0xFF1D4ED8);
@@ -106,11 +104,7 @@ class _DeletedRecordsPageState extends ConsumerState<DeletedRecordsPage>
                     child: TabBar(
                       controller: _tabController,
                       indicator: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [_accentGrad1, _accent],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
+                        color: _accent,
                         borderRadius: BorderRadius.circular(11),
                         boxShadow: [
                           BoxShadow(
@@ -378,11 +372,7 @@ class _DeletedRecordsPageState extends ConsumerState<DeletedRecordsPage>
                         width: 42,
                         height: 42,
                         decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                            colors: [_redGrad1, _red],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          ),
+                          color: _red,
                           borderRadius: BorderRadius.circular(12),
                           boxShadow: [
                             BoxShadow(
@@ -526,11 +516,7 @@ class _DeletedRecordsPageState extends ConsumerState<DeletedRecordsPage>
                     width: 38,
                     height: 38,
                     decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [_redGrad1, _red],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
+                      color: _red,
                       borderRadius: BorderRadius.circular(10),
                       boxShadow: [
                         BoxShadow(

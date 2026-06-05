@@ -20,7 +20,6 @@ class _C {
   static const surfaceLight = Color(0xFFF0F3FA);
   static const accent = AppColors.brandPrimary;
   static const accentSoft = AppColors.brandSoft;
-  static const accentDark = AppColors.brandPrimaryDark;
   static const text1 = Color(0xFF1A1D2E);
   static const text2 = Color(0xFF7B82A0);
   static const divider = Color(0xFFE4E8F0);
@@ -302,14 +301,7 @@ class _VehiclePageState extends ConsumerState<VehiclePage>
                               width: 42,
                               height: 42,
                               decoration: BoxDecoration(
-                                gradient: const LinearGradient(
-                                  colors: [
-                                    AppColors.brandPrimaryLight,
-                                    _C.accent,
-                                  ],
-                                  begin: Alignment.topLeft,
-                                  end: Alignment.bottomRight,
-                                ),
+                                color: _C.accent,
                                 borderRadius: BorderRadius.circular(12),
                                 boxShadow: [
                                   BoxShadow(
@@ -624,11 +616,7 @@ class _VehiclePageState extends ConsumerState<VehiclePage>
                 width: 38,
                 height: 38,
                 decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [AppColors.brandPrimaryLight, _C.accent],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
+                  color: _C.accent,
                   borderRadius: BorderRadius.circular(10),
                   boxShadow: [
                     BoxShadow(
@@ -1087,11 +1075,7 @@ class _VehiclePageState extends ConsumerState<VehiclePage>
                     child: TabBar(
                       controller: _tabController,
                       indicator: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [AppColors.brandPrimaryLight, _C.accent],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
+                        color: _C.accent,
                         borderRadius: BorderRadius.circular(10),
                         boxShadow: [
                           BoxShadow(
@@ -1161,15 +1145,11 @@ class _VehiclePageState extends ConsumerState<VehiclePage>
                       height: 44,
                       padding: const EdgeInsets.symmetric(horizontal: 12),
                       decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFFFF8A33), Color(0xFFE67E22)],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
+                        color: _C.orange,
                         borderRadius: BorderRadius.circular(12),
                         boxShadow: [
                           BoxShadow(
-                            color: const Color(0xFFE67E22).withOpacity(0.45),
+                            color: _C.orange.withOpacity(0.45),
                             blurRadius: 12,
                             offset: const Offset(0, 4),
                           ),

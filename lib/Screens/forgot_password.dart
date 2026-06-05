@@ -214,14 +214,7 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage>
                                   width: 80,
                                   height: 80,
                                   decoration: BoxDecoration(
-                                    gradient: const LinearGradient(
-                                      colors: [
-                                        primaryColor,
-                                        AppColors.brandPrimaryLight,
-                                      ],
-                                      begin: Alignment.topLeft,
-                                      end: Alignment.bottomRight,
-                                    ),
+                                    color: AppColors.brandPrimary,
                                     borderRadius:
                                         BorderRadius.circular(24),
                                     boxShadow: [
