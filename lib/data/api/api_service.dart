@@ -15,6 +15,7 @@ import 'package:travel_agency_app/domain/models/token_response.dart';
 import 'package:travel_agency_app/domain/models/tripbooking_info.dart';
 import 'package:travel_agency_app/domain/models/vehicles.dart';
 import 'package:travel_agency_app/domain/models/vehicletype.dart';
+import 'package:travel_agency_app/domain/models/payment_history.dart';
 import 'package:retrofit/retrofit.dart';
 
 part 'api_service.g.dart';
@@ -195,6 +196,10 @@ abstract class ApiService {
     @Path("vehicle_id") int vehicleId,
   );
 
+    @GET("users/paymentHistory/{trip_id}")
+  Future<List<PaymentHistory>> getPaymentHistory(@Path("trip_id") int tripId);
+
+
 
   @GET("users/report/{agency_id}/{report_type}")
   Future<List<ReportData>> getReport(
@@ -217,6 +222,8 @@ abstract class ApiService {
     @Path('end_datetime') DateTime end,
     @Path('trip_id') int?tripId
   );
+
+
 
 
 

@@ -72,7 +72,7 @@ class _VehicleManagePageState extends ConsumerState<VehicleManagePage>
 
     _currentStatus = widget.vehicle.StatusId ?? 1;
 
-    _tab = TabController(length: 3, vsync: this)..addListener(_onTabChanged);
+    _tab = TabController(length: 4, vsync: this)..addListener(_onTabChanged);
 
     // Header entrance
     _headerAnim = AnimationController(
@@ -147,7 +147,8 @@ class _VehicleManagePageState extends ConsumerState<VehicleManagePage>
 
   void _onTabChanged() {
     setState(() {});
-    if (_tab.index == 2) {
+    // The "Add Service" FAB belongs to the Maintenance tab (index 3).
+    if (_tab.index == 3) {
       _fabAnim.forward();
     } else {
       _fabAnim.reverse();
@@ -538,6 +539,16 @@ Future<void> _toggleVehicleStatus() async {
           children: [
             _OverviewTab(vehicle: widget.vehicle),
             _TripsTab(
+              vehicle: widget.vehicle,
+              fmt: _fmt,
+              range: _range,
+              customRange: _customRange,
+              onRangeChanged: (r, c) => setState(() {
+                _range = r;
+                _customRange = c;
+              }),
+            ),
+            _ExpenseTab(
               vehicle: widget.vehicle,
               fmt: _fmt,
               range: _range,
@@ -1302,11 +1313,12 @@ class _PremiumTabBar extends SliverPersistentHeaderDelegate {
   final TabController ctrl;
   const _PremiumTabBar(this.ctrl);
 
-  static const _labels = ['Overview', 'Revenue', 'Expense'];
+  static const _labels = ['Overview', 'Revenue', 'Expense', 'Maintenance'];
   static const _icons = [
     Icons.directions_car_rounded,
     Icons.south_west_rounded,
     Icons.north_east_rounded,
+    Icons.build_rounded,
   ];
 
   @override
@@ -1339,29 +1351,29 @@ class _PremiumTabBar extends SliverPersistentHeaderDelegate {
       indicatorPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 7),
       labelColor: Colors.white,
       unselectedLabelColor: _C.text2,
-      labelPadding: const EdgeInsets.symmetric(horizontal: 4),
+      labelPadding: const EdgeInsets.symmetric(horizontal: 2),
       labelStyle: const TextStyle(
-        fontSize: 12,
+        fontSize: 11.5,
         fontWeight: FontWeight.w700,
         letterSpacing: 0.1,
       ),
       unselectedLabelStyle: const TextStyle(
-        fontSize: 12,
+        fontSize: 11.5,
         fontWeight: FontWeight.w500,
       ),
-      padding: const EdgeInsets.symmetric(horizontal: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 8),
       tabs: List.generate(
         _labels.length,
         (i) => Tab(
           height: 50,
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 4),
             child: Row(
               mainAxisSize: MainAxisSize.max,
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Icon(_icons[i], size: 13),
-                const SizedBox(width: 5),
+                const SizedBox(width: 4),
                 Flexible(
                   child: Text(_labels[i], overflow: TextOverflow.ellipsis),
                 ),
@@ -1793,119 +1805,45 @@ class _TripsTabState extends ConsumerState<_TripsTab> {
 }
 
 // ════════════════════════════════════════════════════════════════════════════
-// TAB 3 — MAINTENANCE
+// TAB 3 — EXPENSE
+// Expense breakdown only (toll / repair / driver / fuel / maintenance). The
+// maintenance service records now live in their own Maintenance tab.
 // ════════════════════════════════════════════════════════════════════════════
-class _MaintTab extends ConsumerStatefulWidget {
+class _ExpenseTab extends ConsumerStatefulWidget {
   final Vehicles vehicle;
   final String Function(double) fmt;
   final TripDateRange range;
   final DateTimeRange? customRange;
   final void Function(TripDateRange range, DateTimeRange? customRange)
       onRangeChanged;
-  // FIX: callback now receives a Services object for edit, called with null for add
-  final void Function(Services? service) onEditService;
 
-  const _MaintTab({
+  const _ExpenseTab({
     required this.vehicle,
     required this.fmt,
     required this.range,
     required this.customRange,
     required this.onRangeChanged,
-    required this.onEditService,
   });
 
   @override
-  ConsumerState<_MaintTab> createState() => _MaintTabState();
+  ConsumerState<_ExpenseTab> createState() => _ExpenseTabState();
 }
 
-class _MaintTabState extends ConsumerState<_MaintTab> {
+class _ExpenseTabState extends ConsumerState<_ExpenseTab> {
   @override
   void initState() {
     super.initState();
     Future.microtask(() {
-      ref
-          .read(addVehicleViewModelProvider.notifier)
-          .getServiceRecords(
+      ref.read(addVehicleViewModelProvider.notifier).getServiceRecords(
             ref.read(loginViewModelProvider).agencyId ?? '',
             widget.vehicle.vehicleId ?? 0,
           );
-      // Trips power the toll / repair / driver rows of the expense breakdown.
+      // Trips power the toll / repair / driver / fuel rows of the breakdown.
       ref
           .read(addVehicleViewModelProvider.notifier)
           .getTripsByVehicle(widget.vehicle.vehicleId ?? 0);
     });
   }
-
-  void _confirmDelete(BuildContext context, Services service) {
-  showDialog(
-    context: context,
-    builder: (ctx) => AlertDialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      title: const Text(
-        "Delete Service",
-        style: TextStyle(fontWeight: FontWeight.w800),
-      ),
-      content: Text(
-        'Are you sure you want to delete ${service.serviceName} service permanently?',
-        style: const TextStyle(color: Colors.grey),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(ctx),
-          child: const Text("Cancel"),
-        ),
-        ElevatedButton(
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.red,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
-            ),
-          ),
-          onPressed: () async {
-            Navigator.pop(ctx);
-            try {
-              await ref
-                  .read(addVehicleViewModelProvider.notifier)
-                  .deleteService(service.serviceId ?? 0);
-
-              // Refresh list after delete
-              await ref
-                  .read(addVehicleViewModelProvider.notifier)
-                  .getServiceRecords(
-                    ref.read(loginViewModelProvider).agencyId ?? '',
-                    widget.vehicle.vehicleId ?? 0,
-                  );
-
-              if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text("Service deleted successfully"),
-                    backgroundColor: Colors.green,
-                  ),
-                );
-              }
-            } catch (e) {
-              if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(friendlyErrorMessage(e)),
-                    backgroundColor: Colors.red,
-                  ),
-                );
-              }
-            }
-          },
-          child: const Text(
-            "Delete",
-            style: TextStyle(color: Colors.white),
-          ),
-        ),
-      ],
-    ),
-  );
-}
-
-
 
   @override
   Widget build(BuildContext context) {
@@ -1949,7 +1887,6 @@ class _MaintTabState extends ConsumerState<_MaintTab> {
             ],
           ),
         ),
-
         Expanded(
           child: serviceAsync.when(
             loading: () => ListView(
@@ -1958,14 +1895,12 @@ class _MaintTabState extends ConsumerState<_MaintTab> {
               children: const [
                 SkeletonListItem(hasTrailingLine: false),
                 SkeletonListItem(hasTrailingLine: false),
-                SkeletonListItem(hasTrailingLine: false),
               ],
             ),
             error: (e, _) => NetworkErrorView(
               error: e,
               onRetry: () async {
-                final notifier =
-                    ref.read(addVehicleViewModelProvider.notifier);
+                final notifier = ref.read(addVehicleViewModelProvider.notifier);
                 await notifier.getServiceRecords(
                   ref.read(loginViewModelProvider).agencyId ?? '',
                   widget.vehicle.vehicleId ?? 0,
@@ -1975,20 +1910,11 @@ class _MaintTabState extends ConsumerState<_MaintTab> {
               },
             ),
             data: (services) {
-              final filteredServices = services
-                  .where((s) => widget.range
-                      .matches(s.serviceDate, now, customRange: widget.customRange))
-                  .toList();
+              final maintenance = services
+                  .where((s) => widget.range.matches(s.serviceDate, now,
+                      customRange: widget.customRange))
+                  .fold<double>(0.0, (sum, s) => sum + (s.serviceCost ?? 0.0));
 
-              // Maintenance cost for the selected period (from service records).
-              final maintenance = filteredServices.fold<double>(
-                0.0,
-                (sum, s) => sum + (s.serviceCost ?? 0.0),
-              );
-
-              // Trip-level expenses (toll / repair / driver) for trips that
-              // fall in the selected period, matched on payment/start/booking
-              // date so unpaid trips still count once they have a date.
               bool inPeriod(BookingInfo t) {
                 final d = tripSortKey(t);
                 return widget.range
@@ -2009,58 +1935,8 @@ class _MaintTabState extends ConsumerState<_MaintTab> {
               return ListView(
                 padding: const EdgeInsets.fromLTRB(16, 14, 16, 100),
                 children: [
-                  // Expense breakdown
                   _breakdownCard(
                       toll, repair, driver, fuel, maintenance, totalExpense),
-                  const SizedBox(height: 16),
-
-                  // Empty state
-                  if (filteredServices.isEmpty)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 40),
-                      child: Column(
-                        children: [
-                          Icon(
-                            Icons.build_outlined,
-                            size: 70,
-                            color: Colors.orange.withOpacity(0.6),
-                          ),
-                          const SizedBox(height: 16),
-                          const Text(
-                            "No records",
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            "No maintenance for ${widget.range.label}.",
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(color: Colors.grey),
-                          ),
-                        ],
-                      ),
-                    ),
-
-                  // Service list
-                  ...filteredServices.map((s) {
-                    final formattedDate =
-                        "${s.serviceDate!.day.toString().padLeft(2, '0')}/"
-                        "${s.serviceDate!.month.toString().padLeft(2, '0')}/"
-                        "${s.serviceDate!.year}";
-                    return _mCard(
-                      _MR(
-                        s.serviceName ?? '',
-                        s.description ?? '',
-                        formattedDate,
-                        (s.serviceCost ?? 0).toDouble(),
-                        true,
-                        Icons.build_rounded,
-                      ),
-                      s,
-                    );
-                  }).toList(),
                 ],
               );
             },
@@ -2070,7 +1946,7 @@ class _MaintTabState extends ConsumerState<_MaintTab> {
     );
   }
 
-  // ── Expense breakdown (toll / repair / driver / maintenance) ──────────
+  // ── Expense breakdown (toll / repair / driver / fuel / maintenance) ──────
   Widget _breakdownCard(double toll, double repair, double driver, double fuel,
       double maintenance, double expense) {
     return Container(
@@ -2173,6 +2049,245 @@ class _MaintTabState extends ConsumerState<_MaintTab> {
           ),
         ],
       ),
+    );
+  }
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// TAB 4 — MAINTENANCE
+// Maintenance service records (add / edit / delete).
+// ════════════════════════════════════════════════════════════════════════════
+class _MaintTab extends ConsumerStatefulWidget {
+  final Vehicles vehicle;
+  final String Function(double) fmt;
+  final TripDateRange range;
+  final DateTimeRange? customRange;
+  final void Function(TripDateRange range, DateTimeRange? customRange)
+      onRangeChanged;
+  // FIX: callback now receives a Services object for edit, called with null for add
+  final void Function(Services? service) onEditService;
+
+  const _MaintTab({
+    required this.vehicle,
+    required this.fmt,
+    required this.range,
+    required this.customRange,
+    required this.onRangeChanged,
+    required this.onEditService,
+  });
+
+  @override
+  ConsumerState<_MaintTab> createState() => _MaintTabState();
+}
+
+class _MaintTabState extends ConsumerState<_MaintTab> {
+  @override
+  void initState() {
+    super.initState();
+    Future.microtask(() {
+      ref.read(addVehicleViewModelProvider.notifier).getServiceRecords(
+            ref.read(loginViewModelProvider).agencyId ?? '',
+            widget.vehicle.vehicleId ?? 0,
+          );
+    });
+  }
+
+  void _confirmDelete(BuildContext context, Services service) {
+  showDialog(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      title: const Text(
+        "Delete Service",
+        style: TextStyle(fontWeight: FontWeight.w800),
+      ),
+      content: Text(
+        'Are you sure you want to delete ${service.serviceName} service permanently?',
+        style: const TextStyle(color: Colors.grey),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(ctx),
+          child: const Text("Cancel"),
+        ),
+        ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.red,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
+          onPressed: () async {
+            Navigator.pop(ctx);
+            try {
+              await ref
+                  .read(addVehicleViewModelProvider.notifier)
+                  .deleteService(service.serviceId ?? 0);
+
+              // Refresh list after delete
+              await ref
+                  .read(addVehicleViewModelProvider.notifier)
+                  .getServiceRecords(
+                    ref.read(loginViewModelProvider).agencyId ?? '',
+                    widget.vehicle.vehicleId ?? 0,
+                  );
+
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text("Service deleted successfully"),
+                    backgroundColor: Colors.green,
+                  ),
+                );
+              }
+            } catch (e) {
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(friendlyErrorMessage(e)),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              }
+            }
+          },
+          child: const Text(
+            "Delete",
+            style: TextStyle(color: Colors.white),
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+
+
+  @override
+  Widget build(BuildContext context) {
+    final serviceAsync = ref.watch(
+      addVehicleViewModelProvider.select((s) => s.fetchServiceRecords),
+    );
+    final now = DateTime.now();
+
+    return Column(
+      children: [
+        // ── Date filter ──────────────────────────────────────────────────
+        Container(
+          decoration: const BoxDecoration(
+            color: _C.surface,
+            border: Border(bottom: BorderSide(color: _C.divider)),
+          ),
+          padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
+          child: Row(
+            children: [
+              const Icon(Icons.calendar_month_rounded,
+                  size: 16, color: _C.text2),
+              const SizedBox(width: 8),
+              const Text(
+                'Filter by date',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  color: _C.text2,
+                ),
+              ),
+              const Spacer(),
+              TripDateFilterButton(
+                range: widget.range,
+                customRange: widget.customRange,
+                onChanged: widget.onRangeChanged,
+              ),
+            ],
+          ),
+        ),
+
+        Expanded(
+          child: serviceAsync.when(
+            loading: () => ListView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.fromLTRB(0, 8, 0, 24),
+              children: const [
+                SkeletonListItem(hasTrailingLine: false),
+                SkeletonListItem(hasTrailingLine: false),
+                SkeletonListItem(hasTrailingLine: false),
+              ],
+            ),
+            error: (e, _) => NetworkErrorView(
+              error: e,
+              onRetry: () async {
+                final notifier =
+                    ref.read(addVehicleViewModelProvider.notifier);
+                await notifier.getServiceRecords(
+                  ref.read(loginViewModelProvider).agencyId ?? '',
+                  widget.vehicle.vehicleId ?? 0,
+                );
+                await notifier
+                    .getTripsByVehicle(widget.vehicle.vehicleId ?? 0);
+              },
+            ),
+            data: (services) {
+              final filteredServices = services
+                  .where((s) => widget.range
+                      .matches(s.serviceDate, now, customRange: widget.customRange))
+                  .toList();
+
+              return ListView(
+                padding: const EdgeInsets.fromLTRB(16, 14, 16, 100),
+                children: [
+                  // Empty state
+                  if (filteredServices.isEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 40),
+                      child: Column(
+                        children: [
+                          Icon(
+                            Icons.build_outlined,
+                            size: 70,
+                            color: Colors.orange.withOpacity(0.6),
+                          ),
+                          const SizedBox(height: 16),
+                          const Text(
+                            "No records",
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            "No maintenance for ${widget.range.label}.",
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(color: Colors.grey),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                  // Service list
+                  ...filteredServices.map((s) {
+                    final formattedDate =
+                        "${s.serviceDate!.day.toString().padLeft(2, '0')}/"
+                        "${s.serviceDate!.month.toString().padLeft(2, '0')}/"
+                        "${s.serviceDate!.year}";
+                    return _mCard(
+                      _MR(
+                        s.serviceName ?? '',
+                        s.description ?? '',
+                        formattedDate,
+                        (s.serviceCost ?? 0).toDouble(),
+                        true,
+                        Icons.build_rounded,
+                      ),
+                      s,
+                    );
+                  }).toList(),
+                ],
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 

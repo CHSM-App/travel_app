@@ -97,7 +97,6 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
   bool _fetchingDistance = false;
   String? _routeDistanceText; // e.g. "173 km"
   String? _routeDurationText; // e.g. "3 hours 46 mins"
-  Timer? _distanceDebounce; // debounces the distance fetch while typing
   // Remembers the last route we fetched distance for, so we don't re-call the
   // API for a route that hasn't actually changed.
   String? _lastDistanceRoute;
@@ -178,20 +177,13 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
     // RawAutocomplete only opens its overlay when the TEXT changes, never on a
     // plain focus gain — so an empty field shows no "recent locations" until you
     // type. Re-assigning the controller value on focus nudges it to recompute
-    // and open the overlay. On focus LOSS we also try a distance fetch.
+    // and open the overlay. Distance is NOT fetched on focus loss — it's only
+    // calculated when the operator taps the Distance field.
     pickupFocus.addListener(() {
-      if (pickupFocus.hasFocus) {
-        _nudgeAutocomplete(pickup);
-      } else {
-        _maybeFetchDistance();
-      }
+      if (pickupFocus.hasFocus) _nudgeAutocomplete(pickup);
     });
     dropFocus.addListener(() {
-      if (dropFocus.hasFocus) {
-        _nudgeAutocomplete(drop);
-      } else {
-        _maybeFetchDistance();
-      }
+      if (dropFocus.hasFocus) _nudgeAutocomplete(drop);
     });
 
     // Detach from the picked customer the moment the admin edits any of the
@@ -252,7 +244,6 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
 
   @override
   void dispose() {
-    _distanceDebounce?.cancel();
     pickup.removeListener(_onRouteChanged);
     drop.removeListener(_onRouteChanged);
     customerName.removeListener(_onCustomerFieldChanged);
@@ -280,18 +271,12 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
     super.dispose();
   }
 
-  // Rebuild so the fare-suggestion chip reflects the current route text, and
-  // (debounced) fetch the road distance once both ends are filled. This is the
-  // reliable trigger — focus-loss alone misses cases like tapping a suggestion
-  // or moving straight to another section.
+  // Rebuild so the fare-suggestion chip + autocomplete reflect the current
+  // route text. The road-distance API is NOT fetched here — distance is only
+  // calculated when the operator taps the Distance field after finishing the
+  // pickup/drop entry.
   void _onRouteChanged() {
     if (mounted) setState(() {});
-    _distanceDebounce?.cancel();
-    if (pickup.text.trim().isEmpty || drop.text.trim().isEmpty) return;
-    _distanceDebounce = Timer(
-      const Duration(milliseconds: 700),
-      _maybeFetchDistance,
-    );
   }
 
   // Forces RawAutocomplete to recompute + open its overlay even when the field
@@ -1661,6 +1646,9 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
                                 icon: Icons.straighten_rounded,
                                 iconColor: _C.accent,
                                 iconBg: _C.accentSoft,
+                                // Tapping the Distance field auto-calculates the
+                                // road distance from the entered pickup/drop.
+                                onTap: () => _maybeFetchDistance(),
                                 keyboard: const TextInputType.numberWithOptions(
                                   decimal: true,
                                 ),
@@ -2233,10 +2221,12 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
     void Function(String)? onFieldSubmitted,
     String? Function(String?)? validator,
     Widget? suffixIcon,
+    VoidCallback? onTap,
   }) {
     return TextFormField(
       controller: ctrl,
       focusNode: focusNode,
+      onTap: onTap,
       onFieldSubmitted: onFieldSubmitted,
       keyboardType: keyboard,
       inputFormatters: fmt,

@@ -105,6 +105,10 @@ class BookingInfo {
   @JsonKey(name: 'payment_date')
   final DateTime? paymentDate;
 
+  @JsonKey(name: 'payment_mode')
+  final String? paymentMode;
+
+
 
   BookingInfo({
     this.tripId,
@@ -140,6 +144,7 @@ class BookingInfo {
     this.capacity,
     this.pendingAmount,
     this.paymentDate,
+    this.paymentMode,
   });
 
 

@@ -2,6 +2,7 @@ import 'package:travel_agency_app/data/api/api_service.dart';
 import 'package:travel_agency_app/domain/models/booking_info.dart';
 import 'package:travel_agency_app/domain/models/customers.dart';
 import 'package:travel_agency_app/domain/models/drivers.dart';
+import 'package:travel_agency_app/domain/models/payment_history.dart';
 import 'package:travel_agency_app/domain/models/tripbooking_info.dart';
 import 'package:travel_agency_app/domain/models/vehicles.dart';
 import 'package:travel_agency_app/domain/repository/tripbookingrepository.dart';
@@ -71,6 +72,11 @@ class TripBookingImpl implements Tripbookingrepository {
    @override
   Future<dynamic> updatePaymentStatus(BookingInfo tripbooking) {
     return apiService.updatePaymentStatus(tripbooking);
+  }
+
+  @override
+  Future<List<PaymentHistory>> getPaymentHistory(int tripId) {
+    return apiService.getPaymentHistory(tripId);
   }
 
   @override

@@ -238,7 +238,7 @@ class _MainBottomNavState extends ConsumerState<MainBottomNav>
                               children: [
                                 Text(
                                   userName.isNotEmpty
-                                      ? "Welcome back, $userName 👋"
+                                      ? "Welcome, $userName 👋"
                                       : "Welcome back 👋",
                                   style: const TextStyle(
                                     color: Colors.white70,

@@ -144,6 +144,20 @@ final receivedController = TextEditingController(
           : received.toString(),
 );
 
+    const List<String> paymentModes = [
+      'Cash',
+      'UPI',
+      'Net Banking',
+      'Credit Card',
+      'Debit Card',
+      'Cheque',
+      'Bank Transfer',
+      'Other',
+    ];
+    final paymentModeNotifier = ValueNotifier<String?>(
+      bookinginfo.paymentMode?.isNotEmpty == true ? bookinginfo.paymentMode : null,
+    );
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -447,6 +461,58 @@ final receivedController = TextEditingController(
                     ),
                   ],
                 ),
+                const SizedBox(height: 10),
+                ValueListenableBuilder<String?>(
+                  valueListenable: paymentModeNotifier,
+                  builder: (_, selectedMode, __) => DropdownButtonFormField<String>(
+                    value: selectedMode,
+                    decoration: InputDecoration(
+                      labelText: "Payment Mode *",
+                      labelStyle: TextStyle(
+                        fontSize: isSmall ? 11.5 : 12.5,
+                        color: AppColors.brandPrimary,
+                      ),
+                      prefixIcon: Icon(
+                        Icons.payment_outlined,
+                        size: isSmall ? 15 : 17,
+                        color: AppColors.brandPrimary,
+                      ),
+                      filled: true,
+                      fillColor: AppColors.brandPrimary.withOpacity(0.04),
+                      contentPadding: EdgeInsets.symmetric(
+                        vertical: fieldVertPad,
+                        horizontal: 14,
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(
+                          color: AppColors.brandPrimary.withOpacity(0.3),
+                        ),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(
+                          color: AppColors.brandPrimary,
+                          width: 1.5,
+                        ),
+                      ),
+                    ),
+                    items: paymentModes
+                        .map((mode) => DropdownMenuItem(
+                              value: mode,
+                              child: Text(
+                                mode,
+                                style: TextStyle(
+                                  fontSize: isSmall ? 13 : 14,
+                                  fontWeight: FontWeight.w600,
+                                  color: const Color(0xFF1A1A2E),
+                                ),
+                              ),
+                            ))
+                        .toList(),
+                    onChanged: (val) => paymentModeNotifier.value = val,
+                  ),
+                ),
               ],
             );
           }
@@ -477,6 +543,58 @@ final receivedController = TextEditingController(
                 "Amount Received",
                 Icons.account_balance_wallet_outlined,
                 highlight: true,
+              ),
+              const SizedBox(height: 10),
+              ValueListenableBuilder<String?>(
+                valueListenable: paymentModeNotifier,
+                builder: (_, selectedMode, __) => DropdownButtonFormField<String>(
+                  value: selectedMode,
+                  decoration: InputDecoration(
+                    labelText: "Payment Mode *",
+                    labelStyle: TextStyle(
+                      fontSize: isSmall ? 11.5 : 12.5,
+                      color: AppColors.brandPrimary,
+                    ),
+                    prefixIcon: Icon(
+                      Icons.payment_outlined,
+                      size: isSmall ? 15 : 17,
+                      color: AppColors.brandPrimary,
+                    ),
+                    filled: true,
+                    fillColor: AppColors.brandPrimary.withOpacity(0.04),
+                    contentPadding: EdgeInsets.symmetric(
+                      vertical: fieldVertPad,
+                      horizontal: 14,
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(
+                        color: AppColors.brandPrimary.withOpacity(0.3),
+                      ),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(
+                        color: AppColors.brandPrimary,
+                        width: 1.5,
+                      ),
+                    ),
+                  ),
+                  items: paymentModes
+                      .map((mode) => DropdownMenuItem(
+                            value: mode,
+                            child: Text(
+                              mode,
+                              style: TextStyle(
+                                fontSize: isSmall ? 13 : 14,
+                                fontWeight: FontWeight.w600,
+                                color: const Color(0xFF1A1A2E),
+                              ),
+                            ),
+                          ))
+                      .toList(),
+                  onChanged: (val) => paymentModeNotifier.value = val,
+                ),
               ),
             ],
           );
@@ -1013,7 +1131,16 @@ final receivedController = TextEditingController(
                        if (isEditable || paymentStatus == "Partially Paid")
                               GestureDetector(
                                 onTap: () async {
-                                  
+                                  if (paymentModeNotifier.value == null) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text("Please select a payment mode"),
+                                        backgroundColor: Colors.red,
+                                      ),
+                                    );
+                                    return;
+                                  }
+
                                   final updated = BookingInfo(
                                     tripId: bookinginfo.tripId,
                                     tollCharges:
@@ -1037,6 +1164,7 @@ final receivedController = TextEditingController(
                                           receivedController.text,
                                         ) ??
                                         0,
+                                    paymentMode: paymentModeNotifier.value,
                                   );
                                   await ref
                                       .read(tripPageViewModelProvider.notifier)
@@ -1268,6 +1396,7 @@ final receivedController = TextEditingController(
     final receivedCtrl = TextEditingController(
       text: approved == 0 ? "" : approved.toStringAsFixed(0),
     );
+    String? endTripPaymentMode;
     bool submitting = false;
 
     showModalBottomSheet(
@@ -1437,6 +1566,16 @@ final receivedController = TextEditingController(
                 return;
               }
               setSheet(() => submitting = true);
+              if (endTripPaymentMode == null) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text("Please select a payment mode"),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+                setSheet(() => submitting = false);
+                return;
+              }
               final updated = BookingInfo(
                 tripId: tripId,
                 endDateTime: endSel,
@@ -1445,6 +1584,7 @@ final receivedController = TextEditingController(
                 driverCharges: double.tryParse(driverCtrl.text) ?? 0,
                 fuelCharges: double.tryParse(fuelCtrl.text) ?? 0,
                 amountReceived: double.tryParse(receivedCtrl.text) ?? 0,
+                paymentMode: endTripPaymentMode,
               );
               await ref
                   .read(tripPageViewModelProvider.notifier)
@@ -1676,6 +1816,66 @@ final receivedController = TextEditingController(
                                       "Amount Received",
                                       Icons.account_balance_wallet_rounded,
                                       highlight: true,
+                                    ),
+                                    const SizedBox(height: 10),
+                                    DropdownButtonFormField<String>(
+                                      value: endTripPaymentMode,
+                                      decoration: InputDecoration(
+                                        labelText: "Payment Mode *",
+                                        labelStyle: const TextStyle(
+                                          fontSize: 12.5,
+                                          color: AppColors.brandPrimary,
+                                        ),
+                                        prefixIcon: const Icon(
+                                          Icons.payment_outlined,
+                                          size: 18,
+                                          color: AppColors.brandPrimary,
+                                        ),
+                                        isDense: true,
+                                        filled: true,
+                                        fillColor: AppColors.brandSoft.withOpacity(0.5),
+                                        contentPadding: const EdgeInsets.symmetric(
+                                          vertical: 14,
+                                          horizontal: 12,
+                                        ),
+                                        enabledBorder: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(12),
+                                          borderSide: BorderSide(
+                                            color: AppColors.brandPrimary.withOpacity(0.35),
+                                          ),
+                                        ),
+                                        focusedBorder: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(12),
+                                          borderSide: const BorderSide(
+                                            color: AppColors.brandPrimary,
+                                            width: 1.5,
+                                          ),
+                                        ),
+                                      ),
+                                      items: const [
+                                        'Cash',
+                                        'UPI',
+                                        'Net Banking',
+                                        'Credit Card',
+                                        'Debit Card',
+                                        'Cheque',
+                                        'Bank Transfer',
+                                        'Other',
+                                      ]
+                                          .map((mode) => DropdownMenuItem(
+                                                value: mode,
+                                                child: Text(
+                                                  mode,
+                                                  style: const TextStyle(
+                                                    fontSize: 14,
+                                                    fontWeight: FontWeight.w600,
+                                                    color: _textPrimary,
+                                                  ),
+                                                ),
+                                              ))
+                                          .toList(),
+                                      onChanged: (val) =>
+                                          setSheet(() => endTripPaymentMode = val),
                                     ),
                                     const SizedBox(height: 14),
                                     summaryRow("Approved fare",

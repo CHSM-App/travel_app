@@ -120,7 +120,6 @@ class _ModernSettingsPageState extends ConsumerState<ModernSettingsPage>
                           'View our privacy policy',
                           onTap: () => _openPrivacyPolicy(context),
                         ),
-                        _MenuItem(Icons.language_rounded, 'Language', 'English (US)'),
                         _MenuItem(
                           Icons.delete_sweep_outlined,
                           'Deleted Vehicles & Drivers',
@@ -150,6 +149,12 @@ class _ModernSettingsPageState extends ConsumerState<ModernSettingsPage>
                               builder: (_) => const HelpCenterPage(),
                             ),
                           ),
+                        ),
+                        _MenuItem(
+                          Icons.mail_outline_rounded,
+                          'Contact Us',
+                          'Get in touch with our team',
+                          onTap: () => _showContactSheet(context),
                         ),
                         _MenuItem(Icons.info_outline_rounded, 'About', 'Version 1.0.0', onTap: () => _showAboutDialog(context)),
                       ]),
@@ -464,6 +469,149 @@ class _ModernSettingsPageState extends ConsumerState<ModernSettingsPage>
           content: Text('Could not open privacy policy'),
           backgroundColor: Colors.red,
         ),
+      );
+    }
+  }
+
+  // ─────────────────────────── CONTACT US ─────────────────────────
+
+  static const String _contactEmail = 'support@vengurlatech.com';
+  static const String _contactNo = '+91 9422229951';
+
+  void _showContactSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (_) => Container(
+        decoration: const BoxDecoration(
+          color: _cardBg,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+        ),
+        padding: EdgeInsets.fromLTRB(
+          20,
+          12,
+          20,
+          20 + MediaQuery.of(context).padding.bottom,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+            const Text(
+              'Contact Us',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w800,
+                color: _textDark,
+                letterSpacing: -0.3,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              "We'd love to hear from you. Reach out anytime.",
+              style: TextStyle(fontSize: 13, color: _textMid, height: 1.4),
+            ),
+            const SizedBox(height: 20),
+            _contactTile(
+              icon: Icons.email_outlined,
+              label: 'Email',
+              value: _contactEmail,
+              onTap: () => _launchContact(
+                context,
+                Uri(scheme: 'mailto', path: _contactEmail),
+                'No email app found',
+              ),
+            ),
+            const SizedBox(height: 12),
+            _contactTile(
+              icon: Icons.phone_outlined,
+              label: 'Mobile',
+              value: _contactNo,
+              onTap: () => _launchContact(
+                context,
+                Uri(scheme: 'tel', path: _contactNo.replaceAll(' ', '')),
+                'No phone app found',
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _contactTile({
+    required IconData icon,
+    required String label,
+    required String value,
+    required VoidCallback onTap,
+  }) {
+    return Material(
+      color: _surface,
+      borderRadius: BorderRadius.circular(16),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+          child: Row(
+            children: [
+              _iconBox(icon),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(label,
+                        style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: _textMid)),
+                    const SizedBox(height: 2),
+                    Text(value,
+                        style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                            color: _textDark)),
+                  ],
+                ),
+              ),
+              Icon(Icons.chevron_right_rounded,
+                  color: Colors.grey.shade400, size: 20),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _launchContact(
+    BuildContext context,
+    Uri uri,
+    String errorMessage, {
+    bool external = false,
+  }) async {
+    Navigator.pop(context);
+    final launched = await launchUrl(
+      uri,
+      mode: external
+          ? LaunchMode.externalApplication
+          : LaunchMode.platformDefault,
+    );
+    if (!launched && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(errorMessage), backgroundColor: Colors.red),
       );
     }
   }

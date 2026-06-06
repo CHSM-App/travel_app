@@ -1,6 +1,7 @@
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:travel_agency_app/domain/models/booking_info.dart';
+import 'package:travel_agency_app/domain/models/payment_history.dart';
 import 'package:travel_agency_app/domain/usecase/tripbooking_usecase.dart';
 
 
@@ -15,6 +16,7 @@ final bool isLoading;
   final AsyncValue<List<BookingInfo>> activeList;
   final AsyncValue<List<BookingInfo>> cancelledList;
   final AsyncValue<List<BookingInfo>> allList;
+  final AsyncValue<List<PaymentHistory>> paymentHistory;
 
   const TripPageState({
 
@@ -27,6 +29,7 @@ final bool isLoading;
     this.activeList = const AsyncValue.loading(),
     this.cancelledList = const AsyncValue.loading(),
     this.allList = const AsyncValue.loading(),
+    this.paymentHistory = const AsyncValue.loading(),
 
       });
 
@@ -41,6 +44,7 @@ final bool isLoading;
     AsyncValue<List<BookingInfo>>? activeList,
     AsyncValue<List<BookingInfo>>? cancelledList,
     AsyncValue<List<BookingInfo>>? allList,
+      AsyncValue<List<PaymentHistory>>? paymentHistory,
 
   }) {
     return TripPageState(
@@ -54,7 +58,7 @@ final bool isLoading;
       activeList: activeList ?? this.activeList,
       cancelledList: cancelledList ?? this.cancelledList,
       allList: allList ?? this.allList,
-
+      paymentHistory: paymentHistory ?? this.paymentHistory,
     );
   }
 }
@@ -164,6 +168,18 @@ class TripPageViewModel extends StateNotifier<TripPageState> {
       state = state.copyWith(allList: AsyncValue.data(merged));
     } catch (e, st) {
       state = state.copyWith(allList: AsyncValue.error(e, st));
+    }
+  }
+
+
+  
+  Future<void> paymentHistory(int tripId) async {
+    state = state.copyWith(paymentHistory: const AsyncValue.loading());
+    try {
+      final result = await usecase.getPaymentHistory(tripId);
+      state = state.copyWith(paymentHistory: AsyncValue.data(result));
+    } catch (e, st) {
+      state = state.copyWith(paymentHistory: AsyncValue.error(e, st));
     }
   }
 
