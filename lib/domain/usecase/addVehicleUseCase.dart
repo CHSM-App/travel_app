@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:travel_agency_app/domain/models/booking_info.dart';
 import 'package:travel_agency_app/domain/models/fueltype.dart';
+import 'package:travel_agency_app/domain/models/ledger_entry.dart';
 import 'package:travel_agency_app/domain/models/services.dart';
 import 'package:travel_agency_app/domain/models/status.dart';
 import 'package:travel_agency_app/domain/models/vehicles.dart';
@@ -57,6 +58,10 @@ class AddVehicleUseCase {
     int vehicleId,
   ) async {
     return addvehiclerepository.getServiceRecords(agencyId, vehicleId);
+  }
+
+  Future<List<LedgerEntry>> getVehicleReport(String agencyId) {
+    return addvehiclerepository.getVehicleReport(agencyId);
   }
 
   Future<dynamic> updateService(int serviceId, Services services) async {

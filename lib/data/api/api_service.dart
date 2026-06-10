@@ -16,6 +16,7 @@ import 'package:travel_agency_app/domain/models/tripbooking_info.dart';
 import 'package:travel_agency_app/domain/models/vehicles.dart';
 import 'package:travel_agency_app/domain/models/vehicletype.dart';
 import 'package:travel_agency_app/domain/models/payment_history.dart';
+import 'package:travel_agency_app/domain/models/ledger_entry.dart';
 import 'package:retrofit/retrofit.dart';
 
 part 'api_service.g.dart';
@@ -205,6 +206,14 @@ abstract class ApiService {
   Future<List<ReportData>> getReport(
     @Path("agency_id") String agencyId,
     @Path("report_type") String reportType,
+  );
+
+  // Per-vehicle financial ledger for the whole agency (one row per dated event:
+  // NEW_BOOKING / PAYMENT_RECEIVED / TRIP_EXPENSE / MAINTENANCE). Fetched once,
+  // filtered in the UI by date + vehicle.
+  @GET("users/VehicleReport/{agency_id}")
+  Future<List<LedgerEntry>> getVehicleReport(
+    @Path("agency_id") String agencyId,
   );
 
   @GET("users/fetchAvailableVehicles/{agency_id}/{start_datetime}/{end_datetime}/{trip_id}")

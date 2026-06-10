@@ -5,12 +5,8 @@ import 'package:travel_agency_app/core/utils/vehicle_report_export.dart';
 import 'package:travel_agency_app/Screens/vehicle_details.dart';
 import 'package:travel_agency_app/core/theme/app_colors.dart';
 import 'package:travel_agency_app/core/widgets/error_view.dart';
-import 'package:travel_agency_app/core/widgets/trip_filter.dart' show tripSortKey;
-import 'package:travel_agency_app/domain/models/booking_info.dart';
-import 'package:travel_agency_app/domain/models/services.dart';
+import 'package:travel_agency_app/domain/models/ledger_entry.dart';
 import 'package:travel_agency_app/domain/models/vehicles.dart';
-import 'package:travel_agency_app/domain/viewModel/trippage_viewmodel.dart';
-import 'package:travel_agency_app/presentation/providers/usecase_provider.dart';
 import 'package:travel_agency_app/presentation/providers/viewmodel_provider.dart';
 
 // ─── Design tokens ─────────────────────────────────────────────────────────
@@ -228,10 +224,6 @@ class _VehicleReportPageState extends ConsumerState<VehicleReportPage> {
     });
   }
 
-  // Service records keyed by vehicleId. We hold the full unfiltered list and
-  // apply the period filter at render time, so toggling chips is instant.
-  Map<int, List<Services>> _servicesByVehicle = const {};
-
   @override
   void initState() {
     super.initState();
@@ -241,144 +233,60 @@ class _VehicleReportPageState extends ConsumerState<VehicleReportPage> {
   Future<void> _refreshAll() async {
     final aid = ref.read(loginViewModelProvider).agencyId ?? '';
     if (aid.isEmpty) return;
-    final tn = ref.read(tripPageViewModelProvider.notifier);
     final vn = ref.read(tripBookingViewModelProvider.notifier);
-    await Future.wait([
-      tn.activeList(aid),
-      tn.upcomingList(aid),
-      tn.historyList(aid),
-      tn.unpaidList(aid),
-      tn.cancelledList(aid),
-      vn.vehicleList(aid),
-    ]);
-    if (!mounted) return;
-    // Services depend on the vehicle list — fetch them only after vehicles
-    // are loaded so we know which vehicle ids to ask the API about.
-    final vehicles =
-        ref.read(tripBookingViewModelProvider).fetchVehicleList.asData?.value ??
-            const <Vehicles>[];
-    await _loadServices(aid, vehicles);
+    // Re-fetch the agency ledger (booking/payment/expense/maintenance events)
+    // and the vehicle list. The ledger is fetched once and filtered in the UI.
+    ref.invalidate(vehicleReportLedgerProvider(aid));
+    await vn.vehicleList(aid);
   }
 
-  /// Pulls service records for every vehicle in parallel via the existing
-  /// per-vehicle endpoint. Using the use case directly (not the view model)
-  /// avoids overwriting the shared `fetchServiceRecords` state that the
-  /// vehicle_details Maintenance tab relies on.
-  Future<void> _loadServices(String agencyId, List<Vehicles> vehicles) async {
-    if (agencyId.isEmpty || vehicles.isEmpty) return;
-    final useCase = ref.read(addVehicleUseCaseProvider);
-    final ids = vehicles
-        .map((v) => v.vehicleId)
-        .whereType<int>()
-        .toList(growable: false);
-    final results = await Future.wait(
-      ids.map((id) async {
-        try {
-          return await useCase.getServiceRecords(agencyId, id);
-        } catch (_) {
-          // A single vehicle's service fetch failing shouldn't blank the
-          // whole report — fall back to an empty list for that vehicle.
-          return <Services>[];
-        }
-      }),
-    );
-    if (!mounted) return;
-    final map = <int, List<Services>>{};
-    for (var i = 0; i < ids.length; i++) {
-      map[ids[i]] = results[i];
-    }
-    setState(() => _servicesByVehicle = map);
-  }
-
-  /// Period-filtered service records per vehicle, newest first. Drives both the
-  /// per-vehicle maintenance total and the detailed maintenance list in exports.
-  Map<int, List<Services>> _servicesInPeriod() {
-    final now = DateTime.now();
-    final out = <int, List<Services>>{};
-    _servicesByVehicle.forEach((vehicleId, services) {
-      final inPeriod = services
-          .where((s) => _accept(s.serviceDate, now))
-          .toList()
-        ..sort((a, b) => (b.serviceDate ?? DateTime(0))
-            .compareTo(a.serviceDate ?? DateTime(0)));
-      if (inPeriod.isNotEmpty) out[vehicleId] = inPeriod;
-    });
-    return out;
-  }
-
-  // ── Data helpers ───────────────────────────────────────────────────
-  List<BookingInfo> _getData(AsyncValue<List<BookingInfo>> v) => v.when(
-        data: (r) => r,
-        loading: () => const <BookingInfo>[],
-        error: (_, __) => const <BookingInfo>[],
-      );
-
-  /// Pull every trip the agency has touched, deduplicated by tripId. The five
-  /// lists overlap (a trip can be both "active" and "unpaid"), so we collapse
-  /// on the trip key to avoid double-counting revenue or expenses.
-  List<BookingInfo> _allTrips(TripPageState s) {
-    final all = <BookingInfo>[
-      ..._getData(s.activeList),
-      ..._getData(s.upcomingList),
-      ..._getData(s.historyList),
-      ..._getData(s.unpaidList),
-      ..._getData(s.cancelledList),
-    ];
-    final unique = <String, BookingInfo>{};
-    for (final t in all) {
-      final key = t.tripId?.toString() ??
-          '${t.bookingDate?.toIso8601String() ?? ''}-${t.vehicleId ?? ''}-${t.customerId ?? ''}';
-      unique[key] = t;
-    }
-    return unique.values.toList();
-  }
-
-  // Revenue = money actually collected, never the quoted fare. Unpaid trips
-  // contribute 0 until payment is recorded.
-  double _revenueOf(BookingInfo t) => t.amountReceived ?? 0.0;
-  double _expenseOf(BookingInfo t) =>
-      (t.tollCharges ?? 0.0) +
-      (t.repairingCharges ?? 0.0) +
-      (t.driverCharges ?? 0.0) +
-      (t.fuelCharges ?? 0.0);
-
+  // ── Aggregation from the agency ledger ─────────────────────────────
+  /// Builds per-vehicle stats from the ledger rows already filtered to the
+  /// active period. Revenue = PAYMENT_RECEIVED (recognised on payment date),
+  /// trip expense = TRIP_EXPENSE, maintenance = MAINTENANCE. tripCount is the
+  /// number of distinct trips with any activity in the window.
   List<VehicleStat> _statsByVehicle(
     List<Vehicles> vehicles,
-    List<BookingInfo> trips,
-    Map<int, List<Services>> servicesInPeriod,
+    List<LedgerEntry> entries,
   ) {
-    // Bucket the period trips by vehicle once.
-    final tripsById = <int, List<BookingInfo>>{};
-    for (final t in trips) {
-      final id = t.vehicleId;
+    final byId = <int, List<LedgerEntry>>{};
+    for (final e in entries) {
+      final id = e.vehicleId;
       if (id == null) continue;
-      (tripsById[id] ??= <BookingInfo>[]).add(t);
+      (byId[id] ??= <LedgerEntry>[]).add(e);
     }
 
     final list = <VehicleStat>[];
     for (final v in vehicles) {
       final id = v.vehicleId;
       if (id == null) continue;
-      final vTrips = [...(tripsById[id] ?? const <BookingInfo>[])]
-        ..sort((a, b) => (tripSortKey(b) ?? DateTime(0))
-            .compareTo(tripSortKey(a) ?? DateTime(0)));
-      final vServices = servicesInPeriod[id] ?? const <Services>[];
+      final rows = byId[id] ?? const <LedgerEntry>[];
+      final revenue = rows
+          .where((e) => e.isPayment)
+          .fold<double>(0, (s, e) => s + (e.revenue ?? 0));
+      final tripExpense = rows
+          .where((e) => e.isTripExpense)
+          .fold<double>(0, (s, e) => s + (e.tripExpense ?? 0));
+      final maintenance = rows
+          .where((e) => e.isMaintenance)
+          .fold<double>(0, (s, e) => s + (e.maintenance ?? 0));
+      // Distinct trips touched this period (booking/payment/expense rows carry a
+      // trip_id; maintenance rows don't, so they never inflate the count).
+      final tripIds =
+          rows.where((e) => e.tripId != null).map((e) => e.tripId).toSet();
       list.add(VehicleStat(
         vehicle: v,
-        revenue: vTrips.fold<double>(0, (s, t) => s + _revenueOf(t)),
-        tripExpense: vTrips.fold<double>(0, (s, t) => s + _expenseOf(t)),
-        maintenanceExpense:
-            vServices.fold<double>(0, (s, e) => s + (e.serviceCost ?? 0)),
-        tripCount: vTrips.length,
-        trips: vTrips,
-        services: vServices,
+        revenue: revenue,
+        tripExpense: tripExpense,
+        maintenanceExpense: maintenance,
+        tripCount: tripIds.length,
       ));
     }
 
-    // Any financial activity in the period — a booked trip OR a maintenance
-    // record — promotes a vehicle above truly idle ones. Within the active
-    // set we sort by net desc so the most profitable surfaces first.
-    bool active(VehicleStat s) => s.tripCount > 0 || s.maintenanceExpense > 0;
+    // Any financial activity in the period promotes a vehicle above idle ones;
+    // within the active set, sort by net desc so the most profitable surfaces.
+    bool active(VehicleStat s) =>
+        s.tripCount > 0 || s.maintenanceExpense > 0 || s.revenue > 0;
     list.sort((a, b) {
       final aActive = active(a);
       final bActive = active(b);
@@ -389,20 +297,15 @@ class _VehicleReportPageState extends ConsumerState<VehicleReportPage> {
     return list;
   }
 
-  /// Builds the period-filtered snapshot the UI and exporters both consume.
+  /// Builds the period-filtered snapshot the UI and exporter both consume, from
+  /// the agency ledger (fetched once, filtered here by entry date).
   ReportSnapshot _buildSnapshot(
     List<Vehicles> vehicles,
-    TripPageState tripState,
+    List<LedgerEntry> ledger,
   ) {
     final now = DateTime.now();
-    final allTrips = _allTrips(tripState);
-    // Bucket trips by their own date (start → booking → end), matching the
-    // vehicle_details screen, so the date window never pulls in a trip whose
-    // card shows a date outside the range.
-    final inPeriod =
-        allTrips.where((t) => _accept(tripSortKey(t), now)).toList();
-    final servicesInPeriod = _servicesInPeriod();
-    final stats = _statsByVehicle(vehicles, inPeriod, servicesInPeriod);
+    final inPeriod = ledger.where((e) => _accept(e.entryDate, now)).toList();
+    final stats = _statsByVehicle(vehicles, inPeriod);
     return ReportSnapshot(
       title: 'Vehicle Report',
       periodLabel: _period.label,
@@ -410,9 +313,10 @@ class _VehicleReportPageState extends ConsumerState<VehicleReportPage> {
       stats: stats,
       totalRevenue: stats.fold<double>(0, (s, e) => s + e.revenue),
       totalExpense: stats.fold<double>(0, (s, e) => s + e.expense),
-      activeVehicles: stats.where((s) => s.tripCount > 0).length,
+      activeVehicles:
+          stats.where((s) => s.tripCount > 0 || s.revenue > 0).length,
       totalVehicles: vehicles.length,
-      tripCount: inPeriod.length,
+      tripCount: stats.fold<int>(0, (s, e) => s + e.tripCount),
     );
   }
 
@@ -439,14 +343,17 @@ class _VehicleReportPageState extends ConsumerState<VehicleReportPage> {
       _snack('No vehicles available to export');
       return;
     }
-    final snap = _buildSnapshot(vehicles, ref.read(tripPageViewModelProvider));
+    final aid = ref.read(loginViewModelProvider).agencyId ?? '';
+    final ledger = ref.read(vehicleReportLedgerProvider(aid)).asData?.value ??
+        const <LedgerEntry>[];
+    final snap = _buildSnapshot(vehicles, ledger);
     setState(() => _exporting = true);
     await runVehicleReportExport(context, snap);
     if (mounted) setState(() => _exporting = false);
   }
 
   /// Opens the per-vehicle management page (trips, maintenance, overview and
-  /// the P&L summary all live there now).
+  /// the P&L summary all live there).
   void _openVehicleDetail(VehicleStat stat) {
     Navigator.push(
       context,
@@ -459,7 +366,8 @@ class _VehicleReportPageState extends ConsumerState<VehicleReportPage> {
   // ── Build ──────────────────────────────────────────────────────────
   @override
   Widget build(BuildContext context) {
-    final tripState = ref.watch(tripPageViewModelProvider);
+    final aid = ref.watch(loginViewModelProvider).agencyId ?? '';
+    final ledgerAsync = ref.watch(vehicleReportLedgerProvider(aid));
     final vehicleState =
         ref.watch(tripBookingViewModelProvider).fetchVehicleList;
 
@@ -483,7 +391,9 @@ class _VehicleReportPageState extends ConsumerState<VehicleReportPage> {
                       'Add a vehicle to start tracking revenue and expenses',
                     );
                   }
-                  final snap = _buildSnapshot(vehicles, tripState);
+                  final ledger =
+                      ledgerAsync.asData?.value ?? const <LedgerEntry>[];
+                  final snap = _buildSnapshot(vehicles, ledger);
                   final stats = snap.stats;
 
                   return RefreshIndicator(

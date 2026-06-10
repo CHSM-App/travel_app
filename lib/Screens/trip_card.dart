@@ -1277,7 +1277,7 @@ final receivedController = TextEditingController(
                                 Icons.location_on,
                                 AppColors.brandPrimary,
                               ),
-                              rowDivider(),
+                              rowDivider(), 
                               detailRow(
                                 "Booked",
                                 _formatDate(bookinginfo.bookingDate),

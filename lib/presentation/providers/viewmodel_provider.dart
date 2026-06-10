@@ -1,6 +1,7 @@
 // ignore: file_names
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:travel_agency_app/domain/models/ledger_entry.dart';
 import 'package:travel_agency_app/domain/viewModel/addDriver_viewmodel.dart';
 import 'package:travel_agency_app/domain/viewModel/addVehicle_viewmodel.dart';
 import 'package:travel_agency_app/domain/viewModel/auth_model.dart';
@@ -58,6 +59,17 @@ final reportViewModelProvider =
       final usecase = ref.watch(reportUseCaseProvider);
       return ReportViewModel(ref, usecase);
     });
+
+// Agency-wide financial ledger for the vehicle report. Fetched ONCE per
+// agencyId (Riverpod caches the future), then filtered in the UI by date and by
+// vehicle. The report page groups it per vehicle; the per-vehicle detail page
+// filters the same list by vehicleId. Call `ref.invalidate(...)` to refresh.
+final vehicleReportLedgerProvider =
+    FutureProvider.family<List<LedgerEntry>, String>((ref, agencyId) async {
+  if (agencyId.isEmpty) return const <LedgerEntry>[];
+  final usecase = ref.watch(addVehicleUseCaseProvider);
+  return usecase.getVehicleReport(agencyId);
+});
 
 // Drives the bottom nav's current tab. The dashboard writes to this to deep-link
 // the operator into Trips/Vehicles with the right filter pre-applied.

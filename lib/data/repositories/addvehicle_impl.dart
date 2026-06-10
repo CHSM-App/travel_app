@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:travel_agency_app/data/api/api_service.dart';
 import 'package:travel_agency_app/domain/models/booking_info.dart';
 import 'package:travel_agency_app/domain/models/fueltype.dart';
+import 'package:travel_agency_app/domain/models/ledger_entry.dart';
 import 'package:travel_agency_app/domain/models/services.dart';
 import 'package:travel_agency_app/domain/models/status.dart';
 import 'package:travel_agency_app/domain/models/vehicles.dart';
@@ -60,6 +61,11 @@ class AddvehicleImpl implements Addvehiclerepository {
   @override
   Future<List<Services>> getServiceRecords(String agencyId, int vehicleId) {
     return apiService.getServiceRecords(agencyId, vehicleId);
+  }
+
+  @override
+  Future<List<LedgerEntry>> getVehicleReport(String agencyId) {
+    return apiService.getVehicleReport(agencyId);
   }
 
    @override

@@ -15,6 +15,7 @@ import 'package:travel_agency_app/core/widgets/error_view.dart';
 import 'package:travel_agency_app/core/widgets/skeleton.dart';
 import 'package:travel_agency_app/core/widgets/trip_filter.dart';
 import 'package:travel_agency_app/domain/models/booking_info.dart';
+import 'package:travel_agency_app/domain/models/ledger_entry.dart';
 import 'package:travel_agency_app/domain/models/services.dart';
 import 'package:travel_agency_app/domain/models/vehicles.dart';
 import 'package:travel_agency_app/presentation/providers/viewmodel_provider.dart';
@@ -263,19 +264,25 @@ Future<void> _toggleVehicleStatus() async {
       ..sort((a, b) => (b.serviceDate ?? DateTime(0))
           .compareTo(a.serviceDate ?? DateTime(0)));
 
-    final revenue =
-        periodTrips.fold<double>(0, (s, t) => s + (t.amountReceived ?? 0));
-    final tripExpense = periodTrips.fold<double>(
-      0,
-      (s, t) =>
-          s +
-          (t.tollCharges ?? 0) +
-          (t.repairingCharges ?? 0) +
-          (t.driverCharges ?? 0) +
-          (t.fuelCharges ?? 0),
-    );
-    final maintenance =
-        periodServices.fold<double>(0, (s, e) => s + (e.serviceCost ?? 0));
+    // Headline figures from the agency ledger (same source as the on-screen
+    // P&L summary): revenue on payment date, expense on trip/service date.
+    final agencyId = ref.read(loginViewModelProvider).agencyId ?? '';
+    final ledger =
+        ref.read(vehicleReportLedgerProvider(agencyId)).asData?.value ??
+            const <LedgerEntry>[];
+    final vid = widget.vehicle.vehicleId;
+    final rows = ledger.where((e) =>
+        e.vehicleId == vid &&
+        _range.matches(e.entryDate, now, customRange: _customRange));
+    final revenue = rows
+        .where((e) => e.isPayment)
+        .fold<double>(0, (s, e) => s + (e.revenue ?? 0));
+    final tripExpense = rows
+        .where((e) => e.isTripExpense)
+        .fold<double>(0, (s, e) => s + (e.tripExpense ?? 0));
+    final maintenance = rows
+        .where((e) => e.isMaintenance)
+        .fold<double>(0, (s, e) => s + (e.maintenance ?? 0));
 
     final stat = VehicleStat(
       vehicle: widget.vehicle,
@@ -308,43 +315,45 @@ Future<void> _toggleVehicleStatus() async {
     final tripsAsync = ref.watch(
       addVehicleViewModelProvider.select((s) => s.fetchTripsByVehicleId),
     );
-    final servicesAsync = ref.watch(
-      addVehicleViewModelProvider.select((s) => s.fetchServiceRecords),
-    );
     final trips = tripsAsync.asData?.value ?? const <BookingInfo>[];
-    final services = servicesAsync.asData?.value ?? const <Services>[];
     final now = DateTime.now();
 
-    // Revenue = money received; trip expense = toll + repair + driver + fuel. Trips are
-    // bucketed by their own date (start → booking → end) — the same key the list
-    // shows and sorts by — so a date filter never pulls in a trip whose card
-    // shows a date outside the window. Maintenance from service costs.
-    final periodTrips = trips.where((t) {
-      final d = tripSortKey(t);
-      return _range.matches(d, now, customRange: _customRange);
-    }).toList();
-    final revenue =
-        periodTrips.fold<double>(0, (s, t) => s + (t.amountReceived ?? 0));
-    // Trips that still have an outstanding balance (received < approved).
-    final unpaidCount = periodTrips
-        .where((t) => (t.amountApprove ?? 0) > (t.amountReceived ?? 0))
-        .length;
-    final tripExpense = periodTrips.fold<double>(
-      0,
-      (s, t) =>
-          s +
-          (t.tollCharges ?? 0) +
-          (t.repairingCharges ?? 0) +
-          (t.driverCharges ?? 0) +
-          (t.fuelCharges ?? 0),
-    );
-    final maintenance = services
-        .where((s) => _range.matches(s.serviceDate, now, customRange: _customRange))
-        .fold<double>(0, (sum, e) => sum + (e.serviceCost ?? 0));
+    // Per-vehicle money comes from the agency ledger (fetched once, shared with
+    // the Vehicle Report) so the numbers match the report exactly: revenue is
+    // recognised on the payment date, trip expense / maintenance on their own
+    // dates. Filtered here to this vehicle + the active period.
+    final agencyId = ref.watch(loginViewModelProvider).agencyId ?? '';
+    final ledger =
+        ref.watch(vehicleReportLedgerProvider(agencyId)).asData?.value ??
+            const <LedgerEntry>[];
+    final vid = widget.vehicle.vehicleId;
+    final rows = ledger.where((e) =>
+        e.vehicleId == vid &&
+        _range.matches(e.entryDate, now, customRange: _customRange));
+    final revenue = rows
+        .where((e) => e.isPayment)
+        .fold<double>(0, (s, e) => s + (e.revenue ?? 0));
+    final tripExpense = rows
+        .where((e) => e.isTripExpense)
+        .fold<double>(0, (s, e) => s + (e.tripExpense ?? 0));
+    final maintenance = rows
+        .where((e) => e.isMaintenance)
+        .fold<double>(0, (s, e) => s + (e.maintenance ?? 0));
     final expense = tripExpense + maintenance;
     final net = revenue - expense;
     final isProfit = net >= 0;
     final margin = revenue > 0 ? (net / revenue * 100) : 0.0;
+
+    // Trip count + unpaid count still come from the trip list — the ledger
+    // doesn't carry each trip's approved-vs-received balance. Bucketed by the
+    // trip's own date (start → booking → end), matching the trip list.
+    final periodTrips = trips.where((t) {
+      final d = tripSortKey(t);
+      return _range.matches(d, now, customRange: _customRange);
+    }).toList();
+    final unpaidCount = periodTrips
+        .where((t) => (t.amountApprove ?? 0) > (t.amountReceived ?? 0))
+        .length;
 
     return Container(
       color: _C.bg,
@@ -1616,13 +1625,31 @@ class _TripsTabState extends ConsumerState<_TripsTab> {
         }
 
         // Date range + search narrow the list first; the status dropdown then
-        // operates on what remains.
+        // operates on what remains. Period membership uses the same agency
+        // ledger as the P&L summary so the list and summary always agree on
+        // which trips fall in the window. Falls back to the trip date if the
+        // ledger hasn't loaded.
         final now = DateTime.now();
+        final agencyId = ref.watch(loginViewModelProvider).agencyId ?? '';
+        final ledger =
+            ref.watch(vehicleReportLedgerProvider(agencyId)).asData?.value ??
+                const <LedgerEntry>[];
+        final ledgerLoaded = ledger.isNotEmpty;
+        final vid = widget.vehicle.vehicleId;
+        final inPeriodIds = ledger
+            .where((e) =>
+                e.vehicleId == vid &&
+                widget.range
+                    .matches(e.entryDate, now, customRange: widget.customRange))
+            .map((e) => e.tripId)
+            .whereType<int>()
+            .toSet();
         final base = allTrips.where((t) {
-          final d = tripSortKey(t);
-          return widget.range
-                  .matches(d, now, customRange: widget.customRange) &&
-              tripMatchesQuery(t, _query);
+          final inPeriod = ledgerLoaded
+              ? inPeriodIds.contains(t.tripId)
+              : widget.range
+                  .matches(tripSortKey(t), now, customRange: widget.customRange);
+          return inPeriod && tripMatchesQuery(t, _query);
         }).toList();
         final filtered = base.where((t) => _filter.matches(t)).toList();
 
@@ -1856,6 +1883,25 @@ class _ExpenseTabState extends ConsumerState<_ExpenseTab> {
     final trips = tripsAsync.asData?.value ?? const <BookingInfo>[];
     final now = DateTime.now();
 
+    // Period membership comes from the same agency ledger the P&L summary uses,
+    // so the breakdown includes exactly the trips the summary counts (no
+    // trip-date vs ledger-date drift). Falls back to the trip date if the
+    // ledger hasn't loaded.
+    final agencyId = ref.watch(loginViewModelProvider).agencyId ?? '';
+    final ledger =
+        ref.watch(vehicleReportLedgerProvider(agencyId)).asData?.value ??
+            const <LedgerEntry>[];
+    final ledgerLoaded = ledger.isNotEmpty;
+    final vid = widget.vehicle.vehicleId;
+    final expenseTripIds = ledger
+        .where((e) =>
+            e.vehicleId == vid &&
+            e.isTripExpense &&
+            widget.range.matches(e.entryDate, now, customRange: widget.customRange))
+        .map((e) => e.tripId)
+        .whereType<int>()
+        .toSet();
+
     return Column(
       children: [
         // ── Date filter ──────────────────────────────────────────────────
@@ -1915,13 +1961,12 @@ class _ExpenseTabState extends ConsumerState<_ExpenseTab> {
                       customRange: widget.customRange))
                   .fold<double>(0.0, (sum, s) => sum + (s.serviceCost ?? 0.0));
 
-              bool inPeriod(BookingInfo t) {
+              final periodTrips = trips.where((t) {
+                if (ledgerLoaded) return expenseTripIds.contains(t.tripId);
                 final d = tripSortKey(t);
                 return widget.range
                     .matches(d, now, customRange: widget.customRange);
-              }
-
-              final periodTrips = trips.where(inPeriod).toList();
+              }).toList();
               final toll = periodTrips.fold<double>(
                   0.0, (sum, t) => sum + (t.tollCharges ?? 0.0));
               final repair = periodTrips.fold<double>(
