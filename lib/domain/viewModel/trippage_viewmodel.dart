@@ -1,5 +1,6 @@
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:travel_agency_app/core/network/error_messages.dart';
 import 'package:travel_agency_app/domain/models/booking_info.dart';
 import 'package:travel_agency_app/domain/models/payment_history.dart';
 import 'package:travel_agency_app/domain/usecase/tripbooking_usecase.dart';
@@ -173,23 +174,40 @@ class TripPageViewModel extends StateNotifier<TripPageState> {
 
 
   
+  /// Loads every installment recorded against [tripId] for the trip-detail
+  /// sheet's "Payment History" section. Results are sorted newest-first so the
+  /// most recent payment shows on top. Call again to refresh after a new
+  /// payment is submitted.
   Future<void> paymentHistory(int tripId) async {
     state = state.copyWith(paymentHistory: const AsyncValue.loading());
     try {
       final result = await usecase.getPaymentHistory(tripId);
+      result.sort((a, b) {
+        final da = a.PaymentDate, db = b.PaymentDate;
+        if (da != null && db != null) return db.compareTo(da);
+        if (da == null && db != null) return 1;
+        if (da != null && db == null) return -1;
+        return (b.PaymentId ?? 0).compareTo(a.PaymentId ?? 0);
+      });
       state = state.copyWith(paymentHistory: AsyncValue.data(result));
     } catch (e, st) {
       state = state.copyWith(paymentHistory: AsyncValue.error(e, st));
     }
   }
 
-   Future<void> updatePaymentStatus(BookingInfo bookinginfo) async {
+  /// Records a payment. Returns `null` on success, or a user-facing error
+  /// message when the API call failed (so the caller can tell the user the
+  /// data was NOT saved and why).
+  Future<String?> updatePaymentStatus(BookingInfo bookinginfo) async {
     state = state.copyWith(isLoading: true, error: null);
     try {
       final result = await usecase.updatePaymentStatus(bookinginfo);
       state = state.copyWith(isLoading: false, data: result);
+      return null;
     } catch (e) {
-      state = state.copyWith(isLoading: false, error: e.toString());
+      final msg = friendlyErrorMessage(e);
+      state = state.copyWith(isLoading: false, error: msg);
+      return msg;
     }
   }
 
@@ -207,13 +225,18 @@ class TripPageViewModel extends StateNotifier<TripPageState> {
   /// Ends an active trip: stamps the end datetime (defaulting to now on the
   /// backend if not supplied), records final charges + amount received, and
   /// moves the trip to unpaid / paid based on what was collected.
-  Future<void> endTrip(BookingInfo bookinginfo) async {
+  /// Ends an active trip. Returns `null` on success, or a user-facing error
+  /// message when the API call failed.
+  Future<String?> endTrip(BookingInfo bookinginfo) async {
     state = state.copyWith(isLoading: true, error: null);
     try {
       final result = await usecase.endTrip(bookinginfo);
       state = state.copyWith(isLoading: false, data: result);
+      return null;
     } catch (e) {
-      state = state.copyWith(isLoading: false, error: e.toString());
+      final msg = friendlyErrorMessage(e);
+      state = state.copyWith(isLoading: false, error: msg);
+      return msg;
     }
   }
 

@@ -8,20 +8,20 @@ part of 'payment_history.dart';
 
 PaymentHistory _$PaymentHistoryFromJson(Map<String, dynamic> json) =>
     PaymentHistory(
-      PaymentId: (json['PaymentId'] as num?)?.toInt(),
-      TripId: (json['TripId'] as num?)?.toInt(),
-      Amount: (json['Amount'] as num?)?.toDouble(),
-      PaymentMode: json['PaymentMode'] as String?,
-      PaymentDate: json['PaymentDate'] == null
+      PaymentId: (json['payment_id'] as num?)?.toInt(),
+      TripId: (json['trip_id'] as num?)?.toInt(),
+      Amount: (json['amount'] as num?)?.toDouble(),
+      PaymentMode: json['payment_mode'] as String?,
+      PaymentDate: json['payment_date'] == null
           ? null
-          : DateTime.parse(json['PaymentDate'] as String),
+          : DateTime.parse(json['payment_date'] as String),
     );
 
 Map<String, dynamic> _$PaymentHistoryToJson(PaymentHistory instance) =>
     <String, dynamic>{
-      'PaymentId': instance.PaymentId,
-      'TripId': instance.TripId,
-      'Amount': instance.Amount,
-      'PaymentMode': instance.PaymentMode,
-      'PaymentDate': instance.PaymentDate?.toIso8601String(),
+      'payment_id': instance.PaymentId,
+      'trip_id': instance.TripId,
+      'amount': instance.Amount,
+      'payment_mode': instance.PaymentMode,
+      'payment_date': instance.PaymentDate?.toIso8601String(),
     };

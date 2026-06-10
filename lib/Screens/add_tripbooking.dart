@@ -105,6 +105,7 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
   bool _fetchingDistance = false;
   String? _routeDistanceText; // e.g. "173 km"
   String? _routeDurationText; // e.g. "3 hours 46 mins"
+  int? _routeDurationMinutes; // numeric one-way estimate, doubled in the chip
   // Remembers the last route we fetched distance for, so we don't re-call the
   // API for a route that hasn't actually changed.
   String? _lastDistanceRoute;
@@ -962,9 +963,12 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
       final result = await DistanceService.getDistance(from, to);
       if (!mounted) return;
       if (result != null) {
-        distance.text = result.km.toStringAsFixed(1);
+        // Round trip covers the route both ways, so the billed distance is ×2.
+        final km = _isReturnTrip ? result.km * 2 : result.km;
+        distance.text = km.toStringAsFixed(1);
         _routeDistanceText = result.distanceText;
         _routeDurationText = result.durationText;
+        _routeDurationMinutes = result.durationMinutes;
         _lastDistanceRoute = route;
         _recalcFuel();
         _recalcCharges();
@@ -1060,8 +1064,10 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
     final rate = match.first.perKmCharge;
     if (rate == null || rate <= 0) return;
     final base = dist * rate;
-    // Return = both legs (×2); one-way adds half for the empty return leg (×1.5).
-    final total = _isReturnTrip ? base * 2 : base * 1.5;
+    // The Distance field already holds the round-trip distance (×2) when it's a
+    // return trip, so charge it straight; one-way adds half for the empty
+    // return leg (×1.5).
+    final total = _isReturnTrip ? base : base * 1.5;
     charges.text = total == total.roundToDouble()
         ? total.toStringAsFixed(0)
         : total.toStringAsFixed(2);
@@ -1102,7 +1108,7 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
               const SizedBox(width: 6),
               Flexible(
                 child: Text(
-                  "₹${fmt(rate)}/km × ${fmt(dist)} km × ${_isReturnTrip ? '2 (return)' : '1.5 (one-way)'}",
+                  "₹${fmt(rate)}/km × ${fmt(dist)} km${_isReturnTrip ? ' (round trip)' : ' × 1.5 (one-way)'}",
                   softWrap: true,
                   style: const TextStyle(
                     fontSize: 12,
@@ -1133,9 +1139,16 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
   }
 
   // Read-only chip showing the estimated drive time for the fetched route.
+  // Always shown doubled: the driver has to come back regardless of whether the
+  // customer booked a return trip, so the round-trip time is the real estimate.
   // Distance is already shown in the Distance field, so it's not repeated here.
   Widget _routeInfoChip() {
-    if (_routeDurationText == null) return const SizedBox.shrink();
+    if (_routeDurationMinutes == null && _routeDurationText == null) {
+      return const SizedBox.shrink();
+    }
+    final timeText = _routeDurationMinutes != null
+        ? _formatDuration(_routeDurationMinutes! * 2)
+        : (_routeDurationText ?? '--');
     return Padding(
       padding: const EdgeInsets.only(top: 12),
       child: Container(
@@ -1160,25 +1173,27 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
               ),
             ),
             const SizedBox(width: 10),
-            const Text(
-              "Est. drive time",
-              style: TextStyle(
-                fontSize: 12.5,
-                color: _C.text2,
-                fontWeight: FontWeight.w500,
+            // Label ellipsizes if space is tight; the time itself always shows
+            // in full so values like "15 hours 20 mins" aren't cut off.
+            const Expanded(
+              child: Text(
+                "Est. time (incl. return)",
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 12.5,
+                  color: _C.text2,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
             ),
-            const Spacer(),
-            Flexible(
-              child: Text(
-                _routeDurationText!,
-                overflow: TextOverflow.ellipsis,
-                textAlign: TextAlign.right,
-                style: const TextStyle(
-                  fontSize: 12.5,
-                  fontWeight: FontWeight.w800,
-                  color: _C.text1,
-                ),
+            const SizedBox(width: 8),
+            Text(
+              timeText,
+              textAlign: TextAlign.right,
+              style: const TextStyle(
+                fontSize: 12.5,
+                fontWeight: FontWeight.w800,
+                color: _C.text1,
               ),
             ),
           ],
@@ -1187,9 +1202,22 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
     );
   }
 
-  // Round-trip switch. Toggling it re-seeds the Trip Charges field via
-  // _recalcCharges (×2 for return, ×1.5 for one-way) so the amount stays in
-  // sync with the choice.
+  // Renders a minute count back into a "1 day 3 hours 46 mins" style string.
+  String _formatDuration(int minutes) {
+    if (minutes <= 0) return '--';
+    final d = minutes ~/ 1440;
+    final h = (minutes % 1440) ~/ 60;
+    final m = minutes % 60;
+    final parts = <String>[];
+    if (d > 0) parts.add('$d day${d > 1 ? 's' : ''}');
+    if (h > 0) parts.add('$h hour${h > 1 ? 's' : ''}');
+    if (m > 0) parts.add('$m min${m > 1 ? 's' : ''}');
+    return parts.isEmpty ? '--' : parts.join(' ');
+  }
+
+  // Round-trip switch. Toggling it doubles / halves the Distance field (a return
+  // trip covers the route both ways) and re-seeds Trip Charges + Fuel so the
+  // figures stay in sync with the choice.
   Widget _returnTripToggle() {
     return Padding(
       padding: const EdgeInsets.only(top: 12),
@@ -1230,7 +1258,7 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
                   const SizedBox(height: 2),
                   Text(
                     _isReturnTrip
-                        ? "Round trip · charged ×2"
+                        ? "Round trip · distance ×2"
                         : "One-way · charged ×1.5 (incl. half return)",
                     style: const TextStyle(fontSize: 11, color: _C.text2),
                   ),
@@ -1241,7 +1269,19 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
               value: _isReturnTrip,
               activeColor: _C.accent,
               onChanged: (v) {
-                setState(() => _isReturnTrip = v);
+                // Reflect the round/one-way choice in the Distance field: double
+                // it when switching to round trip, halve it when switching back.
+                final cur = double.tryParse(distance.text.trim());
+                setState(() {
+                  _isReturnTrip = v;
+                  if (cur != null && cur > 0) {
+                    final adjusted = v ? cur * 2 : cur / 2;
+                    distance.text = adjusted == adjusted.roundToDouble()
+                        ? adjusted.toStringAsFixed(0)
+                        : adjusted.toStringAsFixed(1);
+                  }
+                });
+                _recalcFuel();
                 _recalcCharges();
               },
             ),
@@ -1380,16 +1420,24 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
       // received using the same endTrip flow the trip card uses. This moves
       // the trip to Paid / Unpaid based on what was collected.
       if (completed && tripId != null) {
-        await ref.read(tripPageViewModelProvider.notifier).updatePaymentStatus(
+        final err = await ref
+            .read(tripPageViewModelProvider.notifier)
+            .updatePaymentStatus(
               BookingInfo(
                 tripId: tripId,
                 tollCharges: toll,
                 repairingCharges: repair,
                 driverCharges: driverChg,
                 fuelCharges: fuelChg,
-                amountReceived: received, 
+                amountReceived: received,
               ),
             );
+        if (err != null) {
+          if (!mounted) return;
+          setState(() => _saving = false);
+          _snack("Payment not recorded: $err");
+          return;
+        }
         completionRecorded = true;
       }
     } catch (_) {
@@ -1730,6 +1778,7 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
                                 iconBg: _C.redSoft,
                                 options: dropOptions,
                               ),
+                              _returnTripToggle(),
                               _divider(),
                               _inputField(
                                 label: "Distance (KM)",
@@ -1762,7 +1811,6 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
                                     : null,
                               ),
                               _routeInfoChip(),
-                              _returnTripToggle(),
                             ],
                           ),
                         ),
