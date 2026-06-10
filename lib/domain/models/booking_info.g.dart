@@ -49,6 +49,7 @@ BookingInfo _$BookingInfoFromJson(Map<String, dynamic> json) => BookingInfo(
       ? null
       : DateTime.parse(json['payment_date'] as String),
   paymentMode: json['payment_mode'] as String?,
+  isReturnTrip: (json['is_return_trip'] as num?)?.toInt(),
 );
 
 Map<String, dynamic> _$BookingInfoToJson(BookingInfo instance) =>
@@ -87,4 +88,5 @@ Map<String, dynamic> _$BookingInfoToJson(BookingInfo instance) =>
       'pending_amount': instance.pendingAmount,
       'payment_date': instance.paymentDate?.toIso8601String(),
       'payment_mode': instance.paymentMode,
+      'is_return_trip': instance.isReturnTrip,
     };

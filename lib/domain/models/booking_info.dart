@@ -108,6 +108,11 @@ class BookingInfo {
   @JsonKey(name: 'payment_mode')
   final String? paymentMode;
 
+  // 1 when the trip is a round trip (charged ×2), 0 for one-way (charged ×1.5).
+  // Stored as an int in the DB. Used to restore the toggle when editing.
+  @JsonKey(name: 'is_return_trip')
+  final int? isReturnTrip;
+
 
 
   BookingInfo({
@@ -145,6 +150,7 @@ class BookingInfo {
     this.pendingAmount,
     this.paymentDate,
     this.paymentMode,
+    this.isReturnTrip,
   });
 
 

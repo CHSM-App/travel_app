@@ -53,6 +53,11 @@ final DateTime? bookingdate;
   @JsonKey(name: 'agency_id')
   final String? agencyId;
 
+  // 1 when the trip is a round trip (charged ×2), 0 for one-way (charged ×1.5
+  // — base + half the return leg). Stored as an int so the toggle restores.
+  @JsonKey(name: 'is_return_trip')
+  final int? isreturntrip;
+
   // @JsonKey(name: 'customerid')
   // final int
 
@@ -78,6 +83,7 @@ final DateTime? bookingdate;
     this.tripcharges,
     this.bookingdate,
     this.agencyId,
+    this.isreturntrip,
   });
 
   factory TripBooking.fromJson(Map<String, dynamic> json) =>

@@ -8,6 +8,7 @@ import 'package:intl/intl.dart';
 import 'package:travel_agency_app/Screens/add_driver.dart';
 import 'package:travel_agency_app/Screens/add_vehicle.dart';
 import 'package:travel_agency_app/core/network/distance_service.dart';
+import 'package:travel_agency_app/core/network/places_service.dart';
 import 'package:travel_agency_app/core/theme/app_colors.dart';
 import 'package:travel_agency_app/domain/models/booking_info.dart';
 import 'package:travel_agency_app/domain/models/customers.dart';
@@ -68,6 +69,11 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
   final drop = TextEditingController();
   final pickupFocus = FocusNode();
   final dropFocus = FocusNode();
+
+  // Debounce for the Google Places lookup so we don't fire a (billed) request
+  // on every keystroke. Only one location field is focused at a time, so a
+  // single shared timer is enough.
+  Timer? _placesDebounce;
   final distance = TextEditingController();
   final fuelReq = TextEditingController();
   final charges = TextEditingController();
@@ -93,6 +99,8 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
     return startDt!.isBefore(DateTime(now.year, now.month, now.day));
   }
   int? selVehicle, selDriver, selCustomer;
+  // Round trip → charged ×2. One-way → charged ×1.5 (base + half return leg).
+  bool _isReturnTrip = false;
   bool _saving = false;
   bool _fetchingDistance = false;
   String? _routeDistanceText; // e.g. "173 km"
@@ -147,6 +155,7 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
       distance.text = b.distance?.toString() ?? '';
       fuelReq.text = b.fuelRequired?.toString() ?? '';
       charges.text = b.amountApprove?.toString() ?? '';
+      _isReturnTrip = (b.isReturnTrip ?? 0) == 1;
       selVehicle = b.vehicleId;
       selDriver = b.driverId;
       selCustomer = b.customerId;
@@ -244,6 +253,7 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
 
   @override
   void dispose() {
+    _placesDebounce?.cancel();
     pickup.removeListener(_onRouteChanged);
     drop.removeListener(_onRouteChanged);
     customerName.removeListener(_onCustomerFieldChanged);
@@ -284,6 +294,20 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
   // the same value notifies the controller's listeners without changing text.
   void _nudgeAutocomplete(TextEditingController ctrl) {
     ctrl.value = ctrl.value.copyWith();
+  }
+
+  // Debounced Google Places lookup (via our backend), used ONLY as a fallback
+  // when no past trip matches the typed route. Waits 300 ms after the last
+  // keystroke; if a newer query arrives first this future is abandoned and
+  // RawAutocomplete keeps only the latest result. Returns [] on any error.
+  Future<List<String>> _placeSuggestions(String query) {
+    _placesDebounce?.cancel();
+    final completer = Completer<List<String>>();
+    _placesDebounce = Timer(const Duration(milliseconds: 300), () async {
+      final results = await PlacesService.autocomplete(query);
+      if (!completer.isCompleted) completer.complete(results);
+    });
+    return completer.future;
   }
 
   // Autofill all three customer fields from a picked suggestion. The listener
@@ -1035,7 +1059,9 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
 
     final rate = match.first.perKmCharge;
     if (rate == null || rate <= 0) return;
-    final total = dist * rate;
+    final base = dist * rate;
+    // Return = both legs (×2); one-way adds half for the empty return leg (×1.5).
+    final total = _isReturnTrip ? base * 2 : base * 1.5;
     charges.text = total == total.roundToDouble()
         ? total.toStringAsFixed(0)
         : total.toStringAsFixed(2);
@@ -1076,7 +1102,7 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
               const SizedBox(width: 6),
               Flexible(
                 child: Text(
-                  "₹${fmt(rate)}/km × ${fmt(dist)} km",
+                  "₹${fmt(rate)}/km × ${fmt(dist)} km × ${_isReturnTrip ? '2 (return)' : '1.5 (one-way)'}",
                   softWrap: true,
                   style: const TextStyle(
                     fontSize: 12,
@@ -1154,6 +1180,70 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
                   color: _C.text1,
                 ),
               ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // Round-trip switch. Toggling it re-seeds the Trip Charges field via
+  // _recalcCharges (×2 for return, ×1.5 for one-way) so the amount stays in
+  // sync with the choice.
+  Widget _returnTripToggle() {
+    return Padding(
+      padding: const EdgeInsets.only(top: 12),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: _C.surfaceLight,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: _C.divider),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: _C.accent.withOpacity(0.12),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Icon(
+                Icons.sync_alt_rounded,
+                size: 14,
+                color: _C.accent,
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    "Return Trip",
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: _C.text1,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    _isReturnTrip
+                        ? "Round trip · charged ×2"
+                        : "One-way · charged ×1.5 (incl. half return)",
+                    style: const TextStyle(fontSize: 11, color: _C.text2),
+                  ),
+                ],
+              ),
+            ),
+            Switch(
+              value: _isReturnTrip,
+              activeColor: _C.accent,
+              onChanged: (v) {
+                setState(() => _isReturnTrip = v);
+                _recalcCharges();
+              },
             ),
           ],
         ),
@@ -1256,6 +1346,7 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
       distance: double.tryParse(distance.text.trim()) ?? 0,
       fuelrequired: double.tryParse(fuelReq.text.trim()) ?? 0,
       tripcharges: double.tryParse(charges.text.trim()) ?? 0,
+      isreturntrip: _isReturnTrip ? 1 : 0,
       tollcharges: completed ? toll : null,
       repairingcharges: completed ? repair : null,
       drivercharges: completed ? driverChg : null,
@@ -1671,6 +1762,7 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
                                     : null,
                               ),
                               _routeInfoChip(),
+                              _returnTripToggle(),
                             ],
                           ),
                         ),
@@ -2115,18 +2207,25 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
     return RawAutocomplete<String>(
       textEditingController: ctrl,
       focusNode: focusNode,
-      optionsBuilder: (TextEditingValue value) {
-        final q = value.text.trim().toLowerCase();
+      optionsBuilder: (TextEditingValue value) async {
+        final raw = value.text.trim();
+        final q = raw.toLowerCase();
         if (q.isEmpty) {
           // Field focused but empty: show up to 6 recent unique locations.
           return options.take(6);
         }
-        return options
+        // Past trips for this route come first — they're instant and the most
+        // relevant to this agency.
+        final past = options
             .where((s) {
               final lower = s.toLowerCase();
               return lower.contains(q) && lower != q;
             })
-            .take(8);
+            .take(8)
+            .toList();
+        if (past.isNotEmpty) return past;
+        // No previous trip matches this route → fall back to Google Places.
+        return _placeSuggestions(raw);
       },
       onSelected: (String selection) {
         ctrl.text = selection;

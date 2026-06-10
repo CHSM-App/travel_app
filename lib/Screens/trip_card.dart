@@ -1305,6 +1305,17 @@ final receivedController = TextEditingController(
                                 Icons.straighten,
                                 AppColors.brandPrimary,
                               ),
+                              rowDivider(),
+                              detailRow(
+                                "Trip Type",
+                                bookinginfo.isReturnTrip == 1
+                                    ? "Round Trip"
+                                    : "One Way",
+                                bookinginfo.isReturnTrip == 1
+                                    ? Icons.sync_alt_rounded
+                                    : Icons.trending_flat_rounded,
+                                AppColors.brandPrimary,
+                              ),
                             ],
                           ),
 
