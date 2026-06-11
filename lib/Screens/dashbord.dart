@@ -230,8 +230,6 @@ class _TravelAdminDashboardState extends ConsumerState<TravelAdminDashboard> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _PageTitle(isSmall: isSmall),
-                  SizedBox(height: sectionGap - 2),
                   _NewBookingHero(isSmall: isSmall),
                   SizedBox(height: sectionGap),
                   _ActionNeededCard(
@@ -267,9 +265,6 @@ class _TravelAdminDashboardState extends ConsumerState<TravelAdminDashboard> {
 }
 // ─────────────────────────────────────────────────────────
 // ACTION NEEDED CARD
-// A worklist, not a scoreboard: three live rows the operator
-// can act on right now. Each row deep-links into the Trips tab
-// with the right filter pre-applied via the cross-tab providers.
 // ─────────────────────────────────────────────────────────
 class _ActionNeededCard extends ConsumerWidget {
   final bool isSmall;
@@ -1010,81 +1005,7 @@ class _StatChip extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────
-// PAGE TITLE
-// ─────────────────────────────────────────────────────────
-class _PageTitle extends StatelessWidget {
-  final bool isSmall;
-  const _PageTitle({required this.isSmall});
 
-  @override
-  Widget build(BuildContext context) {
-    final now = DateTime.now();
-    const months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
-    ];
-    final dateStr = "${now.day} ${months[now.month - 1]}";
-
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                "Your agency at a glance",
-                style: TextStyle(
-                  fontSize: isSmall ? 11 : 13,
-                  color: Colors.grey.shade500,
-                ),
-                overflow: TextOverflow.ellipsis,
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(width: 8),
-        Container(
-          padding: EdgeInsets.symmetric(
-            horizontal: isSmall ? 8 : 12,
-            vertical: 7,
-          ),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            boxShadow: [
-              BoxShadow(
-                color: TravelAdminDashboard.primaryColor.withOpacity(0.08),
-                blurRadius: 10,
-                offset: const Offset(0, 3),
-              ),
-            ],
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                Icons.calendar_today_rounded,
-                size: isSmall ? 11 : 13,
-                color: TravelAdminDashboard.primaryColor,
-              ),
-              const SizedBox(width: 4),
-              Text(
-                dateStr,
-                style: TextStyle(
-                  fontSize: isSmall ? 10 : 11,
-                  fontWeight: FontWeight.w600,
-                  color: TravelAdminDashboard.primaryColor,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-}
 
 // ─────────────────────────────────────────────────────────
 // SECTION TITLE

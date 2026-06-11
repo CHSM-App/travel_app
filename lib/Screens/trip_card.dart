@@ -39,69 +39,82 @@ class TripCard extends ConsumerWidget {
   String _formatTime(DateTime? date) {
     if (date == null) return '--';
     final hour = date.hour % 12 == 0 ? 12 : date.hour % 12;
-    final minute = date.minute.toString().padLeft(2,'0');
+    final minute = date.minute.toString().padLeft(2, '0');
     final period = date.hour >= 12 ? 'PM' : 'AM';
     return "$hour:$minute $period";
   }
 
   // "31 May, 9:14 AM" — compact day + short month + time, as in the card design.
   static const List<String> _months = [
-    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
   ];
   String _prettyDateTime(DateTime? date) {
     if (date == null) return '--';
     return "${date.day} ${_months[date.month - 1]}, ${_formatTime(date)}";
   }
 
-String get paymentStatus {
-  final approved = bookinginfo.amountApprove ?? 0;
-  final received = bookinginfo.amountReceived ?? 0;
+  String get paymentStatus {
+    final approved = bookinginfo.amountApprove ?? 0;
+    final received = bookinginfo.amountReceived ?? 0;
 
-  if (received == 0) {
-    return "Unpaid";
-  } else if (received < approved) {
-    return "Partially Paid";
-  } else {
-    return "Paid";
+    if (received == 0) {
+      return "Unpaid";
+    } else if (received < approved) {
+      return "Partially Paid";
+    } else {
+      return "Paid";
+    }
   }
-}
-Color _paymentColor(String status) {
-  switch (status.toLowerCase()) {
-    case 'paid':
-      return _success;
-    case 'unpaid':
-      return _danger;
-    case 'partially paid':
-      return _warning;
-    default:
-      return _textSec;
+
+  Color _paymentColor(String status) {
+    switch (status.toLowerCase()) {
+      case 'paid':
+        return _success;
+      case 'unpaid':
+        return _danger;
+      case 'partially paid':
+        return _warning;
+      default:
+        return _textSec;
+    }
   }
-}
-Color _paymentBg(String status) {
-  switch (status.toLowerCase()) {
-    case 'paid':
-      return _successSoft;
-    case 'unpaid':
-      return _dangerSoft;
-    case 'partially paid':
-      return _warningSoft;
-    default:
-      return _accentSoft;
+
+  Color _paymentBg(String status) {
+    switch (status.toLowerCase()) {
+      case 'paid':
+        return _successSoft;
+      case 'unpaid':
+        return _dangerSoft;
+      case 'partially paid':
+        return _warningSoft;
+      default:
+        return _accentSoft;
+    }
   }
-}
- IconData _paymentIcon(String status) {
-  switch (status.toLowerCase()) {
-    case 'paid':
-      return Icons.check_circle_rounded;
-    case 'unpaid':
-      return Icons.cancel_rounded;
-    case 'partially paid':
-      return Icons.timelapse_rounded;
-    default:
-      return Icons.info_rounded;
+
+  IconData _paymentIcon(String status) {
+    switch (status.toLowerCase()) {
+      case 'paid':
+        return Icons.check_circle_rounded;
+      case 'unpaid':
+        return Icons.cancel_rounded;
+      case 'partially paid':
+        return Icons.timelapse_rounded;
+      default:
+        return Icons.info_rounded;
+    }
   }
-}
 
   String get tripPaymentStatus {
     final approved = bookinginfo.amountApprove ?? 0;
@@ -112,14 +125,16 @@ Color _paymentBg(String status) {
   }
 
   void _showTripDetail(BuildContext context, WidgetRef ref) {
-       print("DEBUG status: ${bookinginfo.status} | type: ${bookinginfo.status.runtimeType}");
-    final bool isEditable = bookinginfo.status==2;
+    print(
+      "DEBUG status: ${bookinginfo.status} | type: ${bookinginfo.status.runtimeType}",
+    );
+    final bool isEditable = bookinginfo.status == 2;
     final bool isCancelled = bookinginfo.status == 5;
 
     // Use tripType passed from the tab — same logic as active tab, no API status guessing
     final bool isActiveOrUpcoming =
-    bookinginfo.status == 1 || // Active
-    bookinginfo.status == 3;   // Upcoming
+        bookinginfo.status == 1 || // Active
+        bookinginfo.status == 3; // Upcoming
 
     final tollController = TextEditingController(
       text: bookinginfo.tollCharges?.toString() ?? "",
@@ -133,16 +148,16 @@ Color _paymentBg(String status) {
     final fuelController = TextEditingController(
       text: bookinginfo.fuelCharges?.toString() ?? "",
     );
-final approved = bookinginfo.amountApprove ?? 0;
-final received = bookinginfo.amountReceived ?? 0;
-final pending = approved - received;
-final receivedController = TextEditingController(
-  text: paymentStatus == "Partially Paid"
-      ? pending.toString()
-      : received == 0
+    final approved = bookinginfo.amountApprove ?? 0;
+    final received = bookinginfo.amountReceived ?? 0;
+    final pending = approved - received;
+    final receivedController = TextEditingController(
+      text: paymentStatus == "Partially Paid"
+          ? pending.toString()
+          : received == 0
           ? approved.toString()
           : received.toString(),
-);
+    );
 
     const List<String> paymentModes = [
       'Cash',
@@ -155,7 +170,9 @@ final receivedController = TextEditingController(
       'Other',
     ];
     final paymentModeNotifier = ValueNotifier<String?>(
-      bookinginfo.paymentMode?.isNotEmpty == true ? bookinginfo.paymentMode : null,
+      bookinginfo.paymentMode?.isNotEmpty == true
+          ? bookinginfo.paymentMode
+          : null,
     );
 
     // Kick off the payment-history load for this trip; the sheet's Consumer
@@ -188,8 +205,6 @@ final receivedController = TextEditingController(
         final labelWidth = isSmall ? 60.0 : 68.0;
         final sectionGap = isSmall ? 8.0 : 10.0;
         final fieldVertPad = isSmall ? 11.0 : 13.0;
-
-
 
         Widget infoBlock({
           required String label,
@@ -299,7 +314,7 @@ final receivedController = TextEditingController(
               : const Color(0xFF6B7280);
           return TextField(
             controller: ctrl,
-    readOnly: !(isEditable || paymentStatus == "Partially Paid"),
+            readOnly: !(isEditable || paymentStatus == "Partially Paid"),
             keyboardType: TextInputType.number,
             inputFormatters: [FilteringTextInputFormatter.digitsOnly],
             style: TextStyle(
@@ -350,68 +365,68 @@ final receivedController = TextEditingController(
         }
 
         Widget customerDriverRow() {
-  return Column(
-    children: [
-      infoBlock(
-        label: "CUSTOMER",
-        icon: Icons.person_outline_rounded,
-        color: const Color(0xFF7209B7),
-        rows: [
-          detailRow(
-            "Name",
-            bookinginfo.customer_name ?? "--",
-            Icons.badge_outlined,
-            const Color(0xFF7209B7),
-          ),
-          rowDivider(),
-          detailRow(
-            "Phone",
-            bookinginfo.customer_phone ?? "--",
-            Icons.phone_outlined,
-            const Color(0xFF7209B7),
-          ),
-          rowDivider(),
-          detailRow(
-            "Address",
-            bookinginfo.customerAddress ?? "--",
-            Icons.home,
-            const Color(0xFF7209B7),
-          ),
-        ],
-      ),
+          return Column(
+            children: [
+              infoBlock(
+                label: "CUSTOMER",
+                icon: Icons.person_outline_rounded,
+                color: const Color(0xFF7209B7),
+                rows: [
+                  detailRow(
+                    "Name",
+                    bookinginfo.customer_name ?? "--",
+                    Icons.badge_outlined,
+                    const Color(0xFF7209B7),
+                  ),
+                  rowDivider(),
+                  detailRow(
+                    "Phone",
+                    bookinginfo.customer_phone ?? "--",
+                    Icons.phone_outlined,
+                    const Color(0xFF7209B7),
+                  ),
+                  rowDivider(),
+                  detailRow(
+                    "Address",
+                    bookinginfo.customerAddress ?? "--",
+                    Icons.home,
+                    const Color(0xFF7209B7),
+                  ),
+                ],
+              ),
 
-      SizedBox(height: sectionGap),
+              SizedBox(height: sectionGap),
 
-      infoBlock(
-        label: "DRIVER",
-        icon: Icons.drive_eta_outlined,
-        color: const Color(0xFF3A86FF),
-        rows: [
-          detailRow(
-            "Name",
-            bookinginfo.driver_name ?? "--",
-            Icons.badge_outlined,
-            const Color(0xFF3A86FF),
-          ),
-          rowDivider(),
-          detailRow(
-            "Phone",
-            bookinginfo.driverPhone ?? "--",
-            Icons.phone_outlined,
-            const Color(0xFF3A86FF),
-          ),
-          rowDivider(),
-          detailRow(
-            "Licence",
-            bookinginfo.driverLicenceNo ?? "--",
-            Icons.credit_card_outlined,
-            const Color(0xFF3A86FF),
-          ),
-        ],
-      ),
-    ],
-  );
-}
+              infoBlock(
+                label: "DRIVER",
+                icon: Icons.drive_eta_outlined,
+                color: const Color(0xFF3A86FF),
+                rows: [
+                  detailRow(
+                    "Name",
+                    bookinginfo.driver_name ?? "--",
+                    Icons.badge_outlined,
+                    const Color(0xFF3A86FF),
+                  ),
+                  rowDivider(),
+                  detailRow(
+                    "Phone",
+                    bookinginfo.driverPhone ?? "--",
+                    Icons.phone_outlined,
+                    const Color(0xFF3A86FF),
+                  ),
+                  rowDivider(),
+                  detailRow(
+                    "Licence",
+                    bookinginfo.driverLicenceNo ?? "--",
+                    Icons.credit_card_outlined,
+                    const Color(0xFF3A86FF),
+                  ),
+                ],
+              ),
+            ],
+          );
+        }
 
         Widget paymentFields() {
           if (isLarge) {
@@ -472,54 +487,57 @@ final receivedController = TextEditingController(
                 const SizedBox(height: 10),
                 ValueListenableBuilder<String?>(
                   valueListenable: paymentModeNotifier,
-                  builder: (_, selectedMode, __) => DropdownButtonFormField<String>(
-                    value: selectedMode,
-                    decoration: InputDecoration(
-                      labelText: "Payment Mode *",
-                      labelStyle: TextStyle(
-                        fontSize: isSmall ? 11.5 : 12.5,
-                        color: AppColors.brandPrimary,
-                      ),
-                      prefixIcon: Icon(
-                        Icons.payment_outlined,
-                        size: isSmall ? 15 : 17,
-                        color: AppColors.brandPrimary,
-                      ),
-                      filled: true,
-                      fillColor: AppColors.brandPrimary.withOpacity(0.04),
-                      contentPadding: EdgeInsets.symmetric(
-                        vertical: fieldVertPad,
-                        horizontal: 14,
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(
-                          color: AppColors.brandPrimary.withOpacity(0.3),
+                  builder: (_, selectedMode, __) =>
+                      DropdownButtonFormField<String>(
+                        value: selectedMode,
+                        decoration: InputDecoration(
+                          labelText: "Payment Mode *",
+                          labelStyle: TextStyle(
+                            fontSize: isSmall ? 11.5 : 12.5,
+                            color: AppColors.brandPrimary,
+                          ),
+                          prefixIcon: Icon(
+                            Icons.payment_outlined,
+                            size: isSmall ? 15 : 17,
+                            color: AppColors.brandPrimary,
+                          ),
+                          filled: true,
+                          fillColor: AppColors.brandPrimary.withOpacity(0.04),
+                          contentPadding: EdgeInsets.symmetric(
+                            vertical: fieldVertPad,
+                            horizontal: 14,
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(
+                              color: AppColors.brandPrimary.withOpacity(0.3),
+                            ),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(
+                              color: AppColors.brandPrimary,
+                              width: 1.5,
+                            ),
+                          ),
                         ),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(
-                          color: AppColors.brandPrimary,
-                          width: 1.5,
-                        ),
-                      ),
-                    ),
-                    items: paymentModes
-                        .map((mode) => DropdownMenuItem(
-                              value: mode,
-                              child: Text(
-                                mode,
-                                style: TextStyle(
-                                  fontSize: isSmall ? 13 : 14,
-                                  fontWeight: FontWeight.w600,
-                                  color: const Color(0xFF1A1A2E),
+                        items: paymentModes
+                            .map(
+                              (mode) => DropdownMenuItem(
+                                value: mode,
+                                child: Text(
+                                  mode,
+                                  style: TextStyle(
+                                    fontSize: isSmall ? 13 : 14,
+                                    fontWeight: FontWeight.w600,
+                                    color: const Color(0xFF1A1A2E),
+                                  ),
                                 ),
                               ),
-                            ))
-                        .toList(),
-                    onChanged: (val) => paymentModeNotifier.value = val,
-                  ),
+                            )
+                            .toList(),
+                        onChanged: (val) => paymentModeNotifier.value = val,
+                      ),
                 ),
               ],
             );
@@ -555,54 +573,57 @@ final receivedController = TextEditingController(
               const SizedBox(height: 10),
               ValueListenableBuilder<String?>(
                 valueListenable: paymentModeNotifier,
-                builder: (_, selectedMode, __) => DropdownButtonFormField<String>(
-                  value: selectedMode,
-                  decoration: InputDecoration(
-                    labelText: "Payment Mode *",
-                    labelStyle: TextStyle(
-                      fontSize: isSmall ? 11.5 : 12.5,
-                      color: AppColors.brandPrimary,
-                    ),
-                    prefixIcon: Icon(
-                      Icons.payment_outlined,
-                      size: isSmall ? 15 : 17,
-                      color: AppColors.brandPrimary,
-                    ),
-                    filled: true,
-                    fillColor: AppColors.brandPrimary.withOpacity(0.04),
-                    contentPadding: EdgeInsets.symmetric(
-                      vertical: fieldVertPad,
-                      horizontal: 14,
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(
-                        color: AppColors.brandPrimary.withOpacity(0.3),
+                builder: (_, selectedMode, __) =>
+                    DropdownButtonFormField<String>(
+                      value: selectedMode,
+                      decoration: InputDecoration(
+                        labelText: "Payment Mode *",
+                        labelStyle: TextStyle(
+                          fontSize: isSmall ? 11.5 : 12.5,
+                          color: AppColors.brandPrimary,
+                        ),
+                        prefixIcon: Icon(
+                          Icons.payment_outlined,
+                          size: isSmall ? 15 : 17,
+                          color: AppColors.brandPrimary,
+                        ),
+                        filled: true,
+                        fillColor: AppColors.brandPrimary.withOpacity(0.04),
+                        contentPadding: EdgeInsets.symmetric(
+                          vertical: fieldVertPad,
+                          horizontal: 14,
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(
+                            color: AppColors.brandPrimary.withOpacity(0.3),
+                          ),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(
+                            color: AppColors.brandPrimary,
+                            width: 1.5,
+                          ),
+                        ),
                       ),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(
-                        color: AppColors.brandPrimary,
-                        width: 1.5,
-                      ),
-                    ),
-                  ),
-                  items: paymentModes
-                      .map((mode) => DropdownMenuItem(
-                            value: mode,
-                            child: Text(
-                              mode,
-                              style: TextStyle(
-                                fontSize: isSmall ? 13 : 14,
-                                fontWeight: FontWeight.w600,
-                                color: const Color(0xFF1A1A2E),
+                      items: paymentModes
+                          .map(
+                            (mode) => DropdownMenuItem(
+                              value: mode,
+                              child: Text(
+                                mode,
+                                style: TextStyle(
+                                  fontSize: isSmall ? 13 : 14,
+                                  fontWeight: FontWeight.w600,
+                                  color: const Color(0xFF1A1A2E),
+                                ),
                               ),
                             ),
-                          ))
-                      .toList(),
-                  onChanged: (val) => paymentModeNotifier.value = val,
-                ),
+                          )
+                          .toList(),
+                      onChanged: (val) => paymentModeNotifier.value = val,
+                    ),
               ),
             ],
           );
@@ -712,7 +733,12 @@ final receivedController = TextEditingController(
                                   break;
 
                                 case 3:
-                                  pillColor = const Color.fromARGB(255, 211, 183, 252); // Purple
+                                  pillColor = const Color.fromARGB(
+                                    255,
+                                    211,
+                                    183,
+                                    252,
+                                  ); // Purple
                                   pillIcon = Icons.upcoming_outlined;
                                   pillLabel = "Upcoming";
                                   break;
@@ -724,7 +750,12 @@ final receivedController = TextEditingController(
                                   break;
 
                                 case 5:
-                                  pillColor = const Color.fromARGB(255, 231, 95, 107); // Red
+                                  pillColor = const Color.fromARGB(
+                                    255,
+                                    231,
+                                    95,
+                                    107,
+                                  ); // Red
                                   pillIcon = Icons.cancel_outlined;
                                   pillLabel = "Cancelled";
                                   break;
@@ -769,32 +800,34 @@ final receivedController = TextEditingController(
                           ),
                           const SizedBox(width: 6),
                           // ✏️ Edit Button
-                          if(bookinginfo.status == 1 || bookinginfo.status == 2 || bookinginfo.status == 3)
+                          if (bookinginfo.status == 1 ||
+                              bookinginfo.status == 2 ||
+                              bookinginfo.status == 3)
                             GestureDetector(
-                            onTap: () {
-                              Navigator.pop(ctx);
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => TripBookingForm(booking:bookinginfo ),
+                              onTap: () {
+                                Navigator.pop(ctx);
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) =>
+                                        TripBookingForm(booking: bookinginfo),
+                                  ),
+                                );
+                              },
+                              child: Container(
+                                width: 28,
+                                height: 28,
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withOpacity(0.12),
+                                  shape: BoxShape.circle,
                                 ),
-                              );
-                            },
-                            child: Container(
-                              width: 28,
-                              height: 28,
-                              decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.12),
-                                shape: BoxShape.circle,
-                              ),
-                              child: const Icon(
-                                Icons.edit,
-                                color: Colors.white,
-                                size: 14,
+                                child: const Icon(
+                                  Icons.edit,
+                                  color: Colors.white,
+                                  size: 14,
+                                ),
                               ),
                             ),
-                          ),
-                          
 
                           const SizedBox(width: 6),
 
@@ -820,872 +853,958 @@ final receivedController = TextEditingController(
                     ),
 
                     // ── SCROLLABLE BODY ────────────────────────────────────────
-                   Expanded(
-  child: Padding(
-    padding: EdgeInsets.only(
-      bottom: MediaQuery.of(ctx).viewInsets.bottom, // ✅ KEYBOARD SPACE
-    ),
-    child: ListView(
-      controller: scrollCtrl,
-      keyboardDismissBehavior:
-          ScrollViewKeyboardDismissBehavior.onDrag,
-      padding: EdgeInsets.fromLTRB(
-        hPad,
-        14,
-        hPad,
-        32 + MediaQuery.of(ctx).padding.bottom,
-      ),
-                        children: [
-                          // ── Payment & Charges ──────────────────────────────
-                          Container(
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(cardRadius),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.05),
-                                  blurRadius: 10,
-                                  offset: const Offset(0, 3),
-                                ),
-                              ],
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Container(
-                                  padding: EdgeInsets.fromLTRB(
-                                    14,
-                                    isSmall ? 10 : 12,
-                                    14,
-                                    isSmall ? 8 : 10,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFFFFF0F3),
-                                    borderRadius: BorderRadius.vertical(
-                                      top: Radius.circular(cardRadius),
-                                    ),
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      const Icon(
-                                        Icons.account_balance_wallet_outlined,
-                                        
-                                        size: 14,
-                                        color: Color(0xFFE63946),
-                                      ),
-                                      const SizedBox(width: 7),
-                                      Text(
-                                        "PAYMENT & CHARGES",
-                                        style: TextStyle(
-                                          color: const Color(0xFFE63946),
-                                          fontWeight: FontWeight.w700,
-                                          fontSize: labelFontSize,
-                                          letterSpacing: 0.5,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                Padding(
-                                  padding: EdgeInsets.all(isSmall ? 12 : 16),
-                                  child: Column(
-                                    children: [
-                                      // Approved amount highlight — always shown
-                                      Container(
-                                        padding: EdgeInsets.symmetric(
-                                          horizontal: isSmall ? 12 : 16,
-                                          vertical: isSmall ? 12 : 14,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: const Color(0xFFD8F3DC),
-                                          borderRadius: BorderRadius.circular(
-                                            12,
-                                          ),
-                                        ),
-                                        child: Row(
-                                          children: [
-                                            Icon(
-                                              Icons.verified_rounded,
-                                              color: const Color(0xFF2D6A4F),
-                                              size: isSmall ? 17 : 20,
-                                            ),
-                                            SizedBox(width: isSmall ? 8 : 10),
-                                            Expanded(
-                                              child: Text(
-                                                "Approved Amount",
-                                                style: TextStyle(
-                                                  color: const Color(
-                                                    0xFF2D6A4F,
-                                                  ),
-                                                  fontWeight: FontWeight.w600,
-                                                  fontSize: isSmall ? 12 : 13,
-                                                ),
-                                              ),
-                                            ),
-                                            Text(
-                                              "₹${bookinginfo.amountApprove ?? 0}",
-                                              style: TextStyle(
-                                                color: const Color(0xFF1B4332),
-                                                fontWeight: FontWeight.w800,
-                                                fontSize: isSmall ? 15 : 18,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                      if (paymentStatus == "Partially Paid") ...[
-  const SizedBox(height: 12),
-
-  Row(
-    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-    children: [
-
-      Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            "Paid Amount",
-            style: TextStyle(fontWeight: FontWeight.w600),
-          ),
-          Text(
-            "₹$received",
-            style: const TextStyle(
-              fontWeight: FontWeight.w700,
-              color: Colors.green,
-            ),
-          ),
-        ],
-      ),
-
-      Column(
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          const Text(
-            "Pending Amount",
-            style: TextStyle(fontWeight: FontWeight.w600),
-          ),
-          Text(
-            "₹$pending",
-            style: const TextStyle(
-              fontWeight: FontWeight.w700,
-              color: Colors.red,
-            ),
-          ),
-        ],
-      ),
-
-    ],
-  ),
-],
-  const SizedBox(height: 12),
-                                      // ── Input fields: hidden for active/upcoming unpaid ──
-                                      if (!isActiveOrUpcoming && !isCancelled) ...[
-                                        SizedBox(height: isSmall ? 10 : 12),
-                                        paymentFields(),
-                                        // ── Submit Payment (below payment mode) ──
-                                        const SizedBox(height: 16),
-                                        if (isEditable ||
-                                            paymentStatus == "Partially Paid")
-                                          GestureDetector(
-                                            onTap: () async {
-                                              if (paymentModeNotifier.value ==
-                                                  null) {
-                                                ScaffoldMessenger.of(context)
-                                                    .showSnackBar(
-                                                  const SnackBar(
-                                                    content: Text(
-                                                        "Please select a payment mode"),
-                                                    backgroundColor: Colors.red,
-                                                  ),
-                                                );
-                                                return;
-                                              }
-
-                                              final updated = BookingInfo(
-                                                tripId: bookinginfo.tripId,
-                                                tollCharges: double.tryParse(
-                                                        tollController.text) ??
-                                                    0,
-                                                repairingCharges:
-                                                    double.tryParse(
-                                                            repairController
-                                                                .text) ??
-                                                        0,
-                                                driverCharges: double.tryParse(
-                                                        driverController.text) ??
-                                                    0,
-                                                fuelCharges: double.tryParse(
-                                                        fuelController.text) ??
-                                                    0,
-                                                amountReceived:
-                                                    double.tryParse(
-                                                            receivedController
-                                                                .text) ??
-                                                        0,
-                                                paymentMode:
-                                                    paymentModeNotifier.value,
-                                              );
-                                              final err = await ref
-                                                  .read(
-                                                      tripPageViewModelProvider
-                                                          .notifier)
-                                                  .updatePaymentStatus(updated);
-                                              if (err != null) {
-                                                ScaffoldMessenger.of(context)
-                                                    .showSnackBar(
-                                                  SnackBar(
-                                                    content: Text(
-                                                        "Payment not saved: $err"),
-                                                    backgroundColor: Colors.red,
-                                                  ),
-                                                );
-                                                return;
-                                              }
-                                              if (bookinginfo.tripId != null) {
-                                                await ref
-                                                    .read(
-                                                        tripPageViewModelProvider
-                                                            .notifier)
-                                                    .paymentHistory(
-                                                        bookinginfo.tripId!);
-                                              }
-                                              if (onTripUpdated != null) {
-                                                await onTripUpdated!();
-                                              }
-                                              Navigator.pop(ctx);
-                                              ScaffoldMessenger.of(context)
-                                                  .showSnackBar(
-                                                const SnackBar(
-                                                  content: Text(
-                                                      "Payment details updated successfully!"),
-                                                  backgroundColor: Colors.green,
-                                                ),
-                                              );
-                                            },
-                                            child: Container(
-                                              width: double.infinity,
-                                              padding: EdgeInsets.symmetric(
-                                                vertical: isSmall ? 14 : 16,
-                                              ),
-                                              decoration: BoxDecoration(
-                                                color: AppColors.brandPrimary,
-                                                borderRadius:
-                                                    BorderRadius.circular(16),
-                                                boxShadow: [
-                                                  BoxShadow(
-                                                    color: AppColors.brandPrimary
-                                                        .withOpacity(0.4),
-                                                    blurRadius: 14,
-                                                    offset: const Offset(0, 5),
-                                                  ),
-                                                ],
-                                              ),
-                                              child: Row(
-                                                mainAxisAlignment:
-                                                    MainAxisAlignment.center,
-                                                children: [
-                                                  Icon(
-                                                    Icons.check_circle_outline,
-                                                    color: Colors.white,
-                                                    size: isSmall ? 18 : 20,
-                                                  ),
-                                                  const SizedBox(width: 8),
-                                                  Text(
-                                                    "Submit Payment",
-                                                    style: TextStyle(
-                                                      color: Colors.white,
-                                                      fontWeight: FontWeight.w700,
-                                                      fontSize: isSmall ? 14 : 15,
-                                                      letterSpacing: 0.3,
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                          )
-                                        else
-                                          Center(
-                                            child: Container(
-                                              padding: EdgeInsets.symmetric(
-                                                horizontal: isSmall ? 18 : 24,
-                                                vertical: isSmall ? 10 : 12,
-                                              ),
-                                              decoration: BoxDecoration(
-                                                color: Colors.green.shade50,
-                                                borderRadius:
-                                                    BorderRadius.circular(30),
-                                                border: Border.all(
-                                                  color: Colors.green.shade200,
-                                                ),
-                                              ),
-                                              child: Row(
-                                                mainAxisSize: MainAxisSize.min,
-                                                children: [
-                                                  Icon(
-                                                    Icons.verified_rounded,
-                                                    color: Colors.green.shade600,
-                                                    size: isSmall ? 15 : 18,
-                                                  ),
-                                                  SizedBox(
-                                                      width: isSmall ? 6 : 8),
-                                                  Text(
-                                                    "Payment done",
-                                                    style: TextStyle(
-                                                      color:
-                                                          Colors.green.shade700,
-                                                      fontWeight:
-                                                          FontWeight.w600,
-                                                      fontSize: isSmall ? 12 : 14,
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                          ),
-                                      ],
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
+                    Expanded(
+                      child: Padding(
+                        padding: EdgeInsets.only(
+                          bottom: MediaQuery.of(
+                            ctx,
+                          ).viewInsets.bottom, // ✅ KEYBOARD SPACE
+                        ),
+                        child: ListView(
+                          controller: scrollCtrl,
+                          keyboardDismissBehavior:
+                              ScrollViewKeyboardDismissBehavior.onDrag,
+                          padding: EdgeInsets.fromLTRB(
+                            hPad,
+                            14,
+                            hPad,
+                            32 + MediaQuery.of(ctx).padding.bottom,
                           ),
-
-                          // ── Payment History (installments) ─────────────────
-                          // Lists every installment recorded against this trip.
-                          // Loaded via TripPageViewModel.paymentHistory(tripId)
-                          // (triggered when the sheet opens) and read from its
-                          // state's paymentHistory AsyncValue.
-                          if (bookinginfo.tripId != null) ...[
-                            SizedBox(height: sectionGap),
-                            Consumer(
-                              builder: (context, innerRef, _) {
-                                final async = innerRef.watch(
-                                  tripPageViewModelProvider.select(
-                                    (s) => s.paymentHistory,
+                          children: [
+                            // ── Payment & Charges ──────────────────────────────
+                            Container(
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(cardRadius),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.05),
+                                    blurRadius: 10,
+                                    offset: const Offset(0, 3),
                                   ),
-                                );
-
-                                Widget shell(Widget body) {
-                                  return Container(
+                                ],
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Container(
+                                    padding: EdgeInsets.fromLTRB(
+                                      14,
+                                      isSmall ? 10 : 12,
+                                      14,
+                                      isSmall ? 8 : 10,
+                                    ),
                                     decoration: BoxDecoration(
-                                      color: Colors.white,
-                                      borderRadius:
-                                          BorderRadius.circular(cardRadius),
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: Colors.black.withOpacity(0.05),
-                                          blurRadius: 10,
-                                          offset: const Offset(0, 3),
+                                      color: const Color(0xFFFFF0F3),
+                                      borderRadius: BorderRadius.vertical(
+                                        top: Radius.circular(cardRadius),
+                                      ),
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        const Icon(
+                                          Icons.account_balance_wallet_outlined,
+
+                                          size: 14,
+                                          color: Color(0xFFE63946),
+                                        ),
+                                        const SizedBox(width: 7),
+                                        Text(
+                                          "PAYMENT & CHARGES",
+                                          style: TextStyle(
+                                            color: const Color(0xFFE63946),
+                                            fontWeight: FontWeight.w700,
+                                            fontSize: labelFontSize,
+                                            letterSpacing: 0.5,
+                                          ),
                                         ),
                                       ],
                                     ),
+                                  ),
+                                  Padding(
+                                    padding: EdgeInsets.all(isSmall ? 12 : 16),
                                     child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
                                       children: [
+                                        // Approved amount highlight — always shown
                                         Container(
-                                          width: double.infinity,
-                                          padding: EdgeInsets.fromLTRB(
-                                            14,
-                                            isSmall ? 10 : 12,
-                                            14,
-                                            isSmall ? 8 : 10,
+                                          padding: EdgeInsets.symmetric(
+                                            horizontal: isSmall ? 12 : 16,
+                                            vertical: isSmall ? 12 : 14,
                                           ),
                                           decoration: BoxDecoration(
-                                            color: _accentSoft,
-                                            borderRadius: BorderRadius.vertical(
-                                              top: Radius.circular(cardRadius),
+                                            color: const Color(0xFFD8F3DC),
+                                            borderRadius: BorderRadius.circular(
+                                              12,
                                             ),
                                           ),
                                           child: Row(
                                             children: [
                                               Icon(
-                                                Icons.receipt_long_rounded,
-                                                size: isSmall ? 13 : 15,
-                                                color: _accent,
+                                                Icons.verified_rounded,
+                                                color: const Color(0xFF2D6A4F),
+                                                size: isSmall ? 17 : 20,
                                               ),
-                                              const SizedBox(width: 7),
+                                              SizedBox(width: isSmall ? 8 : 10),
+                                              Expanded(
+                                                child: Text(
+                                                  "Approved Amount",
+                                                  style: TextStyle(
+                                                    color: const Color(
+                                                      0xFF2D6A4F,
+                                                    ),
+                                                    fontWeight: FontWeight.w600,
+                                                    fontSize: isSmall ? 12 : 13,
+                                                  ),
+                                                ),
+                                              ),
                                               Text(
-                                                "PAYMENT HISTORY",
+                                                "₹${bookinginfo.amountApprove ?? 0}",
                                                 style: TextStyle(
-                                                  color: _accent,
-                                                  fontWeight: FontWeight.w700,
-                                                  fontSize: labelFontSize,
-                                                  letterSpacing: 0.5,
+                                                  color: const Color(
+                                                    0xFF1B4332,
+                                                  ),
+                                                  fontWeight: FontWeight.w800,
+                                                  fontSize: isSmall ? 15 : 18,
                                                 ),
                                               ),
                                             ],
                                           ),
                                         ),
-                                        Padding(
-                                          padding: EdgeInsets.fromLTRB(
-                                            14,
-                                            8,
-                                            14,
-                                            isSmall ? 10 : 12,
-                                          ),
-                                          child: body,
-                                        ),
-                                      ],
-                                    ),
-                                  );
-                                }
+                                        if (paymentStatus ==
+                                            "Partially Paid") ...[
+                                          const SizedBox(height: 12),
 
-                                Widget centered(Widget child) => Padding(
-                                      padding:
-                                          const EdgeInsets.symmetric(vertical: 14),
-                                      child: Center(child: child),
-                                    );
+                                          Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.spaceBetween,
+                                            children: [
+                                              Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+                                                children: [
+                                                  const Text(
+                                                    "Paid Amount",
+                                                    style: TextStyle(
+                                                      fontWeight:
+                                                          FontWeight.w600,
+                                                    ),
+                                                  ),
+                                                  Text(
+                                                    "₹$received",
+                                                    style: const TextStyle(
+                                                      fontWeight:
+                                                          FontWeight.w700,
+                                                      color: Colors.green,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
 
-                                return async.when(
-                                  loading: () => shell(
-                                    centered(
-                                      SizedBox(
-                                        width: 22,
-                                        height: 22,
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 2.2,
-                                          color: _accent,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                  error: (e, _) => shell(
-                                    centered(
-                                      Column(
-                                        children: [
-                                          Icon(
-                                            Icons.error_outline_rounded,
-                                            color: _danger,
-                                            size: 22,
+                                              Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.end,
+                                                children: [
+                                                  const Text(
+                                                    "Pending Amount",
+                                                    style: TextStyle(
+                                                      fontWeight:
+                                                          FontWeight.w600,
+                                                    ),
+                                                  ),
+                                                  Text(
+                                                    "₹$pending",
+                                                    style: const TextStyle(
+                                                      fontWeight:
+                                                          FontWeight.w700,
+                                                      color: Colors.red,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ],
                                           ),
-                                          const SizedBox(height: 6),
-                                          Text(
-                                            "Couldn't load payment history",
-                                            style: TextStyle(
-                                              fontSize: 12,
-                                              color: _textSec,
-                                            ),
-                                          ),
-                                          const SizedBox(height: 8),
-                                          GestureDetector(
-                                            onTap: () => innerRef
-                                                .read(
-                                                  tripPageViewModelProvider
-                                                      .notifier,
-                                                )
-                                                .paymentHistory(
-                                                  bookinginfo.tripId!,
+                                        ],
+                                        const SizedBox(height: 12),
+                                        // ── Input fields: hidden for active/upcoming unpaid ──
+                                        if (!isActiveOrUpcoming &&
+                                            !isCancelled) ...[
+                                          SizedBox(height: isSmall ? 10 : 12),
+                                          paymentFields(),
+                                          // ── Submit Payment (below payment mode) ──
+                                          const SizedBox(height: 16),
+                                          if (isEditable ||
+                                              paymentStatus == "Partially Paid")
+                                            GestureDetector(
+                                              onTap: () async {
+                                                if (paymentModeNotifier.value ==
+                                                    null) {
+                                                  ScaffoldMessenger.of(
+                                                    context,
+                                                  ).showSnackBar(
+                                                    const SnackBar(
+                                                      content: Text(
+                                                        "Please select a payment mode",
+                                                      ),
+                                                      backgroundColor:
+                                                          Colors.red,
+                                                    ),
+                                                  );
+                                                  return;
+                                                }
+
+                                                final updated = BookingInfo(
+                                                  tripId: bookinginfo.tripId,
+                                                  tollCharges:
+                                                      double.tryParse(
+                                                        tollController.text,
+                                                      ) ??
+                                                      0,
+                                                  repairingCharges:
+                                                      double.tryParse(
+                                                        repairController.text,
+                                                      ) ??
+                                                      0,
+                                                  driverCharges:
+                                                      double.tryParse(
+                                                        driverController.text,
+                                                      ) ??
+                                                      0,
+                                                  fuelCharges:
+                                                      double.tryParse(
+                                                        fuelController.text,
+                                                      ) ??
+                                                      0,
+                                                  amountReceived:
+                                                      double.tryParse(
+                                                        receivedController.text,
+                                                      ) ??
+                                                      0,
+                                                  paymentMode:
+                                                      paymentModeNotifier.value,
+                                                );
+                                                final err = await ref
+                                                    .read(
+                                                      tripPageViewModelProvider
+                                                          .notifier,
+                                                    )
+                                                    .updatePaymentStatus(
+                                                      updated,
+                                                    );
+                                                if (err != null) {
+                                                  ScaffoldMessenger.of(
+                                                    context,
+                                                  ).showSnackBar(
+                                                    SnackBar(
+                                                      content: Text(
+                                                        "Payment not saved: $err",
+                                                      ),
+                                                      backgroundColor:
+                                                          Colors.red,
+                                                    ),
+                                                  );
+                                                  return;
+                                                }
+                                                if (bookinginfo.tripId !=
+                                                    null) {
+                                                  await ref
+                                                      .read(
+                                                        tripPageViewModelProvider
+                                                            .notifier,
+                                                      )
+                                                      .paymentHistory(
+                                                        bookinginfo.tripId!,
+                                                      );
+                                                }
+                                                if (onTripUpdated != null) {
+                                                  await onTripUpdated!();
+                                                }
+                                                Navigator.pop(ctx);
+                                                ScaffoldMessenger.of(
+                                                  context,
+                                                ).showSnackBar(
+                                                  const SnackBar(
+                                                    content: Text(
+                                                      "Payment details updated successfully!",
+                                                    ),
+                                                    backgroundColor:
+                                                        Colors.green,
+                                                  ),
+                                                );
+                                              },
+                                              child: Container(
+                                                width: double.infinity,
+                                                padding: EdgeInsets.symmetric(
+                                                  vertical: isSmall ? 14 : 16,
                                                 ),
-                                            child: Text(
-                                              "Retry",
-                                              style: TextStyle(
-                                                fontSize: 12.5,
-                                                fontWeight: FontWeight.w700,
-                                                color: _accent,
+                                                decoration: BoxDecoration(
+                                                  color: AppColors.brandPrimary,
+                                                  borderRadius:
+                                                      BorderRadius.circular(16),
+                                                  boxShadow: [
+                                                    BoxShadow(
+                                                      color: AppColors
+                                                          .brandPrimary
+                                                          .withOpacity(0.4),
+                                                      blurRadius: 14,
+                                                      offset: const Offset(
+                                                        0,
+                                                        5,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                                child: Row(
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment.center,
+                                                  children: [
+                                                    Icon(
+                                                      Icons
+                                                          .check_circle_outline,
+                                                      color: Colors.white,
+                                                      size: isSmall ? 18 : 20,
+                                                    ),
+                                                    const SizedBox(width: 8),
+                                                    Text(
+                                                      "Submit Payment",
+                                                      style: TextStyle(
+                                                        color: Colors.white,
+                                                        fontWeight:
+                                                            FontWeight.w700,
+                                                        fontSize: isSmall
+                                                            ? 14
+                                                            : 15,
+                                                        letterSpacing: 0.3,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            )
+                                          else
+                                            Center(
+                                              child: Container(
+                                                padding: EdgeInsets.symmetric(
+                                                  horizontal: isSmall ? 18 : 24,
+                                                  vertical: isSmall ? 10 : 12,
+                                                ),
+                                                decoration: BoxDecoration(
+                                                  color: Colors.green.shade50,
+                                                  borderRadius:
+                                                      BorderRadius.circular(30),
+                                                  border: Border.all(
+                                                    color:
+                                                        Colors.green.shade200,
+                                                  ),
+                                                ),
+                                                child: Row(
+                                                  mainAxisSize:
+                                                      MainAxisSize.min,
+                                                  children: [
+                                                    Icon(
+                                                      Icons.verified_rounded,
+                                                      color:
+                                                          Colors.green.shade600,
+                                                      size: isSmall ? 15 : 18,
+                                                    ),
+                                                    SizedBox(
+                                                      width: isSmall ? 6 : 8,
+                                                    ),
+                                                    Text(
+                                                      "Payment done",
+                                                      style: TextStyle(
+                                                        color: Colors
+                                                            .green
+                                                            .shade700,
+                                                        fontWeight:
+                                                            FontWeight.w600,
+                                                        fontSize: isSmall
+                                                            ? 12
+                                                            : 14,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
                                               ),
                                             ),
+                                        ],
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+
+                            // ── Payment History (installments) ─────────────────
+                            // Lists every installment recorded against this trip.
+                            // Loaded via TripPageViewModel.paymentHistory(tripId)
+                            // (triggered when the sheet opens) and read from its
+                            // state's paymentHistory AsyncValue.
+                            if (bookinginfo.tripId != null) ...[
+                              SizedBox(height: sectionGap),
+                              Consumer(
+                                builder: (context, innerRef, _) {
+                                  final async = innerRef.watch(
+                                    tripPageViewModelProvider.select(
+                                      (s) => s.paymentHistory,
+                                    ),
+                                  );
+
+                                  Widget shell(Widget body) {
+                                    return Container(
+                                      decoration: BoxDecoration(
+                                        color: Colors.white,
+                                        borderRadius: BorderRadius.circular(
+                                          cardRadius,
+                                        ),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: Colors.black.withOpacity(
+                                              0.05,
+                                            ),
+                                            blurRadius: 10,
+                                            offset: const Offset(0, 3),
                                           ),
                                         ],
                                       ),
-                                    ),
-                                  ),
-                                  data: (payments) {
-                                    if (payments.isEmpty) {
-                                      return shell(
-                                        centered(
-                                          Column(
-                                            children: [
-                                              Icon(
-                                                Icons.history_toggle_off_rounded,
-                                                color: _textSec,
-                                                size: 24,
-                                              ),
-                                              const SizedBox(height: 6),
-                                              Text(
-                                                "No payments recorded yet",
-                                                style: TextStyle(
-                                                  fontSize: 12,
-                                                  color: _textSec,
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Container(
+                                            width: double.infinity,
+                                            padding: EdgeInsets.fromLTRB(
+                                              14,
+                                              isSmall ? 10 : 12,
+                                              14,
+                                              isSmall ? 8 : 10,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: _accentSoft,
+                                              borderRadius:
+                                                  BorderRadius.vertical(
+                                                    top: Radius.circular(
+                                                      cardRadius,
+                                                    ),
+                                                  ),
+                                            ),
+                                            child: Row(
+                                              children: [
+                                                Icon(
+                                                  Icons.receipt_long_rounded,
+                                                  size: isSmall ? 13 : 15,
+                                                  color: _accent,
                                                 ),
-                                              ),
-                                            ],
+                                                const SizedBox(width: 7),
+                                                Text(
+                                                  "PAYMENT HISTORY",
+                                                  style: TextStyle(
+                                                    color: _accent,
+                                                    fontWeight: FontWeight.w700,
+                                                    fontSize: labelFontSize,
+                                                    letterSpacing: 0.5,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                          Padding(
+                                            padding: EdgeInsets.fromLTRB(
+                                              14,
+                                              8,
+                                              14,
+                                              isSmall ? 10 : 12,
+                                            ),
+                                            child: body,
+                                          ),
+                                        ],
+                                      ),
+                                    );
+                                  }
+
+                                  Widget centered(Widget child) => Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 14,
+                                    ),
+                                    child: Center(child: child),
+                                  );
+
+                                  return async.when(
+                                    loading: () => shell(
+                                      centered(
+                                        SizedBox(
+                                          width: 22,
+                                          height: 22,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2.2,
+                                            color: _accent,
                                           ),
                                         ),
-                                      );
-                                    }
-
-                                    final total = payments.fold<double>(
-                                      0,
-                                      (sum, p) => sum + (p.Amount ?? 0),
-                                    );
-
-                                    return shell(
-                                      Column(
-                                        children: [
-                                          for (int i = 0;
-                                              i < payments.length;
-                                              i++) ...[
-                                            if (i > 0)
-                                              Divider(
-                                                height: 14,
-                                                color: Colors.grey.shade100,
+                                      ),
+                                    ),
+                                    error: (e, _) => shell(
+                                      centered(
+                                        Column(
+                                          children: [
+                                            Icon(
+                                              Icons.error_outline_rounded,
+                                              color: _danger,
+                                              size: 22,
+                                            ),
+                                            const SizedBox(height: 6),
+                                            Text(
+                                              "Couldn't load payment history",
+                                              style: TextStyle(
+                                                fontSize: 12,
+                                                color: _textSec,
                                               ),
-                                            Row(
-                                              children: [
-                                                Container(
-                                                  width: isSmall ? 34 : 38,
-                                                  height: isSmall ? 34 : 38,
-                                                  decoration: BoxDecoration(
-                                                    color: _successSoft,
-                                                    borderRadius:
-                                                        BorderRadius.circular(10),
+                                            ),
+                                            const SizedBox(height: 8),
+                                            GestureDetector(
+                                              onTap: () => innerRef
+                                                  .read(
+                                                    tripPageViewModelProvider
+                                                        .notifier,
+                                                  )
+                                                  .paymentHistory(
+                                                    bookinginfo.tripId!,
                                                   ),
-                                                  child: Icon(
-                                                    Icons
-                                                        .account_balance_wallet_rounded,
-                                                    size: isSmall ? 16 : 18,
-                                                    color: _success,
+                                              child: Text(
+                                                "Retry",
+                                                style: TextStyle(
+                                                  fontSize: 12.5,
+                                                  fontWeight: FontWeight.w700,
+                                                  color: _accent,
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                    data: (payments) {
+                                      if (payments.isEmpty) {
+                                        return shell(
+                                          centered(
+                                            Column(
+                                              children: [
+                                                Icon(
+                                                  Icons
+                                                      .history_toggle_off_rounded,
+                                                  color: _textSec,
+                                                  size: 24,
+                                                ),
+                                                const SizedBox(height: 6),
+                                                Text(
+                                                  "No payments recorded yet",
+                                                  style: TextStyle(
+                                                    fontSize: 12,
+                                                    color: _textSec,
                                                   ),
                                                 ),
-                                                const SizedBox(width: 12),
-                                                Expanded(
-                                                  child: Column(
-                                                    crossAxisAlignment:
-                                                        CrossAxisAlignment.start,
-                                                    children: [
-                                                      Text(
-                                                        payments[i].PaymentMode
-                                                                ?.isNotEmpty ==
-                                                            true
-                                                            ? payments[i]
-                                                                .PaymentMode!
-                                                            : "Payment",
-                                                        style: TextStyle(
-                                                          fontSize:
-                                                              isSmall ? 12.5 : 13.5,
-                                                          fontWeight:
-                                                              FontWeight.w700,
-                                                          color: _textPrimary,
+                                              ],
+                                            ),
+                                          ),
+                                        );
+                                      }
+
+                                      final total = payments.fold<double>(
+                                        0,
+                                        (sum, p) => sum + (p.Amount ?? 0),
+                                      );
+
+                                      return shell(
+                                        Column(
+                                          children: [
+                                            for (
+                                              int i = 0;
+                                              i < payments.length;
+                                              i++
+                                            ) ...[
+                                              if (i > 0)
+                                                Divider(
+                                                  height: 14,
+                                                  color: Colors.grey.shade100,
+                                                ),
+                                              Row(
+                                                children: [
+                                                  Container(
+                                                    width: isSmall ? 34 : 38,
+                                                    height: isSmall ? 34 : 38,
+                                                    decoration: BoxDecoration(
+                                                      color: _successSoft,
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                            10,
+                                                          ),
+                                                    ),
+                                                    child: Icon(
+                                                      Icons
+                                                          .account_balance_wallet_rounded,
+                                                      size: isSmall ? 16 : 18,
+                                                      color: _success,
+                                                    ),
+                                                  ),
+                                                  const SizedBox(width: 12),
+                                                  Expanded(
+                                                    child: Column(
+                                                      crossAxisAlignment:
+                                                          CrossAxisAlignment
+                                                              .start,
+                                                      children: [
+                                                        Text(
+                                                          payments[i]
+                                                                      .PaymentMode
+                                                                      ?.isNotEmpty ==
+                                                                  true
+                                                              ? payments[i]
+                                                                    .PaymentMode!
+                                                              : "Payment",
+                                                          style: TextStyle(
+                                                            fontSize: isSmall
+                                                                ? 12.5
+                                                                : 13.5,
+                                                            fontWeight:
+                                                                FontWeight.w700,
+                                                            color: _textPrimary,
+                                                          ),
                                                         ),
-                                                      ),
-                                                      const SizedBox(height: 2),
-                                                      Text(
-                                                        _prettyDateTime(
-                                                          payments[i].PaymentDate,
+                                                        const SizedBox(
+                                                          height: 2,
                                                         ),
-                                                        style: TextStyle(
-                                                          fontSize: 11,
-                                                          color: _textSec,
+                                                        Text(
+                                                          _prettyDateTime(
+                                                            payments[i]
+                                                                .PaymentDate,
+                                                          ),
+                                                          style: TextStyle(
+                                                            fontSize: 11,
+                                                            color: _textSec,
+                                                          ),
                                                         ),
-                                                      ),
-                                                    ],
+                                                      ],
+                                                    ),
+                                                  ),
+                                                  Text(
+                                                    "₹${(payments[i].Amount ?? 0).toStringAsFixed(0)}",
+                                                    style: TextStyle(
+                                                      fontSize: isSmall
+                                                          ? 14
+                                                          : 15.5,
+                                                      fontWeight:
+                                                          FontWeight.w800,
+                                                      color: _success,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ],
+                                            Divider(
+                                              height: 18,
+                                              color: Colors.grey.shade200,
+                                            ),
+                                            Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment
+                                                      .spaceBetween,
+                                              children: [
+                                                Text(
+                                                  "Total Paid",
+                                                  style: TextStyle(
+                                                    fontSize: isSmall
+                                                        ? 12.5
+                                                        : 13.5,
+                                                    fontWeight: FontWeight.w700,
+                                                    color: _textPrimary,
                                                   ),
                                                 ),
                                                 Text(
-                                                  "₹${(payments[i].Amount ?? 0).toStringAsFixed(0)}",
+                                                  "₹${total.toStringAsFixed(0)}",
                                                   style: TextStyle(
-                                                    fontSize: isSmall ? 14 : 15.5,
+                                                    fontSize: isSmall
+                                                        ? 15
+                                                        : 16.5,
                                                     fontWeight: FontWeight.w800,
-                                                    color: _success,
+                                                    color: _accent,
                                                   ),
                                                 ),
                                               ],
                                             ),
                                           ],
-                                          Divider(
-                                            height: 18,
-                                            color: Colors.grey.shade200,
-                                          ),
-                                          Row(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.spaceBetween,
-                                            children: [
-                                              Text(
-                                                "Total Paid",
-                                                style: TextStyle(
-                                                  fontSize: isSmall ? 12.5 : 13.5,
-                                                  fontWeight: FontWeight.w700,
-                                                  color: _textPrimary,
-                                                ),
-                                              ),
-                                              Text(
-                                                "₹${total.toStringAsFixed(0)}",
-                                                style: TextStyle(
-                                                  fontSize: isSmall ? 15 : 16.5,
-                                                  fontWeight: FontWeight.w800,
-                                                  color: _accent,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ],
-                                      ),
-                                    );
-                                  },
-                                );
-                              },
-                            ),
-                          ],
-
-                          // ── End Trip Button (Only for Active) ──
-                          // Closes out an in-progress trip: stamps the end time
-                          // and records payment in one step, then moves it to
-                          // unpaid / paid. This is how open-ended (no end set)
-                          // trips get completed.
-                          if (bookinginfo.status == 1) ...[
-                            const SizedBox(height: 20),
-                            GestureDetector(
-                              onTap: () {
-                                Navigator.pop(ctx);
-                                _showEndTripSheet(context, ref);
-                              },
-                              child: Container(
-                                width: double.infinity,
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 16,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFF2DB976),
-                                  borderRadius: BorderRadius.circular(16),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: const Color(0xFF2DB976).withOpacity(0.35),
-                                      blurRadius: 14,
-                                      offset: const Offset(0, 5),
-                                    ),
-                                  ],
-                                ),
-                                child: const Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(
-                                      Icons.flag_circle_rounded,
-                                      color: Colors.white,
-                                    ),
-                                    SizedBox(width: 8),
-                                    Text(
-                                      "End Trip",
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.w700,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ],
-
-                          // ── Cancel Trip Button (Only for Active / Upcoming) ──
-                          if (isActiveOrUpcoming) ...[
-                            const SizedBox(height: 20),
-                            GestureDetector(
-                              onTap: () async {
-                                // Confirmation Dialog
-                                final confirm = await showDialog<bool>(
-                                  context: context,
-                                  builder: (_) => AlertDialog(
-                                    title: const Text("Cancel Trip"),
-                                    content: const Text(
-                                      "Are you sure you want to cancel this trip?",
-                                    ),
-                                    actions: [
-                                      TextButton(
-                                        onPressed: () =>
-                                            Navigator.pop(context, false),
-                                        child: const Text("No"),
-                                      ),
-                                      ElevatedButton(
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: Colors.red,
                                         ),
-                                        onPressed: () =>
-                                            Navigator.pop(context, true),
-                                        child: const Text("Yes, Cancel"),
+                                      );
+                                    },
+                                  );
+                                },
+                              ),
+                            ],
+
+                            // ── End Trip Button (Only for Active) ──
+                            // Closes out an in-progress trip: stamps the end time
+                            // and records payment in one step, then moves it to
+                            // unpaid / paid. This is how open-ended (no end set)
+                            // trips get completed.
+                            if (bookinginfo.status == 1) ...[
+                              const SizedBox(height: 20),
+                              GestureDetector(
+                                onTap: () {
+                                  Navigator.pop(ctx);
+                                  _showEndTripSheet(context, ref);
+                                },
+                                child: Container(
+                                  width: double.infinity,
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 16,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF2DB976),
+                                    borderRadius: BorderRadius.circular(16),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: const Color(
+                                          0xFF2DB976,
+                                        ).withOpacity(0.35),
+                                        blurRadius: 14,
+                                        offset: const Offset(0, 5),
                                       ),
                                     ],
                                   ),
-                                );
-
-                                if (confirm == true) {
-                                  // final updated = BookingInfo(
-                                  //   tripId: bookinginfo.tripId,
-                                  //   status: 5, // 🔥 Cancelled
-                                  // );
-
-                                  final trip_id = bookinginfo.tripId;
-                                  if (trip_id == null) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                        content: Text("Invalid Trip ID"),
+                                  child: const Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(
+                                        Icons.flag_circle_rounded,
+                                        color: Colors.white,
                                       ),
-                                    );
-                                    return;
-                                  }
+                                      SizedBox(width: 8),
+                                      Text(
+                                        "End Trip",
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
 
-                                  final cancelErr = await ref
-                                      .read(tripPageViewModelProvider.notifier)
-                                      .cancelTrip(trip_id);
-                                  if (cancelErr != null) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content:
-                                            Text("Trip not cancelled: $cancelErr"),
-                                        backgroundColor: Colors.red,
+                            // ── Cancel Trip Button (Only for Active / Upcoming) ──
+                            if (isActiveOrUpcoming) ...[
+                              const SizedBox(height: 20),
+                              GestureDetector(
+                                onTap: () async {
+                                  // Confirmation Dialog
+                                  final confirm = await showDialog<bool>(
+                                    context: context,
+                                    builder: (_) => AlertDialog(
+                                      title: const Text("Cancel Trip"),
+                                      content: const Text(
+                                        "Are you sure you want to cancel this trip?",
                                       ),
-                                    );
-                                    return;
-                                  }
-                                  if (onTripUpdated != null) {
-                                    await onTripUpdated!();
-                                  }
-                                  Navigator.pop(ctx);
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text(
-                                        "Trip cancelled successfully!",
-                                      ),
-                                      backgroundColor: Colors.green,
+                                      actions: [
+                                        TextButton(
+                                          onPressed: () =>
+                                              Navigator.pop(context, false),
+                                          child: const Text("No"),
+                                        ),
+                                        ElevatedButton(
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: Colors.red,
+                                          ),
+                                          onPressed: () =>
+                                              Navigator.pop(context, true),
+                                          child: const Text("Yes, Cancel"),
+                                        ),
+                                      ],
                                     ),
                                   );
-                                }
-                              },
-                              child: Container(
-                                width: double.infinity,
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 16,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFE63946),
-                                  borderRadius: BorderRadius.circular(16),
-                                ),
-                                child: const Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(
-                                      Icons.cancel_outlined,
-                                      color: Colors.white,
-                                    ),
-                                    SizedBox(width: 8),
-                                    Text(
-                                      "Cancel Trip",
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.w700,
+
+                                  if (confirm == true) {
+                                    // final updated = BookingInfo(
+                                    //   tripId: bookinginfo.tripId,
+                                    //   status: 5, // 🔥 Cancelled
+                                    // );
+
+                                    final trip_id = bookinginfo.tripId;
+                                    if (trip_id == null) {
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        const SnackBar(
+                                          content: Text("Invalid Trip ID"),
+                                        ),
+                                      );
+                                      return;
+                                    }
+
+                                    final cancelErr = await ref
+                                        .read(
+                                          tripPageViewModelProvider.notifier,
+                                        )
+                                        .cancelTrip(trip_id);
+                                    if (cancelErr != null) {
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        SnackBar(
+                                          content: Text(
+                                            "Trip not cancelled: $cancelErr",
+                                          ),
+                                          backgroundColor: Colors.red,
+                                        ),
+                                      );
+                                      return;
+                                    }
+                                    if (onTripUpdated != null) {
+                                      await onTripUpdated!();
+                                    }
+                                    Navigator.pop(ctx);
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text(
+                                          "Trip cancelled successfully!",
+                                        ),
+                                        backgroundColor: Colors.green,
                                       ),
-                                    ),
-                                  ],
+                                    );
+                                  }
+                                },
+                                child: Container(
+                                  width: double.infinity,
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 16,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFE63946),
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                  child: const Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(
+                                        Icons.cancel_outlined,
+                                        color: Colors.white,
+                                      ),
+                                      SizedBox(width: 8),
+                                      Text(
+                                        "Cancel Trip",
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               ),
+                            ],
+
+                            SizedBox(height: sectionGap),
+                            // ── Trip Info ──────────────────────────────────────
+                            infoBlock(
+                              label: "TRIP INFO",
+                              icon: Icons.route_rounded,
+                              color: AppColors.brandPrimary,
+                              rows: [
+                                detailRow(
+                                  "Pickup",
+                                  bookinginfo.pickupLocation ?? "--",
+                                  Icons.trip_origin,
+                                  AppColors.brandPrimary,
+                                ),
+                                rowDivider(),
+                                detailRow(
+                                  "Drop",
+                                  bookinginfo.dropLocation ?? "--",
+                                  Icons.location_on,
+                                  AppColors.brandPrimary,
+                                ),
+                                rowDivider(),
+                                detailRow(
+                                  "Booked",
+                                  _formatDate(bookinginfo.bookingDate),
+                                  Icons.event_note_rounded,
+                                  AppColors.brandPrimary,
+                                ),
+                                rowDivider(),
+                                detailRow(
+                                  "Start",
+                                  "${_formatDate(bookinginfo.startDateTime)}  ${_formatTime(bookinginfo.startDateTime)}",
+                                  Icons.calendar_today_outlined,
+                                  AppColors.brandPrimary,
+                                ),
+                                rowDivider(),
+                                detailRow(
+                                  "End",
+                                  "${_formatDate(bookinginfo.endDateTime)}  ${_formatTime(bookinginfo.endDateTime)}",
+                                  Icons.calendar_today_outlined,
+                                  AppColors.brandPrimary,
+                                ),
+                                rowDivider(),
+                                detailRow(
+                                  "Distance",
+                                  "${bookinginfo.distance?.toString() ?? "--"} km",
+                                  Icons.straighten,
+                                  AppColors.brandPrimary,
+                                ),
+                                rowDivider(),
+                                detailRow(
+                                  "Trip Type",
+                                  bookinginfo.isReturnTrip == 1
+                                      ? "Round Trip"
+                                      : "One Way",
+                                  bookinginfo.isReturnTrip == 1
+                                      ? Icons.sync_alt_rounded
+                                      : Icons.trending_flat_rounded,
+                                  AppColors.brandPrimary,
+                                ),
+                              ],
+                            ),
+
+                            SizedBox(height: sectionGap),
+                            // ── Customer + Driver ──────────────────────────────
+                            customerDriverRow(),
+
+                            SizedBox(height: sectionGap),
+                            // ── Vehicle Info ───────────────────────────────────
+                            infoBlock(
+                              label: "VEHICLE",
+                              icon: Icons.directions_car_outlined,
+                              color: const Color(0xFF06D6A0),
+                              rows: [
+                                detailRow(
+                                  "Vehicle",
+                                  bookinginfo.vehicle_info ?? "--",
+                                  Icons.local_shipping_outlined,
+                                  const Color(0xFF06D6A0),
+                                ),
+                                rowDivider(),
+                                detailRow(
+                                  "Capacity",
+                                  bookinginfo.capacity?.toString() ?? "--",
+                                  Icons.group_outlined,
+                                  const Color(0xFF06D6A0),
+                                ),
+                                rowDivider(),
+                                detailRow(
+                                  "Fuel",
+                                  bookinginfo.fuelType ?? "--",
+                                  Icons.local_gas_station_outlined,
+                                  const Color(0xFF06D6A0),
+                                ),
+                                rowDivider(),
+                                detailRow(
+                                  "Mileage",
+                                  bookinginfo.mileage ?? "--",
+                                  Icons.speed_outlined,
+                                  const Color(0xFF06D6A0),
+                                ),
+                              ],
                             ),
                           ],
-
-                          SizedBox(height: sectionGap),
-                          // ── Trip Info ──────────────────────────────────────
-                          infoBlock(
-                            label: "TRIP INFO",
-                            icon: Icons.route_rounded,
-                            color: AppColors.brandPrimary,
-                            rows: [
-                              detailRow(
-                                "Pickup",
-                                bookinginfo.pickupLocation ?? "--",
-                                Icons.trip_origin,
-                                AppColors.brandPrimary,
-                              ),
-                              rowDivider(),
-                              detailRow(
-                                "Drop",
-                                bookinginfo.dropLocation ?? "--",
-                                Icons.location_on,
-                                AppColors.brandPrimary,
-                              ),
-                              rowDivider(), 
-                              detailRow(
-                                "Booked",
-                                _formatDate(bookinginfo.bookingDate),
-                                Icons.event_note_rounded,
-                                AppColors.brandPrimary,
-                              ),
-                              rowDivider(),
-                              detailRow(
-                                "Start",
-                                "${_formatDate(bookinginfo.startDateTime)}  ${_formatTime(bookinginfo.startDateTime)}",
-                                Icons.calendar_today_outlined,
-                                AppColors.brandPrimary,
-                              ),
-                              rowDivider(),
-                              detailRow(
-                                "End",
-                                "${_formatDate(bookinginfo.endDateTime)}  ${_formatTime(bookinginfo.endDateTime)}",
-                                Icons.calendar_today_outlined,
-                                AppColors.brandPrimary,
-                              ),
-                              rowDivider(),
-                              detailRow(
-                                "Distance",
-                                "${bookinginfo.distance?.toString() ?? "--"} km",
-                                Icons.straighten,
-                                AppColors.brandPrimary,
-                              ),
-                              rowDivider(),
-                              detailRow(
-                                "Trip Type",
-                                bookinginfo.isReturnTrip == 1
-                                    ? "Round Trip"
-                                    : "One Way",
-                                bookinginfo.isReturnTrip == 1
-                                    ? Icons.sync_alt_rounded
-                                    : Icons.trending_flat_rounded,
-                                AppColors.brandPrimary,
-                              ),
-                            ],
-                          ),
-
-                          SizedBox(height: sectionGap),
-                          // ── Customer + Driver ──────────────────────────────
-                          customerDriverRow(),
-
-                          SizedBox(height: sectionGap),
-                          // ── Vehicle Info ───────────────────────────────────
-                          infoBlock(
-                            label: "VEHICLE",
-                            icon: Icons.directions_car_outlined,
-                            color: const Color(0xFF06D6A0),
-                            rows: [
-                              detailRow(
-                                "Vehicle",
-                                bookinginfo.vehicle_info ?? "--",
-                                Icons.local_shipping_outlined,
-                                const Color(0xFF06D6A0),
-                              ),
-                              rowDivider(),
-                              detailRow(
-                                "Capacity",
-                                bookinginfo.capacity?.toString() ?? "--",
-                                Icons.group_outlined,
-                                const Color(0xFF06D6A0),
-                              ),
-                              rowDivider(),
-                              detailRow(
-                                "Fuel",
-                                bookinginfo.fuelType ?? "--",
-                                Icons.local_gas_station_outlined,
-                                const Color(0xFF06D6A0),
-                              ),
-                              rowDivider(),
-                              detailRow(
-                                "Mileage",
-                                bookinginfo.mileage ?? "--",
-                                Icons.speed_outlined,
-                                const Color(0xFF06D6A0),
-                              ),
-                            ],
-                          ),
-                        ],
+                        ),
                       ),
-  ),
                     ),
                   ],
                 ),
@@ -1706,8 +1825,9 @@ final receivedController = TextEditingController(
     // Build a wall-clock DateTime from UTC + 5:30, so the value shown and sent
     // is always IST. It serializes without a timezone marker, so the backend
     // stores the exact IST wall-clock (same as start_datetime).
-    final istNow =
-        DateTime.now().toUtc().add(const Duration(hours: 5, minutes: 30));
+    final istNow = DateTime.now().toUtc().add(
+      const Duration(hours: 5, minutes: 30),
+    );
     DateTime endSel = DateTime(
       istNow.year,
       istNow.month,
@@ -1793,16 +1913,20 @@ final receivedController = TextEditingController(
                   labelText: label,
                   labelStyle: TextStyle(fontSize: 12.5, color: accent),
                   prefixText: "₹ ",
-                  prefixStyle:
-                      TextStyle(fontWeight: FontWeight.w700, color: accent),
+                  prefixStyle: TextStyle(
+                    fontWeight: FontWeight.w700,
+                    color: accent,
+                  ),
                   prefixIcon: Icon(icon, size: 18, color: accent),
                   isDense: true,
                   filled: true,
                   fillColor: highlight
                       ? AppColors.brandSoft.withOpacity(0.5)
                       : Colors.grey.shade50,
-                  contentPadding:
-                      const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
+                  contentPadding: const EdgeInsets.symmetric(
+                    vertical: 14,
+                    horizontal: 12,
+                  ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide: BorderSide(
@@ -1823,55 +1947,58 @@ final receivedController = TextEditingController(
             }
 
             Widget sectionLabel(String t) => Padding(
-                  padding: const EdgeInsets.only(left: 2, bottom: 8),
-                  child: Text(
-                    t,
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 0.6,
-                      color: _textSec,
-                    ),
-                  ),
-                );
+              padding: const EdgeInsets.only(left: 2, bottom: 8),
+              child: Text(
+                t,
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 0.6,
+                  color: _textSec,
+                ),
+              ),
+            );
 
             Widget card({required Widget child}) => Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: _divider),
-                  ),
-                  child: child,
-                );
+              width: double.infinity,
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: _divider),
+              ),
+              child: child,
+            );
 
-            Widget summaryRow(String label, String value,
-                    {Color? color, bool bold = false}) =>
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 4),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        label,
-                        style: TextStyle(
-                          fontSize: 12.5,
-                          color: _textSec,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      Text(
-                        value,
-                        style: TextStyle(
-                          fontSize: 13.5,
-                          color: color ?? _textPrimary,
-                          fontWeight: bold ? FontWeight.w800 : FontWeight.w700,
-                        ),
-                      ),
-                    ],
+            Widget summaryRow(
+              String label,
+              String value, {
+              Color? color,
+              bool bold = false,
+            }) => Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    label,
+                    style: TextStyle(
+                      fontSize: 12.5,
+                      color: _textSec,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
-                );
+                  Text(
+                    value,
+                    style: TextStyle(
+                      fontSize: 13.5,
+                      color: color ?? _textPrimary,
+                      fontWeight: bold ? FontWeight.w800 : FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ),
+            );
 
             Future<void> pickEnd() async {
               final d = await showDatePicker(
@@ -1956,8 +2083,9 @@ final receivedController = TextEditingController(
                 child: Container(
                   decoration: const BoxDecoration(
                     color: Color(0xFFF7F8FC),
-                    borderRadius:
-                        BorderRadius.vertical(top: Radius.circular(26)),
+                    borderRadius: BorderRadius.vertical(
+                      top: Radius.circular(26),
+                    ),
                   ),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
@@ -1967,8 +2095,9 @@ final receivedController = TextEditingController(
                         padding: const EdgeInsets.fromLTRB(18, 12, 14, 18),
                         decoration: const BoxDecoration(
                           color: AppColors.brandHeader,
-                          borderRadius:
-                              BorderRadius.vertical(top: Radius.circular(26)),
+                          borderRadius: BorderRadius.vertical(
+                            top: Radius.circular(26),
+                          ),
                         ),
                         child: Column(
                           children: [
@@ -2065,8 +2194,9 @@ final receivedController = TextEditingController(
                                         height: 40,
                                         decoration: BoxDecoration(
                                           color: AppColors.brandSoft,
-                                          borderRadius:
-                                              BorderRadius.circular(10),
+                                          borderRadius: BorderRadius.circular(
+                                            10,
+                                          ),
                                         ),
                                         child: const Icon(
                                           Icons.event_available_rounded,
@@ -2106,8 +2236,9 @@ final receivedController = TextEditingController(
                                         ),
                                         decoration: BoxDecoration(
                                           color: AppColors.brandSoft,
-                                          borderRadius:
-                                              BorderRadius.circular(8),
+                                          borderRadius: BorderRadius.circular(
+                                            8,
+                                          ),
                                         ),
                                         child: const Row(
                                           mainAxisSize: MainAxisSize.min,
@@ -2139,17 +2270,29 @@ final receivedController = TextEditingController(
                               card(
                                 child: Column(
                                   children: [
-                                    money(tollCtrl, "Toll Charges",
-                                        Icons.toll_rounded),
+                                    money(
+                                      tollCtrl,
+                                      "Toll Charges",
+                                      Icons.toll_rounded,
+                                    ),
                                     const SizedBox(height: 10),
-                                    money(repairCtrl, "Repair Charges",
-                                        Icons.build_rounded),
+                                    money(
+                                      repairCtrl,
+                                      "Repair Charges",
+                                      Icons.build_rounded,
+                                    ),
                                     const SizedBox(height: 10),
-                                    money(driverCtrl, "Driver Charges",
-                                        Icons.payments_rounded),
+                                    money(
+                                      driverCtrl,
+                                      "Driver Charges",
+                                      Icons.payments_rounded,
+                                    ),
                                     const SizedBox(height: 10),
-                                    money(fuelCtrl, "Fuel Charges",
-                                        Icons.local_gas_station_rounded),
+                                    money(
+                                      fuelCtrl,
+                                      "Fuel Charges",
+                                      Icons.local_gas_station_rounded,
+                                    ),
                                   ],
                                 ),
                               ),
@@ -2181,53 +2324,67 @@ final receivedController = TextEditingController(
                                         ),
                                         isDense: true,
                                         filled: true,
-                                        fillColor: AppColors.brandSoft.withOpacity(0.5),
-                                        contentPadding: const EdgeInsets.symmetric(
-                                          vertical: 14,
-                                          horizontal: 12,
-                                        ),
+                                        fillColor: AppColors.brandSoft
+                                            .withOpacity(0.5),
+                                        contentPadding:
+                                            const EdgeInsets.symmetric(
+                                              vertical: 14,
+                                              horizontal: 12,
+                                            ),
                                         enabledBorder: OutlineInputBorder(
-                                          borderRadius: BorderRadius.circular(12),
+                                          borderRadius: BorderRadius.circular(
+                                            12,
+                                          ),
                                           borderSide: BorderSide(
-                                            color: AppColors.brandPrimary.withOpacity(0.35),
+                                            color: AppColors.brandPrimary
+                                                .withOpacity(0.35),
                                           ),
                                         ),
                                         focusedBorder: OutlineInputBorder(
-                                          borderRadius: BorderRadius.circular(12),
+                                          borderRadius: BorderRadius.circular(
+                                            12,
+                                          ),
                                           borderSide: const BorderSide(
                                             color: AppColors.brandPrimary,
                                             width: 1.5,
                                           ),
                                         ),
                                       ),
-                                      items: const [
-                                        'Cash',
-                                        'UPI',
-                                        'Net Banking',
-                                        'Credit Card',
-                                        'Debit Card',
-                                        'Cheque',
-                                        'Bank Transfer',
-                                        'Other',
-                                      ]
-                                          .map((mode) => DropdownMenuItem(
-                                                value: mode,
-                                                child: Text(
-                                                  mode,
-                                                  style: const TextStyle(
-                                                    fontSize: 14,
-                                                    fontWeight: FontWeight.w600,
-                                                    color: _textPrimary,
+                                      items:
+                                          const [
+                                                'Cash',
+                                                'UPI',
+                                                'Net Banking',
+                                                'Credit Card',
+                                                'Debit Card',
+                                                'Cheque',
+                                                'Bank Transfer',
+                                                'Other',
+                                              ]
+                                              .map(
+                                                (mode) => DropdownMenuItem(
+                                                  value: mode,
+                                                  child: Text(
+                                                    mode,
+                                                    style: const TextStyle(
+                                                      fontSize: 14,
+                                                      fontWeight:
+                                                          FontWeight.w600,
+                                                      color: _textPrimary,
+                                                    ),
                                                   ),
                                                 ),
-                                              ))
-                                          .toList(),
-                                      onChanged: (val) =>
-                                          setSheet(() => endTripPaymentMode = val),
+                                              )
+                                              .toList(),
+                                      onChanged: (val) => setSheet(
+                                        () => endTripPaymentMode = val,
+                                      ),
                                     ),
                                     const SizedBox(height: 14),
-                                    summaryRow("Approved fare",
-                                        "₹${approved.toStringAsFixed(0)}"),
+                                    summaryRow(
+                                      "Approved fare",
+                                      "₹${approved.toStringAsFixed(0)}",
+                                    ),
                                     summaryRow(
                                       "Received",
                                       "₹${received.toStringAsFixed(0)}",
@@ -2258,14 +2415,18 @@ final receivedController = TextEditingController(
                                           ),
                                           decoration: BoxDecoration(
                                             color: payBg,
-                                            borderRadius:
-                                                BorderRadius.circular(20),
+                                            borderRadius: BorderRadius.circular(
+                                              20,
+                                            ),
                                           ),
                                           child: Row(
                                             mainAxisSize: MainAxisSize.min,
                                             children: [
-                                              Icon(payIcon,
-                                                  size: 13, color: payColor),
+                                              Icon(
+                                                payIcon,
+                                                size: 13,
+                                                color: payColor,
+                                              ),
                                               const SizedBox(width: 5),
                                               Text(
                                                 payLabel,
@@ -2289,8 +2450,9 @@ final receivedController = TextEditingController(
                                 onTap: submitting ? null : submit,
                                 child: Container(
                                   width: double.infinity,
-                                  padding:
-                                      const EdgeInsets.symmetric(vertical: 16),
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 16,
+                                  ),
                                   decoration: BoxDecoration(
                                     color: const Color(0xFF2DB976),
                                     borderRadius: BorderRadius.circular(16),

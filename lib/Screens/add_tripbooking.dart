@@ -2142,26 +2142,6 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
                 ],
               ),
             ),
-            Container(
-              width: 42,
-              height: 42,
-              decoration: BoxDecoration(
-                color: _C.accent,
-                borderRadius: BorderRadius.circular(14),
-                boxShadow: [
-                  BoxShadow(
-                    color: _C.accent.withOpacity(0.3),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Icon(
-                isEdit ? Icons.edit_road_rounded : Icons.add_road_rounded,
-                color: Colors.white,
-                size: 20,
-              ),
-            ),
           ],
         ),
       ),

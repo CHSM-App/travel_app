@@ -205,23 +205,6 @@ class _CustomerListPageState extends ConsumerState<CustomerListPage>
               ),
               child: Stack(
                 children: [
-                  // Left color accent bar
-                  Positioned(
-                    left: 0,
-                    top: 0,
-                    bottom: 0,
-                    child: Container(
-                      width: 4,
-                      decoration: BoxDecoration(
-                        color: fgCol,
-                        borderRadius: const BorderRadius.only(
-                          topLeft: Radius.circular(18),
-                          bottomLeft: Radius.circular(18),
-                        ),
-                      ),
-                    ),
-                  ),
-
                   // Main content
                   Padding(
                     padding: const EdgeInsets.fromLTRB(16, 14, 50, 14),
