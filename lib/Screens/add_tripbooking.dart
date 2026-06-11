@@ -1404,47 +1404,51 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
    
 
     final n = ref.read(tripBookingViewModelProvider.notifier);
+    final bool isUpdate = widget.booking != null;
     bool completionRecorded = false;
-    try {
-      int? tripId = widget.booking?.tripId;
-      if (widget.booking != null) {
-        await n.updateTripBooking(tripId ?? 0, bk);
-      } else {
-        await n.addTripBooking(bk);
-        // Recover the new trip id from the create response so we can complete it.
-        tripId = _findTripId(ref.read(tripBookingViewModelProvider).data);
-        debugPrint("Created trip with id $tripId");
-      }
+    int? tripId = widget.booking?.tripId;
 
-      // For a back-dated trip, stamp the end time + final charges + amount
-      // received using the same endTrip flow the trip card uses. This moves
-      // the trip to Paid / Unpaid based on what was collected.
-      if (completed && tripId != null) {
-        final err = await ref
-            .read(tripPageViewModelProvider.notifier)
-            .updatePaymentStatus(
-              BookingInfo(
-                tripId: tripId,
-                tollCharges: toll,
-                repairingCharges: repair,
-                driverCharges: driverChg,
-                fuelCharges: fuelChg,
-                amountReceived: received,
-              ),
-            );
-        if (err != null) {
-          if (!mounted) return;
-          setState(() => _saving = false);
-          _snack("Payment not recorded: $err");
-          return;
-        }
-        completionRecorded = true;
-      }
-    } catch (_) {
+    // Save (create or update) the booking. The viewmodel returns null on
+    // success or a user-facing reason on failure — surface failures so the
+    // operator knows the trip was NOT saved instead of silently navigating away.
+    final saveErr = isUpdate
+        ? await n.updateTripBooking(tripId ?? 0, bk)
+        : await n.addTripBooking(bk);
+    if (saveErr != null) {
       if (!mounted) return;
       setState(() => _saving = false);
-      _snack("Failed to save trip");
+      _snack(isUpdate ? "Trip not updated: $saveErr" : "Trip not saved: $saveErr");
       return;
+    }
+    if (!isUpdate) {
+      // Recover the new trip id from the create response so we can complete it.
+      tripId = _findTripId(ref.read(tripBookingViewModelProvider).data);
+      debugPrint("Created trip with id $tripId");
+    }
+
+    // For a back-dated trip, stamp the end time + final charges + amount
+    // received using the same endTrip flow the trip card uses. This moves
+    // the trip to Paid / Unpaid based on what was collected.
+    if (completed && tripId != null) {
+      final err = await ref
+          .read(tripPageViewModelProvider.notifier)
+          .updatePaymentStatus(
+            BookingInfo(
+              tripId: tripId,
+              tollCharges: toll,
+              repairingCharges: repair,
+              driverCharges: driverChg,
+              fuelCharges: fuelChg,
+              amountReceived: received,
+            ),
+          );
+      if (err != null) {
+        if (!mounted) return;
+        setState(() => _saving = false);
+        _snack("Payment not recorded: $err");
+        return;
+      }
+      completionRecorded = true;
     }
 
     if (!mounted) return;
@@ -1453,6 +1457,10 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
     // let the operator finish it from the trip card.
     if (completed && !completionRecorded) {
       _snack("Trip saved. Record charges & payment from the trip card.");
+    } else {
+      _snackSuccess(isUpdate
+          ? "Trip updated successfully"
+          : "Trip booked successfully");
     }
     Navigator.pop(context);
   }
@@ -3312,6 +3320,34 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
           ],
         ),
         backgroundColor: _C.red,
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.all(16),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+    );
+  }
+
+  // Green confirmation snackbar — used when a save/update API call succeeds.
+  void _snackSuccess(String msg) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(
+              Icons.check_circle_rounded,
+              color: Colors.white,
+              size: 17,
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                msg,
+                style: const TextStyle(fontWeight: FontWeight.w600),
+              ),
+            ),
+          ],
+        ),
+        backgroundColor: Colors.green,
         behavior: SnackBarBehavior.floating,
         margin: const EdgeInsets.all(16),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),

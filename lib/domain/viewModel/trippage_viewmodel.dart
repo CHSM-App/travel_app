@@ -212,13 +212,18 @@ class TripPageViewModel extends StateNotifier<TripPageState> {
   }
 
 
-  Future<void> cancelTrip(int trip_id) async {
+  /// Cancels a trip. Returns `null` on success, or a user-facing error message
+  /// when the API call failed.
+  Future<String?> cancelTrip(int trip_id) async {
      state = state.copyWith(isLoading: true, error: null);
     try {
       final result = await usecase.cancelTrip(trip_id);
       state = state.copyWith(isLoading: false, data: result);
+      return null;
     } catch (e) {
-      state = state.copyWith(isLoading: false, error: e.toString());
+      final msg = friendlyErrorMessage(e);
+      state = state.copyWith(isLoading: false, error: msg);
+      return msg;
     }
   }
 

@@ -1524,9 +1524,19 @@ final receivedController = TextEditingController(
                                     return;
                                   }
 
-                                  await ref
+                                  final cancelErr = await ref
                                       .read(tripPageViewModelProvider.notifier)
                                       .cancelTrip(trip_id);
+                                  if (cancelErr != null) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content:
+                                            Text("Trip not cancelled: $cancelErr"),
+                                        backgroundColor: Colors.red,
+                                      ),
+                                    );
+                                    return;
+                                  }
                                   if (onTripUpdated != null) {
                                     await onTripUpdated!();
                                   }
@@ -1536,7 +1546,7 @@ final receivedController = TextEditingController(
                                       content: Text(
                                         "Trip cancelled successfully!",
                                       ),
-                                      backgroundColor: Colors.red,
+                                      backgroundColor: Colors.green,
                                     ),
                                   );
                                 }

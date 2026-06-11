@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:travel_agency_app/core/network/error_messages.dart';
 import 'package:travel_agency_app/domain/models/booking_info.dart';
 import 'package:travel_agency_app/domain/models/customers.dart';
 import 'package:travel_agency_app/domain/models/drivers.dart';
@@ -75,13 +76,19 @@ class TripBookingViewModel extends StateNotifier<TripBookingState> {
   TripBookingViewModel(this.ref, this.usecase)
     : super(const TripBookingState());
 
-  Future<void> addTripBooking(TripBooking tripbooking) async {
+  /// Creates a trip booking. Returns `null` on success, or a user-facing error
+  /// message when the API call failed (so the caller can tell the user the
+  /// booking was NOT saved and why).
+  Future<String?> addTripBooking(TripBooking tripbooking) async {
     state = state.copyWith(isLoading: true, error: null);
     try {
       final result = await usecase.addTripBooking(tripbooking);
       state = state.copyWith(isLoading: false, data: result);
+      return null;
     } catch (e) {
-      state = state.copyWith(isLoading: false, error: e.toString());
+      final msg = friendlyErrorMessage(e);
+      state = state.copyWith(isLoading: false, error: msg);
+      return msg;
     }
   }
 
@@ -204,13 +211,18 @@ class TripBookingViewModel extends StateNotifier<TripBookingState> {
     }
   }
 
-  Future<void> updateTripBooking(int tripId, TripBooking booking) async {
+  /// Updates an existing trip booking. Returns `null` on success, or a
+  /// user-facing error message when the API call failed.
+  Future<String?> updateTripBooking(int tripId, TripBooking booking) async {
      state = state.copyWith(isLoading: true, error: null);
     try {
       final result = await usecase.updateTripBooking(tripId, booking);
       state = state.copyWith(isLoading: false, data: result);
+      return null;
     } catch (e) {
-      state = state.copyWith(isLoading: false, error: e.toString());
+      final msg = friendlyErrorMessage(e);
+      state = state.copyWith(isLoading: false, error: msg);
+      return msg;
     }
   }
 
