@@ -619,11 +619,17 @@ class _VehicleReportPageState extends ConsumerState<VehicleReportPage> {
           borderRadius: BorderRadius.circular(14),
           border: Border.all(color: _C.divider),
         ),
-        child: Row(
-          children: [
-            for (final p in VehicleReportPeriod.values)
-              Expanded(child: _periodChip(p)),
-          ],
+        child: SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            children: [
+              for (final p in VehicleReportPeriod.values) ...[
+                _periodChip(p),
+                if (p != VehicleReportPeriod.values.last)
+                  const SizedBox(width: 4),
+              ],
+            ],
+          ),
         ),
       ),
     );
@@ -643,7 +649,7 @@ class _VehicleReportPageState extends ConsumerState<VehicleReportPage> {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 220),
         curve: Curves.easeOutCubic,
-        padding: const EdgeInsets.symmetric(vertical: 9, horizontal: 2),
+        padding: const EdgeInsets.symmetric(vertical: 9, horizontal: 14),
         decoration: BoxDecoration(
           color: active ? _C.accent : Colors.transparent,
           borderRadius: BorderRadius.circular(10),
@@ -657,32 +663,27 @@ class _VehicleReportPageState extends ConsumerState<VehicleReportPage> {
                 ]
               : null,
         ),
-        child: Center(
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                p.icon,
-                size: 13,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              p.icon,
+              size: 13,
+              color: active ? Colors.white : _C.text2,
+            ),
+            const SizedBox(width: 4),
+            Text(
+              p.label,
+              maxLines: 1,
+              style: TextStyle(
+                fontSize: 11.5,
+                fontWeight: FontWeight.w700,
                 color: active ? Colors.white : _C.text2,
+                letterSpacing: -0.1,
               ),
-              const SizedBox(width: 4),
-              Flexible(
-                child: Text(
-                  p.label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 11.5,
-                    fontWeight: FontWeight.w700,
-                    color: active ? Colors.white : _C.text2,
-                    letterSpacing: -0.1,
-                  ),
-                ),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

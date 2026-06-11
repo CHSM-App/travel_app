@@ -484,6 +484,7 @@ class TripCard extends ConsumerWidget {
                     ),
                   ],
                 ),
+                if (paymentStatus != "Paid") ...[
                 const SizedBox(height: 10),
                 ValueListenableBuilder<String?>(
                   valueListenable: paymentModeNotifier,
@@ -539,6 +540,7 @@ class TripCard extends ConsumerWidget {
                         onChanged: (val) => paymentModeNotifier.value = val,
                       ),
                 ),
+                ],
               ],
             );
           }
@@ -570,6 +572,7 @@ class TripCard extends ConsumerWidget {
                 Icons.account_balance_wallet_outlined,
                 highlight: true,
               ),
+              if (paymentStatus != "Paid") ...[
               const SizedBox(height: 10),
               ValueListenableBuilder<String?>(
                 valueListenable: paymentModeNotifier,
@@ -625,6 +628,7 @@ class TripCard extends ConsumerWidget {
                       onChanged: (val) => paymentModeNotifier.value = val,
                     ),
               ),
+              ],
             ],
           );
         }
@@ -1746,6 +1750,15 @@ class TripCard extends ConsumerWidget {
                                   "Distance",
                                   "${bookinginfo.distance?.toString() ?? "--"} km",
                                   Icons.straighten,
+                                  AppColors.brandPrimary,
+                                ),
+                                rowDivider(),
+                                detailRow(
+                                  "Fuel Req.",
+                                  bookinginfo.fuelRequired != null
+                                      ? "${bookinginfo.fuelRequired} L"
+                                      : "--",
+                                  Icons.local_gas_station_outlined,
                                   AppColors.brandPrimary,
                                 ),
                                 rowDivider(),

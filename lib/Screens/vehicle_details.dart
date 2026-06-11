@@ -49,7 +49,6 @@ class _VehicleManagePageState extends ConsumerState<VehicleManagePage>
   late final AnimationController _headerAnim;
   late final AnimationController _avatarAnim;
   late final AnimationController _fabAnim;
-  late final AnimationController _pulseAnim;
 
   // ── Derived Animations ─────────────────────────────────────────────────
   late final Animation<double> _headerFade;
@@ -57,7 +56,6 @@ class _VehicleManagePageState extends ConsumerState<VehicleManagePage>
   late final Animation<double> _avatarScale;
   late final Animation<double> _avatarRotate;
   late final Animation<double> _fabScale;
-  late final Animation<double> _pulseAnim1;
 
   // Shared date filter — driven from the Revenue / Expense tab date button and
   // reflected in the P&L summary above the tabs.
@@ -121,17 +119,6 @@ class _VehicleManagePageState extends ConsumerState<VehicleManagePage>
       duration: const Duration(milliseconds: 400),
     );
     _fabScale = CurvedAnimation(parent: _fabAnim, curve: Curves.elasticOut);
-
-    // Pulse for status dot
-    _pulseAnim = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1500),
-    )..repeat(reverse: true);
-
-    _pulseAnim1 = Tween<double>(
-      begin: 0.6,
-      end: 1.0,
-    ).animate(CurvedAnimation(parent: _pulseAnim, curve: Curves.easeInOut));
 
     // Prefetch trips + services so the P&L summary above the tabs is populated
     // regardless of which tab is active. Both calls are idempotent and shared
@@ -207,7 +194,6 @@ Future<void> _toggleVehicleStatus() async {
     _headerAnim.dispose();
     _avatarAnim.dispose();
     _fabAnim.dispose();
-    _pulseAnim.dispose();
     super.dispose();
   }
 
@@ -593,7 +579,6 @@ Future<void> _toggleVehicleStatus() async {
   // pinned at the top — same style as the customer / driver history pages.
   Widget _buildHeader() {
     final top = MediaQuery.of(context).padding.top;
-    final isEngaged = _currentStatus == 2;
     final hasNumber =
         widget.vehicle.number != null && widget.vehicle.number!.trim().isNotEmpty;
 
@@ -666,15 +651,7 @@ Future<void> _toggleVehicleStatus() async {
                               ),
                             ),
                           ),
-                          const SizedBox(width: 8),
                         ],
-                        AnimatedBuilder(
-                          animation: _pulseAnim1,
-                          builder: (_, __) => _StatusBadge(
-                            isEngaged: isEngaged,
-                            pulseValue: _pulseAnim1.value,
-                          ),
-                        ),
                       ],
                     ),
                   ],
@@ -725,19 +702,41 @@ Future<void> _toggleVehicleStatus() async {
     );
   }
 
-  Widget _smallAvatar() => Container(
-        width: 44,
-        height: 44,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(14),
-          color: AppColors.brandPrimary,
+  Widget _smallAvatar() {
+    // Status dot mirrors the vehicle list: green = available, orange = engaged.
+    final isEngaged = _currentStatus == 2;
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        Container(
+          width: 44,
+          height: 44,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(14),
+            color: AppColors.brandPrimary,
+          ),
+          child: const Icon(
+            Icons.directions_car_rounded,
+            color: Colors.white,
+            size: 22,
+          ),
         ),
-        child: const Icon(
-          Icons.directions_car_rounded,
-          color: Colors.white,
-          size: 22,
+        Positioned(
+          right: -2,
+          bottom: -2,
+          child: Container(
+            width: 14,
+            height: 14,
+            decoration: BoxDecoration(
+              color: isEngaged ? _C.orange : _C.green,
+              shape: BoxShape.circle,
+              border: Border.all(color: _C.surface, width: 2),
+            ),
+          ),
         ),
-      );
+      ],
+    );
+  }
 
   Widget _navIconButton({
     required IconData icon,
@@ -1155,67 +1154,6 @@ Future<void> _toggleVehicleStatus() async {
   }
 }
 
-// ── Status Badge ───────────────────────────────────────────────────────────
-class _StatusBadge extends StatelessWidget {
-  final bool isEngaged;
-  final double pulseValue;
-
-  const _StatusBadge({required this.isEngaged, required this.pulseValue});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: isEngaged
-            ? _C.orange.withOpacity(0.20)
-            : _C.green.withOpacity(0.20),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: isEngaged
-              ? _C.orange.withOpacity(0.50)
-              : _C.green.withOpacity(0.50),
-        ),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 6,
-            height: 6,
-            decoration: BoxDecoration(
-              color: isEngaged
-                  ? const Color(0xFFFB923C)
-                  : const Color(0xFF34D399),
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: (isEngaged ? _C.orange : _C.green).withOpacity(
-                    0.6 * pulseValue,
-                  ),
-                  blurRadius: 6 * pulseValue,
-                  spreadRadius: 2 * pulseValue,
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 6),
-          Text(
-            isEngaged ? 'Engaged' : 'Available',
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w700,
-              color: isEngaged
-                  ? const Color(0xFFFB923C)
-                  : const Color(0xFF34D399),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 // ── Animated Form Field ────────────────────────────────────────────────────
 class _AnimatedFormField extends StatefulWidget {
   final Widget child;
@@ -1349,8 +1287,8 @@ class _PremiumTabBar extends SliverPersistentHeaderDelegate {
     ),
     child: TabBar(
       controller: ctrl,
-      isScrollable: false,
-      tabAlignment: TabAlignment.fill,
+      isScrollable: true,
+      tabAlignment: TabAlignment.start,
       dividerColor: Colors.transparent,
       indicator: BoxDecoration(
         color: AppColors.brandPrimary,
@@ -1360,7 +1298,7 @@ class _PremiumTabBar extends SliverPersistentHeaderDelegate {
       indicatorPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 7),
       labelColor: Colors.white,
       unselectedLabelColor: _C.text2,
-      labelPadding: const EdgeInsets.symmetric(horizontal: 2),
+      labelPadding: const EdgeInsets.symmetric(horizontal: 6),
       labelStyle: const TextStyle(
         fontSize: 11.5,
         fontWeight: FontWeight.w700,
@@ -1376,16 +1314,14 @@ class _PremiumTabBar extends SliverPersistentHeaderDelegate {
         (i) => Tab(
           height: 50,
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4),
+            padding: const EdgeInsets.symmetric(horizontal: 8),
             child: Row(
-              mainAxisSize: MainAxisSize.max,
+              mainAxisSize: MainAxisSize.min,
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Icon(_icons[i], size: 13),
                 const SizedBox(width: 4),
-                Flexible(
-                  child: Text(_labels[i], overflow: TextOverflow.ellipsis),
-                ),
+                Text(_labels[i]),
               ],
             ),
           ),

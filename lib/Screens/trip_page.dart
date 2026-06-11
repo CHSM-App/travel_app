@@ -142,7 +142,6 @@ class _TripPageState extends ConsumerState<TripPage> {
   DateRange _selectedRange = DateRange.all;
   DateTimeRange? _customRange;
   String _searchQuery = '';
-  bool _searchVisible = false;
 
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocus = FocusNode();
@@ -265,27 +264,38 @@ class _TripPageState extends ConsumerState<TripPage> {
     setState(() => _completedSubTab = subTab);
   }
 
-  Future<void> _onRangeSelected(DateRange range) async {
-    if (range == DateRange.custom) {
-      await _pickCustomRange();
-      return;
-    }
-    if (range == _selectedRange && _customRange == null) return;
+  /// Commits the filter selections made in the bottom sheet back to the page,
+  /// reloading the list only when the status filter actually changed.
+  void _applyFromSheet(
+    TripFilter filter,
+    CompletedSubTab subTab,
+    DateRange range,
+    DateTimeRange? customRange,
+  ) {
+    final filterChanged = filter != _selectedFilter;
     setState(() {
+      _selectedFilter = filter;
+      _completedSubTab = subTab;
       _selectedRange = range;
-      _customRange = null;
+      _customRange = customRange;
     });
+    if (filterChanged) _loadListForFilter(filter);
   }
 
-  Future<void> _pickCustomRange() async {
+  /// Opens the material date-range picker and returns the chosen range (or null
+  /// if cancelled). Used by the "Custom" chip inside the filter sheet.
+  Future<DateTimeRange?> _showRangePicker(
+    BuildContext ctx,
+    DateTimeRange? initialRange,
+  ) {
     final now = DateTime.now();
-    final initial = _customRange ??
+    final initial = initialRange ??
         DateTimeRange(
           start: now.subtract(const Duration(days: 6)),
           end: now,
         );
-    final picked = await showDateRangePicker(
-      context: context,
+    return showDateRangePicker(
+      context: ctx,
       initialDateRange: initial,
       firstDate: DateTime(now.year - 5),
       lastDate: DateTime(now.year + 1),
@@ -299,12 +309,6 @@ class _TripPageState extends ConsumerState<TripPage> {
         child: child!,
       ),
     );
-    if (picked != null && mounted) {
-      setState(() {
-        _selectedRange = DateRange.custom;
-        _customRange = picked;
-      });
-    }
   }
 
   void _onSearchChanged(String value) {
@@ -315,23 +319,6 @@ class _TripPageState extends ConsumerState<TripPage> {
       if (normalized == _searchQuery) return;
       setState(() => _searchQuery = normalized);
     });
-  }
-
-  void _toggleSearch() {
-    setState(() {
-      _searchVisible = !_searchVisible;
-      if (!_searchVisible) {
-        _debounceTimer?.cancel();
-        _searchController.clear();
-        _searchQuery = '';
-        _searchFocus.unfocus();
-      }
-    });
-    if (_searchVisible) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) _searchFocus.requestFocus();
-      });
-    }
   }
 
   @override
@@ -425,13 +412,13 @@ class _TripPageState extends ConsumerState<TripPage> {
       ),
       child: Column(
         children: [
-          AnimatedSwitcher(
-            duration: const Duration(milliseconds: 180),
-            transitionBuilder: (child, anim) =>
-                FadeTransition(opacity: anim, child: child),
-            child: _searchVisible
-                ? _buildSearchRow()
-                : _buildPrimaryRow(),
+          // Always-visible search bar with a single filter entry point.
+          Row(
+            children: [
+              Expanded(child: _buildSearchField()),
+              const SizedBox(width: 8),
+              _buildFilterButton(),
+            ],
           ),
           if (_selectedFilter == TripFilter.completed) ...[
             const SizedBox(height: 8),
@@ -439,6 +426,315 @@ class _TripPageState extends ConsumerState<TripPage> {
           ],
         ],
       ),
+    );
+  }
+
+  /// Single filter entry point. Shows the brand colour + a count badge when any
+  /// non-default filter is active, and opens the full filter sheet on tap.
+  Widget _buildFilterButton() {
+    final activeCount = (_selectedFilter != TripFilter.active ? 1 : 0) +
+        (_selectedRange != DateRange.all ? 1 : 0);
+    final hasActive = activeCount > 0;
+
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        Material(
+          color: hasActive ? AppColors.brandPrimary : Colors.grey.shade100,
+          borderRadius: BorderRadius.circular(12),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(12),
+            onTap: _openFilterSheet,
+            child: Container(
+              width: 44,
+              height: 44,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: hasActive
+                      ? AppColors.brandPrimary
+                      : Colors.grey.shade300,
+                ),
+              ),
+              child: Icon(
+                Icons.tune_rounded,
+                size: 22,
+                color: hasActive ? Colors.white : Colors.grey.shade700,
+              ),
+            ),
+          ),
+        ),
+        if (hasActive)
+          Positioned(
+            right: -4,
+            top: -4,
+            child: Container(
+              padding: const EdgeInsets.all(4),
+              constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
+              decoration: BoxDecoration(
+                color: Colors.red.shade500,
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.white, width: 1.5),
+              ),
+              alignment: Alignment.center,
+              child: Text(
+                '$activeCount',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w800,
+                  height: 1,
+                ),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
+  /// Bottom sheet holding every filter — status, completed view, and date range
+  /// — with a live preview, Reset, and Apply. Selections are staged locally and
+  /// only committed when Apply is tapped.
+  void _openFilterSheet() {
+    TripFilter tempFilter = _selectedFilter;
+    CompletedSubTab tempSub = _completedSubTab;
+    DateRange tempRange = _selectedRange;
+    DateTimeRange? tempCustom = _customRange;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (ctx, setSheetState) {
+            Widget choiceChip({
+              required String label,
+              required IconData icon,
+              required bool selected,
+              required VoidCallback onTap,
+            }) {
+              return GestureDetector(
+                onTap: onTap,
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 150),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: selected
+                        ? AppColors.brandPrimary
+                        : Colors.grey.shade100,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: selected
+                          ? AppColors.brandPrimary
+                          : Colors.grey.shade300,
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        icon,
+                        size: 14,
+                        color: selected ? Colors.white : Colors.grey.shade700,
+                      ),
+                      const SizedBox(width: 5),
+                      Text(
+                        label,
+                        style: TextStyle(
+                          fontSize: 12.5,
+                          fontWeight:
+                              selected ? FontWeight.w700 : FontWeight.w500,
+                          color:
+                              selected ? Colors.white : Colors.grey.shade800,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }
+
+            Widget sectionTitle(String t) => Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      t,
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w800,
+                        color: Colors.grey.shade500,
+                        letterSpacing: 0.4,
+                      ),
+                    ),
+                  ),
+                );
+
+            return Container(
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+              ),
+              padding: EdgeInsets.only(
+                left: 16,
+                right: 16,
+                top: 8,
+                bottom: MediaQuery.of(ctx).viewInsets.bottom + 14,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 36,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade300,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      const Icon(Icons.tune_rounded,
+                          size: 18, color: AppColors.brandPrimary),
+                      const SizedBox(width: 8),
+                      const Text(
+                        'Filters',
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      const Spacer(),
+                      TextButton(
+                        style: TextButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(horizontal: 8),
+                          minimumSize: const Size(0, 32),
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        ),
+                        onPressed: () => setSheetState(() {
+                          tempFilter = TripFilter.active;
+                          tempSub = CompletedSubTab.unpaid;
+                          tempRange = DateRange.all;
+                          tempCustom = null;
+                        }),
+                        child: Text(
+                          'Reset',
+                          style: TextStyle(
+                            color: Colors.grey.shade700,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+
+                  // ── Status ──────────────────────────────────────────────
+                  sectionTitle('STATUS'),
+                  Wrap(
+                    spacing: 7,
+                    runSpacing: 7,
+                    children: [
+                      for (final f in TripFilter.values)
+                        choiceChip(
+                          label: f.label,
+                          icon: f.icon,
+                          selected: tempFilter == f,
+                          onTap: () => setSheetState(() => tempFilter = f),
+                        ),
+                    ],
+                  ),
+
+                  // ── Completed view (contextual) ─────────────────────────
+                  if (tempFilter == TripFilter.completed) ...[
+                    const SizedBox(height: 12),
+                    sectionTitle('COMPLETED VIEW'),
+                    Wrap(
+                      spacing: 7,
+                      runSpacing: 7,
+                      children: [
+                        for (final s in CompletedSubTab.values)
+                          choiceChip(
+                            label: s.label,
+                            icon: s.icon,
+                            selected: tempSub == s,
+                            onTap: () => setSheetState(() => tempSub = s),
+                          ),
+                      ],
+                    ),
+                  ],
+
+                  // ── Date range ──────────────────────────────────────────
+                  const SizedBox(height: 12),
+                  sectionTitle('DATE RANGE'),
+                  Wrap(
+                    spacing: 7,
+                    runSpacing: 7,
+                    children: [
+                      for (final r in DateRange.values)
+                        choiceChip(
+                          label: (r == DateRange.custom && tempCustom != null)
+                              ? '${_shortDate(tempCustom!.start)} – ${_shortDate(tempCustom!.end)}'
+                              : r.label,
+                          icon: r.icon,
+                          selected: tempRange == r,
+                          onTap: () async {
+                            if (r == DateRange.custom) {
+                              final picked =
+                                  await _showRangePicker(ctx, tempCustom);
+                              if (picked != null) {
+                                setSheetState(() {
+                                  tempRange = DateRange.custom;
+                                  tempCustom = picked;
+                                });
+                              }
+                            } else {
+                              setSheetState(() {
+                                tempRange = r;
+                                tempCustom = null;
+                              });
+                            }
+                          },
+                        ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.pop(ctx);
+                        _applyFromSheet(
+                            tempFilter, tempSub, tempRange, tempCustom);
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.brandPrimary,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                      child: const Text(
+                        'Apply Filters',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
     );
   }
 
@@ -516,200 +812,12 @@ class _TripPageState extends ConsumerState<TripPage> {
     );
   }
 
-  Widget _buildPrimaryRow() {
-    return Row(
-      key: const ValueKey('primary'),
-      children: [
-        _buildStatusDropdown(),
-        const Spacer(),
-        _buildDateFilterButton(),
-        const SizedBox(width: 2),
-        _buildSearchIcon(),
-      ],
-    );
-  }
-
-  Widget _buildSearchRow() {
-    return Row(
-      key: const ValueKey('search'),
-      children: [
-        IconButton(
-          icon: const Icon(Icons.arrow_back_rounded),
-          color: Colors.grey.shade700,
-          onPressed: _toggleSearch,
-        ),
-        Expanded(child: _buildSearchField()),
-      ],
-    );
-  }
-
-  Widget _buildStatusDropdown() {
-    return Container(
-      height: 40,
-      padding: const EdgeInsets.symmetric(horizontal: 10),
-      decoration: BoxDecoration(
-        color: AppColors.brandPrimary,
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: DropdownButtonHideUnderline(
-        child: DropdownButton<TripFilter>(
-          value: _selectedFilter,
-          isDense: true,
-          icon: const Icon(
-            Icons.keyboard_arrow_down_rounded,
-            color: Colors.white,
-            size: 20,
-          ),
-          dropdownColor: AppColors.brandPrimary,
-          borderRadius: BorderRadius.circular(10),
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
-          ),
-          // selectedItemBuilder lets us render the closed dropdown differently
-          // from the menu items. We prefix the closed state with "Status:" so
-          // users can tell this control from the adjacent date-range chips.
-          selectedItemBuilder: (context) => [
-            for (final f in TripFilter.values)
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(
-                    Icons.tune_rounded,
-                    size: 15,
-                    color: Colors.white,
-                  ),
-                  const SizedBox(width: 6),
-                  Text(
-                    'Status: ${f.label}',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ),
-          ],
-          items: [
-            for (final f in TripFilter.values)
-              DropdownMenuItem(
-                value: f,
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(f.icon, size: 16, color: Colors.white),
-                    const SizedBox(width: 8),
-                    Text(f.label),
-                  ],
-                ),
-              ),
-          ],
-          onChanged: (value) {
-            if (value != null) _applyFilter(value);
-          },
-        ),
-      ),
-    );
-  }
-
-  Widget _buildDateFilterButton() {
-    final isDefault =
-        _selectedRange == DateRange.all ||
-            (_selectedRange == DateRange.custom && _customRange == null);
-    final activeLabel = _activeDateLabel();
-
-    return PopupMenuButton<DateRange>(
-      tooltip: 'Date filter',
-      initialValue: _selectedRange,
-      position: PopupMenuPosition.under,
-      offset: const Offset(0, 8),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      onSelected: _onRangeSelected,
-      itemBuilder: (context) => [
-        for (final r in DateRange.values)
-          PopupMenuItem<DateRange>(
-            value: r,
-            child: _DateMenuRow(
-              range: r,
-              selected: r == _selectedRange,
-              customRange:
-                  r == DateRange.custom ? _customRange : null,
-            ),
-          ),
-      ],
-      child: Container(
-        constraints: const BoxConstraints(maxWidth: 180),
-        height: 36,
-        padding: EdgeInsets.symmetric(horizontal: isDefault ? 8 : 10),
-        decoration: BoxDecoration(
-          color: isDefault
-              ? Colors.transparent
-              : AppColors.brandPrimary.withValues(alpha: 0.10),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: isDefault
-                ? Colors.transparent
-                : AppColors.brandPrimary,
-            width: 1,
-          ),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.filter_alt_rounded,
-              size: 18,
-              color: isDefault
-                  ? Colors.grey.shade700
-                  : AppColors.brandPrimary,
-            ),
-            if (!isDefault) ...[
-              const SizedBox(width: 4),
-              Flexible(
-                child: Text(
-                  activeLabel,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.brandPrimary,
-                  ),
-                ),
-              ),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-
-  String _activeDateLabel() {
-    if (_selectedRange == DateRange.custom && _customRange != null) {
-      return '${_shortDate(_customRange!.start)} – ${_shortDate(_customRange!.end)}';
-    }
-    return _selectedRange.label;
-  }
-
-  Widget _buildSearchIcon() {
-    return IconButton(
-      icon: Icon(
-        Icons.search_rounded,
-        color: Colors.grey.shade700,
-        size: 22,
-      ),
-      tooltip: 'Search',
-      onPressed: _toggleSearch,
-    );
-  }
-
   Widget _buildSearchField() {
     return Container(
-      height: 40,
+      height: 44,
       decoration: BoxDecoration(
         color: Colors.grey.shade100,
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(12),
         border: Border.all(color: Colors.grey.shade300, width: 1),
       ),
       child: TextField(
@@ -816,7 +924,8 @@ class _TripPageState extends ConsumerState<TripPage> {
             itemBuilder: (_, i) {
               final item = items[i];
               if (item.isHeader) {
-                return _buildSectionHeader(item.headerLabel!);
+                return _buildSectionHeader(
+                    item.headerLabel!, item.headerCount!);
               }
               final trip = item.trip!;
               return TripCard(
@@ -832,7 +941,7 @@ class _TripPageState extends ConsumerState<TripPage> {
     );
   }
 
-  Widget _buildSectionHeader(String label) {
+  Widget _buildSectionHeader(String label, int count) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(4, 12, 4, 6),
       child: Row(
@@ -844,6 +953,23 @@ class _TripPageState extends ConsumerState<TripPage> {
               fontWeight: FontWeight.w700,
               color: Colors.grey.shade800,
               letterSpacing: 0.2,
+            ),
+          ),
+          const SizedBox(width: 8),
+          // Trip count for this day group.
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+            decoration: BoxDecoration(
+              color: AppColors.brandPrimary.withValues(alpha: 0.10),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Text(
+              '$count ${count == 1 ? 'trip' : 'trips'}',
+              style: const TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                color: AppColors.brandPrimary,
+              ),
             ),
           ),
           const SizedBox(width: 10),
@@ -905,16 +1031,26 @@ class _TripPageState extends ConsumerState<TripPage> {
     });
 
     final now = DateTime.now();
-    final items = <_RowItem>[];
-    String? lastHeader;
+
+    // Group consecutive trips under their day header first, so each header can
+    // carry the number of trips that fall under it (Today, Yesterday, …).
+    final groups = <({String header, List<BookingInfo> trips})>[];
     for (final trip in sorted) {
       final key = _sortKey(trip);
       final header = key == null ? 'Undated' : _formatDayHeader(key, now);
-      if (header != lastHeader) {
-        items.add(_RowItem.header(header));
-        lastHeader = header;
+      if (groups.isEmpty || groups.last.header != header) {
+        groups.add((header: header, trips: <BookingInfo>[trip]));
+      } else {
+        groups.last.trips.add(trip);
       }
-      items.add(_RowItem.trip(trip));
+    }
+
+    final items = <_RowItem>[];
+    for (final g in groups) {
+      items.add(_RowItem.header(g.header, g.trips.length));
+      for (final trip in g.trips) {
+        items.add(_RowItem.trip(trip));
+      }
     }
     return items;
   }
@@ -1035,74 +1171,18 @@ String _shortDate(DateTime d) {
   return '${d.day} $mo ${d.year}';
 }
 
-class _DateMenuRow extends StatelessWidget {
-  const _DateMenuRow({
-    required this.range,
-    required this.selected,
-    required this.customRange,
-  });
-
-  final DateRange range;
-  final bool selected;
-  final DateTimeRange? customRange;
-
-  @override
-  Widget build(BuildContext context) {
-    final hasCustomRange =
-        range == DateRange.custom && customRange != null;
-    final label = hasCustomRange
-        ? '${_shortDate(customRange!.start)} – ${_shortDate(customRange!.end)}'
-        : range.label;
-    final caption = range == DateRange.custom
-        ? (hasCustomRange ? 'Tap to change' : 'Pick a start and end date')
-        : null;
-    final color = selected ? AppColors.brandPrimary : Colors.grey.shade800;
-
-    return Row(
-      children: [
-        Icon(range.icon, size: 18, color: color),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-                  color: color,
-                ),
-              ),
-              if (caption != null)
-                Text(
-                  caption,
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: Colors.grey.shade500,
-                  ),
-                ),
-            ],
-          ),
-        ),
-        if (selected)
-          Icon(Icons.check_rounded,
-              size: 18, color: AppColors.brandPrimary),
-      ],
-    );
-  }
-}
-
 class _RowItem {
-  _RowItem.header(String label)
+  _RowItem.header(String label, int count)
       : headerLabel = label,
+        headerCount = count,
         trip = null;
   _RowItem.trip(BookingInfo t)
       : headerLabel = null,
+        headerCount = null,
         trip = t;
 
   final String? headerLabel;
+  final int? headerCount;
   final BookingInfo? trip;
 
   bool get isHeader => headerLabel != null;

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 import 'package:travel_agency_app/Screens/add_customer.dart';
 import 'package:travel_agency_app/Screens/customer_hist.dart';
 import 'package:travel_agency_app/Screens/customer_report.dart';
@@ -128,20 +129,17 @@ class _CustomerListPageState extends ConsumerState<CustomerListPage>
     if (result != null && mounted) _refresh();
   }
 
-  // Compact rupee label: ₹1.2L / ₹45.0K / ₹850. Keeps long balances from
-  // blowing out the card width.
-  String _money(double v) {
-    if (v >= 100000) return '₹${(v / 100000).toStringAsFixed(1)}L';
-    if (v >= 1000) return '₹${(v / 1000).toStringAsFixed(1)}K';
-    return '₹${v.toStringAsFixed(0)}';
-  }
+  // Full rupee amount with Indian grouping, e.g. ₹27,100 / ₹2,71,000.
+  String _fullMoney(double v) =>
+      '₹${NumberFormat.decimalPattern('en_IN').format(v)}';
 
+  // Two-letter monogram for the avatar.
   String _initials(String? name) {
     if (name == null || name.trim().isEmpty) return '?';
-    final parts = name.trim().split(' ');
+    final parts = name.trim().split(RegExp(r'\s+'));
     return parts.length >= 2
         ? '${parts[0][0]}${parts[1][0]}'.toUpperCase()
-        : name[0].toUpperCase();
+        : parts[0][0].toUpperCase();
   }
 
   List<Customer> _applyFilter(List<Customer> list) {
@@ -158,8 +156,9 @@ class _CustomerListPageState extends ConsumerState<CustomerListPage>
 
   // ── Customer Card ────────────────────────────────────────────────────────────
   Widget _card(Customer customer, int index) {
-    const bgCol = _C.indigoLight;
-    const fgCol = _C.indigo;
+    final hasDues = (customer.pendingAmount ?? 0) > 0;
+    final hasPhone = customer.phone != null && customer.phone!.isNotEmpty;
+    final hasAddr = customer.address != null && customer.address!.isNotEmpty;
 
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0, end: 1),
@@ -173,10 +172,10 @@ class _CustomerListPageState extends ConsumerState<CustomerListPage>
         ),
       ),
       child: Container(
-        margin: const EdgeInsets.only(bottom: 10),
+        margin: const EdgeInsets.only(bottom: 8),
         decoration: BoxDecoration(
           color: _C.surface,
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(16),
           border: Border.all(color: _C.slate300.withValues(alpha: 0.45), width: 1),
           boxShadow: [
             BoxShadow(
@@ -192,7 +191,7 @@ class _CustomerListPageState extends ConsumerState<CustomerListPage>
           ],
         ),
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(16),
           child: Material(
             color: Colors.transparent,
             child: InkWell(
@@ -203,108 +202,128 @@ class _CustomerListPageState extends ConsumerState<CustomerListPage>
                 MaterialPageRoute(
                     builder: (_) => CustomerHist(customer: customer)),
               ),
-              child: Stack(
-                children: [
-                  // Main content
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 14, 50, 14),
-                    child: Row(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(12, 9, 6, 9),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // ── Top: avatar + name/status + Due badge + menu ─────
+                    Row(
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-
-                        // Avatar
+                        // Avatar monogram
                         Container(
-                          width: 50,
-                          height: 50,
+                          width: 38,
+                          height: 38,
                           decoration: BoxDecoration(
-                            color: bgCol,
-                            borderRadius: BorderRadius.circular(14),
+                            color: _C.indigoLight,
+                            shape: BoxShape.circle,
                             border: Border.all(
-                              color: fgCol.withValues(alpha: 0.2),
+                              color: _C.indigo.withValues(alpha: 0.18),
                               width: 1.5,
                             ),
                           ),
-                          child: Center(
-                            child: Text(
-                              _initials(customer.name),
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w900,
-                                color: fgCol,
-                                letterSpacing: -0.5,
-                              ),
+                          alignment: Alignment.center,
+                          child: Text(
+                            _initials(customer.name),
+                            style: const TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w900,
+                              color: _C.indigo,
+                              letterSpacing: 0.2,
                             ),
                           ),
                         ),
-
-                        const SizedBox(width: 13),
-
-                        // Info
+                        const SizedBox(width: 10),
+                        // Name
                         Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisSize: MainAxisSize.min,
+                          child: Text(
+                            customer.name ?? 'Unknown',
+                            style: const TextStyle(
+                              fontSize: 15.5,
+                              fontWeight: FontWeight.w800,
+                              color: _C.slate900,
+                              letterSpacing: -0.3,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        // Due / Paid pill
+                        _statusBadge(hasDues),
+                        const SizedBox(width: 2),
+                        _cardMenu(customer),
+                      ],
+                    ),
+
+                    const SizedBox(height: 9),
+                    Container(height: 1, color: _C.slate100),
+                    const SizedBox(height: 9),
+
+                    // ── Bottom: contact (left) + outstanding (right) ─────
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Expanded(
+                          child: Row(
                             children: [
-                              Text(
-                                customer.name ?? 'Unknown',
-                                style: const TextStyle(
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w800,
-                                  color: _C.slate900,
-                                  letterSpacing: -0.3,
+                              if (hasPhone) ...[
+                                const Icon(Icons.phone_rounded,
+                                    size: 14, color: _C.slate500),
+                                const SizedBox(width: 6),
+                                Flexible(
+                                  child: Text(
+                                    customer.phone!,
+                                    style: const TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
+                                      color: _C.slate700,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
                                 ),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              const SizedBox(height: 5),
-                              // Chips flow left-to-right and wrap onto the next
-                              // line when they don't fit, so the pending badge
-                              // sits beside the address but never overflows on
-                              // narrow screens / long addresses.
-                              Wrap(
-                                spacing: 6,
-                                runSpacing: 6,
-                                crossAxisAlignment: WrapCrossAlignment.center,
-                                children: [
-                                  if (customer.phone != null &&
-                                      customer.phone!.isNotEmpty)
-                                    _InfoChip(
-                                      icon: Icons.phone_rounded,
-                                      label: customer.phone!,
-                                      iconColor: _C.indigo,
-                                      bgColor: _C.indigoLight,
+                              ],
+                              if (hasPhone && hasAddr)
+                                const SizedBox(width: 16),
+                              if (hasAddr) ...[
+                                const Icon(Icons.location_on_rounded,
+                                    size: 14, color: _C.slate500),
+                                const SizedBox(width: 6),
+                                Flexible(
+                                  child: Text(
+                                    customer.address!,
+                                    style: const TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
+                                      color: _C.slate700,
                                     ),
-                                  if (customer.address != null &&
-                                      customer.address!.isNotEmpty)
-                                    _InfoChip(
-                                      icon: Icons.location_on_rounded,
-                                      label: customer.address!,
-                                      iconColor: _C.slate500,
-                                      bgColor: _C.slate100,
-                                      maxWidth: 200,
-                                      ellipsis: true,
-                                    ),
-                                  // Outstanding balance — only when the customer
-                                  // owes money.
-                                  if ((customer.pendingAmount ?? 0) > 0)
-                                    _InfoChip(
-                                      icon: Icons.account_balance_wallet_rounded,
-                                      label:
-                                          'Pending ${_money(customer.pendingAmount!)}',
-                                      iconColor: _C.error,
-                                      bgColor: _C.errorLight,
-                                    ),
-                                ],
-                              ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
                             ],
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        // Outstanding amount
+                        Text(
+                          hasDues
+                              ? _fullMoney(customer.pendingAmount!)
+                              : 'No dues',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w800,
+                            color: hasDues ? _C.error : _C.success,
+                            letterSpacing: -0.3,
                           ),
                         ),
                       ],
                     ),
-                  ),
-
-                  // Three-dot menu
-                  Positioned(top: 8, right: 6, child: _cardMenu(customer)),
-                ],
+                  ],
+                ),
               ),
             ),
           ),
@@ -313,19 +332,45 @@ class _CustomerListPageState extends ConsumerState<CustomerListPage>
     );
   }
 
+  // Due / Paid pill shown at the top-right of the card.
+  Widget _statusBadge(bool hasDues) {
+    final color = hasDues ? _C.error : _C.success;
+    final bg = hasDues ? _C.errorLight : _C.success.withValues(alpha: 0.12);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            hasDues
+                ? Icons.error_outline_rounded
+                : Icons.check_circle_outline_rounded,
+            size: 13,
+            color: color,
+          ),
+          const SizedBox(width: 4),
+          Text(
+            hasDues ? 'Due' : 'Paid',
+            style: TextStyle(
+              fontSize: 11.5,
+              fontWeight: FontWeight.w800,
+              color: color,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   // ── Three-dot Menu ───────────────────────────────────────────────────────────
   Widget _cardMenu(Customer customer) {
     return PopupMenuButton<String>(
       padding: EdgeInsets.zero,
-      icon: Container(
-        padding: const EdgeInsets.all(7),
-        decoration: BoxDecoration(
-          color: _C.slate100,
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: _C.slate300.withValues(alpha: 0.5)),
-        ),
-        child: const Icon(Icons.more_vert_rounded, color: _C.slate500, size: 17),
-      ),
+      icon: const Icon(Icons.more_vert_rounded, color: _C.slate500, size: 20),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       elevation: 12,
       shadowColor: Colors.black.withValues(alpha: 0.15),
@@ -743,52 +788,3 @@ class _CustomerListPageState extends ConsumerState<CustomerListPage>
   }
 }
 
-// ─── Info Chip Widget ─────────────────────────────────────────────────────────
-class _InfoChip extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final Color iconColor;
-  final Color bgColor;
-  final double maxWidth;
-  final bool ellipsis;
-
-  const _InfoChip({
-    required this.icon,
-    required this.label,
-    required this.iconColor,
-    required this.bgColor,
-    this.maxWidth = 120,
-    this.ellipsis = false,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 4),
-      constraints: BoxConstraints(maxWidth: maxWidth),
-      decoration: BoxDecoration(
-        color: bgColor,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 11, color: iconColor),
-          const SizedBox(width: 4),
-          Flexible(
-            child: Text(
-              label,
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
-                color: iconColor,
-              ),
-              overflow: ellipsis ? TextOverflow.ellipsis : null,
-              maxLines: 1,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
