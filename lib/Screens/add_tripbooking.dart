@@ -160,6 +160,13 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
       selVehicle = b.vehicleId;
       selDriver = b.driverId;
       selCustomer = b.customerId;
+      // Prefill the inline customer fields straight from the booking so edit
+      // mode shows the customer immediately, without waiting on the customer
+      // list to load or relying on a customerId match. These listeners aren't
+      // attached yet, so writing here won't clear selCustomer.
+      customerName.text = b.customer_name ?? '';
+      customerPhone.text = b.customer_phone ?? '';
+      customerAddress.text = b.customerAddress ?? '';
       if (b.startDateTime != null) {
         final s = b.startDateTime!;
         startDt = DateTime(s.year, s.month, s.day, s.hour, s.minute);
@@ -1320,8 +1327,8 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
       _snack("Select start date/time");
       return;
     }
-    if (selVehicle == null || selDriver == null) {
-      _snack("Select vehicle & driver");
+    if (selVehicle == null) {
+      _snack("Select vehicle");
       return;
     }
     // A back-dated (completed) trip needs an end time to be logged.
@@ -1379,7 +1386,7 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
     final bk = TripBooking(
       tripId: widget.booking?.tripId,
       vehicleid: selVehicle!,
-      driverid: selDriver!,
+      driverid: selDriver,
       customerid: customerId,
       pickuplocation: pickup.text,
       droplocation: drop.text,
@@ -1978,7 +1985,7 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
                               const SizedBox(height: 14),
 
                               // ── Driver ───────────────────────────────────────────
-                              _assignLabel("Driver"),
+                              _assignLabel("Driver (optional)"),
                               const SizedBox(height: 6),
                               if (startDt == null)
                                 _lockedTile(
@@ -2041,7 +2048,7 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
                                         selDriver = val;
                                         selDriverLabel = label;
                                       }),
-                                      hasError: selDriver == null,
+                                      hasError: false,
                                     );
                                   },
                                   loading: () => _loadingTile(

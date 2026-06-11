@@ -9,10 +9,9 @@ import 'package:travel_agency_app/Screens/vehicle_report.dart';
 import 'package:travel_agency_app/core/theme/app_colors.dart';
 import 'package:travel_agency_app/core/widgets/skeleton.dart';
 import 'package:travel_agency_app/domain/models/booking_info.dart';
-import 'package:travel_agency_app/domain/models/services.dart';
+import 'package:travel_agency_app/domain/models/ledger_entry.dart';
 import 'package:travel_agency_app/domain/models/vehicles.dart';
 import 'package:travel_agency_app/domain/viewModel/trippage_viewmodel.dart';
-import 'package:travel_agency_app/presentation/providers/usecase_provider.dart';
 import 'package:travel_agency_app/presentation/providers/viewmodel_provider.dart';
 
 class TravelAdminDashboard extends ConsumerStatefulWidget {
@@ -29,11 +28,6 @@ class TravelAdminDashboard extends ConsumerStatefulWidget {
 }
 
 class _TravelAdminDashboardState extends ConsumerState<TravelAdminDashboard> {
-  // Service / maintenance records keyed by vehicleId. Loaded separately from
-  // trips because maintenance costs are tracked per-vehicle, not per-trip.
-  // We hold the full list and filter to "today" at render time.
-  Map<int, List<Services>> _servicesByVehicle = const {};
-
   @override
   void initState() {
     super.initState();
@@ -51,75 +45,59 @@ class _TravelAdminDashboardState extends ConsumerState<TravelAdminDashboard> {
     notifier.historyList(agencyId);
     notifier.unpaidList(agencyId);
     notifier.cancelledList(agencyId);
-    _loadMaintenance(agencyId);
+    // Vehicle list + agency ledger drive today's revenue/expenditure so the
+    // dashboard figures match the Vehicle Report's "Today" filter exactly.
+    // The ledger itself is fetched lazily by watching its provider in build().
+    ref.read(tripBookingViewModelProvider.notifier).vehicleList(agencyId);
   }
 
-  // Triggered by RefreshIndicator. Awaits all five fetches so the spinner
-  // stays until the data is genuinely back, not just dispatched.
+  // Triggered by RefreshIndicator. Awaits all fetches so the spinner stays
+  // until the data is genuinely back, not just dispatched. The ledger is a
+  // cached FutureProvider, so invalidating it forces a re-fetch on next watch.
   Future<void> _refresh() async {
     final agencyId = ref.read(loginViewModelProvider).agencyId ?? '';
     if (agencyId.trim().isEmpty) return;
     final notifier = ref.read(tripPageViewModelProvider.notifier);
+    ref.invalidate(vehicleReportLedgerProvider(agencyId));
     await Future.wait([
       notifier.activeList(agencyId),
       notifier.upcomingList(agencyId),
       notifier.historyList(agencyId),
       notifier.unpaidList(agencyId),
       notifier.cancelledList(agencyId),
-      _loadMaintenance(agencyId),
+      ref.read(tripBookingViewModelProvider.notifier).vehicleList(agencyId),
     ]);
   }
 
-  /// Loads the vehicle list, then pulls each vehicle's service records in
-  /// parallel so today's maintenance can be folded into expenditure. Uses the
-  /// use case directly (not the view model) to avoid clobbering the shared
-  /// `fetchServiceRecords` state the vehicle_details Maintenance tab relies on.
-  Future<void> _loadMaintenance(String agencyId) async {
-    if (agencyId.trim().isEmpty) return;
-    final vn = ref.read(tripBookingViewModelProvider.notifier);
-    await vn.vehicleList(agencyId);
-    if (!mounted) return;
-    final vehicles = ref
-            .read(tripBookingViewModelProvider)
-            .fetchVehicleList
-            .asData
-            ?.value ??
-        const <Vehicles>[];
-    final ids =
-        vehicles.map((v) => v.vehicleId).whereType<int>().toList(growable: false);
-    if (ids.isEmpty) return;
-    final useCase = ref.read(addVehicleUseCaseProvider);
-    final results = await Future.wait(
-      ids.map((id) async {
-        try {
-          return await useCase.getServiceRecords(agencyId, id);
-        } catch (_) {
-          // One vehicle's fetch failing shouldn't blank the whole figure.
-          return <Services>[];
-        }
-      }),
-    );
-    if (!mounted) return;
-    final map = <int, List<Services>>{};
-    for (var i = 0; i < ids.length; i++) {
-      map[ids[i]] = results[i];
-    }
-    setState(() => _servicesByVehicle = map);
-  }
-
-  // Sum of service costs whose serviceDate falls on today, across all vehicles.
-  double _todayMaintenance() {
+  // Today's revenue & expenditure from the same agency ledger the Vehicle
+  // Report uses, so the two screens always agree. Revenue = PAYMENT_RECEIVED
+  // rows dated today; expenditure = TRIP_EXPENSE + MAINTENANCE rows dated today.
+  // Entries are scoped to vehicles still in the list (matching the report);
+  // before that list loads we sum everything so the figure isn't briefly blank.
+  ({double revenue, double expense}) _todayLedgerTotals(
+    List<Vehicles> vehicles,
+    List<LedgerEntry> ledger,
+  ) {
     final now = DateTime.now();
-    var total = 0.0;
-    for (final services in _servicesByVehicle.values) {
-      for (final s in services) {
-        final d = s.serviceDate;
-        if (d != null && _isSameDay(d, now)) {
-          total += s.serviceCost ?? 0.0;
-        }
+    final ids = vehicles.map((v) => v.vehicleId).whereType<int>().toSet();
+    var revenue = 0.0;
+    var expense = 0.0;
+    for (final e in ledger) {
+      if (ids.isNotEmpty) {
+        final id = e.vehicleId;
+        if (id == null || !ids.contains(id)) continue;
+      }
+      final d = e.entryDate;
+      if (d == null || !_isSameDay(d, now)) continue;
+      if (e.isPayment) {
+        revenue += e.revenue ?? 0;
+      } else if (e.isTripExpense) {
+        expense += e.tripExpense ?? 0;
+      } else if (e.isMaintenance) {
+        expense += e.maintenance ?? 0;
       }
     }
-    return total;
+    return (revenue: revenue, expense: expense);
   }
 
   bool _isSameDay(DateTime a, DateTime b) =>
@@ -150,58 +128,53 @@ class _TravelAdminDashboardState extends ConsumerState<TravelAdminDashboard> {
     return unique.values.toList();
   }
 
-  _DashboardStats _todayStats(List<BookingInfo> rows, double maintenanceToday) {
+  // "Today Bookings" = trips booked today, regardless of payment. Revenue and
+  // expenditure no longer come from here — they're read from the agency ledger
+  // so they stay in lock-step with the Vehicle Report. See [_todayLedgerTotals].
+  int _todayBookings(List<BookingInfo> rows) {
     final now = DateTime.now();
     var bookings = 0;
-    var revenue = 0.0;
-    // Seed expenditure with today's vehicle maintenance, then add trip-level
-    // costs (toll/repairing/driver/fuel) collected today below.
-    var expenditure = maintenanceToday;
-
     for (final row in rows) {
-      // "Today Bookings" = trips booked today, regardless of payment.
       final booked = row.bookingDate;
       if (booked != null && _isSameDay(booked, now)) {
         bookings += 1;
       }
-
-      // Revenue & expenditure are realised on the day payment is collected
-      // (paymentDate), not the booking date. A future / unpaid booking has no
-      // paymentDate yet, so it contributes nothing until it's actually paid.
-      final paid = row.paymentDate;
-      if (paid != null && _isSameDay(paid, now)) {
-        revenue += row.amountReceived ?? 0.0;
-        expenditure += (row.tollCharges ?? 0.0) +
-            (row.repairingCharges ?? 0.0) +
-            (row.driverCharges ?? 0.0) +
-            (row.fuelCharges ?? 0.0);
-      }
     }
-
-    return _DashboardStats(
-      bookings: bookings,
-      revenue: revenue,
-      expenditure: expenditure,
-    );
+    return bookings;
   }
 
   @override
   Widget build(BuildContext context) {
     final tripState = ref.watch(tripPageViewModelProvider);
     final mergedTrips = _mergedTrips(tripState);
+    final agencyId = ref.watch(loginViewModelProvider).agencyId ?? '';
+    final ledgerAsync = ref.watch(vehicleReportLedgerProvider(agencyId));
+    final vehicleState =
+        ref.watch(tripBookingViewModelProvider).fetchVehicleList;
+    final vehicles = vehicleState.asData?.value ?? const <Vehicles>[];
+    final ledger = ledgerAsync.asData?.value ?? const <LedgerEntry>[];
+
     final anyLoading = tripState.activeList.isLoading ||
         tripState.upcomingList.isLoading ||
         tripState.historyList.isLoading ||
         tripState.unpaidList.isLoading ||
-        tripState.cancelledList.isLoading;
+        tripState.cancelledList.isLoading ||
+        ledgerAsync.isLoading ||
+        vehicleState.isLoading;
     final anyError = tripState.activeList.hasError ||
         tripState.upcomingList.hasError ||
         tripState.historyList.hasError ||
         tripState.unpaidList.hasError ||
-        tripState.cancelledList.hasError;
-    final maintenanceToday = _todayMaintenance();
-    final todayStats = (mergedTrips.isNotEmpty || maintenanceToday > 0)
-        ? _todayStats(mergedTrips, maintenanceToday)
+        tripState.cancelledList.hasError ||
+        ledgerAsync.hasError ||
+        vehicleState.hasError;
+    final ledgerTotals = _todayLedgerTotals(vehicles, ledger);
+    final todayStats = (mergedTrips.isNotEmpty || ledger.isNotEmpty)
+        ? _DashboardStats(
+            bookings: _todayBookings(mergedTrips),
+            revenue: ledgerTotals.revenue,
+            expenditure: ledgerTotals.expense,
+          )
         : _DashboardStats(isLoading: anyLoading, hasError: anyError);
 
     final sw = MediaQuery.of(context).size.width;
