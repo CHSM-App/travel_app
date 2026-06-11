@@ -1,17 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-import 'package:travel_agency_app/Screens/driver_history.dart';
+import 'package:travel_agency_app/Screens/customer_hist.dart';
 import 'package:travel_agency_app/core/theme/app_colors.dart';
-import 'package:travel_agency_app/core/utils/driver_report_export.dart';
+import 'package:travel_agency_app/core/utils/customer_report_export.dart';
 import 'package:travel_agency_app/core/widgets/error_view.dart';
 import 'package:travel_agency_app/core/widgets/trip_filter.dart' show tripSortKey;
 import 'package:travel_agency_app/domain/models/booking_info.dart';
-import 'package:travel_agency_app/domain/models/drivers.dart';
+import 'package:travel_agency_app/domain/models/customers.dart';
 import 'package:travel_agency_app/presentation/providers/usecase_provider.dart';
 import 'package:travel_agency_app/presentation/providers/viewmodel_provider.dart';
 
-// ─── Design tokens (mirror vehicle_report.dart) ─────────────────────────────
+// ─── Design tokens (mirror vehicle_report.dart / driver_report.dart) ─────────
 class _C {
   static const bg = Color(0xFFF5F7FB);
   static const surface = Color(0xFFFFFFFF);
@@ -26,32 +26,34 @@ class _C {
   static const dividerLight = Color(0xFFF1F4F9);
   static const green = Color(0xFF10B981);
   static const greenSoft = Color(0xFFD1FAE5);
+  static const orange = Color(0xFFF59E0B);
+  static const orangeSoft = Color(0xFFFEF3C7);
   static const gold = Color(0xFFD4AF37);
 }
 
-/// Date-window filter for the driver ledger. Defaults to "Month" — the cadence
-/// operators naturally reconcile driver payouts on.
-enum DriverReportPeriod { month, year, custom }
+/// Date-window filter for the customer ledger. Defaults to "Month" — the cadence
+/// operators naturally reconcile customer accounts on.
+enum CustomerReportPeriod { month, year, custom }
 
-extension on DriverReportPeriod {
+extension on CustomerReportPeriod {
   String get label {
     switch (this) {
-      case DriverReportPeriod.month:
+      case CustomerReportPeriod.month:
         return 'Monthly';
-      case DriverReportPeriod.year:
+      case CustomerReportPeriod.year:
         return 'Yearly';
-      case DriverReportPeriod.custom:
+      case CustomerReportPeriod.custom:
         return 'Custom';
     }
   }
 
   IconData get icon {
     switch (this) {
-      case DriverReportPeriod.month:
+      case CustomerReportPeriod.month:
         return Icons.calendar_month_rounded;
-      case DriverReportPeriod.year:
+      case CustomerReportPeriod.year:
         return Icons.calendar_today_rounded;
-      case DriverReportPeriod.custom:
+      case CustomerReportPeriod.custom:
         return Icons.date_range_rounded;
     }
   }
@@ -61,11 +63,11 @@ extension on DriverReportPeriod {
   bool matches(DateTime? d, DateTime now) {
     if (d == null) return false;
     switch (this) {
-      case DriverReportPeriod.month:
+      case CustomerReportPeriod.month:
         return d.year == now.year && d.month == now.month;
-      case DriverReportPeriod.year:
+      case CustomerReportPeriod.year:
         return d.year == now.year;
-      case DriverReportPeriod.custom:
+      case CustomerReportPeriod.custom:
         return true;
     }
   }
@@ -74,14 +76,14 @@ extension on DriverReportPeriod {
   /// the page state.
   (DateTime?, DateTime?) range(DateTime now) {
     switch (this) {
-      case DriverReportPeriod.month:
+      case CustomerReportPeriod.month:
         return (
           DateTime(now.year, now.month, 1),
           DateTime(now.year, now.month + 1, 0),
         );
-      case DriverReportPeriod.year:
+      case CustomerReportPeriod.year:
         return (DateTime(now.year, 1, 1), DateTime(now.year, 12, 31));
-      case DriverReportPeriod.custom:
+      case CustomerReportPeriod.custom:
         return (null, null);
     }
   }
@@ -109,44 +111,52 @@ String _formatCustomRange(DateTime? start, DateTime? end) {
   return 'Until ${fmt.format(end!)}';
 }
 
-/// Per-driver figures over the active period.
-class _DriverStat {
-  final Drivers driver;
+/// Per-customer figures over the active period.
+class _CustomerStat {
+  final Customer customer;
   final List<BookingInfo> trips;
 
-  const _DriverStat({required this.driver, required this.trips});
+  const _CustomerStat({required this.customer, required this.trips});
 
   int get tripCount => trips.length;
   double get received =>
       trips.fold<double>(0, (s, t) => s + (t.amountReceived ?? 0));
-  double get driverPay =>
-      trips.fold<double>(0, (s, t) => s + (t.driverCharges ?? 0));
+  double get approved =>
+      trips.fold<double>(0, (s, t) => s + (t.amountApprove ?? 0));
+  double get pending {
+    double p = 0;
+    for (final t in trips) {
+      final due = (t.amountApprove ?? 0) - (t.amountReceived ?? 0);
+      if (due > 0) p += due;
+    }
+    return p;
+  }
 
   bool get hasActivity => tripCount > 0;
 }
 
-class DriverReportPage extends ConsumerStatefulWidget {
-  final DriverReportPeriod initialPeriod;
+class CustomerReportPage extends ConsumerStatefulWidget {
+  final CustomerReportPeriod initialPeriod;
 
-  const DriverReportPage({
+  const CustomerReportPage({
     super.key,
-    this.initialPeriod = DriverReportPeriod.month,
+    this.initialPeriod = CustomerReportPeriod.month,
   });
 
   @override
-  ConsumerState<DriverReportPage> createState() => _DriverReportPageState();
+  ConsumerState<CustomerReportPage> createState() => _CustomerReportPageState();
 }
 
-class _DriverReportPageState extends ConsumerState<DriverReportPage> {
-  late DriverReportPeriod _period = widget.initialPeriod;
+class _CustomerReportPageState extends ConsumerState<CustomerReportPage> {
+  late CustomerReportPeriod _period = widget.initialPeriod;
 
   // Bounds for the "Custom" period (date-only).
   DateTime? _customStart;
   DateTime? _customEnd;
 
-  // Trips keyed by driverId. The full unfiltered set is held and the period
+  // Trips keyed by customerId. The full unfiltered set is held and the period
   // filter is applied at render time so toggling chips is instant.
-  Map<int, List<BookingInfo>> _tripsByDriver = const {};
+  Map<int, List<BookingInfo>> _tripsByCustomer = const {};
   bool _loadingTrips = false;
 
   // True while a PDF/Excel file is being generated, to block double taps and
@@ -162,23 +172,25 @@ class _DriverReportPageState extends ConsumerState<DriverReportPage> {
   Future<void> _refreshAll() async {
     final aid = ref.read(loginViewModelProvider).agencyId ?? '';
     if (aid.isEmpty) return;
-    await ref.read(tripBookingViewModelProvider.notifier).driverList(aid);
+    await ref
+        .read(customerViewModelProvider.notifier)
+        .fetchCustomerslist(aid);
     if (!mounted) return;
-    final drivers =
-        ref.read(tripBookingViewModelProvider).fetchDriverList.asData?.value ??
-            const <Drivers>[];
-    await _loadTrips(drivers);
+    final customers =
+        ref.read(customerViewModelProvider).customerList.asData?.value ??
+            const <Customer>[];
+    await _loadTrips(customers);
   }
 
-  /// Pulls trip history for every driver in parallel via the per-driver
+  /// Pulls trip history for every customer in parallel via the per-customer
   /// endpoint. Using the use case directly (not the view model) avoids
-  /// overwriting the shared `fetchTripsByDriverId` state that the driver
-  /// history screen relies on.
-  Future<void> _loadTrips(List<Drivers> drivers) async {
-    if (drivers.isEmpty) return;
-    final useCase = ref.read(addDriverUseCaseProvider);
-    final ids = drivers
-        .map((d) => d.driverId)
+  /// overwriting the shared `customerHist` state that the customer history
+  /// screen relies on.
+  Future<void> _loadTrips(List<Customer> customers) async {
+    if (customers.isEmpty) return;
+    final useCase = ref.read(customerUseCaseProvider);
+    final ids = customers
+        .map((c) => c.customerId)
         .whereType<int>()
         .toList(growable: false);
     if (ids.isEmpty) return;
@@ -186,9 +198,10 @@ class _DriverReportPageState extends ConsumerState<DriverReportPage> {
     final results = await Future.wait(
       ids.map((id) async {
         try {
-          return await useCase.fetchDriverHistory(id);
+          final res = await useCase.customerhist(id);
+          return res is List ? res.cast<BookingInfo>() : <BookingInfo>[];
         } catch (_) {
-          // A single driver's history failing shouldn't blank the report.
+          // A single customer's history failing shouldn't blank the report.
           return <BookingInfo>[];
         }
       }),
@@ -199,7 +212,7 @@ class _DriverReportPageState extends ConsumerState<DriverReportPage> {
       map[ids[i]] = results[i];
     }
     setState(() {
-      _tripsByDriver = map;
+      _tripsByCustomer = map;
       _loadingTrips = false;
     });
   }
@@ -215,7 +228,7 @@ class _DriverReportPageState extends ConsumerState<DriverReportPage> {
 
   /// Whether [d] falls inside the active period.
   bool _accept(DateTime? d, DateTime now) {
-    if (_period != DriverReportPeriod.custom) return _period.matches(d, now);
+    if (_period != CustomerReportPeriod.custom) return _period.matches(d, now);
     final (start, end) = _customWindow();
     if (start == null && end == null) return true;
     if (d == null) return false;
@@ -226,7 +239,7 @@ class _DriverReportPageState extends ConsumerState<DriverReportPage> {
   }
 
   String _activeRangeLabel(DateTime now) {
-    if (_period != DriverReportPeriod.custom) return _period.rangeLabel(now);
+    if (_period != CustomerReportPeriod.custom) return _period.rangeLabel(now);
     return _formatCustomRange(_customStart, _customEnd);
   }
 
@@ -260,37 +273,39 @@ class _DriverReportPageState extends ConsumerState<DriverReportPage> {
     setState(() {
       _customStart = picked.start;
       _customEnd = picked.end;
-      _period = DriverReportPeriod.custom;
+      _period = CustomerReportPeriod.custom;
     });
   }
 
-  /// Period-filtered per-driver stats, sorted with active drivers first then by
-  /// revenue received desc so the top earner surfaces.
-  List<_DriverStat> _statsFor(List<Drivers> drivers) {
+  /// Period-filtered per-customer stats, sorted with active customers first then
+  /// by revenue received desc so the top account surfaces.
+  List<_CustomerStat> _statsFor(List<Customer> customers) {
     final now = DateTime.now();
-    final list = <_DriverStat>[];
-    for (final d in drivers) {
-      final id = d.driverId;
-      final all = id == null ? const <BookingInfo>[] : (_tripsByDriver[id] ?? const <BookingInfo>[]);
+    final list = <_CustomerStat>[];
+    for (final c in customers) {
+      final id = c.customerId;
+      final all = id == null
+          ? const <BookingInfo>[]
+          : (_tripsByCustomer[id] ?? const <BookingInfo>[]);
       final periodTrips = all
           .where((t) => _accept(tripSortKey(t), now))
           .toList()
         ..sort((a, b) => (tripSortKey(b) ?? DateTime(0))
             .compareTo(tripSortKey(a) ?? DateTime(0)));
-      list.add(_DriverStat(driver: d, trips: periodTrips));
+      list.add(_CustomerStat(customer: c, trips: periodTrips));
     }
     list.sort((a, b) {
       if (a.hasActivity != b.hasActivity) return a.hasActivity ? -1 : 1;
       if (a.hasActivity) return b.received.compareTo(a.received);
-      return (a.driver.name ?? '').compareTo(b.driver.name ?? '');
+      return (a.customer.name ?? '').compareTo(b.customer.name ?? '');
     });
     return list;
   }
 
-  void _openDriver(Drivers driver) {
+  void _openCustomer(Customer customer) {
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (_) => DriverHistoryPage(driver: driver)),
+      MaterialPageRoute(builder: (_) => CustomerHist(customer: customer)),
     );
   }
 
@@ -307,23 +322,22 @@ class _DriverReportPageState extends ConsumerState<DriverReportPage> {
   }
 
   /// Builds the period-filtered snapshot the exporter consumes from the same
-  /// per-driver stats that drive the on-screen cards, so the file matches the UI.
-  DriverReportSnapshot _buildSnapshot(List<Drivers> drivers) {
+  /// per-customer stats that drive the on-screen cards, so the file matches UI.
+  CustomerReportSnapshot _buildSnapshot(List<Customer> customers) {
     final now = DateTime.now();
-    final stats = _statsFor(drivers);
+    final stats = _statsFor(customers);
     final exportStats = stats
-        .map((s) => DriverReportStat(driver: s.driver, trips: s.trips))
+        .map((s) => CustomerReportStat(customer: s.customer, trips: s.trips))
         .toList();
-    return DriverReportSnapshot(
-      title: 'Driver Report',
+    return CustomerReportSnapshot(
+      title: 'Customer Report',
       periodLabel: _period.label,
       dateRangeLabel: _activeRangeLabel(now),
       stats: exportStats,
       totalReceived: exportStats.fold<double>(0, (s, e) => s + e.received),
       totalApproved: exportStats.fold<double>(0, (s, e) => s + e.approved),
-      totalDriverPay: exportStats.fold<double>(0, (s, e) => s + e.driverPay),
-      activeDrivers: exportStats.where((s) => s.hasActivity).length,
-      totalDrivers: drivers.length,
+      activeCustomers: exportStats.where((s) => s.hasActivity).length,
+      totalCustomers: customers.length,
       tripCount: exportStats.fold<int>(0, (s, e) => s + e.tripCount),
     );
   }
@@ -332,27 +346,27 @@ class _DriverReportPageState extends ConsumerState<DriverReportPage> {
   /// off to the shared chooser → generate → save → open/share flow.
   Future<void> _onExportTap() async {
     if (_exporting) return;
-    final drivers =
-        ref.read(tripBookingViewModelProvider).fetchDriverList.asData?.value;
-    if (drivers == null || drivers.isEmpty) {
-      _snack('No drivers available to export');
+    final customers =
+        ref.read(customerViewModelProvider).customerList.asData?.value;
+    if (customers == null || customers.isEmpty) {
+      _snack('No customers available to export');
       return;
     }
-    if (_loadingTrips && _tripsByDriver.isEmpty) {
+    if (_loadingTrips && _tripsByCustomer.isEmpty) {
       _snack('Trips are still loading. Please wait a moment.');
       return;
     }
-    final snap = _buildSnapshot(drivers);
+    final snap = _buildSnapshot(customers);
     setState(() => _exporting = true);
-    await runDriverReportExport(context, snap);
+    await runCustomerReportExport(context, snap);
     if (mounted) setState(() => _exporting = false);
   }
 
   // ── Build ──────────────────────────────────────────────────────────
   @override
   Widget build(BuildContext context) {
-    final driverState =
-        ref.watch(tripBookingViewModelProvider).fetchDriverList;
+    final customerState =
+        ref.watch(customerViewModelProvider).customerList;
 
     return Scaffold(
       backgroundColor: _C.bg,
@@ -362,27 +376,27 @@ class _DriverReportPageState extends ConsumerState<DriverReportPage> {
             _buildAppBar(),
             _buildPeriodChips(),
             Expanded(
-              child: driverState.when(
+              child: customerState.when(
                 loading: () => _loadingState(),
                 error: (e, _) =>
                     NetworkErrorView(error: e, onRetry: _refreshAll),
-                data: (drivers) {
-                  if (drivers.isEmpty) {
+                data: (customers) {
+                  if (customers.isEmpty) {
                     return _emptyState(
-                      Icons.person_rounded,
-                      'No drivers yet',
-                      'Add a driver to start tracking trips and payouts',
+                      Icons.people_rounded,
+                      'No customers yet',
+                      'Add a customer to start tracking trips and dues',
                     );
                   }
                   final now = DateTime.now();
-                  final stats = _statsFor(drivers);
+                  final stats = _statsFor(customers);
                   final totalReceived =
                       stats.fold<double>(0, (s, e) => s + e.received);
-                  final totalPay =
-                      stats.fold<double>(0, (s, e) => s + e.driverPay);
+                  final totalPending =
+                      stats.fold<double>(0, (s, e) => s + e.pending);
                   final tripCount =
                       stats.fold<int>(0, (s, e) => s + e.tripCount);
-                  final activeDrivers =
+                  final activeCustomers =
                       stats.where((s) => s.hasActivity).length;
 
                   return RefreshIndicator(
@@ -395,17 +409,17 @@ class _DriverReportPageState extends ConsumerState<DriverReportPage> {
                       children: [
                         _OverallCard(
                           received: totalReceived,
-                          driverPay: totalPay,
-                          activeDrivers: activeDrivers,
-                          totalDrivers: drivers.length,
+                          pending: totalPending,
+                          activeCustomers: activeCustomers,
+                          totalCustomers: customers.length,
                           tripCount: tripCount,
                           periodLabel: _period.label,
                           dateRangeLabel: _activeRangeLabel(now),
                         ),
                         const SizedBox(height: 16),
-                        _perDriverHeader(stats.length),
+                        _perCustomerHeader(stats.length),
                         const SizedBox(height: 8),
-                        if (_loadingTrips && _tripsByDriver.isEmpty)
+                        if (_loadingTrips && _tripsByCustomer.isEmpty)
                           const Padding(
                             padding: EdgeInsets.only(top: 30),
                             child: Center(
@@ -422,11 +436,11 @@ class _DriverReportPageState extends ConsumerState<DriverReportPage> {
                           )
                         else
                           for (var i = 0; i < stats.length; i++)
-                            _DriverRevenueCard(
+                            _CustomerRevenueCard(
                               stat: stats[i],
                               index: i,
                               isTopPerformer: i == 0 && stats[i].received > 0,
-                              onTap: () => _openDriver(stats[i].driver),
+                              onTap: () => _openCustomer(stats[i].customer),
                             ),
                       ],
                     ),
@@ -440,7 +454,7 @@ class _DriverReportPageState extends ConsumerState<DriverReportPage> {
     );
   }
 
-  Widget _perDriverHeader(int count) {
+  Widget _perCustomerHeader(int count) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 2),
       child: Row(
@@ -455,7 +469,7 @@ class _DriverReportPageState extends ConsumerState<DriverReportPage> {
           ),
           const SizedBox(width: 10),
           const Text(
-            'Per Driver',
+            'Per Customer',
             style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w800,
@@ -540,7 +554,7 @@ class _DriverReportPageState extends ConsumerState<DriverReportPage> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  'Driver Report',
+                  'Customer Report',
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w800,
@@ -551,7 +565,7 @@ class _DriverReportPageState extends ConsumerState<DriverReportPage> {
                 ),
                 SizedBox(height: 3),
                 Text(
-                  'Track trips and payouts per driver',
+                  'Track trips and dues per customer',
                   style: TextStyle(
                     fontSize: 11.5,
                     color: _C.text2,
@@ -620,7 +634,7 @@ class _DriverReportPageState extends ConsumerState<DriverReportPage> {
         ),
         child: Row(
           children: [
-            for (final p in DriverReportPeriod.values)
+            for (final p in CustomerReportPeriod.values)
               Expanded(child: _periodChip(p)),
           ],
         ),
@@ -628,12 +642,12 @@ class _DriverReportPageState extends ConsumerState<DriverReportPage> {
     );
   }
 
-  Widget _periodChip(DriverReportPeriod p) {
+  Widget _periodChip(CustomerReportPeriod p) {
     final active = p == _period;
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: () {
-        if (p == DriverReportPeriod.custom) {
+        if (p == CustomerReportPeriod.custom) {
           _pickCustomRange();
         } else {
           setState(() => _period = p);
@@ -771,18 +785,18 @@ class _DriverReportPageState extends ConsumerState<DriverReportPage> {
 // ─────────────────────────────────────────────────────────
 class _OverallCard extends StatelessWidget {
   final double received;
-  final double driverPay;
-  final int activeDrivers;
-  final int totalDrivers;
+  final double pending;
+  final int activeCustomers;
+  final int totalCustomers;
   final int tripCount;
   final String periodLabel;
   final String dateRangeLabel;
 
   const _OverallCard({
     required this.received,
-    required this.driverPay,
-    required this.activeDrivers,
-    required this.totalDrivers,
+    required this.pending,
+    required this.activeCustomers,
+    required this.totalCustomers,
     required this.tripCount,
     required this.periodLabel,
     required this.dateRangeLabel,
@@ -879,7 +893,7 @@ class _OverallCard extends StatelessWidget {
                             ),
                             const SizedBox(width: 3),
                             Text(
-                              '$activeDrivers/$totalDrivers',
+                              '$activeCustomers/$totalCustomers',
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 10,
@@ -943,16 +957,16 @@ class _OverallCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 12),
                   _subStat(
-                    label: 'Driver Pay',
-                    value: '₹${_formatCompact(driverPay)}',
-                    icon: Icons.payments_rounded,
+                    label: 'Pending Dues',
+                    value: '₹${_formatCompact(pending)}',
+                    icon: Icons.pending_actions_rounded,
                   ),
                   const SizedBox(height: 10),
                   Row(
                     children: [
                       _footerChip(
                         Icons.person_rounded,
-                        '$activeDrivers/$totalDrivers active',
+                        '$activeCustomers/$totalCustomers active',
                       ),
                       const SizedBox(width: 6),
                       _footerChip(
@@ -1038,14 +1052,14 @@ class _OverallCard extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────
-// PER-DRIVER CARD
+// PER-CUSTOMER CARD
 // ─────────────────────────────────────────────────────────
-class _DriverRevenueCard extends StatelessWidget {
-  final _DriverStat stat;
+class _CustomerRevenueCard extends StatelessWidget {
+  final _CustomerStat stat;
   final int index;
   final bool isTopPerformer;
   final VoidCallback? onTap;
-  const _DriverRevenueCard({
+  const _CustomerRevenueCard({
     required this.stat,
     required this.index,
     this.isTopPerformer = false,
@@ -1067,7 +1081,7 @@ class _DriverRevenueCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final d = stat.driver;
+    final c = stat.customer;
     final isActive = stat.hasActivity;
 
     return TweenAnimationBuilder<double>(
@@ -1160,7 +1174,7 @@ class _DriverRevenueCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _header(d, isActive),
+                    _header(c, isActive),
                     if (isActive) ...[
                       const SizedBox(height: 9),
                       Container(height: 1, color: _C.dividerLight),
@@ -1182,7 +1196,7 @@ class _DriverRevenueCard extends StatelessWidget {
     );
   }
 
-  Widget _header(Drivers d, bool isActive) {
+  Widget _header(Customer c, bool isActive) {
     return Row(
       children: [
         Container(
@@ -1203,7 +1217,7 @@ class _DriverRevenueCard extends StatelessWidget {
           ),
           alignment: Alignment.center,
           child: Text(
-            _initials(d.name),
+            _initials(c.name),
             style: const TextStyle(
               color: Colors.white,
               fontSize: 13,
@@ -1218,7 +1232,7 @@ class _DriverRevenueCard extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                d.name ?? 'Unknown',
+                c.name ?? 'Unknown',
                 style: const TextStyle(
                   fontSize: 13.5,
                   fontWeight: FontWeight.w800,
@@ -1229,7 +1243,7 @@ class _DriverRevenueCard extends StatelessWidget {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
-              if (d.phone != null && d.phone!.trim().isNotEmpty) ...[
+              if (c.phone != null && c.phone!.trim().isNotEmpty) ...[
                 const SizedBox(height: 3),
                 Row(
                   mainAxisSize: MainAxisSize.min,
@@ -1239,7 +1253,7 @@ class _DriverRevenueCard extends StatelessWidget {
                     const SizedBox(width: 4),
                     Flexible(
                       child: Text(
-                        d.phone!.trim(),
+                        c.phone!.trim(),
                         style: const TextStyle(
                           fontSize: 11.5,
                           fontWeight: FontWeight.w600,
@@ -1297,7 +1311,7 @@ class _DriverRevenueCard extends StatelessWidget {
       children: [
         Expanded(
           child: _miniStat(
-            label: 'Revenue',
+            label: 'Received',
             value: '₹${_formatCompact(stat.received)}',
             color: _C.green,
             bg: _C.greenSoft,
@@ -1307,11 +1321,11 @@ class _DriverRevenueCard extends StatelessWidget {
         const SizedBox(width: 6),
         Expanded(
           child: _miniStat(
-            label: 'Driver Pay',
-            value: '₹${_formatCompact(stat.driverPay)}',
-            color: _C.accent,
-            bg: _C.accentSoft,
-            icon: Icons.payments_rounded,
+            label: 'Pending',
+            value: '₹${_formatCompact(stat.pending)}',
+            color: _C.orange,
+            bg: _C.orangeSoft,
+            icon: Icons.pending_actions_rounded,
           ),
         ),
       ],

@@ -8,6 +8,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:travel_agency_app/Screens/trip_card.dart';
 import 'package:travel_agency_app/core/storage/constant.dart';
 import 'package:travel_agency_app/core/theme/app_colors.dart';
+import 'package:travel_agency_app/core/utils/driver_report_export.dart';
 import 'package:travel_agency_app/core/widgets/error_view.dart';
 import 'package:travel_agency_app/core/widgets/skeleton.dart';
 import 'package:travel_agency_app/core/widgets/trip_filter.dart';
@@ -79,6 +80,9 @@ class _DriverHistoryPageState
   Timer? _debounceTimer;
   bool _searchVisible = false;
   String _query = '';
+
+  // True while a PDF/Excel file is being generated for this driver.
+  bool _exporting = false;
 
   static const Color _bg = Color(0xFFF2F4F8);
   static const Color _surface = Color(0xFFFFFFFF);
@@ -307,6 +311,30 @@ class _DriverHistoryPageState
               ),
             ),
           ),
+          const SizedBox(width: 8),
+          // Export this driver's report (PDF / Excel) for the active range.
+          _exporting
+              ? Container(
+                  width: 38,
+                  height: 38,
+                  decoration: BoxDecoration(
+                    color: _surfaceLight,
+                    borderRadius: BorderRadius.circular(11),
+                    border: Border.all(color: _divider, width: 1.2),
+                  ),
+                  padding: const EdgeInsets.all(10),
+                  child: const CircularProgressIndicator(
+                    strokeWidth: 2.2,
+                    valueColor: AlwaysStoppedAnimation(_accent),
+                  ),
+                )
+              : _iconButton(
+                  icon: Icons.ios_share_rounded,
+                  label: 'Export report',
+                  iconColor: _accent,
+                  bgColor: _accentSoft,
+                  onTap: _exportReport,
+                ),
         ],
       ),
     );
@@ -848,6 +876,71 @@ class _DriverHistoryPageState
     await ref
         .read(addDriverViewModelProvider.notifier)
         .fetchDriverHistory(widget.driver.driverId ?? 0);
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // EXPORT (single driver)
+  // ─────────────────────────────────────────────────────────────
+
+  /// Human-readable label for the active date window, mirroring the figures
+  /// the report card shows.
+  String _rangeLabel(DateTime now) {
+    final fmt = DateFormat('dd MMM yyyy');
+    final today = DateTime(now.year, now.month, now.day);
+    switch (_range) {
+      case TripDateRange.all:
+        return 'All time';
+      case TripDateRange.today:
+        return fmt.format(today);
+      case TripDateRange.week:
+        return '${fmt.format(today.subtract(const Duration(days: 6)))} - '
+            '${fmt.format(today)}';
+      case TripDateRange.month:
+        return '${fmt.format(today.subtract(const Duration(days: 29)))} - '
+            '${fmt.format(today)}';
+      case TripDateRange.custom:
+        final c = _customRange;
+        if (c == null) return 'All time';
+        return '${fmt.format(c.start)} - ${fmt.format(c.end)}';
+    }
+  }
+
+  /// Builds a single-driver [DriverReportSnapshot] from the loaded trips,
+  /// filtered to the active date range + search, then runs the shared export.
+  Future<void> _exportReport() async {
+    if (_exporting) return;
+    final trips = ref
+            .read(addDriverViewModelProvider)
+            .fetchTripsByDriverId
+            .asData
+            ?.value ??
+        const <BookingInfo>[];
+    final now = DateTime.now();
+    final periodTrips = trips
+        .where((t) =>
+            _range.matches(tripSortKey(t), now, customRange: _customRange) &&
+            tripMatchesQuery(t, _query))
+        .toList()
+      ..sort((a, b) => (tripSortKey(b) ?? DateTime(0))
+          .compareTo(tripSortKey(a) ?? DateTime(0)));
+
+    final stat = DriverReportStat(driver: widget.driver, trips: periodTrips);
+    final snap = DriverReportSnapshot(
+      title: '${widget.driver.name ?? 'Driver'} Report',
+      periodLabel: _range.label,
+      dateRangeLabel: _rangeLabel(now),
+      stats: [stat],
+      totalReceived: stat.received,
+      totalApproved: stat.approved,
+      totalDriverPay: stat.driverPay,
+      activeDrivers: stat.hasActivity ? 1 : 0,
+      totalDrivers: 1,
+      tripCount: stat.tripCount,
+    );
+
+    setState(() => _exporting = true);
+    await runDriverReportExport(context, snap);
+    if (mounted) setState(() => _exporting = false);
   }
 
   Widget _buildTripList(

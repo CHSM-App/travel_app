@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:travel_agency_app/Screens/add_customer.dart';
 import 'package:travel_agency_app/Screens/customer_hist.dart';
+import 'package:travel_agency_app/Screens/customer_report.dart';
 import 'package:travel_agency_app/core/theme/app_colors.dart';
 import 'package:travel_agency_app/core/widgets/error_view.dart';
 import 'package:travel_agency_app/core/widgets/skeleton.dart';
@@ -72,6 +73,49 @@ class _CustomerListPageState extends ConsumerState<CustomerListPage>
     final agencyId = ref.read(loginViewModelProvider).agencyId ?? '';
     if (agencyId.trim().isEmpty) return;
     ref.read(customerViewModelProvider.notifier).fetchCustomerslist(agencyId);
+  }
+
+  /// Gradient "Report" pill shown beside the search bar — mirrors the button in
+  /// vehicle_page.dart. Opens the customer-wise report screen. Sized to match
+  /// the search bar's height so the row stays aligned.
+  Widget _reportButton() {
+    return GestureDetector(
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const CustomerReportPage()),
+      ),
+      child: Container(
+        height: 50,
+        padding: const EdgeInsets.symmetric(horizontal: 14),
+        decoration: BoxDecoration(
+          color: _C.amber,
+          borderRadius: BorderRadius.circular(14),
+          boxShadow: [
+            BoxShadow(
+              color: _C.amber.withValues(alpha: 0.45),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: const [
+            Icon(Icons.insights_rounded, color: Colors.white, size: 18),
+            SizedBox(width: 6),
+            Text(
+              'Report',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 13,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 0.2,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   // Opens the Add Customer form, then refreshes the list so the new customer
@@ -542,111 +586,87 @@ class _CustomerListPageState extends ConsumerState<CustomerListPage>
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
 
-                  // Title row
+                  
+
+                  const SizedBox(height: 12),
+
+                  // Search bar + roster Report button
                   Row(
                     children: [
                       Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                        
-                            const SizedBox(height: 2),
-                            // Live count badge
-                            // state.CustomerList.maybeWhen(
-                              // data: (list) {
-                              //   final filtered = _applyFilter(list);
-                              //   // return Text(
-                              //   //   _query.isNotEmpty
-                              //   //       ? '${filtered.length} of ${list.length} customers'
-                              //   //       : '${list.length} customers total',
-                              //   //   style: const TextStyle(
-                              //   //     fontSize: 12,
-                              //   //     color: _C.slate500,
-                              //   //     fontWeight: FontWeight.w500,
-                              //   //   ),
-                              //   // );
-                              // },
-                              // orElse: () => const SizedBox.shrink(),
-                            // ),
-                          ],
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          decoration: BoxDecoration(
+                            color: _C.slate50,
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(
+                              color: _searchFocused
+                                  ? _C.indigo
+                                  : _C.slate300.withValues(alpha: 0.7),
+                              width: _searchFocused ? 1.5 : 1,
+                            ),
+                            boxShadow: _searchFocused
+                                ? [BoxShadow(
+                                    color: _C.indigo.withValues(alpha: 0.12),
+                                    blurRadius: 10,
+                                    offset: const Offset(0, 3),
+                                  )]
+                                : [],
+                          ),
+                          child: TextField(
+                            controller: _searchCtrl,
+                            focusNode: _searchFocus,
+                            onChanged: (v) =>
+                                setState(() => _query = v.toLowerCase().trim()),
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                              color: _C.slate900,
+                            ),
+                            decoration: InputDecoration(
+                              hintText: 'Search name, phone or address…',
+                              hintStyle: const TextStyle(
+                                color: _C.slate500,
+                                fontWeight: FontWeight.w400,
+                                fontSize: 14,
+                              ),
+                              prefixIcon: Icon(
+                                Icons.search_rounded,
+                                color: _searchFocused ? _C.indigo : _C.slate500,
+                                size: 20,
+                              ),
+                              suffixIcon: _query.isNotEmpty
+                                  ? GestureDetector(
+                                      onTap: () {
+                                        _searchCtrl.clear();
+                                        setState(() => _query = '');
+                                      },
+                                      child: Container(
+                                        margin: const EdgeInsets.all(10),
+                                        decoration: BoxDecoration(
+                                          color: _C.slate300
+                                              .withValues(alpha: 0.5),
+                                          shape: BoxShape.circle,
+                                        ),
+                                        child: const Icon(Icons.close_rounded,
+                                            color: _C.slate700, size: 14),
+                                      ),
+                                    )
+                                  : null,
+                              filled: false,
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 14,
+                              ),
+                              border: InputBorder.none,
+                              enabledBorder: InputBorder.none,
+                              focusedBorder: InputBorder.none,
+                            ),
+                          ),
                         ),
                       ),
-
-                   
-                
+                      const SizedBox(width: 10),
+                      _reportButton(),
                     ],
-                  ),
-
-                  // const SizedBox(height: 12),
-
-                  // Search bar
-                  AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
-                    decoration: BoxDecoration(
-                      color: _C.slate50,
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(
-                        color: _searchFocused
-                            ? _C.indigo
-                            : _C.slate300.withValues(alpha: 0.7),
-                        width: _searchFocused ? 1.5 : 1,
-                      ),
-                      boxShadow: _searchFocused
-                          ? [BoxShadow(
-                              color: _C.indigo.withValues(alpha: 0.12),
-                              blurRadius: 10,
-                              offset: const Offset(0, 3),
-                            )]
-                          : [],
-                    ),
-                    child: TextField(
-                      controller: _searchCtrl,
-                      focusNode: _searchFocus,
-                      onChanged: (v) =>
-                          setState(() => _query = v.toLowerCase().trim()),
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                        color: _C.slate900,
-                      ),
-                      decoration: InputDecoration(
-                        hintText: 'Search name, phone or address…',
-                        hintStyle: const TextStyle(
-                          color: _C.slate500,
-                          fontWeight: FontWeight.w400,
-                          fontSize: 14,
-                        ),
-                        prefixIcon: Icon(
-                          Icons.search_rounded,
-                          color: _searchFocused ? _C.indigo : _C.slate500,
-                          size: 20,
-                        ),
-                        suffixIcon: _query.isNotEmpty
-                            ? GestureDetector(
-                                onTap: () {
-                                  _searchCtrl.clear();
-                                  setState(() => _query = '');
-                                },
-                                child: Container(
-                                  margin: const EdgeInsets.all(10),
-                                  decoration: BoxDecoration(
-                                    color: _C.slate300.withValues(alpha: 0.5),
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: const Icon(Icons.close_rounded,
-                                      color: _C.slate700, size: 14),
-                                ),
-                              )
-                            : null,
-                        filled: false,
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 14,
-                        ),
-                        border: InputBorder.none,
-                        enabledBorder: InputBorder.none,
-                        focusedBorder: InputBorder.none,
-                      ),
-                    ),
                   ),
 
                   const SizedBox(height: 14),
