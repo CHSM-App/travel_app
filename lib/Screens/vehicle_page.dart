@@ -5,8 +5,6 @@ import 'package:travel_agency_app/Screens/add_vehicle.dart';
 import 'package:travel_agency_app/Screens/add_driver.dart';
 import 'package:travel_agency_app/Screens/driver_history.dart';
 import 'package:travel_agency_app/Screens/vehicle_details.dart';
-import 'package:travel_agency_app/Screens/vehicle_report.dart';
-import 'package:travel_agency_app/Screens/driver_report.dart';
 import 'package:travel_agency_app/core/theme/app_colors.dart';
 import 'package:travel_agency_app/core/widgets/error_view.dart';
 import 'package:travel_agency_app/core/widgets/skeleton.dart';
@@ -1054,46 +1052,6 @@ class _VehiclePageState extends ConsumerState<VehiclePage>
     ),
   );
 
-  // ── Report pill ───────────────────────────────────────────────────
-  // Gradient "Report" button shown in the header on both tabs; the caller
-  // routes to the Vehicle or Driver report depending on the active tab.
-  Widget _reportButton({required VoidCallback onTap}) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        height: 44,
-        padding: const EdgeInsets.symmetric(horizontal: 12),
-        decoration: BoxDecoration(
-          color: _C.orange,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(
-              color: _C.orange.withOpacity(0.45),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: const [
-            Icon(Icons.insights_rounded, color: Colors.white, size: 18),
-            SizedBox(width: 6),
-            Text(
-              'Report',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 13,
-                fontWeight: FontWeight.w800,
-                letterSpacing: 0.2,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   // ── Error ─────────────────────────────────────────────────────────
   // ── Header ────────────────────────────────────────────────────────
   Widget _buildHeader() {
@@ -1170,21 +1128,6 @@ class _VehiclePageState extends ConsumerState<VehiclePage>
                 ),
 
                 const SizedBox(width: 10),
-
-                // Report button — per-vehicle revenue/expense breakdown on the
-                // Vehicles tab, per-driver trips/payouts on the Drivers tab.
-                // A gradient pill so it stands out in the header strip.
-                _reportButton(
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => _isVehicleTab
-                          ? const VehicleReportPage()
-                          : const DriverReportPage(),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
 
                 GestureDetector(
                   onTap: () {

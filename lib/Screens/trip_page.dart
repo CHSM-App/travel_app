@@ -13,8 +13,9 @@ import 'package:travel_agency_app/domain/models/booking_info.dart';
 import 'package:travel_agency_app/domain/viewModel/trippage_viewmodel.dart';
 import 'package:travel_agency_app/presentation/providers/viewmodel_provider.dart';
 
-/// Single source of truth for trip filters. `key` is the wire value used by
-/// the cross-screen [tripPageInitialFilterProvider] deep-link signal.
+/// Trip status filter. `key` is the wire value used by the cross-screen
+/// [tripPageInitialFilterProvider] deep-link signal. Payment is a separate,
+/// orthogonal axis — see [PaymentFilter].
 enum TripFilter {
   all('all', 'All', Icons.list_alt_rounded,
       'No Trips', 'No trips have been booked yet'),
@@ -24,8 +25,6 @@ enum TripFilter {
       'No Upcoming Trips', 'No trips scheduled for the future'),
   completed('completed', 'Completed', Icons.task_alt_rounded,
       'No Completed Trips', 'Completed trips will appear here'),
-  unpaid('unpaid', 'Unpaid', Icons.payment_rounded,
-      'No Unpaid Trips', 'Trips with pending payments will appear here'),
   cancelled('cancelled', 'Cancelled', Icons.cancel_rounded,
       'No Cancelled Trips', "You haven't cancelled any trips");
 
@@ -51,9 +50,9 @@ enum TripFilter {
     return null;
   }
 
-  // The list to render for this filter. "Completed" shows the paid/history
-  // bucket; "Unpaid" is now its own first-class filter backed by the unpaid
-  // bucket rather than a sub-tab under Completed.
+  // The list to render for this filter. "Completed" merges the paid (history)
+  // and unpaid buckets so it shows every finished trip regardless of payment;
+  // the [PaymentFilter] then narrows it to paid / unpaid / partially paid.
   AsyncValue<List<BookingInfo>> listFrom(TripPageState state) {
     switch (this) {
       case TripFilter.all:
@@ -63,12 +62,64 @@ enum TripFilter {
       case TripFilter.upcoming:
         return state.upcomingList;
       case TripFilter.completed:
-        return state.historyList;
-      case TripFilter.unpaid:
-        return state.unpaidList;
+        return _mergeCompleted(state.historyList, state.unpaidList);
       case TripFilter.cancelled:
         return state.cancelledList;
     }
+  }
+}
+
+/// Merges the paid (history) and unpaid buckets into the single "Completed"
+/// list. Shows data as soon as either bucket has loaded, de-dupes by trip id,
+/// and only surfaces loading/error while nothing usable is available yet.
+AsyncValue<List<BookingInfo>> _mergeCompleted(
+  AsyncValue<List<BookingInfo>> history,
+  AsyncValue<List<BookingInfo>> unpaid,
+) {
+  if (history.hasValue || unpaid.hasValue) {
+    final byId = <int, BookingInfo>{};
+    final noId = <BookingInfo>[];
+    for (final list in [
+      history.asData?.value ?? const <BookingInfo>[],
+      unpaid.asData?.value ?? const <BookingInfo>[],
+    ]) {
+      for (final trip in list) {
+        final id = trip.tripId;
+        if (id == null) {
+          noId.add(trip);
+        } else {
+          byId.putIfAbsent(id, () => trip);
+        }
+      }
+    }
+    return AsyncValue.data([...byId.values, ...noId]);
+  }
+  if (history.hasError) return history;
+  if (unpaid.hasError) return unpaid;
+  return const AsyncValue.loading();
+}
+
+/// Payment status filter applied on top of the trip-status list. Matches on the
+/// trip's lowercase `payment_status` string; "All" matches everything.
+enum PaymentFilter {
+  all('All', Icons.account_balance_wallet_rounded, null),
+  paid('Paid', Icons.check_circle_rounded, 'paid'),
+  unpaid('Unpaid', Icons.error_outline_rounded, 'unpaid'),
+  partiallyPaid('Partially Paid', Icons.timelapse_rounded, 'partially paid');
+
+  const PaymentFilter(this.label, this.icon, this.statusKey);
+
+  final String label;
+  final IconData icon;
+
+  /// The lowercase `payment_status` value this filter matches, or null for
+  /// "All" (matches everything).
+  final String? statusKey;
+
+  bool matches(String? paymentStatus) {
+    final key = statusKey;
+    if (key == null) return true;
+    return (paymentStatus?.toLowerCase() ?? '') == key;
   }
 }
 
@@ -118,7 +169,12 @@ class TripPage extends ConsumerStatefulWidget {
 class _TripPageState extends ConsumerState<TripPage> {
   static const Duration _searchDebounce = Duration(milliseconds: 250);
 
-  TripFilter _selectedFilter = TripFilter.active;
+  // Trip status and payment status are independent axes that combine freely.
+  // Both default to "All" so the page opens showing every trip, and selecting
+  // any one filter (status, payment, or date) — or any combination — narrows
+  // the same underlying list.
+  TripFilter _selectedFilter = TripFilter.all;
+  PaymentFilter _selectedPayment = PaymentFilter.all;
   DateRange _selectedRange = DateRange.all;
   DateTimeRange? _customRange;
   String _searchQuery = '';
@@ -137,7 +193,8 @@ class _TripPageState extends ConsumerState<TripPage> {
     // doesn't fire on the value already present at subscription time.
     final resolved = _resolveDeepLink(ref.read(tripPageInitialFilterProvider));
     if (resolved != null) {
-      _selectedFilter = resolved;
+      _selectedFilter = resolved.status;
+      _selectedPayment = resolved.payment;
       // A companion date signal pins the list to everything on/after that day
       // (e.g. tomorrow-and-onwards pickups from the dashboard's "Upcoming
       // Trips" row).
@@ -153,12 +210,22 @@ class _TripPageState extends ConsumerState<TripPage> {
     Future.microtask(() => _loadListForFilter(_selectedFilter));
   }
 
-  /// Translates a [tripPageInitialFilterProvider] key into a filter. The legacy
-  /// `'paid'` deep-link now lands on the Completed filter, while `'unpaid'`
-  /// resolves through [TripFilter.fromKey] to the first-class Unpaid filter.
-  TripFilter? _resolveDeepLink(String? key) {
-    if (key == 'paid') return TripFilter.completed;
-    return TripFilter.fromKey(key);
+  /// Translates a [tripPageInitialFilterProvider] key into a (status, payment)
+  /// pair. The payment-based `'paid'`/`'unpaid'` deep-links land on Trip Status
+  /// "All" with the matching Payment Status filter applied, so they show every
+  /// matching trip regardless of status; every other key resolves to a trip
+  /// status with the payment filter left at "All".
+  ({TripFilter status, PaymentFilter payment})? _resolveDeepLink(String? key) {
+    if (key == null) return null;
+    if (key == 'paid') {
+      return (status: TripFilter.all, payment: PaymentFilter.paid);
+    }
+    if (key == 'unpaid') {
+      return (status: TripFilter.all, payment: PaymentFilter.unpaid);
+    }
+    final status = TripFilter.fromKey(key);
+    if (status == null) return null;
+    return (status: status, payment: PaymentFilter.all);
   }
 
   /// An open-ended [DateTimeRange] starting at [day] and running far into the
@@ -207,10 +274,13 @@ class _TripPageState extends ConsumerState<TripPage> {
         await notifier.upcomingList(agencyId);
         break;
       case TripFilter.completed:
-        await notifier.historyList(agencyId);
-        break;
-      case TripFilter.unpaid:
-        await notifier.unpaidList(agencyId);
+        // Completed merges the paid (history) and unpaid buckets, so fetch
+        // both. They resolve independently and the merge surfaces whatever is
+        // ready first.
+        await Future.wait([
+          notifier.historyList(agencyId),
+          notifier.unpaidList(agencyId),
+        ]);
         break;
       case TripFilter.cancelled:
         await notifier.cancelledList(agencyId);
@@ -218,22 +288,29 @@ class _TripPageState extends ConsumerState<TripPage> {
     }
   }
 
-  void _applyFilter(TripFilter filter) {
-    if (filter == _selectedFilter) return;
-    setState(() => _selectedFilter = filter);
-    _loadListForFilter(filter);
+  void _applyFilter(TripFilter filter, PaymentFilter payment) {
+    final filterChanged = filter != _selectedFilter;
+    if (!filterChanged && payment == _selectedPayment) return;
+    setState(() {
+      _selectedFilter = filter;
+      _selectedPayment = payment;
+    });
+    if (filterChanged) _loadListForFilter(filter);
   }
 
   /// Commits the filter selections made in the bottom sheet back to the page,
-  /// reloading the list only when the status filter actually changed.
+  /// reloading the list only when the status filter actually changed (the
+  /// payment and date filters are applied client-side, so they don't re-fetch).
   void _applyFromSheet(
     TripFilter filter,
+    PaymentFilter payment,
     DateRange range,
     DateTimeRange? customRange,
   ) {
     final filterChanged = filter != _selectedFilter;
     setState(() {
       _selectedFilter = filter;
+      _selectedPayment = payment;
       _selectedRange = range;
       _customRange = customRange;
     });
@@ -291,7 +368,7 @@ class _TripPageState extends ConsumerState<TripPage> {
     ref.listen<String?>(tripPageInitialFilterProvider, (prev, next) {
       final resolved = _resolveDeepLink(next);
       if (resolved == null) return;
-      _applyFilter(resolved);
+      _applyFilter(resolved.status, resolved.payment);
       // Apply (or clear) the companion date filter so the deep-linked list lands
       // in a predictable state — pinned to a single day, or back to "All".
       _applyDeepLinkDate(ref.read(tripPageInitialDateProvider));
@@ -382,7 +459,8 @@ class _TripPageState extends ConsumerState<TripPage> {
   /// Single filter entry point. Shows the brand colour + a count badge when any
   /// non-default filter is active, and opens the full filter sheet on tap.
   Widget _buildFilterButton() {
-    final activeCount = (_selectedFilter != TripFilter.active ? 1 : 0) +
+    final activeCount = (_selectedFilter != TripFilter.all ? 1 : 0) +
+        (_selectedPayment != PaymentFilter.all ? 1 : 0) +
         (_selectedRange != DateRange.all ? 1 : 0);
     final hasActive = activeCount > 0;
 
@@ -443,11 +521,12 @@ class _TripPageState extends ConsumerState<TripPage> {
     );
   }
 
-  /// Bottom sheet holding every filter — trip status and date range — with a
-  /// live preview, Reset, and Apply. Selections are staged locally and only
-  /// committed when Apply is tapped.
+  /// Bottom sheet holding every filter — trip status, payment status and date
+  /// range — stacked into clearly-labelled sections. Selections are staged
+  /// locally and only committed when "Apply Filters" is tapped.
   void _openFilterSheet() {
     TripFilter tempFilter = _selectedFilter;
+    PaymentFilter tempPayment = _selectedPayment;
     DateRange tempRange = _selectedRange;
     DateTimeRange? tempCustom = _customRange;
 
@@ -456,6 +535,7 @@ class _TripPageState extends ConsumerState<TripPage> {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (ctx) {
+        final maxHeight = MediaQuery.of(ctx).size.height * 0.85;
         return StatefulBuilder(
           builder: (ctx, setSheetState) {
             Widget choiceChip({
@@ -469,12 +549,12 @@ class _TripPageState extends ConsumerState<TripPage> {
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 150),
                   padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   decoration: BoxDecoration(
                     color: selected
                         ? AppColors.brandPrimary
                         : Colors.grey.shade100,
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(10),
                     border: Border.all(
                       color: selected
                           ? AppColors.brandPrimary
@@ -486,10 +566,10 @@ class _TripPageState extends ConsumerState<TripPage> {
                     children: [
                       Icon(
                         icon,
-                        size: 14,
+                        size: 15,
                         color: selected ? Colors.white : Colors.grey.shade700,
                       ),
-                      const SizedBox(width: 5),
+                      const SizedBox(width: 6),
                       Text(
                         label,
                         style: TextStyle(
@@ -506,23 +586,49 @@ class _TripPageState extends ConsumerState<TripPage> {
               );
             }
 
-            Widget sectionTitle(String t) => Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
-                  child: Align(
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      t,
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w800,
-                        color: Colors.grey.shade500,
-                        letterSpacing: 0.4,
-                      ),
+            // One labelled group: a small header followed by its wrap of chips,
+            // wrapped in a soft surface so the three sections read as distinct
+            // cards rather than one long list.
+            Widget section({
+              required IconData icon,
+              required String title,
+              required List<Widget> chips,
+            }) {
+              return Container(
+                width: double.infinity,
+                padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade50,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: Colors.grey.shade200),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(icon, size: 15, color: AppColors.brandPrimary),
+                        const SizedBox(width: 6),
+                        Text(
+                          title,
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w800,
+                            color: Colors.grey.shade600,
+                            letterSpacing: 0.4,
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                );
+                    const SizedBox(height: 10),
+                    Wrap(spacing: 8, runSpacing: 8, children: chips),
+                  ],
+                ),
+              );
+            }
 
             return Container(
+              constraints: BoxConstraints(maxHeight: maxHeight),
               decoration: const BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
@@ -544,7 +650,7 @@ class _TripPageState extends ConsumerState<TripPage> {
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 12),
                   Row(
                     children: [
                       const Icon(Icons.tune_rounded,
@@ -565,7 +671,8 @@ class _TripPageState extends ConsumerState<TripPage> {
                           tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                         ),
                         onPressed: () => setSheetState(() {
-                          tempFilter = TripFilter.active;
+                          tempFilter = TripFilter.all;
+                          tempPayment = PaymentFilter.all;
                           tempRange = DateRange.all;
                           tempCustom = null;
                         }),
@@ -579,73 +686,102 @@ class _TripPageState extends ConsumerState<TripPage> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 4),
 
-                  // ── Trip status ─────────────────────────────────────────
-                  sectionTitle('TRIP STATUS'),
-                  Wrap(
-                    spacing: 7,
-                    runSpacing: 7,
-                    children: [
-                      for (final f in TripFilter.values)
-                        choiceChip(
-                          label: f.label,
-                          icon: f.icon,
-                          selected: tempFilter == f,
-                          onTap: () => setSheetState(() => tempFilter = f),
-                        ),
-                    ],
+                  // Scrollable so the three sections never overflow on small
+                  // screens or with the keyboard up.
+                  Flexible(
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      child: Column(
+                        children: [
+                          // ── Trip status ───────────────────────────────
+                          section(
+                            icon: Icons.local_taxi_rounded,
+                            title: 'TRIP STATUS',
+                            chips: [
+                              for (final f in TripFilter.values)
+                                choiceChip(
+                                  label: f.label,
+                                  icon: f.icon,
+                                  selected: tempFilter == f,
+                                  onTap: () =>
+                                      setSheetState(() => tempFilter = f),
+                                ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+
+                          // ── Payment status ────────────────────────────
+                          section(
+                            icon: Icons.payments_rounded,
+                            title: 'PAYMENT STATUS',
+                            chips: [
+                              for (final p in PaymentFilter.values)
+                                choiceChip(
+                                  label: p.label,
+                                  icon: p.icon,
+                                  selected: tempPayment == p,
+                                  onTap: () =>
+                                      setSheetState(() => tempPayment = p),
+                                ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+
+                          // ── Date range ────────────────────────────────
+                          section(
+                            icon: Icons.calendar_today_rounded,
+                            title: 'DATE RANGE',
+                            chips: [
+                              for (final r in DateRange.values)
+                                choiceChip(
+                                  label: (r == DateRange.custom &&
+                                          tempCustom != null)
+                                      ? '${_shortDate(tempCustom!.start)} – ${_shortDate(tempCustom!.end)}'
+                                      : r.label,
+                                  icon: r.icon,
+                                  selected: tempRange == r,
+                                  onTap: () async {
+                                    if (r == DateRange.custom) {
+                                      final picked = await _showRangePicker(
+                                          ctx, tempCustom);
+                                      if (picked != null) {
+                                        setSheetState(() {
+                                          tempRange = DateRange.custom;
+                                          tempCustom = picked;
+                                        });
+                                      }
+                                    } else {
+                                      setSheetState(() {
+                                        tempRange = r;
+                                        tempCustom = null;
+                                      });
+                                    }
+                                  },
+                                ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
 
-                  // ── Date range ──────────────────────────────────────────
-                  const SizedBox(height: 12),
-                  sectionTitle('DATE RANGE'),
-                  Wrap(
-                    spacing: 7,
-                    runSpacing: 7,
-                    children: [
-                      for (final r in DateRange.values)
-                        choiceChip(
-                          label: (r == DateRange.custom && tempCustom != null)
-                              ? '${_shortDate(tempCustom!.start)} – ${_shortDate(tempCustom!.end)}'
-                              : r.label,
-                          icon: r.icon,
-                          selected: tempRange == r,
-                          onTap: () async {
-                            if (r == DateRange.custom) {
-                              final picked =
-                                  await _showRangePicker(ctx, tempCustom);
-                              if (picked != null) {
-                                setSheetState(() {
-                                  tempRange = DateRange.custom;
-                                  tempCustom = picked;
-                                });
-                              }
-                            } else {
-                              setSheetState(() {
-                                tempRange = r;
-                                tempCustom = null;
-                              });
-                            }
-                          },
-                        ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 14),
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
                       onPressed: () {
                         Navigator.pop(ctx);
-                        _applyFromSheet(tempFilter, tempRange, tempCustom);
+                        _applyFromSheet(
+                            tempFilter, tempPayment, tempRange, tempCustom);
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.brandPrimary,
                         foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        padding: const EdgeInsets.symmetric(vertical: 13),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
+                          borderRadius: BorderRadius.circular(12),
                         ),
                       ),
                       child: const Text(
@@ -762,7 +898,7 @@ class _TripPageState extends ConsumerState<TripPage> {
         );
       },
       data: (trips) {
-        final filtered = _filterAndSearch(trips, filter);
+        final filtered = _filterAndSearch(trips);
         if (filtered.isEmpty) return _buildEmptyState(filter);
 
         final items = _groupByDay(filtered);
@@ -838,24 +974,15 @@ class _TripPageState extends ConsumerState<TripPage> {
     );
   }
 
-  List<BookingInfo> _filterAndSearch(
-    List<BookingInfo> trips,
-    TripFilter filter,
-  ) {
-    // Defensive payment-status check for the first-class Unpaid filter: only
-    // show trips that are actually unpaid/partially paid, even if the backing
-    // list ever returns something stale.
-    final isUnpaidTab = filter == TripFilter.unpaid;
+  List<BookingInfo> _filterAndSearch(List<BookingInfo> trips) {
+    final payment = _selectedPayment;
     final query = _searchQuery;
     final hasQuery = query.isNotEmpty;
     final range = _selectedRange;
     final now = DateTime.now();
 
     return trips.where((trip) {
-      if (isUnpaidTab) {
-        final status = trip.payment_status?.toLowerCase() ?? '';
-        if (status != 'unpaid' && status != 'partially paid') return false;
-      }
+      if (!payment.matches(trip.payment_status)) return false;
       if (!range.matches(_sortKey(trip), now, customRange: _customRange)) {
         return false;
       }

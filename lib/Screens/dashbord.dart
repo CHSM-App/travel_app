@@ -4,6 +4,7 @@ import 'package:travel_agency_app/Screens/add_customer.dart';
 import 'package:travel_agency_app/Screens/add_driver.dart';
 import 'package:travel_agency_app/Screens/add_tripbooking.dart';
 import 'package:travel_agency_app/Screens/add_vehicle.dart';
+import 'package:travel_agency_app/Screens/report_page.dart';
 import 'package:travel_agency_app/Screens/reports.dart';
 import 'package:travel_agency_app/Screens/transactions_page.dart';
 import 'package:travel_agency_app/core/theme/app_colors.dart';
@@ -248,7 +249,7 @@ class _TravelAdminDashboardState extends ConsumerState<TravelAdminDashboard> {
                   // SizedBox(height: isSmall ? 6 : 8),
                   // _BookingReportBanner(isSmall: isSmall),
                   SizedBox(height: isSmall ? 8 : 10),
-                  _TransactionsBanner(isSmall: isSmall),
+                  _ReportsBanner(isSmall: isSmall),
                   SizedBox(height: sectionGap),
                   // _SectionTitle(title: "Recent Activity", isSmall: isSmall),
                   // SizedBox(height: isSmall ? 10 : 14),
@@ -852,15 +853,13 @@ class _NewBookingHero extends StatelessWidget {
 // }
 
 // ─────────────────────────────────────────────────────────
-// TRANSACTIONS BANNER
-// Routes to the Transactions daybook — a date-grouped ledger of
-// every payment received and expense incurred. Shares the brand
-// accent with the other report cards; told apart by its icon and
-// title rather than a separate hue.
+// REPORTS BANNER
+// Routes to the Reports hub, which lists the Transaction, Vehicle,
+// Customer and Driver reports. Pure redirection — it holds no data.
 // ─────────────────────────────────────────────────────────
-class _TransactionsBanner extends StatelessWidget {
+class _ReportsBanner extends StatelessWidget {
   final bool isSmall;
-  const _TransactionsBanner({required this.isSmall});
+  const _ReportsBanner({required this.isSmall});
 
   @override
   Widget build(BuildContext context) {
@@ -872,7 +871,7 @@ class _TransactionsBanner extends StatelessWidget {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (_) => const TransactionsPage(),
+            builder: (_) => const ReportPage(),
           ),
         );
       },
@@ -909,7 +908,7 @@ class _TransactionsBanner extends StatelessWidget {
                   ],
                 ),
                 child: Icon(
-                  Icons.receipt_long_rounded,
+                  Icons.bar_chart_rounded,
                   color: Colors.white,
                   size: isSmall ? 18 : 22,
                 ),
@@ -921,7 +920,7 @@ class _TransactionsBanner extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      "Transaction History",
+                      "Reports",
                       style: TextStyle(
                         fontSize: isSmall ? 13 : 15,
                         fontWeight: FontWeight.w800,
@@ -932,7 +931,7 @@ class _TransactionsBanner extends StatelessWidget {
                     ),
                     SizedBox(height: isSmall ? 2 : 3),
                     Text(
-                      "Payments, expenses & daily cash flow",
+                      "Transaction, vehicle, customer & driver",
                       style: TextStyle(
                         fontSize: isSmall ? 9 : 10,
                         color: Colors.grey.shade500,
