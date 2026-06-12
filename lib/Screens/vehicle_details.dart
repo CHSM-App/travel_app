@@ -26,9 +26,13 @@ abstract class _C {
   static const surface = Color(0xFFFFFFFF);
   static const accent = AppColors.brandPrimary;
   static const green = Color(0xFF059669);
+  static const greenSoft = Color(0xFFD1FAE5);
   static const orange = Color(0xFFEA580C);
+  static const orangeSoft = Color(0xFFFEF3C7);
+  static const red = Color(0xFFEF4444);
   static const text1 = Color(0xFF0F1224);
   static const text2 = Color(0xFF6B7280);
+  static const text3 = Color(0xFFA3ABBD);
   static const divider = Color(0xFFE5E7F0);
 }
 
@@ -71,7 +75,7 @@ class _VehicleManagePageState extends ConsumerState<VehicleManagePage>
 
     _currentStatus = widget.vehicle.StatusId ?? 1;
 
-    _tab = TabController(length: 4, vsync: this)..addListener(_onTabChanged);
+    _tab = TabController(length: 5, vsync: this)..addListener(_onTabChanged);
 
     // Header entrance
     _headerAnim = AnimationController(
@@ -135,8 +139,8 @@ class _VehicleManagePageState extends ConsumerState<VehicleManagePage>
 
   void _onTabChanged() {
     setState(() {});
-    // The "Add Service" FAB belongs to the Maintenance tab (index 3).
-    if (_tab.index == 3) {
+    // The "Add Service" FAB belongs to the Maintenance tab (index 4).
+    if (_tab.index == 4) {
       _fabAnim.forward();
     } else {
       _fabAnim.reverse();
@@ -543,9 +547,19 @@ Future<void> _toggleVehicleStatus() async {
                 _customRange = c;
               }),
             ),
-            _ExpenseTab(
+            _TxnTab(
               vehicle: widget.vehicle,
-              fmt: _fmt,
+              kind: _TxnKind.revenue,
+              range: _range,
+              customRange: _customRange,
+              onRangeChanged: (r, c) => setState(() {
+                _range = r;
+                _customRange = c;
+              }),
+            ),
+            _TxnTab(
+              vehicle: widget.vehicle,
+              kind: _TxnKind.expense,
               range: _range,
               customRange: _customRange,
               onRangeChanged: (r, c) => setState(() {
@@ -1260,9 +1274,10 @@ class _PremiumTabBar extends SliverPersistentHeaderDelegate {
   final TabController ctrl;
   const _PremiumTabBar(this.ctrl);
 
-  static const _labels = ['Overview', 'Revenue', 'Expense', 'Maintenance'];
+  static const _labels = ['Overview', 'Trips', 'Revenue', 'Expense', 'Maintenance'];
   static const _icons = [
-    Icons.directions_car_rounded,
+    Icons.dashboard_rounded,
+    Icons.route_rounded,
     Icons.south_west_rounded,
     Icons.north_east_rounded,
     Icons.build_rounded,
@@ -1768,79 +1783,91 @@ class _TripsTabState extends ConsumerState<_TripsTab> {
 }
 
 // ════════════════════════════════════════════════════════════════════════════
-// TAB 3 — EXPENSE
-// Expense breakdown only (toll / repair / driver / fuel / maintenance). The
-// maintenance service records now live in their own Maintenance tab.
+// TABS 3 & 4 — REVENUE / EXPENSE (individual money transactions)
+// A flat, date-grouped list of individual money transactions for this vehicle —
+// one row per payment / expense — mirroring the agency-wide Transactions page,
+// scoped to this vehicle and the shared period filter. Fed by the same agency
+// ledger as the P&L summary so the figures always agree.
 // ════════════════════════════════════════════════════════════════════════════
-class _ExpenseTab extends ConsumerStatefulWidget {
+
+/// Which side of the daybook a [_TxnTab] shows.
+enum _TxnKind { revenue, expense }
+
+class _TxnTab extends ConsumerStatefulWidget {
   final Vehicles vehicle;
-  final String Function(double) fmt;
+  final _TxnKind kind;
   final TripDateRange range;
   final DateTimeRange? customRange;
   final void Function(TripDateRange range, DateTimeRange? customRange)
       onRangeChanged;
 
-  const _ExpenseTab({
+  const _TxnTab({
     required this.vehicle,
-    required this.fmt,
+    required this.kind,
     required this.range,
     required this.customRange,
     required this.onRangeChanged,
   });
 
   @override
-  ConsumerState<_ExpenseTab> createState() => _ExpenseTabState();
+  ConsumerState<_TxnTab> createState() => _TxnTabState();
 }
 
-class _ExpenseTabState extends ConsumerState<_ExpenseTab> {
+class _TxnTabState extends ConsumerState<_TxnTab> {
+  bool get _isRevenue => widget.kind == _TxnKind.revenue;
+
   @override
   void initState() {
     super.initState();
+    // Trips are needed so a transaction row can open the full (editable) trip
+    // sheet; the ledger itself is loaded by the watch below (shared provider).
     Future.microtask(() {
-      ref.read(addVehicleViewModelProvider.notifier).getServiceRecords(
-            ref.read(loginViewModelProvider).agencyId ?? '',
-            widget.vehicle.vehicleId ?? 0,
-          );
-      // Trips power the toll / repair / driver / fuel rows of the breakdown.
       ref
           .read(addVehicleViewModelProvider.notifier)
           .getTripsByVehicle(widget.vehicle.vehicleId ?? 0);
     });
   }
 
+  String _money(double v) =>
+      '₹${NumberFormat.decimalPattern('en_IN').format(v.round())}';
+
+  bool _isExpense(LedgerEntry e) => e.isTripExpense || e.isMaintenance;
+
+  bool _matchesKind(LedgerEntry e) => _isRevenue ? e.isPayment : _isExpense(e);
+
+  double _amount(LedgerEntry e) {
+    if (e.isPayment) return e.revenue ?? 0;
+    if (e.isTripExpense) return e.tripExpense ?? 0;
+    if (e.isMaintenance) return e.maintenance ?? 0;
+    return 0;
+  }
+
+  bool _sameDay(DateTime a, DateTime b) =>
+      a.year == b.year && a.month == b.month && a.day == b.day;
+
+  /// First available human label: customer → maintenance → vehicle → generic.
+  String _title(LedgerEntry e) {
+    if (e.customerName != null) return e.customerName!;
+    if (e.isMaintenance) return 'Maintenance';
+    return e.vehicleName ?? 'Trip';
+  }
+
+  Future<void> _refresh() async {
+    final aid = ref.read(loginViewModelProvider).agencyId ?? '';
+    if (aid.isNotEmpty) ref.invalidate(vehicleReportLedgerProvider(aid));
+    await ref
+        .read(addVehicleViewModelProvider.notifier)
+        .getTripsByVehicle(widget.vehicle.vehicleId ?? 0);
+  }
+
   @override
   Widget build(BuildContext context) {
-    final serviceAsync = ref.watch(
-      addVehicleViewModelProvider.select((s) => s.fetchServiceRecords),
-    );
-    final tripsAsync = ref.watch(
-      addVehicleViewModelProvider.select((s) => s.fetchTripsByVehicleId),
-    );
-    final trips = tripsAsync.asData?.value ?? const <BookingInfo>[];
-    final now = DateTime.now();
-
-    // Period membership comes from the same agency ledger the P&L summary uses,
-    // so the breakdown includes exactly the trips the summary counts (no
-    // trip-date vs ledger-date drift). Falls back to the trip date if the
-    // ledger hasn't loaded.
     final agencyId = ref.watch(loginViewModelProvider).agencyId ?? '';
-    final ledger =
-        ref.watch(vehicleReportLedgerProvider(agencyId)).asData?.value ??
-            const <LedgerEntry>[];
-    final ledgerLoaded = ledger.isNotEmpty;
-    final vid = widget.vehicle.vehicleId;
-    final expenseTripIds = ledger
-        .where((e) =>
-            e.vehicleId == vid &&
-            e.isTripExpense &&
-            widget.range.matches(e.entryDate, now, customRange: widget.customRange))
-        .map((e) => e.tripId)
-        .whereType<int>()
-        .toSet();
+    final ledgerAsync = ref.watch(vehicleReportLedgerProvider(agencyId));
 
     return Column(
       children: [
-        // ── Date filter ──────────────────────────────────────────────────
+        // ── Date filter (shared with the other tabs) ─────────────────────
         Container(
           decoration: const BoxDecoration(
             color: _C.surface,
@@ -1870,166 +1897,593 @@ class _ExpenseTabState extends ConsumerState<_ExpenseTab> {
           ),
         ),
         Expanded(
-          child: serviceAsync.when(
+          child: ledgerAsync.when(
             loading: () => ListView(
               physics: const AlwaysScrollableScrollPhysics(),
               padding: const EdgeInsets.fromLTRB(0, 8, 0, 24),
               children: const [
-                SkeletonListItem(hasTrailingLine: false),
-                SkeletonListItem(hasTrailingLine: false),
+                SkeletonListItem(),
+                SkeletonListItem(),
+                SkeletonListItem(),
               ],
             ),
-            error: (e, _) => NetworkErrorView(
-              error: e,
-              onRetry: () async {
-                final notifier = ref.read(addVehicleViewModelProvider.notifier);
-                await notifier.getServiceRecords(
-                  ref.read(loginViewModelProvider).agencyId ?? '',
-                  widget.vehicle.vehicleId ?? 0,
-                );
-                await notifier
-                    .getTripsByVehicle(widget.vehicle.vehicleId ?? 0);
-              },
-            ),
-            data: (services) {
-              final maintenance = services
-                  .where((s) => widget.range.matches(s.serviceDate, now,
-                      customRange: widget.customRange))
-                  .fold<double>(0.0, (sum, s) => sum + (s.serviceCost ?? 0.0));
-
-              final periodTrips = trips.where((t) {
-                if (ledgerLoaded) return expenseTripIds.contains(t.tripId);
-                final d = tripSortKey(t);
-                return widget.range
-                    .matches(d, now, customRange: widget.customRange);
-              }).toList();
-              final toll = periodTrips.fold<double>(
-                  0.0, (sum, t) => sum + (t.tollCharges ?? 0.0));
-              final repair = periodTrips.fold<double>(
-                  0.0, (sum, t) => sum + (t.repairingCharges ?? 0.0));
-              final driver = periodTrips.fold<double>(
-                  0.0, (sum, t) => sum + (t.driverCharges ?? 0.0));
-              final fuel = periodTrips.fold<double>(
-                  0.0, (sum, t) => sum + (t.fuelCharges ?? 0.0));
-              final totalExpense = toll + repair + driver + fuel + maintenance;
-
-              return ListView(
-                padding: const EdgeInsets.fromLTRB(16, 14, 16, 100),
-                children: [
-                  _breakdownCard(
-                      toll, repair, driver, fuel, maintenance, totalExpense),
-                ],
-              );
-            },
+            error: (e, _) => NetworkErrorView(error: e, onRetry: _refresh),
+            data: (ledger) => _buildList(ledger),
           ),
         ),
       ],
     );
   }
 
-  // ── Expense breakdown (toll / repair / driver / fuel / maintenance) ──────
-  Widget _breakdownCard(double toll, double repair, double driver, double fuel,
-      double maintenance, double expense) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
-      decoration: BoxDecoration(
-        color: _C.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: _C.divider),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
+  Widget _buildList(List<LedgerEntry> ledger) {
+    final now = DateTime.now();
+    final vid = widget.vehicle.vehicleId;
+    final rows = ledger
+        .where((e) =>
+            e.vehicleId == vid &&
+            _amount(e) > 0 &&
+            _matchesKind(e) &&
+            widget.range
+                .matches(e.entryDate, now, customRange: widget.customRange))
+        .toList()
+      ..sort((a, b) =>
+          (b.entryDate ?? DateTime(0)).compareTo(a.entryDate ?? DateTime(0)));
+
+    if (rows.isEmpty) return _emptyState();
+
+    final amountColor = _isRevenue ? _C.green : _C.red;
+
+    return RefreshIndicator(
+      color: _C.accent,
+      backgroundColor: _C.surface,
+      onRefresh: _refresh,
+      child: ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.fromLTRB(16, 14, 16, 100),
+        children: _daySections(rows, amountColor),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+    );
+  }
+
+  // ── Day-grouped rows ───────────────────────────────────────────────────
+  List<Widget> _daySections(List<LedgerEntry> rows, Color amountColor) {
+    final groups = <({DateTime? day, List<LedgerEntry> items})>[];
+    for (final e in rows) {
+      final d = e.entryDate == null
+          ? null
+          : DateTime(e.entryDate!.year, e.entryDate!.month, e.entryDate!.day);
+      if (groups.isEmpty ||
+          (groups.last.day == null) != (d == null) ||
+          (groups.last.day != null &&
+              d != null &&
+              !_sameDay(groups.last.day!, d))) {
+        groups.add((day: d, items: <LedgerEntry>[e]));
+      } else {
+        groups.last.items.add(e);
+      }
+    }
+
+    final widgets = <Widget>[];
+    for (final g in groups) {
+      widgets.add(
+        _dayHeader(g.day, g.items.fold<double>(0, (s, e) => s + _amount(e))),
+      );
+      widgets.add(const SizedBox(height: 8));
+      for (final e in g.items) {
+        widgets.add(_row(e, amountColor));
+      }
+      widgets.add(const SizedBox(height: 6));
+    }
+    return widgets;
+  }
+
+  Widget _dayHeader(DateTime? day, double subtotal) {
+    final label = day == null ? 'Undated' : _dayLabel(day);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(2, 4, 2, 0),
+      child: Row(
         children: [
-          const Text(
-            'Expense Breakdown',
-            style: TextStyle(
-              fontSize: 13.5,
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 12.5,
               fontWeight: FontWeight.w800,
-              color: _C.text1,
-              letterSpacing: -0.2,
+              color: _C.text2,
+              letterSpacing: 0.2,
             ),
           ),
-          const SizedBox(height: 12),
-          _breakdownRow('Toll charges', toll, Icons.toll_rounded),
-          _breakdownRow('Repair charges', repair, Icons.build_rounded),
-          _breakdownRow('Driver charges', driver, Icons.payments_rounded),
-          _breakdownRow('Fuel charges', fuel, Icons.local_gas_station_rounded),
-          _breakdownRow('Maintenance', maintenance, Icons.handyman_rounded),
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: 10),
-            child: Divider(height: 1, color: _C.divider),
-          ),
-          Row(
-            children: [
-              const Text(
-                'Total expense',
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w800,
-                  color: _C.text1,
-                ),
-              ),
-              const Spacer(),
-              Text(
-                widget.fmt(expense),
-                style: const TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w800,
-                  color: _C.orange,
-                  letterSpacing: -0.3,
-                ),
-              ),
-            ],
+          const SizedBox(width: 8),
+          Expanded(child: Container(height: 1, color: _C.divider)),
+          const SizedBox(width: 8),
+          Text(
+            _money(subtotal),
+            style: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+              color: _C.text3,
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _breakdownRow(String label, double value, IconData icon) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
-      child: Row(
-        children: [
-          Container(
-            width: 28,
-            height: 28,
-            decoration: BoxDecoration(
-              color: _C.orange.withOpacity(0.12),
-              borderRadius: BorderRadius.circular(8),
+  String _dayLabel(DateTime d) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final diff = today.difference(DateTime(d.year, d.month, d.day)).inDays;
+    if (diff == 0) return 'Today';
+    if (diff == 1) return 'Yesterday';
+    return DateFormat('EEE, dd MMM').format(d);
+  }
+
+  Widget _row(LedgerEntry e, Color amountColor) {
+    final leadingColor =
+        e.isMaintenance ? _C.orange : (_isRevenue ? _C.green : _C.orange);
+    final leadingBg = e.isMaintenance
+        ? _C.orangeSoft
+        : (_isRevenue ? _C.greenSoft : _C.orangeSoft);
+    final leadingIcon = e.isMaintenance
+        ? Icons.build_rounded
+        : (_isRevenue ? Icons.south_west_rounded : Icons.north_east_rounded);
+
+    final hasRoute = e.pickup != null && e.drop != null;
+
+    final chips = <Widget>[
+      if (e.vehicleNumber != null)
+        _metaChip(Icons.directions_car_rounded, e.vehicleNumber!, _C.text2),
+      if (_isRevenue && e.paymentMode != null)
+        _metaChip(
+            Icons.account_balance_wallet_rounded, e.paymentMode!, _C.accent),
+      if (!_isRevenue)
+        _metaChip(
+          e.isMaintenance
+              ? Icons.build_rounded
+              : Icons.local_gas_station_rounded,
+          e.isMaintenance ? 'Maintenance' : 'Trip expense',
+          _C.orange,
+        ),
+    ];
+
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () => _openTxnSheet(e),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 8),
+        padding: const EdgeInsets.fromLTRB(12, 11, 10, 11),
+        decoration: BoxDecoration(
+          color: _C.surface,
+          borderRadius: BorderRadius.circular(13),
+          border: Border.all(color: _C.divider),
+          boxShadow: [
+            BoxShadow(
+              color: _C.accent.withOpacity(0.03),
+              blurRadius: 6,
+              offset: const Offset(0, 2),
             ),
-            child: Icon(icon, size: 14, color: _C.orange),
-          ),
-          const SizedBox(width: 11),
-          Expanded(
-            child: Text(
-              label,
-              style: const TextStyle(
-                fontSize: 12.5,
-                fontWeight: FontWeight.w600,
-                color: _C.text2,
+          ],
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Container(
+              width: 38,
+              height: 38,
+              decoration: BoxDecoration(
+                color: leadingBg,
+                borderRadius: BorderRadius.circular(11),
+              ),
+              child: Icon(leadingIcon, size: 18, color: leadingColor),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // ── Line 1: name + amount ──────────────────────────
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          _title(e),
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w800,
+                            color: _C.text1,
+                            letterSpacing: -0.2,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        _money(_amount(e)),
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w800,
+                          color: amountColor,
+                          letterSpacing: -0.3,
+                        ),
+                      ),
+                    ],
+                  ),
+                  // ── Line 2: route ──────────────────────────────────
+                  if (hasRoute) ...[
+                    const SizedBox(height: 5),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Padding(
+                          padding: EdgeInsets.only(top: 1),
+                          child: Icon(Icons.alt_route_rounded,
+                              size: 13, color: _C.text3),
+                        ),
+                        const SizedBox(width: 5),
+                        Expanded(
+                          child: Text(
+                            '${e.pickup} → ${e.drop}',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: _C.text2,
+                              height: 1.25,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                  // ── Line 3: meta chips ─────────────────────────────
+                  if (chips.isNotEmpty) ...[
+                    const SizedBox(height: 7),
+                    Wrap(spacing: 6, runSpacing: 6, children: chips),
+                  ],
+                ],
               ),
             ),
-          ),
+            const SizedBox(width: 4),
+            const Icon(Icons.chevron_right_rounded, size: 18, color: _C.text3),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _metaChip(IconData icon, String text, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.10),
+        borderRadius: BorderRadius.circular(7),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 11, color: color),
+          const SizedBox(width: 4),
           Text(
-            widget.fmt(value),
-            style: const TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w800,
-              color: _C.text1,
-              letterSpacing: -0.3,
+            text,
+            style: TextStyle(
+              fontSize: 10.5,
+              fontWeight: FontWeight.w700,
+              color: color,
+              letterSpacing: 0.1,
             ),
           ),
         ],
       ),
+    );
+  }
+
+  // ── Tap dispatch ───────────────────────────────────────────────────────
+  /// Trip-backed rows open the full (editable) trip sheet from [TripCard];
+  /// maintenance / no-trip rows fall back to a read-only ledger sheet.
+  void _openTxnSheet(LedgerEntry e) {
+    final tripId = e.tripId;
+    if (tripId == null) {
+      _openLedgerSheet(e);
+      return;
+    }
+    final trips = ref.read(addVehicleViewModelProvider).fetchTripsByVehicleId
+            .asData
+            ?.value ??
+        const <BookingInfo>[];
+    BookingInfo? trip;
+    for (final t in trips) {
+      if (t.tripId == tripId) {
+        trip = t;
+        break;
+      }
+    }
+    if (trip == null) {
+      _openLedgerSheet(e);
+      return;
+    }
+    TripCard(
+      bookinginfo: trip,
+      status: trip.status ?? 0,
+      onTripUpdated: () async => _refresh(),
+    ).showDetailSheet(context, ref);
+  }
+
+  // ── Read-only ledger sheet (maintenance / no-trip rows) ────────────────
+  void _openLedgerSheet(LedgerEntry e) {
+    final isRevenue = e.isPayment;
+    final amtColor =
+        e.isMaintenance ? _C.orange : (isRevenue ? _C.green : _C.red);
+    final amtBg = e.isMaintenance
+        ? _C.orangeSoft
+        : (isRevenue ? _C.greenSoft : const Color(0xFFFEE2E2));
+    final kindLabel = isRevenue
+        ? 'Payment received'
+        : (e.isMaintenance ? 'Maintenance' : 'Trip expense');
+    final leadIcon = e.isMaintenance
+        ? Icons.build_rounded
+        : (isRevenue ? Icons.south_west_rounded : Icons.north_east_rounded);
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        return Container(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(ctx).size.height * 0.82,
+          ),
+          decoration: const BoxDecoration(
+            color: _C.bg,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(height: 10),
+              Container(
+                width: 38,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: _C.text3.withOpacity(0.5),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 12),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 8, 0),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: amtBg,
+                        borderRadius: BorderRadius.circular(11),
+                      ),
+                      child: Icon(leadIcon, size: 19, color: amtColor),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            _title(e),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w800,
+                              color: _C.text1,
+                              letterSpacing: -0.2,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            kindLabel,
+                            style: const TextStyle(
+                              fontSize: 11.5,
+                              fontWeight: FontWeight.w600,
+                              color: _C.text2,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: () => Navigator.pop(ctx),
+                      icon: const Icon(Icons.close_rounded,
+                          size: 20, color: _C.text2),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 8),
+              Flexible(
+                child: ListView(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+                  children: [
+                    _sheetAmountTile(e, amtColor, amtBg, kindLabel),
+                    const SizedBox(height: 12),
+                    _sheetDetailCard(e),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _sheetAmountTile(
+      LedgerEntry e, Color color, Color bg, String kindLabel) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            kindLabel,
+            style: TextStyle(
+              fontSize: 11.5,
+              fontWeight: FontWeight.w700,
+              color: color,
+              letterSpacing: 0.3,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            _money(_amount(e)),
+            style: TextStyle(
+              fontSize: 26,
+              fontWeight: FontWeight.w800,
+              color: color,
+              letterSpacing: -0.8,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _sheetDetailCard(LedgerEntry e) {
+    final rows = <Widget>[];
+    void add(IconData icon, String label, String? value) {
+      if (value == null || value.isEmpty) return;
+      if (rows.isNotEmpty) {
+        rows.add(const Divider(height: 16, color: _C.divider));
+      }
+      rows.add(_sheetDetailRow(icon, label, value));
+    }
+
+    add(Icons.person_outline_rounded, 'Customer', e.customerName);
+    if (e.pickup != null && e.drop != null) {
+      add(Icons.route_rounded, 'Route', '${e.pickup} → ${e.drop}');
+    }
+    add(Icons.directions_car_outlined, 'Vehicle',
+        [e.vehicleName, e.vehicleNumber].where((s) => s != null).join(' · '));
+    add(
+        Icons.event_rounded,
+        'Date',
+        e.entryDate == null
+            ? null
+            : DateFormat('dd MMM yyyy').format(e.entryDate!));
+    if (e.isPayment) {
+      add(Icons.payment_rounded, 'Payment mode', e.paymentMode);
+    }
+
+    if (rows.isEmpty) return const SizedBox.shrink();
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+      decoration: BoxDecoration(
+        color: _C.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: _C.divider),
+      ),
+      child: Column(children: rows),
+    );
+  }
+
+  Widget _sheetDetailRow(IconData icon, String label, String value) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, size: 16, color: _C.text3),
+        const SizedBox(width: 10),
+        SizedBox(
+          width: 84,
+          child: Text(
+            label,
+            style: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+              color: _C.text2,
+            ),
+          ),
+        ),
+        Expanded(
+          child: Text(
+            value,
+            textAlign: TextAlign.right,
+            style: const TextStyle(
+              fontSize: 12.5,
+              fontWeight: FontWeight.w700,
+              color: _C.text1,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  // ── Empty state (keeps the date filter visible above) ──────────────────
+  Widget _emptyState() {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: constraints.maxHeight),
+            child: Center(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 72,
+                      height: 72,
+                      decoration: BoxDecoration(
+                        color: _isRevenue ? _C.greenSoft : _C.orangeSoft,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        _isRevenue
+                            ? Icons.account_balance_wallet_outlined
+                            : Icons.payments_outlined,
+                        size: 32,
+                        color: _isRevenue ? _C.green : _C.orange,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      _isRevenue
+                          ? 'No payments in this period'
+                          : 'No expenses in this period',
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        fontSize: 14.5,
+                        fontWeight: FontWeight.w800,
+                        color: _C.text1,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      _isRevenue
+                          ? 'Payments received will appear here.'
+                          : 'Trip expenses and maintenance will appear here.',
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: _C.text2,
+                        height: 1.5,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }
