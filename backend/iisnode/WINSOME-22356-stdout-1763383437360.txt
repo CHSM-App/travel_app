@@ -1,0 +1,43 @@
+[dotenv@17.2.3] injecting env (4) from .env -- tip: 🔄 add secrets lifecycle management: https://dotenvx.com/ops
+[dotenv@17.2.3] injecting env (0) from .env -- tip: 🔐 encrypt with Dotenvx: https://dotenvx.com
+[dotenv@17.2.3] injecting env (0) from .env -- tip: 🔑 add access controls to secrets: https://dotenvx.com/ops
+[dotenv@17.2.3] injecting env (0) from .env -- tip: 👥 sync secrets across teammates & machines: https://dotenvx.com/ops
+Listning on :\\.\pipe\912f8ee9-1e68-445d-98ef-a96dbb35beb0
+[0mGET / [32m200 [0m69.721 ms - 18[0m
+[0mGET /users/Home/BasicInfo?pre_mob=7057133255&fId=7&OwnerId=7 [31m500 [0m58.611 ms - 33[0m
+Connection Successful
+[0mGET /users/Notifications/C10001/7 [32m200 [0m39.932 ms - 421[0m
+[0mGET / [32m200 [0m1.840 ms - 18[0m
+[0mGET /users/Home/CheckPhone?pre_mob=8262878298 [32m200 [0m11.533 ms - 51[0m
+[0mGET /users/Otp/CheckUser?pre_mob=8262878298 [32m200 [0m8.844 ms - 1641[0m
+[0mPOST /users/CreateLogin?mobile=8262878298 [32m200 [0m4.833 ms - 350[0m
+[0mGET /users/Home/BasicInfo?pre_mob=8262878298&fId=44&OwnerId=35 [32m200 [0m13.357 ms - 768[0m
+[0mGET /users/Home/BasicInfo?pre_mob=8262878298&fId=44&OwnerId=35 [32m200 [0m6.968 ms - 768[0m
+[0mGET /users/Notifications/C10009/35 [32m200 [0m6.357 ms - 2[0m
+[0mGET /users/Home/TotalDue/44 [32m200 [0m6.246 ms - 15[0m
+[0mGET /users/visitor/2025-11-17/44 [32m200 [0m10.555 ms - 2[0m
+[0mGET /users/Community/Broadcast?society_id=C10009&owner_id=35 [32m200 [0m11.967 ms - 2[0m
+[0mGET /users/Notifications/C10009/35 [32m200 [0m5.041 ms - 2[0m
+[0mPOST /notify/OwnerApp/Insert/NewToken?owner_id=35&type=Owner&token=dkLGTaSbThuxqhrdVKd-pz%3AAPA91bHeP1yW9A0cQeqdA193YP5pa_uF__ybXiK7dbW_y1dhKAV9t8u03IctT6um_Zm2V-60TsL8ZwwsiatZz-RaFNrKDHYwYHG6k6onmQ3y0JYqxfu8aZI [32m200 [0m57.753 ms - 41[0m
+[0mGET /users/Otp/CheckUser?pre_mob=8262878298 [32m200 [0m13.185 ms - 1641[0m
+[0mGET /users/Otp/CheckUser?pre_mob=8262878298 [32m200 [0m6.967 ms - 1641[0m
+[0mGET /users/Home/BasicInfo?pre_mob=8262878298&fId=8&OwnerId=8 [32m200 [0m7.325 ms - 874[0m
+[0mGET /users/Home/BasicInfo?pre_mob=8262878298&fId=8&OwnerId=8 [32m200 [0m5.880 ms - 874[0m
+[0mGET /users/Home/TotalDue/8 [32m200 [0m5.990 ms - 21[0m
+[0mGET /users/Home/TotalDue/8 [32m200 [0m6.874 ms - 21[0m
+[0mGET /users/visitor/2025-11-17/8 [32m200 [0m9.144 ms - 2[0m
+[0mGET /users/Home/DueHistory/8 [32m200 [0m55.401 ms - 1296[0m
+[0mPOST /notify/OwnerApp/Insert/NewToken?owner_id=8&type=Owner&token=dkLGTaSbThuxqhrdVKd-pz%3AAPA91bHeP1yW9A0cQeqdA193YP5pa_uF__ybXiK7dbW_y1dhKAV9t8u03IctT6um_Zm2V-60TsL8ZwwsiatZz-RaFNrKDHYwYHG6k6onmQ3y0JYqxfu8aZI [32m200 [0m4.990 ms - 41[0m
+[0mGET /upload/ProfilePhoto/8/1759836155845scaled_96e056dc-fb36-4184-903a-026f02379d761977954400866922378.jpg [32m200 [0m11.086 ms - 407001[0m
+[0mGET /users/Community/Broadcast?society_id=C10001&owner_id=8 [32m200 [0m11.340 ms - 1468[0m
+[0mGET /users/facilities/C10001 [32m200 [0m4.941 ms - 979[0m
+[0mGET /users/Notifications/C10001/8 [32m200 [0m5.627 ms - 1524[0m
+[0mGET /users/OwnerProductBuy/C10001/8 [32m200 [0m12.085 ms - 1510[0m
+[0mGET /users/SocietyPolls/8/C10001/1 [32m200 [0m4.735 ms - 27[0m
+[0mGET /users/FamilyMembers/8 [32m200 [0m8.437 ms - 364[0m
+[0mGET /users/Helpdesk/?societyID=C10001 [32m200 [0m24.672 ms - 10323[0m
+[0mGET /users/visitor/byflat/8 [32m200 [0m27.381 ms - 2[0m
+[0mGET /users/VehicleList/8/C10001 [32m200 [0m23.618 ms - 324[0m
+[0mGET /users/Community/Broadcast?society_id=C10001&owner_id=8 [32m200 [0m11.828 ms - 1468[0m
+[0mGET /users/Home/DueHistory/8 [32m200 [0m25.548 ms - 1296[0m
+[0mGET / [32m200 [0m2.593 ms - 18[0m

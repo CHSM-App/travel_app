@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="robots" content="index, follow" />
+<meta name="description" content="Privacy Policy for the VengurlaTech Travel Agency Management application." />
+<title>Privacy Policy — VengurlaTech</title>
+<style>
+  /* ──────────────────────────────────────────────────────────────
+     Design tokens
+     ────────────────────────────────────────────────────────────── */
+  :root {
+    --primary: #3d5afe;
+    --primary-dark: #2541d4;
+    --primary-soft: #eef1ff;
+    --ink: #0d1330;
+    --text: #1a1d2e;
+    --muted: #5a6178;
+    --muted-2: #8a91a8;
+    --bg: #f6f7fb;
+    --card: #ffffff;
+    --border: #e6e9f1;
+    --border-strong: #d0d6e3;
+    --accent: #00bfa5;
+    --shadow-sm: 0 1px 2px rgba(13, 19, 48, 0.04);
+    --shadow-md: 0 4px 16px rgba(13, 19, 48, 0.06);
+    --shadow-lg: 0 12px 40px rgba(61, 90, 254, 0.08);
+    --radius: 14px;
+    --radius-sm: 10px;
+  }
+
+  /* ──────────────────────────────────────────────────────────────
+     Reset & base
+     ────────────────────────────────────────────────────────────── */
+  *, *::before, *::after { box-sizing: border-box; }
+  html { scroll-behavior: smooth; scroll-padding-top: 84px; }
+  body {
+    margin: 0;
+    padding: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+                 "Helvetica Neue", Arial, sans-serif;
+    line-height: 1.7;
+    font-size: 15.5px;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  a { color: var(--primary); text-decoration: none; transition: color .15s; }
+  a:hover { color: var(--primary-dark); text-decoration: underline; }
+
+  /* ──────────────────────────────────────────────────────────────
+     Top nav
+     ────────────────────────────────────────────────────────────── */
+  .topbar {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: saturate(180%) blur(14px);
+    -webkit-backdrop-filter: saturate(180%) blur(14px);
+    border-bottom: 1px solid var(--border);
+  }
+  .topbar-inner {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 14px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+  }
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--ink);
+    font-weight: 800;
+    letter-spacing: -0.2px;
+  }
+  .brand-mark {
+    width: 32px;
+    height: 32px;
+    border-radius: 9px;
+    background: linear-gradient(135deg, var(--primary), #6378ff);
+    display: grid;
+    place-items: center;
+    color: #fff;
+    font-weight: 800;
+    font-size: 14px;
+    box-shadow: var(--shadow-md);
+  }
+  .brand-text { font-size: 15px; }
+  .topbar-actions a {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--muted);
+    padding: 8px 12px;
+    border-radius: 8px;
+  }
+  .topbar-actions a:hover {
+    background: var(--primary-soft);
+    color: var(--primary);
+    text-decoration: none;
+  }
+
+  /* ──────────────────────────────────────────────────────────────
+     Hero
+     ────────────────────────────────────────────────────────────── */
+  .hero {
+    background:
+      radial-gradient(ellipse 800px 320px at 20% 0%, rgba(61, 90, 254, 0.12), transparent 70%),
+      radial-gradient(ellipse 600px 280px at 80% 0%, rgba(0, 191, 165, 0.10), transparent 70%),
+      var(--card);
+    border-bottom: 1px solid var(--border);
+  }
+  .hero-inner {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 64px 24px 56px;
+  }
+  .eyebrow {
+    display: inline-block;
+    color: var(--primary);
+    background: var(--primary-soft);
+    padding: 5px 12px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    margin-bottom: 14px;
+  }
+  .hero h1 {
+    margin: 0 0 12px;
+    font-size: 40px;
+    line-height: 1.15;
+    letter-spacing: -0.8px;
+    color: var(--ink);
+    font-weight: 800;
+  }
+  .hero-lede {
+    color: var(--muted);
+    max-width: 720px;
+    font-size: 16px;
+    margin: 0 0 22px;
+  }
+  .meta-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 4px;
+  }
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    padding: 6px 12px;
+    border-radius: 999px;
+    font-size: 12.5px;
+    font-weight: 600;
+    box-shadow: var(--shadow-sm);
+  }
+  .chip strong { color: var(--ink); font-weight: 700; }
+  .chip-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+  }
+
+  /* ──────────────────────────────────────────────────────────────
+     Layout: sidebar + content
+     ────────────────────────────────────────────────────────────── */
+  .layout {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 40px 24px 80px;
+    display: grid;
+    grid-template-columns: 260px minmax(0, 1fr);
+    gap: 48px;
+    align-items: start;
+  }
+  .toc {
+    position: sticky;
+    top: 84px;
+    align-self: start;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px 18px 14px;
+    box-shadow: var(--shadow-sm);
+    max-height: calc(100vh - 110px);
+    overflow: auto;
+  }
+  .toc-title {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1.4px;
+    color: var(--muted-2);
+    font-weight: 800;
+    margin: 0 0 12px;
+  }
+  .toc ol {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    counter-reset: toc;
+  }
+  .toc li {
+    counter-increment: toc;
+    margin: 0;
+  }
+  .toc a {
+    display: block;
+    padding: 7px 10px 7px 34px;
+    border-radius: 8px;
+    color: var(--muted);
+    font-size: 13.5px;
+    font-weight: 500;
+    position: relative;
+    line-height: 1.4;
+    transition: background .12s, color .12s;
+  }
+  .toc a::before {
+    content: counter(toc, decimal-leading-zero);
+    position: absolute;
+    left: 10px;
+    top: 7px;
+    color: var(--muted-2);
+    font-size: 11px;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+  }
+  .toc a:hover {
+    background: var(--primary-soft);
+    color: var(--primary);
+    text-decoration: none;
+  }
+  .toc a:hover::before { color: var(--primary); }
+
+  /* ──────────────────────────────────────────────────────────────
+     Content card
+     ────────────────────────────────────────────────────────────── */
+  .content {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-lg);
+    padding: 44px 48px 40px;
+    overflow: hidden;
+  }
+  .content > p:first-of-type {
+    font-size: 16px;
+    color: var(--text);
+    margin-top: 0;
+  }
+  .content section {
+    padding-top: 28px;
+    margin-top: 28px;
+    border-top: 1px solid var(--border);
+    scroll-margin-top: 90px;
+  }
+  .content section:first-of-type {
+    margin-top: 24px;
+    padding-top: 0;
+    border-top: 0;
+  }
+  .content h2 {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    margin: 0 0 10px;
+    font-size: 22px;
+    line-height: 1.25;
+    color: var(--ink);
+    letter-spacing: -0.3px;
+    font-weight: 800;
+  }
+  .content h2 .num {
+    font-size: 13px;
+    font-weight: 800;
+    color: var(--primary);
+    background: var(--primary-soft);
+    padding: 3px 9px;
+    border-radius: 6px;
+    letter-spacing: 0.4px;
+    font-variant-numeric: tabular-nums;
+  }
+  .content h3 {
+    margin: 22px 0 6px;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--ink);
+  }
+  .content p {
+    color: var(--text);
+    margin: 8px 0 12px;
+  }
+  .content ul {
+    padding-left: 22px;
+    margin: 6px 0 12px;
+  }
+  .content li { margin: 6px 0; color: var(--text); }
+  .content li::marker { color: var(--primary); }
+
+  .callout {
+    display: flex;
+    gap: 14px;
+    background: var(--primary-soft);
+    border: 1px solid rgba(61, 90, 254, 0.18);
+    padding: 16px 18px;
+    border-radius: var(--radius-sm);
+    margin: 18px 0;
+    align-items: flex-start;
+  }
+  .callout-icon {
+    flex: 0 0 24px;
+    width: 24px;
+    height: 24px;
+    border-radius: 7px;
+    background: var(--primary);
+    color: #fff;
+    display: grid;
+    place-items: center;
+    font-weight: 800;
+    font-size: 13px;
+    margin-top: 1px;
+  }
+  .callout-body { font-size: 14.5px; color: var(--ink); }
+
+  .disclaimer {
+    margin-top: 32px;
+    padding-top: 22px;
+    border-top: 1px dashed var(--border-strong);
+    color: var(--muted);
+    font-size: 13.5px;
+  }
+
+  /* ──────────────────────────────────────────────────────────────
+     Footer
+     ────────────────────────────────────────────────────────────── */
+  footer {
+    background: var(--ink);
+    color: #c7cbe0;
+    padding: 32px 24px;
+  }
+  .footer-inner {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+    font-size: 13.5px;
+  }
+  footer a { color: #ffffff; opacity: 0.85; }
+  footer a:hover { opacity: 1; }
+  .footer-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #fff;
+    font-weight: 700;
+  }
+  .footer-brand .brand-mark { box-shadow: none; }
+
+  /* ──────────────────────────────────────────────────────────────
+     Mobile
+     ────────────────────────────────────────────────────────────── */
+  @media (max-width: 880px) {
+    html { scroll-padding-top: 72px; }
+    .hero-inner { padding: 40px 20px 36px; }
+    .hero h1 { font-size: 28px; }
+    .hero-lede { font-size: 15px; }
+    .layout {
+      grid-template-columns: 1fr;
+      gap: 18px;
+      padding: 20px 16px 56px;
+    }
+    .toc {
+      position: static;
+      max-height: none;
+      padding: 14px;
+    }
+    .toc[open] { box-shadow: var(--shadow-sm); }
+    .toc-summary {
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 1.3px;
+      color: var(--muted-2);
+      font-weight: 800;
+      cursor: pointer;
+      list-style: none;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .toc-summary::-webkit-details-marker { display: none; }
+    .toc-summary::after {
+      content: "▾";
+      color: var(--muted);
+      transition: transform .2s;
+    }
+    details[open] .toc-summary::after { transform: rotate(180deg); }
+    .toc ol { margin-top: 10px; }
+    .content { padding: 28px 22px; }
+    .content h2 { font-size: 19px; }
+    .topbar-inner { padding: 12px 16px; }
+    .brand-text { font-size: 14px; }
+  }
+
+  /* Hide the <details> toggle on desktop and keep TOC open */
+  @media (min-width: 881px) {
+    .toc-summary { display: none; }
+  }
+
+  /* ──────────────────────────────────────────────────────────────
+     Print
+     ────────────────────────────────────────────────────────────── */
+  @media print {
+    .topbar, .toc, footer { display: none !important; }
+    body { background: #fff; }
+    .hero { background: #fff; border-bottom: 1px solid #ddd; }
+    .hero-inner { padding: 24px 0; }
+    .layout { display: block; padding: 0; }
+    .content {
+      box-shadow: none;
+      border: 0;
+      padding: 0;
+    }
+    a { color: #000; text-decoration: underline; }
+    .content section { break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ────────────────────────  TOP BAR  ──────────────────────── -->
+<header class="topbar">
+  <div class="topbar-inner">
+    <a href="#top" class="brand">
+      <span class="brand-mark">V</span>
+      <span class="brand-text">VengurlaTech</span>
+    </a>
+    <nav class="topbar-actions">
+      <a href="mailto:support@vengurlatech.com">Contact</a>
+      <a href="javascript:window.print()">Print</a>
+    </nav>
+  </div>
+</header>
+
+<!-- ────────────────────────  HERO  ──────────────────────── -->
+<section class="hero" id="top">
+  <div class="hero-inner">
+    <span class="eyebrow">Privacy Policy</span>
+    <h1>How we handle your data.</h1>
+    <p class="hero-lede">
+      This Privacy Policy explains what information the <strong>VengurlaTech
+      Travel Agency Management</strong> application collects, how it is used,
+      who it is shared with, and the choices you have. We've written it in
+      plain language so it's easy to follow.
+    </p>
+    <div class="meta-chips">
+      <span class="chip"><span class="chip-dot"></span><strong>Effective:</strong>&nbsp;20 May 2026</span>
+      <span class="chip"><strong>Last updated:</strong>&nbsp;20 May 2026</span>
+      <span class="chip"><strong>Version:</strong>&nbsp;1.0</span>
+    </div>
+  </div>
+</section>
+
+<!-- ────────────────────────  LAYOUT  ──────────────────────── -->
+<div class="layout">
+
+  <!-- TOC (sidebar on desktop, collapsible on mobile) -->
+  <aside class="toc">
+    <details open class="toc-details">
+      <summary class="toc-summary">On this page</summary>
+      <p class="toc-title">Sections</p>
+      <ol>
+        <li><a href="#sec-1">Information we collect</a></li>
+        <li><a href="#sec-2">How we use information</a></li>
+        <li><a href="#sec-3">How we share information</a></li>
+        <li><a href="#sec-4">Document uploads</a></li>
+        <li><a href="#sec-5">Data security</a></li>
+        <li><a href="#sec-6">Data retention</a></li>
+        <li><a href="#sec-7">Your rights</a></li>
+        <li><a href="#sec-8">Children's privacy</a></li>
+        <li><a href="#sec-9">Cookies &amp; tracking</a></li>
+        <li><a href="#sec-10">International transfers</a></li>
+        <li><a href="#sec-11">Mobile permissions</a></li>
+        <li><a href="#sec-12">Changes to this policy</a></li>
+        <li><a href="#sec-13">Contact us</a></li>
+      </ol>
+    </details>
+  </aside>
+
+  <!-- Content -->
+  <main class="content" id="content">
+
+    <p>
+      This Privacy Policy explains how <strong>VengurlaTech</strong>
+      (&ldquo;we&rdquo;, &ldquo;us&rdquo;, &ldquo;our&rdquo;) collects, uses,
+      discloses, and protects information when you use the
+      <strong>VengurlaTech Travel Agency Management</strong> application
+      and related services (the &ldquo;Service&rdquo;). The Service is a
+      B2B tool that lets a travel-agency administrator manage their own
+      customers, drivers, vehicles, and trip bookings.
+    </p>
+
+    <div class="callout">
+      <div class="callout-icon">i</div>
+      <div class="callout-body">
+        <strong>Who is the user?</strong> The Service is operated by an
+        authorised administrator of a travel agency. The agency itself
+        controls the personal data of its customers, drivers, and staff
+        that it enters into the Service. VengurlaTech acts as the data
+        processor on the agency's behalf for that information.
+      </div>
+    </div>
+
+    <!-- 1 -->
+    <section id="sec-1">
+      <h2><span class="num">01</span>Information we collect</h2>
+
+      <h3>1.1 Administrator account information</h3>
+      <ul>
+        <li>Full name, mobile number, email address</li>
+        <li>Password (stored encrypted; never displayed or shared)</li>
+        <li>Agency name, address, city</li>
+        <li>Profile photo (optional, uploaded by the administrator)</li>
+      </ul>
+
+      <h3>1.2 Information the administrator enters about others</h3>
+      <ul>
+        <li><strong>Customers</strong> &mdash; name, phone number, address,
+            driving licence number, licence expiry, and ID-proof document
+            (uploaded image or PDF).</li>
+        <li><strong>Drivers</strong> &mdash; name, phone number, address,
+            licence number, licence expiry, and licence document.</li>
+        <li><strong>Vehicles</strong> &mdash; vehicle name, registration
+            number, type, capacity, fuel type, mileage, and RC document.</li>
+        <li><strong>Trip bookings</strong> &mdash; pickup/drop locations,
+            distance, fuel required, dates &amp; times, trip charges,
+            toll/repair/driver charges, and payment status.</li>
+      </ul>
+
+      <h3>1.3 Technical &amp; usage information</h3>
+      <ul>
+        <li>Device details (model, OS version) provided during sign-in to
+            bind sessions to a specific device.</li>
+        <li>IP address and timestamps recorded by server access logs for
+            security and abuse-prevention purposes.</li>
+        <li>Crash and diagnostic information when something goes wrong.</li>
+      </ul>
+
+      <h3>1.4 Information we do <em>not</em> collect</h3>
+      <ul>
+        <li>Real-time GPS location of the user's device.</li>
+        <li>Contacts, photos, or other on-device data outside the documents
+            the administrator explicitly chooses to upload.</li>
+        <li>Advertising identifiers.</li>
+      </ul>
+    </section>
+
+    <!-- 2 -->
+    <section id="sec-2">
+      <h2><span class="num">02</span>How we use information</h2>
+      <ul>
+        <li>To provide the Service and its core features (manage trips,
+            customers, drivers, vehicles, billing, history).</li>
+        <li>To authenticate users and protect accounts (password-based
+            login, refresh tokens, device binding).</li>
+        <li>To process payments through our payment partner.</li>
+        <li>To send transactional messages (OTPs, password resets, booking
+            confirmations) via SMS where applicable.</li>
+        <li>To maintain reliability, debug issues, and improve the Service.</li>
+        <li>To comply with applicable laws, court orders, and regulatory
+            requirements.</li>
+      </ul>
+    </section>
+
+    <!-- 3 -->
+    <section id="sec-3">
+      <h2><span class="num">03</span>How we share information</h2>
+      <p>We do <strong>not</strong> sell personal data. We share limited
+      information only with the following categories of recipients,
+      strictly to operate the Service:</p>
+      <ul>
+        <li><strong>Payment gateway</strong> &mdash; Razorpay Software Pvt.
+            Ltd. (when a payment is processed). Razorpay receives
+            transaction data but not your full address book or document
+            uploads.</li>
+        <li><strong>SMS provider</strong> &mdash; used to deliver OTP and
+            transactional messages to the phone number provided.</li>
+        <li><strong>Hosting and infrastructure providers</strong> &mdash;
+            our servers and database are hosted with reputable providers
+            in India under appropriate contractual safeguards.</li>
+        <li><strong>Push-notification provider</strong> &mdash; Google
+            Firebase Cloud Messaging is used solely to deliver
+            notifications to the installed app.</li>
+        <li><strong>Legal authorities</strong> &mdash; when required by
+            law, court order, or to investigate fraud or violations of our
+            terms.</li>
+      </ul>
+    </section>
+
+    <!-- 4 -->
+    <section id="sec-4">
+      <h2><span class="num">04</span>Document uploads</h2>
+      <p>Identity documents (driving licences, RC books, ID proofs)
+      uploaded by the administrator are stored on our servers under
+      access-controlled directories scoped to the uploading agency. Only
+      the originating agency and authorised VengurlaTech personnel can
+      access them. Uploaded files are served over HTTPS.</p>
+    </section>
+
+    <!-- 5 -->
+    <section id="sec-5">
+      <h2><span class="num">05</span>Data security</h2>
+      <ul>
+        <li>All traffic between the app and our servers is encrypted using
+            HTTPS / TLS.</li>
+        <li>Sessions use short-lived access tokens and rotated refresh
+            tokens.</li>
+        <li>Access to production data is limited to authorised personnel on
+            a need-to-know basis.</li>
+        <li>We continuously review our infrastructure for vulnerabilities
+            and apply updates as appropriate.</li>
+      </ul>
+      <p>No method of electronic transmission or storage is 100% secure.
+      While we use reasonable measures to protect your information, we
+      cannot guarantee its absolute security.</p>
+    </section>
+
+    <!-- 6 -->
+    <section id="sec-6">
+      <h2><span class="num">06</span>Data retention</h2>
+      <p>We retain personal data for as long as the administrator's
+      account is active and the data remains useful for operating the
+      Service. Upon account deletion, related personal data is removed or
+      anonymised within a reasonable period unless we are required to
+      retain it for legal, tax, accounting, or fraud-prevention purposes.</p>
+    </section>
+
+    <!-- 7 -->
+    <section id="sec-7">
+      <h2><span class="num">07</span>Your rights</h2>
+      <p>Depending on your jurisdiction (including, for users in India,
+      rights under the <em>Digital Personal Data Protection Act, 2023</em>),
+      you have the right to:</p>
+      <ul>
+        <li>Access the personal data we hold about you.</li>
+        <li>Request correction of inaccurate or incomplete information.</li>
+        <li>Request deletion of your personal data (subject to legal
+            retention obligations).</li>
+        <li>Withdraw consent for processing where consent is the lawful
+            basis.</li>
+        <li>Lodge a complaint with the relevant data-protection
+            authority.</li>
+      </ul>
+      <p>To exercise any of these rights, contact us at the email below.
+      We will respond within a reasonable time frame.</p>
+    </section>
+
+    <!-- 8 -->
+    <section id="sec-8">
+      <h2><span class="num">08</span>Children's privacy</h2>
+      <p>The Service is intended for use by adult travel-agency
+      administrators. It is not directed at children under the age of 18,
+      and we do not knowingly collect personal data from children. If you
+      believe a child has provided us with personal data, please contact
+      us so we can remove it.</p>
+    </section>
+
+    <!-- 9 -->
+    <section id="sec-9">
+      <h2><span class="num">09</span>Cookies &amp; tracking</h2>
+      <p>The mobile application itself does not use browser cookies. Our
+      web components (if any) may use functional cookies strictly
+      necessary for the service to operate. We do not use advertising or
+      third-party tracking cookies.</p>
+    </section>
+
+    <!-- 10 -->
+    <section id="sec-10">
+      <h2><span class="num">10</span>International data transfers</h2>
+      <p>Our servers are located in India. If you access the Service from
+      outside India, your information will be transferred to and
+      processed in India under the safeguards described in this Policy.</p>
+    </section>
+
+    <!-- 11 -->
+    <section id="sec-11">
+      <h2><span class="num">11</span>Permissions used by the mobile app</h2>
+      <ul>
+        <li><strong>Camera</strong> &mdash; to photograph identity
+            documents at the time of upload (used only when you tap
+            &ldquo;Camera&rdquo;).</li>
+        <li><strong>Photos / Storage</strong> &mdash; to let you pick
+            existing documents or images for upload.</li>
+        <li><strong>Internet</strong> &mdash; to communicate with our
+            servers.</li>
+        <li><strong>Notifications</strong> &mdash; to deliver booking and
+            payment alerts.</li>
+      </ul>
+    </section>
+
+    <!-- 12 -->
+    <section id="sec-12">
+      <h2><span class="num">12</span>Changes to this policy</h2>
+      <p>We may update this Privacy Policy from time to time. Material
+      changes will be communicated through the application or via email to
+      registered administrators. The &ldquo;Last updated&rdquo; date at
+      the top of this page reflects the most recent revision.</p>
+    </section>
+
+    <!-- 13 -->
+    <section id="sec-13">
+      <h2><span class="num">13</span>Contact us</h2>
+      <p>If you have any questions, concerns, or requests regarding this
+      Policy or your personal data, please contact us:</p>
+      <ul>
+        <li><strong>Email:</strong>
+            <a href="mailto:support@vengurlatech.com">support@vengurlatech.com</a></li>
+        <li><strong>Company:</strong> VengurlaTech</li>
+        <li><strong>Application:</strong> VengurlaTech Travel Agency
+            Management</li>
+      </ul>
+    </section>
+
+    <p class="disclaimer">
+      This page is provided in good faith as a plain-language summary of
+      our privacy practices. It does not constitute legal advice. If you
+      require a legally binding document for regulatory submission, please
+      have it reviewed by qualified legal counsel.
+    </p>
+  </main>
+</div>
+
+<!-- ────────────────────────  FOOTER  ──────────────────────── -->
+<footer>
+  <div class="footer-inner">
+    <div class="footer-brand">
+      <span class="brand-mark">V</span>
+      <span>VengurlaTech</span>
+    </div>
+    <div>
+      &copy; 2026 VengurlaTech. All rights reserved. ·
+      <a href="mailto:support@vengurlatech.com">support@vengurlatech.com</a>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>

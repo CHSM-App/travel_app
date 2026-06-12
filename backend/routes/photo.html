@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>GET API Call Example</title>
+</head>
+<body>
+    <h1>API Response:</h1>
+    <div id="response"></div>
+
+    <script>
+        // Replace with your API URL
+        alert('Data:')
+        fetch('https://vengurlatech.com/users/Home/TotalDue/8502')
+            .then(response => response.json())
+            .then(data => {
+                // Display the result in the HTML
+              
+                document.getElementById('response').textContent = JSON.stringify(data, null, 2);
+            })
+            .catch(error => {
+                console.error('Error fetching API:', error);
+            });
+    </script>
+</body>
+</html>

@@ -1,0 +1,416 @@
+ var express = require('express');
+var db = require("./db");
+var router = express.Router();
+var http=require('http');
+const jwt = require('jsonwebtoken');
+require('dotenv').config();
+
+let refreshTokens = [];
+
+//-----------TRAVELS APP GET API--------------------------------//
+	
+  router.get('/driverList/:agency_id', async (req, res) => {
+	  const {agency_id} = req.params;
+  try {
+     const result = await db.request()
+      .input('operation', 'DriverList')
+	  .input('agency_id', agency_id)
+      .execute('sp_trip');
+
+    res.json(result.recordset);
+  } catch (err) {
+    res.status(500).json({ error: err });
+  }
+});
+
+  router.get('/deletedDriverList/:agency_id', async (req, res) => {
+	  const {agency_id} = req.params;
+  try {
+     const result = await db.request()
+      .input('operation', 'fetchDeletedDrivers')
+	  .input('agency_id', agency_id)
+      .execute('sp_driver');
+
+    res.json(result.recordset);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+
+router.get('/VehicleList/:agency_id', async (req, res) => {
+	  const {agency_id} = req.params;
+  try {
+     const result = await db.request()
+      .input('operation', 'VehicleList')
+	  .input('agency_id', agency_id)
+      .execute('sp_trip');
+
+    res.json(result.recordset);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+
+router.get('/deletedVehicleList/:agency_id', async (req, res) => {
+	  const {agency_id} = req.params;
+  try {
+     const result = await db.request()
+      .input('operation', 'fetchDeletedVehicles')
+	  .input('agency_id', agency_id)
+      .execute('sp_vehicle');
+
+    res.json(result.recordset);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+
+router.get('/CustomerList/:agency_id', async (req, res) => {
+	 const {agency_id} = req.params;
+  try {
+     const result = await db.request()
+      .input('operation', 'CustomerList')
+	  .input('agency_id', agency_id)
+      .execute('sp_trip');
+
+    res.json(result.recordset);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+
+
+// ---- Google Distance Matrix proxy (API key stays on the server) ----
+router.get('/distance', async (req, res) => {
+  const { origins, destinations } = req.query;
+  if (!origins || !destinations) {
+    return res
+      .status(400)
+      .json({ error: 'origins and destinations are required' });
+  }
+
+  try {
+    const url = new URL('https://maps.googleapis.com/maps/api/distancematrix/json');
+    url.searchParams.set('origins', origins);
+    url.searchParams.set('destinations', destinations);
+    url.searchParams.set('units', 'metric');
+    url.searchParams.set('key', process.env.GOOGLE_MAPS_API_KEY);
+
+    const googleRes = await fetch(url); // Node 18+ has fetch built in
+    const data = await googleRes.json();
+
+    const element = data?.rows?.[0]?.elements?.[0];
+    if (!element || element.status !== 'OK') {
+      return res.status(404).json({
+        error: 'Route not found',
+        googleStatus: element?.status || data.status,
+      });
+    }
+
+    res.json({
+      distanceKm: element.distance.value / 1000, // metres → km
+      distanceText: element.distance.text,         // e.g. "118 km"
+      durationText: element.duration?.text || null, // e.g. "2 hours 30 mins"
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+
+
+router.get('/fetchAvailableVehicles/:agency_id/:start_datetime/:end_datetime/:trip_id?', async (req, res) => {
+
+  const { agency_id, start_datetime, end_datetime, trip_id} = req.params;
+
+  try {
+
+    const result = await db.request()
+      .input('operation', 'FetchAvailableVehicles')
+      .input('agency_id', agency_id)
+      .input('start_datetime', start_datetime) 
+      .input('end_datetime', end_datetime)
+	  .input('trip_id', trip_id ? parseInt(trip_id) : null) 
+      .execute('sp_trip');
+
+    res.json(result.recordset);
+
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.get('/fetchAvailableDrivers/:agency_id/:start_datetime/:end_datetime/:trip_id?', async (req, res) => {
+
+  const { agency_id, start_datetime, end_datetime, trip_id} = req.params;
+
+  try {
+
+    const result = await db.request()
+      .input('operation', 'FetchAvailableDrivers')
+      .input('agency_id', agency_id)
+      .input('start_datetime', start_datetime) 
+      .input('end_datetime', end_datetime)
+	  .input('trip_id', trip_id ? parseInt(trip_id) : null) 
+      .execute('sp_trip');
+
+    res.json(result.recordset);
+
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+	
+  router.get('/Customerhistory/:customer_id', async (req, res) => {
+	  const {customer_id} = req.params;
+  try {
+     const result = await db.request()
+      .input('operation', 'Customerhistory')
+	  .input('customer_id', customer_id)
+      .execute('sp_Customer');
+
+    res.json(result.recordset);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+  router.get('/vehicleHistory/:vehicle_id', async (req, res) => {
+	  const {vehicle_id} = req.params;
+  try {
+     const result = await db.request()
+      .input('operation', 'vehicleHistoryList')
+	  .input('vehicleId', vehicle_id)
+      .execute('sp_Vehicle');
+
+    res.json(result.recordset);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+  router.get('/driverHistory/:driver_id', async (req, res) => {
+	  const {driver_id} = req.params;
+  try {
+     const result = await db.request()
+      .input('operation', 'driverHistoryList')
+	  .input('driverId', driver_id)
+      .execute('sp_driver');
+
+    res.json(result.recordset);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+
+router.get('/VehicleTypeList', async (req, res) => {
+  try {
+     const result = await db.request()
+      .input('operation', 'VehicleTypeList')
+      .execute('sp_Vehicle');
+
+    res.json(result.recordset);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+
+router.get('/StatusList', async (req, res) => {
+  try {
+     const result = await db.request()
+      .input('operation', 'StatusList')
+      .execute('sp_Vehicle');
+
+    res.json(result.recordset);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.get('/FuelTypeList', async (req, res) => {
+  try {
+     const result = await db.request()
+      .input('operation', 'FuelTypeList')
+      .execute('sp_Vehicle');
+
+    res.json(result.recordset);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.get('/UpcomingTrip/:agency_id', async (req, res) => {
+		 const {agency_id} = req.params;
+  try {
+     const result = await db.request()
+      .input('operation', 'UpcomingTrip')
+	 	  .input('agency_id', agency_id)
+      .execute('sp_trip');
+
+    res.json(result.recordset);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.get('/HistoryTrip/:agency_id', async (req, res) => {
+		 const {agency_id} = req.params;
+  try {
+     const result = await db.request()
+      .input('operation', 'HistoryTrip')
+	 	  .input('agency_id', agency_id)
+      .execute('sp_trip');
+
+    res.json(result.recordset);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.get('/Unpaidtrip/:agency_id', async (req, res) => {
+		 const {agency_id} = req.params;
+  try {
+     const result = await db.request()
+      .input('operation', 'Unpaidtrip')
+	 	  .input('agency_id', agency_id)
+      .execute('sp_trip');
+
+    res.json(result.recordset);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.get('/activeTrip/:agency_id', async (req, res) => {
+		 const {agency_id} = req.params;
+  try {
+     const result = await db.request()
+      .input('operation', 'activeTrip')
+	 	  .input('agency_id', agency_id)
+      .execute('sp_trip');
+
+    res.json(result.recordset);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.get('/cancelledTrip/:agency_id', async (req, res) => {
+		 const {agency_id} = req.params;
+  try {
+     const result = await db.request()
+      .input('operation', 'cancelledTrip')
+	 	  .input('agency_id', agency_id)
+      .execute('sp_trip');
+
+    res.json(result.recordset);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.get('/getDriverList', async (req, res) => {
+  try {
+     const result = await db.request()
+      .input('operation', 'getDriverList')
+      .execute('sp_driver');
+
+    res.json(result.recordset);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+	
+  router.get('/Adminprofile/:admin_id', async (req, res) => {
+	  const {admin_id} = req.params;
+  try {
+     const result = await db.request()
+      .input('operation', 'ProfileFetch')
+	  .input('admin_id', admin_id)
+      .execute('sp_admin');
+
+    res.json(result.recordset);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+  router.get('/serviceRecord/:agency_id/:vehicle_id', async (req, res) => {
+	  const {agency_id, vehicle_id} = req.params;
+  try {
+     const result = await db.request()
+      .input('operation', 'getServiceRecords')
+	  .input('agency_id', agency_id)
+	  .input('vehicleid', vehicle_id)
+      .execute('sp_Vehicle');
+
+    res.json(result.recordset);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// REPORT API
+router.get('/report/:agency_id/:report_type', async (req, res) => {
+
+    const { agency_id, report_type } = req.params;
+
+    try {
+
+        const result = await db.request()
+            .input('operation', 'trip_report')
+            .input('report_type', report_type)
+            .input('agency_id', agency_id)
+            .execute('sp_reports');
+
+        res.status(200).json(result.recordset);
+
+    } catch (err) {
+
+        console.error(err);
+        res.status(500).json({
+            success: false,
+            message: err.message
+        });
+
+    }
+
+});
+
+router.get('/paymentHistory/:trip_id', async (req, res) => {
+	const {trip_id} = req.params;
+  try {
+    const result = await db.request()
+      .input("operation", "GetPaymentHistory")
+      .input("trip_id", trip_id)
+      .execute("sp_trip");
+    res.json(result.recordset);
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+
+  router.get('/VehicleReport/:agency_id', async (req, res) => {
+	  const {agency_id} = req.params;
+  try {
+     const result = await db.request()
+      .input('operation', 'getVehicleReport')
+	  .input('agency_id', agency_id)
+      .execute('sp_Vehicle');
+
+    res.json(result.recordset);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+
+module.exports = router; 
