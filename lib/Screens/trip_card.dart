@@ -124,6 +124,11 @@ class TripCard extends ConsumerWidget {
     return "Paid";
   }
 
+  /// Public entry point so other screens (e.g. the Transactions daybook) can
+  /// open this trip's detail sheet without rendering/tapping the card itself.
+  void showDetailSheet(BuildContext context, WidgetRef ref) =>
+      _showTripDetail(context, ref);
+
   void _showTripDetail(BuildContext context, WidgetRef ref) {
     print(
       "DEBUG status: ${bookinginfo.status} | type: ${bookinginfo.status.runtimeType}",

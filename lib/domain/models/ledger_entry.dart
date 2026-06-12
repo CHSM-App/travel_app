@@ -22,6 +22,14 @@ class LedgerEntry {
   final double? tripExpense;
   final double? maintenance;
 
+  // Human-readable trip context. Present only when the ledger view supplies
+  // them; null otherwise so the UI can fall back gracefully (customer → route →
+  // vehicle). Wire-up depends on these columns being added to the SQL view.
+  final String? customerName;
+  final String? pickup;
+  final String? drop;
+  final String? paymentMode;
+
   const LedgerEntry({
     this.vehicleId,
     this.vehicleName,
@@ -34,6 +42,10 @@ class LedgerEntry {
     this.revenue,
     this.tripExpense,
     this.maintenance,
+    this.customerName,
+    this.pickup,
+    this.drop,
+    this.paymentMode,
   });
 
   bool get isBooking => entryType == 'NEW_BOOKING';
@@ -53,6 +65,10 @@ class LedgerEntry {
         revenue: _toDouble(json['revenue']),
         tripExpense: _toDouble(json['trip_expense']),
         maintenance: _toDouble(json['maintenance']),
+        customerName: _toStr(json['customer_name'] ?? json['Customer_name']),
+        pickup: _toStr(json['pickup'] ?? json['pickup_location']),
+        drop: _toStr(json['drop'] ?? json['drop_location']),
+        paymentMode: _toStr(json['payment_mode']),
       );
 
   static int? _toInt(dynamic v) {

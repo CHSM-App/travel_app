@@ -24,6 +24,8 @@ enum TripFilter {
       'No Upcoming Trips', 'No trips scheduled for the future'),
   completed('completed', 'Completed', Icons.task_alt_rounded,
       'No Completed Trips', 'Completed trips will appear here'),
+  unpaid('unpaid', 'Unpaid', Icons.payment_rounded,
+      'No Unpaid Trips', 'Trips with pending payments will appear here'),
   cancelled('cancelled', 'Cancelled', Icons.cancel_rounded,
       'No Cancelled Trips', "You haven't cancelled any trips");
 
@@ -49,9 +51,9 @@ enum TripFilter {
     return null;
   }
 
-  // The list to render. For [TripFilter.completed] the caller must additionally
-  // pick a sub-tab — see [CompletedSubTab.listFrom]. We default to the unpaid
-  // bucket here so this stays usable as a fallback if the sub-tab is missing.
+  // The list to render for this filter. "Completed" shows the paid/history
+  // bucket; "Unpaid" is now its own first-class filter backed by the unpaid
+  // bucket rather than a sub-tab under Completed.
   AsyncValue<List<BookingInfo>> listFrom(TripPageState state) {
     switch (this) {
       case TripFilter.all:
@@ -61,30 +63,11 @@ enum TripFilter {
       case TripFilter.upcoming:
         return state.upcomingList;
       case TripFilter.completed:
+        return state.historyList;
+      case TripFilter.unpaid:
         return state.unpaidList;
       case TripFilter.cancelled:
         return state.cancelledList;
-    }
-  }
-}
-
-/// Sub-tab shown only when [TripFilter.completed] is selected. Splits the
-/// completed bucket into the two views the operator actually cares about.
-enum CompletedSubTab {
-  unpaid('Unpaid', Icons.payment_rounded),
-  paid('Paid', Icons.history_rounded);
-
-  const CompletedSubTab(this.label, this.icon);
-
-  final String label;
-  final IconData icon;
-
-  AsyncValue<List<BookingInfo>> listFrom(TripPageState state) {
-    switch (this) {
-      case CompletedSubTab.unpaid:
-        return state.unpaidList;
-      case CompletedSubTab.paid:
-        return state.historyList;
     }
   }
 }
@@ -136,9 +119,6 @@ class _TripPageState extends ConsumerState<TripPage> {
   static const Duration _searchDebounce = Duration(milliseconds: 250);
 
   TripFilter _selectedFilter = TripFilter.active;
-  // Active only when [_selectedFilter] is [TripFilter.completed]. Default to
-  // "Unpaid" because that's the actionable view operators usually want first.
-  CompletedSubTab _completedSubTab = CompletedSubTab.unpaid;
   DateRange _selectedRange = DateRange.all;
   DateTimeRange? _customRange;
   String _searchQuery = '';
@@ -157,14 +137,14 @@ class _TripPageState extends ConsumerState<TripPage> {
     // doesn't fire on the value already present at subscription time.
     final resolved = _resolveDeepLink(ref.read(tripPageInitialFilterProvider));
     if (resolved != null) {
-      _selectedFilter = resolved.filter;
-      if (resolved.subTab != null) _completedSubTab = resolved.subTab!;
-      // A companion date signal pins the list to a single day (e.g. tomorrow's
-      // pickups from the dashboard's "Upcoming Trips" row).
+      _selectedFilter = resolved;
+      // A companion date signal pins the list to everything on/after that day
+      // (e.g. tomorrow-and-onwards pickups from the dashboard's "Upcoming
+      // Trips" row).
       final initialDate = ref.read(tripPageInitialDateProvider);
       if (initialDate != null) {
         _selectedRange = DateRange.custom;
-        _customRange = _singleDayRange(initialDate);
+        _customRange = _fromDayRange(initialDate);
       }
       ref.read(tripPageInitialFilterProvider.notifier).state = null;
       ref.read(tripPageInitialDateProvider.notifier).state = null;
@@ -173,30 +153,23 @@ class _TripPageState extends ConsumerState<TripPage> {
     Future.microtask(() => _loadListForFilter(_selectedFilter));
   }
 
-  /// Translates a [tripPageInitialFilterProvider] key into a filter + optional
-  /// sub-tab. Keeps the old `'paid'` / `'unpaid'` deep-links working — they now
-  /// open Completed with the matching sub-tab pre-selected.
-  ({TripFilter filter, CompletedSubTab? subTab})? _resolveDeepLink(
-      String? key) {
-    if (key == 'unpaid') {
-      return (filter: TripFilter.completed, subTab: CompletedSubTab.unpaid);
-    }
-    if (key == 'paid') {
-      return (filter: TripFilter.completed, subTab: CompletedSubTab.paid);
-    }
-    final f = TripFilter.fromKey(key);
-    if (f == null) return null;
-    return (filter: f, subTab: null);
+  /// Translates a [tripPageInitialFilterProvider] key into a filter. The legacy
+  /// `'paid'` deep-link now lands on the Completed filter, while `'unpaid'`
+  /// resolves through [TripFilter.fromKey] to the first-class Unpaid filter.
+  TripFilter? _resolveDeepLink(String? key) {
+    if (key == 'paid') return TripFilter.completed;
+    return TripFilter.fromKey(key);
   }
 
-  /// A day-only [DateTimeRange] covering exactly [day] (start == end), used to
-  /// pin the date filter to a single calendar day.
-  DateTimeRange _singleDayRange(DateTime day) {
-    final d = DateTime(day.year, day.month, day.day);
-    return DateTimeRange(start: d, end: d);
+  /// An open-ended [DateTimeRange] starting at [day] and running far into the
+  /// future, used to pin the date filter to "this day and everything after it"
+  /// (e.g. the dashboard's "Upcoming Trips" row → tomorrow and onwards).
+  DateTimeRange _fromDayRange(DateTime day) {
+    final start = DateTime(day.year, day.month, day.day);
+    return DateTimeRange(start: start, end: DateTime(start.year + 5, 12, 31));
   }
 
-  /// Applies a deep-link's companion date signal: pin to a single day when
+  /// Applies a deep-link's companion date signal: pin to [day]-and-onwards when
   /// [day] is set, otherwise reset the range back to "All". Always wrapped in
   /// setState since it runs after the page is mounted.
   void _applyDeepLinkDate(DateTime? day) {
@@ -206,7 +179,7 @@ class _TripPageState extends ConsumerState<TripPage> {
         _customRange = null;
       } else {
         _selectedRange = DateRange.custom;
-        _customRange = _singleDayRange(day);
+        _customRange = _fromDayRange(day);
       }
     });
   }
@@ -234,12 +207,10 @@ class _TripPageState extends ConsumerState<TripPage> {
         await notifier.upcomingList(agencyId);
         break;
       case TripFilter.completed:
-        // Both sub-tabs feed off these lists; pull them in parallel so toggling
-        // between Unpaid/Paid never shows a stale skeleton.
-        await Future.wait([
-          notifier.unpaidList(agencyId),
-          notifier.historyList(agencyId),
-        ]);
+        await notifier.historyList(agencyId);
+        break;
+      case TripFilter.unpaid:
+        await notifier.unpaidList(agencyId);
         break;
       case TripFilter.cancelled:
         await notifier.cancelledList(agencyId);
@@ -247,35 +218,22 @@ class _TripPageState extends ConsumerState<TripPage> {
     }
   }
 
-  void _applyFilter(TripFilter filter, {CompletedSubTab? subTab}) {
-    final filterChanged = filter != _selectedFilter;
-    final subTabChanged =
-        subTab != null && subTab != _completedSubTab;
-    if (!filterChanged && !subTabChanged) return;
-    setState(() {
-      _selectedFilter = filter;
-      if (subTab != null) _completedSubTab = subTab;
-    });
-    if (filterChanged) _loadListForFilter(filter);
-  }
-
-  void _applyCompletedSubTab(CompletedSubTab subTab) {
-    if (subTab == _completedSubTab) return;
-    setState(() => _completedSubTab = subTab);
+  void _applyFilter(TripFilter filter) {
+    if (filter == _selectedFilter) return;
+    setState(() => _selectedFilter = filter);
+    _loadListForFilter(filter);
   }
 
   /// Commits the filter selections made in the bottom sheet back to the page,
   /// reloading the list only when the status filter actually changed.
   void _applyFromSheet(
     TripFilter filter,
-    CompletedSubTab subTab,
     DateRange range,
     DateTimeRange? customRange,
   ) {
     final filterChanged = filter != _selectedFilter;
     setState(() {
       _selectedFilter = filter;
-      _completedSubTab = subTab;
       _selectedRange = range;
       _customRange = customRange;
     });
@@ -333,7 +291,7 @@ class _TripPageState extends ConsumerState<TripPage> {
     ref.listen<String?>(tripPageInitialFilterProvider, (prev, next) {
       final resolved = _resolveDeepLink(next);
       if (resolved == null) return;
-      _applyFilter(resolved.filter, subTab: resolved.subTab);
+      _applyFilter(resolved);
       // Apply (or clear) the companion date filter so the deep-linked list lands
       // in a predictable state — pinned to a single day, or back to "All".
       _applyDeepLinkDate(ref.read(tripPageInitialDateProvider));
@@ -354,11 +312,7 @@ class _TripPageState extends ConsumerState<TripPage> {
               children: [
                 _buildHeader(),
                 Expanded(
-                  child: _buildTripList(
-                    _selectedFilter == TripFilter.completed
-                        ? _completedSubTab.listFrom(state)
-                        : _selectedFilter.listFrom(state),
-                  ),
+                  child: _buildTripList(_selectedFilter.listFrom(state)),
                 ),
               ],
             ),
@@ -420,10 +374,6 @@ class _TripPageState extends ConsumerState<TripPage> {
               _buildFilterButton(),
             ],
           ),
-          if (_selectedFilter == TripFilter.completed) ...[
-            const SizedBox(height: 8),
-            _buildCompletedSubTabs(),
-          ],
         ],
       ),
     );
@@ -458,7 +408,7 @@ class _TripPageState extends ConsumerState<TripPage> {
                 ),
               ),
               child: Icon(
-                Icons.tune_rounded,
+                Icons.filter_alt_rounded,
                 size: 22,
                 color: hasActive ? Colors.white : Colors.grey.shade700,
               ),
@@ -493,12 +443,11 @@ class _TripPageState extends ConsumerState<TripPage> {
     );
   }
 
-  /// Bottom sheet holding every filter — status, completed view, and date range
-  /// — with a live preview, Reset, and Apply. Selections are staged locally and
-  /// only committed when Apply is tapped.
+  /// Bottom sheet holding every filter — trip status and date range — with a
+  /// live preview, Reset, and Apply. Selections are staged locally and only
+  /// committed when Apply is tapped.
   void _openFilterSheet() {
     TripFilter tempFilter = _selectedFilter;
-    CompletedSubTab tempSub = _completedSubTab;
     DateRange tempRange = _selectedRange;
     DateTimeRange? tempCustom = _customRange;
 
@@ -617,7 +566,6 @@ class _TripPageState extends ConsumerState<TripPage> {
                         ),
                         onPressed: () => setSheetState(() {
                           tempFilter = TripFilter.active;
-                          tempSub = CompletedSubTab.unpaid;
                           tempRange = DateRange.all;
                           tempCustom = null;
                         }),
@@ -633,8 +581,8 @@ class _TripPageState extends ConsumerState<TripPage> {
                   ),
                   const SizedBox(height: 8),
 
-                  // ── Status ──────────────────────────────────────────────
-                  sectionTitle('STATUS'),
+                  // ── Trip status ─────────────────────────────────────────
+                  sectionTitle('TRIP STATUS'),
                   Wrap(
                     spacing: 7,
                     runSpacing: 7,
@@ -648,25 +596,6 @@ class _TripPageState extends ConsumerState<TripPage> {
                         ),
                     ],
                   ),
-
-                  // ── Completed view (contextual) ─────────────────────────
-                  if (tempFilter == TripFilter.completed) ...[
-                    const SizedBox(height: 12),
-                    sectionTitle('COMPLETED VIEW'),
-                    Wrap(
-                      spacing: 7,
-                      runSpacing: 7,
-                      children: [
-                        for (final s in CompletedSubTab.values)
-                          choiceChip(
-                            label: s.label,
-                            icon: s.icon,
-                            selected: tempSub == s,
-                            onTap: () => setSheetState(() => tempSub = s),
-                          ),
-                      ],
-                    ),
-                  ],
 
                   // ── Date range ──────────────────────────────────────────
                   const SizedBox(height: 12),
@@ -709,8 +638,7 @@ class _TripPageState extends ConsumerState<TripPage> {
                     child: ElevatedButton(
                       onPressed: () {
                         Navigator.pop(ctx);
-                        _applyFromSheet(
-                            tempFilter, tempSub, tempRange, tempCustom);
+                        _applyFromSheet(tempFilter, tempRange, tempCustom);
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.brandPrimary,
@@ -735,80 +663,6 @@ class _TripPageState extends ConsumerState<TripPage> {
           },
         );
       },
-    );
-  }
-
-  Widget _buildCompletedSubTabs() {
-    return Container(
-      height: 38,
-      padding: const EdgeInsets.all(3),
-      decoration: BoxDecoration(
-        color: Colors.grey.shade100,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: Colors.grey.shade200, width: 1),
-      ),
-      child: Row(
-        children: [
-          for (final tab in CompletedSubTab.values)
-            Expanded(
-              child: _buildSubTabPill(
-                tab: tab,
-                selected: tab == _completedSubTab,
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSubTabPill({
-    required CompletedSubTab tab,
-    required bool selected,
-  }) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(8),
-        onTap: () => _applyCompletedSubTab(tab),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 160),
-          curve: Curves.easeOut,
-          decoration: BoxDecoration(
-            color: selected ? AppColors.brandPrimary : Colors.transparent,
-            borderRadius: BorderRadius.circular(8),
-            boxShadow: selected
-                ? [
-                    BoxShadow(
-                      color: AppColors.brandPrimary.withValues(alpha: 0.25),
-                      blurRadius: 6,
-                      offset: const Offset(0, 2),
-                    ),
-                  ]
-                : const [],
-          ),
-          alignment: Alignment.center,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                tab.icon,
-                size: 15,
-                color: selected ? Colors.white : Colors.grey.shade700,
-              ),
-              const SizedBox(width: 6),
-              Text(
-                tab.label,
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
-                  color: selected ? Colors.white : Colors.grey.shade700,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
     );
   }
 
@@ -988,10 +842,10 @@ class _TripPageState extends ConsumerState<TripPage> {
     List<BookingInfo> trips,
     TripFilter filter,
   ) {
-    // Same defensive payment-status check as before, now keyed on the sub-tab:
-    // the unpaid view only shows trips that are actually unpaid/partially paid.
-    final isUnpaidTab = filter == TripFilter.completed &&
-        _completedSubTab == CompletedSubTab.unpaid;
+    // Defensive payment-status check for the first-class Unpaid filter: only
+    // show trips that are actually unpaid/partially paid, even if the backing
+    // list ever returns something stale.
+    final isUnpaidTab = filter == TripFilter.unpaid;
     final query = _searchQuery;
     final hasQuery = query.isNotEmpty;
     final range = _selectedRange;

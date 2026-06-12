@@ -81,8 +81,9 @@ final bottomNavIndexProvider = StateProvider<int>((ref) => 0);
 final tripPageInitialFilterProvider = StateProvider<String?>((ref) => null);
 
 // One-shot companion to [tripPageInitialFilterProvider]: when a deep-link wants
-// the trip list pinned to a single day, it sets this to that date (e.g. the
-// dashboard's "Upcoming Trips" row points at tomorrow's pickups). null means the
-// deep-link clears any prior date filter back to "All". Consumed and cleared by
-// TripPage alongside the filter signal.
+// the trip list pinned to a day-and-onwards window, it sets this to the start
+// date (e.g. the dashboard's "Upcoming Trips" row points at tomorrow, showing
+// tomorrow and every later pickup). null means the deep-link clears any prior
+// date filter back to "All". Consumed and cleared by TripPage alongside the
+// filter signal.
 final tripPageInitialDateProvider = StateProvider<DateTime?>((ref) => null);

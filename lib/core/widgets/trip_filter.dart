@@ -127,6 +127,7 @@ class TripDateFilterButton extends StatelessWidget {
       initialValue: range,
       position: PopupMenuPosition.under,
       offset: const Offset(0, 8),
+      color: Colors.white,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       onSelected: (r) => _handleSelection(context, r),
       itemBuilder: (context) => [

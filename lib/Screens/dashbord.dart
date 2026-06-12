@@ -5,7 +5,7 @@ import 'package:travel_agency_app/Screens/add_driver.dart';
 import 'package:travel_agency_app/Screens/add_tripbooking.dart';
 import 'package:travel_agency_app/Screens/add_vehicle.dart';
 import 'package:travel_agency_app/Screens/reports.dart';
-import 'package:travel_agency_app/Screens/vehicle_report.dart';
+import 'package:travel_agency_app/Screens/transactions_page.dart';
 import 'package:travel_agency_app/core/theme/app_colors.dart';
 import 'package:travel_agency_app/core/widgets/skeleton.dart';
 import 'package:travel_agency_app/domain/models/booking_info.dart';
@@ -248,7 +248,7 @@ class _TravelAdminDashboardState extends ConsumerState<TravelAdminDashboard> {
                   // SizedBox(height: isSmall ? 6 : 8),
                   // _BookingReportBanner(isSmall: isSmall),
                   SizedBox(height: isSmall ? 8 : 10),
-                  _VehicleReportBanner(isSmall: isSmall),
+                  _TransactionsBanner(isSmall: isSmall),
                   SizedBox(height: sectionGap),
                   // _SectionTitle(title: "Recent Activity", isSmall: isSmall),
                   // SizedBox(height: isSmall ? 10 : 14),
@@ -313,8 +313,8 @@ class _ActionNeededCard extends ConsumerWidget {
         (startsTomorrow > 0 ? 1 : 0) +
         (activeCount > 0 ? 1 : 0);
 
-    // [date] pins the destination list to a single day; null clears any prior
-    // date filter back to "All".
+    // [date] pins the destination list to that day and everything after it;
+    // null clears any prior date filter back to "All".
     void goToTrips(String filter, {DateTime? date}) {
       ref.read(tripPageInitialDateProvider.notifier).state = date;
       ref.read(tripPageInitialFilterProvider.notifier).state = filter;
@@ -852,15 +852,15 @@ class _NewBookingHero extends StatelessWidget {
 // }
 
 // ─────────────────────────────────────────────────────────
-// VEHICLE REPORT BANNER
-// Mirrors the Booking Report banner but routes to the
-// per-vehicle revenue/expense report. Shares the brand accent
-// with Booking Report — the two cards are told apart by their
-// icon and title rather than a separate hue.
+// TRANSACTIONS BANNER
+// Routes to the Transactions daybook — a date-grouped ledger of
+// every payment received and expense incurred. Shares the brand
+// accent with the other report cards; told apart by its icon and
+// title rather than a separate hue.
 // ─────────────────────────────────────────────────────────
-class _VehicleReportBanner extends StatelessWidget {
+class _TransactionsBanner extends StatelessWidget {
   final bool isSmall;
-  const _VehicleReportBanner({required this.isSmall});
+  const _TransactionsBanner({required this.isSmall});
 
   @override
   Widget build(BuildContext context) {
@@ -872,7 +872,7 @@ class _VehicleReportBanner extends StatelessWidget {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (_) => const VehicleReportPage(),
+            builder: (_) => const TransactionsPage(),
           ),
         );
       },
@@ -909,7 +909,7 @@ class _VehicleReportBanner extends StatelessWidget {
                   ],
                 ),
                 child: Icon(
-                  Icons.directions_car_filled_rounded,
+                  Icons.receipt_long_rounded,
                   color: Colors.white,
                   size: isSmall ? 18 : 22,
                 ),
@@ -921,7 +921,7 @@ class _VehicleReportBanner extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      "Vehicle Report",
+                      "Transaction History",
                       style: TextStyle(
                         fontSize: isSmall ? 13 : 15,
                         fontWeight: FontWeight.w800,
@@ -932,7 +932,7 @@ class _VehicleReportBanner extends StatelessWidget {
                     ),
                     SizedBox(height: isSmall ? 2 : 3),
                     Text(
-                      "Per-vehicle revenue, expenses & trips",
+                      "Payments, expenses & daily cash flow",
                       style: TextStyle(
                         fontSize: isSmall ? 9 : 10,
                         color: Colors.grey.shade500,
@@ -1056,14 +1056,16 @@ class _StatsRow extends StatelessWidget {
     final revenueVal = '₹${_formatCompact(stats.revenue)}';
     final expenditureVal = '₹${_formatCompact(stats.expenditure)}';
 
-    // Both money tiles deep-link into the Vehicle Report filtered to today —
-    // tapping a number is the natural "show me where this came from" gesture.
-    void openTodayReport() {
+    // The money tiles deep-link into today's Transactions (daybook) — tapping a
+    // number is the natural "show me which client paid for which trip" gesture.
+    // Revenue opens the Revenue list, Expenditure opens the Expense list.
+    void openTodayTransactions(TxnType type) {
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (_) => const VehicleReportPage(
-            initialPeriod: VehicleReportPeriod.today,
+          builder: (_) => TransactionsPage(
+            date: DateTime.now(),
+            initialType: type,
           ),
         ),
       );
@@ -1087,7 +1089,7 @@ class _StatsRow extends StatelessWidget {
         AppColors.successSoft,
         isLoading: stats.isLoading,
         hasError: stats.hasError,
-        onTap: openTodayReport,
+        onTap: () => openTodayTransactions(TxnType.revenue),
       ),
       _StatData(
         'Today Expenditure',
@@ -1097,7 +1099,7 @@ class _StatsRow extends StatelessWidget {
         AppColors.dangerSoft,
         isLoading: stats.isLoading,
         hasError: stats.hasError,
-        onTap: openTodayReport,
+        onTap: () => openTodayTransactions(TxnType.expense),
       ),
     ];
 
