@@ -19,7 +19,7 @@ import 'package:travel_agency_app/presentation/providers/viewmodel_provider.dart
 
 // ─── Design Tokens ─────────────────────────────────────────────────────────
 class _C {
-  static const bg = Color(0xFFF5F6FA);
+  static const bg = Color(0xFFF0F4FF);
   static const surface = Color(0xFFFFFFFF);
   static const surfaceLight = Color(0xFFF3F5FB);
   static const accent = AppColors.brandPrimary;

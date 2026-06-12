@@ -84,7 +84,7 @@ class _DriverHistoryPageState
   // True while a PDF/Excel file is being generated for this driver.
   bool _exporting = false;
 
-  static const Color _bg = Color(0xFFF2F4F8);
+  static const Color _bg = Color(0xFFF0F4FF);
   static const Color _surface = Color(0xFFFFFFFF);
   static const Color _surfaceLight = Color(0xFFF0F3FA);
   static const Color _accent = AppColors.brandPrimary;

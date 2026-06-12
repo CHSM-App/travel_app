@@ -22,7 +22,7 @@ import 'package:travel_agency_app/presentation/providers/viewmodel_provider.dart
 
 // ── Premium Token System ───────────────────────────────────────────────────
 abstract class _C {
-  static const bg = Color(0xFFF0F2F8);
+  static const bg = Color(0xFFF0F4FF);
   static const surface = Color(0xFFFFFFFF);
   static const accent = AppColors.brandPrimary;
   static const green = Color(0xFF059669);

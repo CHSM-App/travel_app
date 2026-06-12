@@ -120,7 +120,7 @@ class _AddDriverPageState extends ConsumerState<AddDriverPage>
     final state = ref.watch(addDriverViewModelProvider);
 
     return Scaffold(
-      backgroundColor: _surface,
+      backgroundColor: const Color(0xFFF0F4FF),
       body: SafeArea(
         child: FadeTransition(
           opacity: _fadeAnim,

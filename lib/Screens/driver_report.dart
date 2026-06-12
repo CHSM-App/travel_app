@@ -13,7 +13,7 @@ import 'package:travel_agency_app/presentation/providers/viewmodel_provider.dart
 
 // ─── Design tokens (mirror vehicle_report.dart) ─────────────────────────────
 class _C {
-  static const bg = Color(0xFFF5F7FB);
+  static const bg = Color(0xFFF0F4FF);
   static const surface = Color(0xFFFFFFFF);
   static const surfaceLight = Color(0xFFF1F4FA);
   static const accent = AppColors.brandPrimary;

@@ -300,7 +300,7 @@ class _TripPageState extends ConsumerState<TripPage> {
     });
 
     return Scaffold(
-      backgroundColor: Colors.grey.shade50,
+      backgroundColor: const Color(0xFFF0F4FF),
       // Let the list flow under the floating pill nav. SafeArea handles the
       // status bar; bottom is intentionally disabled so the ListView reaches
       // the actual screen edge and items pass behind the transparent nav.

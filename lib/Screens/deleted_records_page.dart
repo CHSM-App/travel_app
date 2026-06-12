@@ -17,7 +17,7 @@ class DeletedRecordsPage extends ConsumerStatefulWidget {
 class _DeletedRecordsPageState extends ConsumerState<DeletedRecordsPage>
     with SingleTickerProviderStateMixin {
   // ─── Design Tokens ────────────────────────────────────────────────────────m
-  static const _bg          = Color(0xFFF4F6FB);
+  static const _bg          = Color(0xFFF0F4FF);
   static const _surface     = Colors.white;
   static const _surfaceAlt  = Color(0xFFF0F3FA);
   static const _accent      = AppColors.brandPrimary;

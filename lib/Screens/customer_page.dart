@@ -12,7 +12,7 @@ import 'package:travel_agency_app/presentation/providers/viewmodel_provider.dart
 
 // ─── Design Tokens ────────────────────────────────────────────────────────────
 class _C {
-  static const bg = Color(0xFFF4F6FB);
+  static const bg = Color(0xFFF0F4FF);
   static const surface = Color(0xFFFFFFFF);
   static const slate900 = Color(0xFF0F172A);
   static const slate700 = Color(0xFF334155);

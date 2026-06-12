@@ -50,7 +50,7 @@ class _CustomerHistState extends ConsumerState<CustomerHist>
   late Animation<double> _fadeIn;
 
   // ── Light Palette ──────────────────────────────────────────────────
-  static const Color _bg            = Color(0xFFF2F4F8);
+  static const Color _bg            = Color(0xFFF0F4FF);
   static const Color _surface       = Color(0xFFFFFFFF);
   static const Color _surfaceLight  = Color(0xFFF0F3FA);
   static const Color _accent        = AppColors.brandPrimary;

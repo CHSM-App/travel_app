@@ -129,7 +129,7 @@ class _AddVehiclePageState extends ConsumerState<AddVehiclePage>
     final state = ref.watch(addVehicleViewModelProvider);
 
     return Scaffold(
-      backgroundColor: _surface,
+      backgroundColor: const Color(0xFFF0F4FF),
       body: SafeArea(
         child: FadeTransition(
           opacity: _fadeAnim,

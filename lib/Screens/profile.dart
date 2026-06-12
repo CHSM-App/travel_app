@@ -40,7 +40,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
   // ── Design tokens ─────────────────────────────────
   static const _primary = AppColors.brandPrimary;
   static const _primaryLt = AppColors.brandSoft;
-  static const _bg = Color(0xFFF5F7FB);
+  static const _bg = Color(0xFFF0F4FF);
   static const _textDark = Color(0xFF0F1729);
   static const _textMid = Color(0xFF6B7280);
   static const _divider = Color(0xFFE6EAF2);

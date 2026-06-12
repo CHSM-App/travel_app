@@ -37,7 +37,7 @@ class _HelpCenterPageState extends State<HelpCenterPage> {
     ));
 
     return Scaffold(
-      backgroundColor: _surface,
+      backgroundColor: const Color(0xFFF0F4FF),
       body: SafeArea(
         bottom: false,
         child: Column(
