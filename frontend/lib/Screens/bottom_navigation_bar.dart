@@ -58,12 +58,13 @@ class _MainBottomNavState extends ConsumerState<MainBottomNav>
     const ModernSettingsPage(),
   ];
 
+  // Settings is intentionally NOT a pill-nav item — it lives as an icon in the
+  // AppBar (index 4 in [pages], opened via the header settings button).
   final List<_NavItem> _navItems = const [
     _NavItem(label: "Home",      icon: Icons.home_outlined,           activeIcon: Icons.home_rounded),
     _NavItem(label: "Trips",     icon: Icons.card_travel_outlined,    activeIcon: Icons.card_travel_rounded),
     _NavItem(label: "Fleets",  icon: Icons.directions_car_outlined, activeIcon: Icons.directions_car_rounded),
     _NavItem(label: "Customers", icon: Icons.people_outline,          activeIcon: Icons.people_rounded),
-    _NavItem(label: "Settings",  icon: Icons.settings_outlined,       activeIcon: Icons.settings_rounded),
   ];
 
   @override
@@ -106,9 +107,15 @@ class _MainBottomNavState extends ConsumerState<MainBottomNav>
 
   void _onItemTapped(int index) {
     if (selectedIndex == index) return;
-    _iconControllers[selectedIndex].reverse();
+    // Settings (index 4) has no pill-nav icon controller, so guard the bounce
+    // animations against indices outside the nav-item range.
+    if (selectedIndex < _iconControllers.length) {
+      _iconControllers[selectedIndex].reverse();
+    }
     setState(() => selectedIndex = index);
-    _iconControllers[index].forward(from: 0);
+    if (index < _iconControllers.length) {
+      _iconControllers[index].forward(from: 0);
+    }
     HapticFeedback.selectionClick();
     // Keep the cross-tab provider in sync so deep links from elsewhere
     // (e.g. dashboard Action Needed rows) read a correct current value
@@ -238,8 +245,8 @@ class _MainBottomNavState extends ConsumerState<MainBottomNav>
                               children: [
                                 Text(
                                   userName.isNotEmpty
-                                      ? "Welcome, $userName 👋"
-                                      : "Welcome back 👋",
+                                      ? "Welcome,"
+                                      : "Welcome👋",
                                   style: const TextStyle(
                                     color: Colors.white70,
                                     fontSize: 12,
@@ -263,6 +270,18 @@ class _MainBottomNavState extends ConsumerState<MainBottomNav>
                                   overflow: TextOverflow.ellipsis,
                                 ),
                               ],
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          // Settings — lives only here in the header (not in the
+                          // pill nav). Shows the Settings page (pages index 4).
+                          IconButton(
+                            onPressed: () => _onItemTapped(4),
+                            tooltip: 'Settings',
+                            icon: const Icon(
+                              Icons.settings_rounded,
+                              color: Colors.white,
+                              size: 26,
                             ),
                           ),
                         ],
@@ -312,7 +331,7 @@ class _MainBottomNavState extends ConsumerState<MainBottomNav>
     return SafeArea(
       top: false,
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+        padding: const EdgeInsets.fromLTRB(20, 0, 20, 6),
         // Shadow lives on the outer container — ClipRRect below would crop any
         // shadow placed on the pill itself. Three layers: a wide indigo-tinted
         // ambient, a tighter neutral key for grounding, and a crisp hairline
