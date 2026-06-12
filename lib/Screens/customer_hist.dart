@@ -897,7 +897,9 @@ class _CustomerHistState extends ConsumerState<CustomerHist>
     if (filtered.isEmpty) return _filteredEmptyState();
     return ListView.builder(
       physics: const BouncingScrollPhysics(),
-      padding: const EdgeInsets.only(bottom: 24),
+      // 8px here + each TripCard's own 8px margin = 16px side inset, matching
+      // the report card, filter row and loading skeletons above.
+      padding: const EdgeInsets.fromLTRB(8, 0, 8, 24),
       itemCount: filtered.length,
       itemBuilder: (_, i) => TripCard(
         key: ValueKey(filtered[i].tripId),

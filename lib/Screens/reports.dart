@@ -903,13 +903,23 @@ class _TravelReportPageState extends ConsumerState<TravelReportPage>
                         .reloadTab(widget.agencyId, tab.tabIndex)),
                 data: (rawList) {
                   final filtered = _applyDateFilter(rawList, _filterType, _customStart, _customEnd);
-                  switch (tab) {
-                    case ReportTabType.booking:  return _BookingTab(data: filtered,  filterType: _filterType);
-                    case ReportTabType.driver:   return _DriverTab(data: filtered,   filterType: _filterType);
-                    case ReportTabType.vehicle:  return _VehicleTab(data: filtered,  filterType: _filterType);
-                    case ReportTabType.customer: return _CustomerTab(data: filtered, filterType: _filterType);
-                    case ReportTabType.revenue:  return _RevenueTab(data: filtered,  filterType: _filterType);
-                  }
+                  final Widget tabView = switch (tab) {
+                    ReportTabType.booking  => _BookingTab(data: filtered,  filterType: _filterType),
+                    ReportTabType.driver   => _DriverTab(data: filtered,   filterType: _filterType),
+                    ReportTabType.vehicle  => _VehicleTab(data: filtered,  filterType: _filterType),
+                    ReportTabType.customer => _CustomerTab(data: filtered, filterType: _filterType),
+                    ReportTabType.revenue  => _RevenueTab(data: filtered,  filterType: _filterType),
+                  };
+                  // Pull-to-refresh: re-fetches this tab from the server. The
+                  // empty-state and each tab's list scroll always, so the
+                  // gesture works even when the tab has no rows.
+                  return RefreshIndicator(
+                    color: tab.color,
+                    onRefresh: () => ref
+                        .read(reportViewModelProvider.notifier)
+                        .reloadTab(widget.agencyId, tab.tabIndex),
+                    child: tabView,
+                  );
                 },
               );
             }).toList(),
@@ -1572,7 +1582,7 @@ class _BookingTab extends StatelessWidget {
     final totalNet    = data.fold(0.0, (s, e) => s + e.net);
     return Column(children: [
       _SummaryRow(items: [_SumItem(Icons.confirmation_number_outlined, 'Bookings', data.length.toString(), _primary), _SumItem(Icons.currency_rupee_rounded, 'Income', '₹${_fmt(totalIncome)}', _green), _SumItem(Icons.trending_up_rounded, 'Net', '₹${_fmt(totalNet.abs())}', totalNet >= 0 ? _green : _red)]),
-      Expanded(child: ListView.separated(padding: const EdgeInsets.fromLTRB(16, 8, 16, 24), itemCount: data.length, separatorBuilder: (_, __) => const SizedBox(height: 10), itemBuilder: (_, i) => _BookingCard(item: data[i], index: i))),
+      Expanded(child: ListView.separated(physics: const AlwaysScrollableScrollPhysics(), padding: const EdgeInsets.fromLTRB(16, 8, 16, 24), itemCount: data.length, separatorBuilder: (_, __) => const SizedBox(height: 10), itemBuilder: (_, i) => _BookingCard(item: data[i], index: i))),
     ]);
   }
 }
@@ -1692,7 +1702,7 @@ class _DriverTab extends StatelessWidget {
     final drivers = _aggregateDriver(data); final grand = drivers.fold(0.0, (s, d) => s + d.income);
     return Column(children: [
       _SummaryRow(items: [_SumItem(Icons.person_pin_outlined, 'Drivers', drivers.length.toString(), _green), _SumItem(Icons.confirmation_number_outlined, 'Trips', drivers.fold(0, (s, d) => s + d.trips).toString(), _textGrey), _SumItem(Icons.currency_rupee_rounded, 'Total', '₹${_fmt(grand)}', _green)]),
-      Expanded(child: ListView.separated(padding: const EdgeInsets.fromLTRB(16, 8, 16, 24), itemCount: drivers.length, separatorBuilder: (_, __) => const SizedBox(height: 10), itemBuilder: (_, i) => _AggCard(agg: drivers[i], grand: grand, color: _green, avatar: CircleAvatar(radius: 18, backgroundColor: _green.withOpacity(0.13), child: Text(drivers[i].name.isNotEmpty ? drivers[i].name[0].toUpperCase() : '?', style: const TextStyle(color: _green, fontSize: 14, fontWeight: FontWeight.w800)))))),
+      Expanded(child: ListView.separated(physics: const AlwaysScrollableScrollPhysics(), padding: const EdgeInsets.fromLTRB(16, 8, 16, 24), itemCount: drivers.length, separatorBuilder: (_, __) => const SizedBox(height: 10), itemBuilder: (_, i) => _AggCard(agg: drivers[i], grand: grand, color: _green, avatar: CircleAvatar(radius: 18, backgroundColor: _green.withOpacity(0.13), child: Text(drivers[i].name.isNotEmpty ? drivers[i].name[0].toUpperCase() : '?', style: const TextStyle(color: _green, fontSize: 14, fontWeight: FontWeight.w800)))))),
     ]);
   }
 }
@@ -1706,7 +1716,7 @@ class _VehicleTab extends StatelessWidget {
     final vehicles = _aggregateVehicle(data); final grand = vehicles.fold(0.0, (s, v) => s + v.income);
     return Column(children: [
       _SummaryRow(items: [_SumItem(Icons.directions_car_outlined, 'Vehicles', vehicles.length.toString(), _orange), _SumItem(Icons.confirmation_number_outlined, 'Trips', vehicles.fold(0, (s, v) => s + v.trips).toString(), _textGrey), _SumItem(Icons.currency_rupee_rounded, 'Total', '₹${_fmt(grand)}', _green)]),
-      Expanded(child: ListView.separated(padding: const EdgeInsets.fromLTRB(16, 8, 16, 24), itemCount: vehicles.length, separatorBuilder: (_, __) => const SizedBox(height: 10), itemBuilder: (_, i) => _AggCard(agg: vehicles[i], grand: grand, color: _orange, avatar: Container(width: 36, height: 36, decoration: BoxDecoration(color: const Color(0xFFFFF3E0), borderRadius: BorderRadius.circular(10)), alignment: Alignment.center, child: const Icon(Icons.directions_car_rounded, color: _orange, size: 18))))),
+      Expanded(child: ListView.separated(physics: const AlwaysScrollableScrollPhysics(), padding: const EdgeInsets.fromLTRB(16, 8, 16, 24), itemCount: vehicles.length, separatorBuilder: (_, __) => const SizedBox(height: 10), itemBuilder: (_, i) => _AggCard(agg: vehicles[i], grand: grand, color: _orange, avatar: Container(width: 36, height: 36, decoration: BoxDecoration(color: const Color(0xFFFFF3E0), borderRadius: BorderRadius.circular(10)), alignment: Alignment.center, child: const Icon(Icons.directions_car_rounded, color: _orange, size: 18))))),
     ]);
   }
 }
@@ -1720,7 +1730,7 @@ class _CustomerTab extends StatelessWidget {
     final customers = _aggregateCustomer(data); final grand = customers.fold(0.0, (s, c) => s + c.income);
     return Column(children: [
       _SummaryRow(items: [_SumItem(Icons.people_alt_outlined, 'Customers', customers.length.toString(), _purple), _SumItem(Icons.confirmation_number_outlined, 'Trips', customers.fold(0, (s, c) => s + c.trips).toString(), _textGrey), _SumItem(Icons.currency_rupee_rounded, 'Total', '₹${_fmt(grand)}', _green)]),
-      Expanded(child: ListView.separated(padding: const EdgeInsets.fromLTRB(16, 8, 16, 24), itemCount: customers.length, separatorBuilder: (_, __) => const SizedBox(height: 10), itemBuilder: (_, i) => _AggCard(agg: customers[i], grand: grand, color: _purple, avatar: CircleAvatar(radius: 18, backgroundColor: _purple.withOpacity(0.13), child: Text(customers[i].name.isNotEmpty ? customers[i].name[0].toUpperCase() : '?', style: const TextStyle(color: _purple, fontSize: 14, fontWeight: FontWeight.w800)))))),
+      Expanded(child: ListView.separated(physics: const AlwaysScrollableScrollPhysics(), padding: const EdgeInsets.fromLTRB(16, 8, 16, 24), itemCount: customers.length, separatorBuilder: (_, __) => const SizedBox(height: 10), itemBuilder: (_, i) => _AggCard(agg: customers[i], grand: grand, color: _purple, avatar: CircleAvatar(radius: 18, backgroundColor: _purple.withOpacity(0.13), child: Text(customers[i].name.isNotEmpty ? customers[i].name[0].toUpperCase() : '?', style: const TextStyle(color: _purple, fontSize: 14, fontWeight: FontWeight.w800)))))),
     ]);
   }
 }
@@ -1734,7 +1744,7 @@ class _RevenueTab extends StatelessWidget {
     final days = _aggregateRevenue(data); final totalIncome = days.fold(0.0, (s, d) => s + d.income); final totalNet = days.fold(0.0, (s, d) => s + d.net);
     return Column(children: [
       _SummaryRow(items: [_SumItem(Icons.calendar_today_rounded, 'Days', days.length.toString(), _red), _SumItem(Icons.currency_rupee_rounded, 'Income', '₹${_fmt(totalIncome)}', _green), _SumItem(Icons.trending_up_rounded, 'Net', '₹${_fmt(totalNet.abs())}', totalNet >= 0 ? _green : _red)]),
-      Expanded(child: ListView.separated(padding: const EdgeInsets.fromLTRB(16, 8, 16, 24), itemCount: days.length, separatorBuilder: (_, __) => const SizedBox(height: 10), itemBuilder: (_, i) => _RevenueDayCard(day: days[i], grand: totalIncome))),
+      Expanded(child: ListView.separated(physics: const AlwaysScrollableScrollPhysics(), padding: const EdgeInsets.fromLTRB(16, 8, 16, 24), itemCount: days.length, separatorBuilder: (_, __) => const SizedBox(height: 10), itemBuilder: (_, i) => _RevenueDayCard(day: days[i], grand: totalIncome))),
     ]);
   }
 }
@@ -1820,12 +1830,22 @@ class _LoadingView extends StatelessWidget {
 }
 
 
-Widget _noData(DateFilterType ft, Color color) => Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-  Container(padding: const EdgeInsets.all(20), decoration: BoxDecoration(color: color.withOpacity(0.1), shape: BoxShape.circle), child: Icon(Icons.search_off_rounded, color: color, size: 36)),
-  const SizedBox(height: 14),
-  Text(ft == DateFilterType.today ? 'No trips today' : ft == DateFilterType.monthly ? 'No trips this month' : ft == DateFilterType.yearly ? 'No trips this year' : 'No data in selected range', style: const TextStyle(color: _textDark, fontSize: 14, fontWeight: FontWeight.w600)),
-  const SizedBox(height: 6), const Text('Try selecting a different date range', style: TextStyle(color: _textGrey, fontSize: 12)),
-]));
+// Wrapped in an always-scrollable view so the parent RefreshIndicator can be
+// pulled even when there is nothing to show.
+Widget _noData(DateFilterType ft, Color color) => LayoutBuilder(
+  builder: (context, constraints) => SingleChildScrollView(
+    physics: const AlwaysScrollableScrollPhysics(),
+    child: ConstrainedBox(
+      constraints: BoxConstraints(minHeight: constraints.maxHeight),
+      child: Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+        Container(padding: const EdgeInsets.all(20), decoration: BoxDecoration(color: color.withOpacity(0.1), shape: BoxShape.circle), child: Icon(Icons.search_off_rounded, color: color, size: 36)),
+        const SizedBox(height: 14),
+        Text(ft == DateFilterType.today ? 'No trips today' : ft == DateFilterType.monthly ? 'No trips this month' : ft == DateFilterType.yearly ? 'No trips this year' : 'No data in selected range', style: const TextStyle(color: _textDark, fontSize: 14, fontWeight: FontWeight.w600)),
+        const SizedBox(height: 6), const Text('Try selecting a different date range', style: TextStyle(color: _textGrey, fontSize: 12)),
+      ])),
+    ),
+  ),
+);
 
 // ─────────────────────────────────────────────────────────────
 //  UTILITY
