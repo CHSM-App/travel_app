@@ -48,6 +48,7 @@ class _VehiclePageState extends ConsumerState<VehiclePage>
   late TabController _tabController;
   final TextEditingController _searchCtrl = TextEditingController();
   bool _searchVisible = false;
+  bool _searchFocused = false;
   final FocusNode _searchFocus = FocusNode();
 
   bool get _isVehicleTab => _tabController.index == 0;
@@ -56,6 +57,10 @@ class _VehiclePageState extends ConsumerState<VehiclePage>
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
+    _searchFocus.addListener(() {
+      if (!mounted) return;
+      setState(() => _searchFocused = _searchFocus.hasFocus);
+    });
     _tabController.addListener(() {
       if (_tabController.indexIsChanging) return;
       if (widget.onTabChanged != null) {
@@ -263,7 +268,7 @@ class _VehiclePageState extends ConsumerState<VehiclePage>
         },
         child: Container(
           // ✅ NO horizontal margin here — padding handled by ListView
-          margin: const EdgeInsets.only(bottom: 10),
+          margin: const EdgeInsets.only(bottom: 8),
           decoration: BoxDecoration(
             color: _C.surface,
             borderRadius: BorderRadius.circular(16),
@@ -283,7 +288,7 @@ class _VehiclePageState extends ConsumerState<VehiclePage>
               Padding(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 14,
-                  vertical: 12,
+                  vertical: 10,
                 ),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -505,12 +510,12 @@ class _VehiclePageState extends ConsumerState<VehiclePage>
                       ],
                     ),
 
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 8),
 
                     // ── Divider ─────────────────────────────────
                     Container(height: 1, color: _C.divider),
 
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 8),
 
                     // ── Row 2: Stats (Wrap so chips never overflow) ──
                     Wrap(
@@ -594,8 +599,8 @@ class _VehiclePageState extends ConsumerState<VehiclePage>
           );
         },
         child: Container(
-          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 3),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
           decoration: BoxDecoration(
             color: _C.surface,
             borderRadius: BorderRadius.circular(14),
@@ -795,52 +800,36 @@ class _VehiclePageState extends ConsumerState<VehiclePage>
 
   // ── Stats strip ───────────────────────────────────────────────────
   Widget _statsStrip(List items, bool isVehicle) {
-    if (isVehicle) {
-      final vehicles = items.cast<Vehicles>();
-      final available = vehicles.where((v) => v.StatusId == 1).length;
-      final engaged = vehicles.where((v) => v.StatusId == 2).length;
-      return _strip([
-        _stripItem(
-          '${items.length}',
-          'Total',
-          Icons.inventory_2_rounded,
-          _C.accent,
-          _C.accentSoft,
-        ),
-        _stripDivider(),
-        _stripItem(
-          '$available',
-          'Available',
-          Icons.check_circle_outline_rounded,
-          _C.green,
-          _C.greenSoft,
-        ),
-        _stripDivider(),
-        _stripItem(
-          '$engaged',
-          'Engaged',
-          Icons.directions_car_rounded,
-          _C.orange,
-          _C.orangeSoft,
-        ),
-      ]);
-    } else {
-      return _strip([
-        _stripItem(
-          '${items.length}',
-          'Total',
-          Icons.people_rounded,
-          _C.accent,
-          _C.accentSoft,
-        ),
-      ]);
-    }
+    // Driver tab has no breakdown beyond the total, which now lives next to the
+    // tab label — so there's nothing to show below.
+    if (!isVehicle) return const SizedBox.shrink();
+
+    final vehicles = items.cast<Vehicles>();
+    final available = vehicles.where((v) => v.StatusId == 1).length;
+    final engaged = vehicles.where((v) => v.StatusId == 2).length;
+    return _strip([
+      _stripItem(
+        '$available',
+        'Available',
+        Icons.check_circle_outline_rounded,
+        _C.green,
+        _C.greenSoft,
+      ),
+      _stripDivider(),
+      _stripItem(
+        '$engaged',
+        'Engaged',
+        Icons.directions_car_rounded,
+        _C.orange,
+        _C.orangeSoft,
+      ),
+    ]);
   }
 
   Widget _strip(List<Widget> children) {
     return Container(
-      margin: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+      margin: const EdgeInsets.fromLTRB(16, 8, 16, 2),
+      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
       decoration: BoxDecoration(
         color: _C.surface,
         borderRadius: BorderRadius.circular(14),
@@ -1055,75 +1044,29 @@ class _VehiclePageState extends ConsumerState<VehiclePage>
   // ── Error ─────────────────────────────────────────────────────────
   // ── Header ────────────────────────────────────────────────────────
   Widget _buildHeader() {
-    return Container(
-      color: _C.surface,
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(0, 2, 0, 4),
       child: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+            padding: const EdgeInsets.fromLTRB(16, 6, 16, 0),
             child: Row(
               children: [
+                // Left slot swaps between the tab bar and the search field, so
+                // the search bar floats over to the left instead of dropping
+                // below the tabs — consistent with the Customers / Trips pages.
                 Expanded(
-                  child: Container(
-                    height: 44,
-                    decoration: BoxDecoration(
-                      color: _C.surfaceLight,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: _C.divider),
-                    ),
-                    child: TabBar(
-                      controller: _tabController,
-                      indicator: BoxDecoration(
-                        color: _C.accent,
-                        borderRadius: BorderRadius.circular(10),
-                        boxShadow: [
-                          BoxShadow(
-                            color: _C.accent.withOpacity(0.3),
-                            blurRadius: 8,
-                            offset: const Offset(0, 2),
+                  child: AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 250),
+                    child: _searchVisible
+                        ? KeyedSubtree(
+                            key: const ValueKey('search'),
+                            child: _buildSearchField(),
+                          )
+                        : KeyedSubtree(
+                            key: const ValueKey('tabs'),
+                            child: _buildTabBar(),
                           ),
-                        ],
-                      ),
-                      indicatorPadding: const EdgeInsets.all(3),
-                      indicatorSize: TabBarIndicatorSize.tab,
-                      labelColor: Colors.white,
-                      unselectedLabelColor: _C.text2,
-                      labelStyle: const TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w700,
-                      ),
-                      unselectedLabelStyle: const TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w500,
-                      ),
-                      dividerColor: Colors.transparent,
-                      onTap: (_) {
-                        _searchCtrl.clear();
-                        setState(() => _searchVisible = false);
-                      },
-                      tabs: const [
-                        Tab(
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(Icons.directions_car_rounded, size: 15),
-                              SizedBox(width: 6),
-                              Text('Vehicles'),
-                            ],
-                          ),
-                        ),
-                        Tab(
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(Icons.person_rounded, size: 15),
-                              SizedBox(width: 6),
-                              Text('Drivers'),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
                   ),
                 ),
 
@@ -1133,7 +1076,10 @@ class _VehiclePageState extends ConsumerState<VehiclePage>
                   onTap: () {
                     setState(() {
                       _searchVisible = !_searchVisible;
-                      if (!_searchVisible) _searchCtrl.clear();
+                      if (!_searchVisible) {
+                        _searchCtrl.clear();
+                        _searchFocus.unfocus();
+                      }
                       if (_searchVisible) {
                         Future.delayed(
                           const Duration(milliseconds: 100),
@@ -1167,70 +1113,198 @@ class _VehiclePageState extends ConsumerState<VehiclePage>
               ],
             ),
           ),
+        ],
+      ),
+    );
+  }
 
-          AnimatedCrossFade(
-            duration: const Duration(milliseconds: 250),
-            crossFadeState: _searchVisible
-                ? CrossFadeState.showFirst
-                : CrossFadeState.showSecond,
-            firstChild: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-              child: TextField(
-                controller: _searchCtrl,
-                focusNode: _searchFocus,
-                onChanged: (_) => setState(() {}),
-                style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                  color: _C.text1,
-                ),
-                decoration: InputDecoration(
-                  hintText: _isVehicleTab
-                      ? 'Search vehicles...'
-                      : 'Search drivers...',
-                  hintStyle: const TextStyle(color: _C.text2, fontSize: 13),
-                  prefixIcon: const Icon(
-                    Icons.search_rounded,
-                    color: _C.text2,
-                    size: 18,
-                  ),
-                  suffixIcon: _searchCtrl.text.isNotEmpty
-                      ? GestureDetector(
-                          onTap: () => setState(() => _searchCtrl.clear()),
-                          child: const Icon(
-                            Icons.cancel_rounded,
-                            color: _C.text2,
-                            size: 16,
-                          ),
-                        )
-                      : null,
-                  filled: true,
-                  fillColor: _C.surfaceLight,
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 14,
-                    vertical: 12,
-                  ),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide.none,
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: _C.divider),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: _C.accent, width: 1.5),
-                  ),
+  Widget _buildTabBar() {
+    final tripState = ref.watch(tripBookingViewModelProvider);
+    final vehicleCount = tripState.fetchVehicleList.maybeWhen(
+      data: (l) => l.length,
+      orElse: () => null,
+    );
+    final driverCount = tripState.fetchDriverList.maybeWhen(
+      data: (l) => l.length,
+      orElse: () => null,
+    );
+
+    return Container(
+      height: 44,
+      decoration: BoxDecoration(
+        color: _C.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: _C.divider),
+        boxShadow: [
+          BoxShadow(
+            color: _C.accent.withValues(alpha: 0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: TabBar(
+        controller: _tabController,
+        indicator: BoxDecoration(
+          color: _C.accent,
+          borderRadius: BorderRadius.circular(10),
+          boxShadow: [
+            BoxShadow(
+              color: _C.accent.withOpacity(0.3),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        indicatorPadding: const EdgeInsets.all(3),
+        indicatorSize: TabBarIndicatorSize.tab,
+        labelColor: Colors.white,
+        unselectedLabelColor: _C.text2,
+        labelStyle: const TextStyle(
+          fontSize: 13,
+          fontWeight: FontWeight.w700,
+        ),
+        unselectedLabelStyle: const TextStyle(
+          fontSize: 13,
+          fontWeight: FontWeight.w500,
+        ),
+        dividerColor: Colors.transparent,
+        onTap: (_) {
+          _searchCtrl.clear();
+          setState(() => _searchVisible = false);
+        },
+        tabs: [
+          _tab(
+            Icons.directions_car_rounded,
+            'Vehicles',
+            vehicleCount,
+            selected: _tabController.index == 0,
+          ),
+          _tab(
+            Icons.person_rounded,
+            'Drivers',
+            driverCount,
+            selected: _tabController.index == 1,
+          ),
+        ],
+      ),
+    );
+  }
+
+  // A tab label with an inline total-count badge.
+  Widget _tab(IconData icon, String label, int? count, {required bool selected}) {
+    return Tab(
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 15),
+          const SizedBox(width: 6),
+          Text(label),
+          if (count != null) ...[
+            const SizedBox(width: 6),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+              decoration: BoxDecoration(
+                color: selected
+                    ? Colors.white.withValues(alpha: 0.25)
+                    : _C.accentSoft,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                '$count',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w800,
+                  color: selected ? Colors.white : _C.accent,
+                  height: 1.2,
                 ),
               ),
             ),
-            secondChild: const SizedBox(width: double.infinity, height: 0),
-          ),
-
-          const SizedBox(height: 12),
-          Divider(height: 1, color: _C.divider),
+          ],
         ],
+      ),
+    );
+  }
+
+  // Compact, focus-animated search bar — matches the Customers / Trips pages.
+  Widget _buildSearchField() {
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 180),
+      height: 44,
+      decoration: BoxDecoration(
+        color: _C.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: _searchFocused ? _C.accent : _C.divider,
+          width: _searchFocused ? 1.5 : 1,
+        ),
+        boxShadow: _searchFocused
+            ? [
+                BoxShadow(
+                  color: _C.accent.withValues(alpha: 0.12),
+                  blurRadius: 10,
+                  offset: const Offset(0, 3),
+                ),
+              ]
+            : [
+                BoxShadow(
+                  color: _C.accent.withValues(alpha: 0.05),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+      ),
+      child: TextField(
+        controller: _searchCtrl,
+        focusNode: _searchFocus,
+        onChanged: (_) => setState(() {}),
+        textAlignVertical: TextAlignVertical.center,
+        style: const TextStyle(
+          fontSize: 13.5,
+          fontWeight: FontWeight.w500,
+          color: _C.text1,
+        ),
+        decoration: InputDecoration(
+          isDense: true,
+          hintText:
+              _isVehicleTab ? 'Search vehicles...' : 'Search drivers...',
+          hintStyle: const TextStyle(
+            color: _C.text2,
+            fontWeight: FontWeight.w400,
+            fontSize: 13.5,
+          ),
+          prefixIcon: Icon(
+            Icons.search_rounded,
+            color: _searchFocused ? _C.accent : _C.text2,
+            size: 20,
+          ),
+          suffixIcon: _searchCtrl.text.isNotEmpty
+              ? GestureDetector(
+                  onTap: () => setState(() => _searchCtrl.clear()),
+                  child: Container(
+                    margin: const EdgeInsets.all(11),
+                    decoration: BoxDecoration(
+                      color: _C.divider,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.close_rounded,
+                      color: _C.text2,
+                      size: 14,
+                    ),
+                  ),
+                )
+              : null,
+          filled: false,
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 12,
+            vertical: 0,
+          ),
+          border: InputBorder.none,
+          enabledBorder: InputBorder.none,
+          focusedBorder: InputBorder.none,
+        ),
       ),
     );
   }
@@ -1300,7 +1374,7 @@ class _VehiclePageState extends ConsumerState<VehiclePage>
                                     const AlwaysScrollableScrollPhysics(), // 🔥 important
                                 padding: const EdgeInsets.fromLTRB(
                                   16,
-                                  10,
+                                  8,
                                   16,
                                   100,
                                 ),
@@ -1348,7 +1422,7 @@ class _VehiclePageState extends ConsumerState<VehiclePage>
                               child: ListView.builder(
                                 physics: const AlwaysScrollableScrollPhysics(),
                                 padding: const EdgeInsets.only(
-                                  top: 6,
+                                  top: 4,
                                   bottom: 100,
                                 ),
                                 itemCount: filtered.length,

@@ -564,7 +564,6 @@ class _CustomerListPageState extends ConsumerState<CustomerListPage>
 
             // ── Header ──────────────────────────────────────────────────────
             Container(
-              color: _C.surface,
               padding: const EdgeInsets.fromLTRB(10, 8, 10, 0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -572,17 +571,18 @@ class _CustomerListPageState extends ConsumerState<CustomerListPage>
 
                   
 
-                  const SizedBox(height: 12),
+                  // const SizedBox(height: 12),
 
                   // Search bar
                   Row(
                     children: [
                       Expanded(
                         child: AnimatedContainer(
-                          duration: const Duration(milliseconds: 200),
+                          duration: const Duration(milliseconds: 180),
+                          height: 44,
                           decoration: BoxDecoration(
                             color: _C.slate50,
-                            borderRadius: BorderRadius.circular(14),
+                            borderRadius: BorderRadius.circular(12),
                             border: Border.all(
                               color: _searchFocused
                                   ? _C.indigo
@@ -602,17 +602,19 @@ class _CustomerListPageState extends ConsumerState<CustomerListPage>
                             focusNode: _searchFocus,
                             onChanged: (v) =>
                                 setState(() => _query = v.toLowerCase().trim()),
+                            textAlignVertical: TextAlignVertical.center,
                             style: const TextStyle(
-                              fontSize: 14,
+                              fontSize: 13.5,
                               fontWeight: FontWeight.w500,
                               color: _C.slate900,
                             ),
                             decoration: InputDecoration(
+                              isDense: true,
                               hintText: 'Search name, phone or address…',
                               hintStyle: const TextStyle(
                                 color: _C.slate500,
                                 fontWeight: FontWeight.w400,
-                                fontSize: 14,
+                                fontSize: 13.5,
                               ),
                               prefixIcon: Icon(
                                 Icons.search_rounded,
@@ -626,7 +628,7 @@ class _CustomerListPageState extends ConsumerState<CustomerListPage>
                                         setState(() => _query = '');
                                       },
                                       child: Container(
-                                        margin: const EdgeInsets.all(10),
+                                        margin: const EdgeInsets.all(11),
                                         decoration: BoxDecoration(
                                           color: _C.slate300
                                               .withValues(alpha: 0.5),
@@ -639,7 +641,7 @@ class _CustomerListPageState extends ConsumerState<CustomerListPage>
                                   : null,
                               filled: false,
                               contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 16, vertical: 14,
+                                horizontal: 12, vertical: 0,
                               ),
                               border: InputBorder.none,
                               enabledBorder: InputBorder.none,
@@ -651,7 +653,7 @@ class _CustomerListPageState extends ConsumerState<CustomerListPage>
                     ],
                   ),
 
-                  const SizedBox(height: 14),
+                  
                 ],
               ),
             ),

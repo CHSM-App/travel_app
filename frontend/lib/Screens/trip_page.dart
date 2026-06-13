@@ -178,6 +178,7 @@ class _TripPageState extends ConsumerState<TripPage> {
   DateRange _selectedRange = DateRange.all;
   DateTimeRange? _customRange;
   String _searchQuery = '';
+  bool _searchFocused = false;
 
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocus = FocusNode();
@@ -186,6 +187,11 @@ class _TripPageState extends ConsumerState<TripPage> {
   @override
   void initState() {
     super.initState();
+
+    _searchFocus.addListener(() {
+      if (!mounted) return;
+      setState(() => _searchFocused = _searchFocus.hasFocus);
+    });
 
     // If someone (e.g. the dashboard's Action Needed card) requested a specific
     // filter before this page was mounted, honour it. ref.listen below catches
@@ -431,16 +437,6 @@ class _TripPageState extends ConsumerState<TripPage> {
   Widget _buildHeader() {
     return Container(
       padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
       child: Column(
         children: [
           // Always-visible search bar with a single filter entry point.
@@ -803,24 +799,50 @@ class _TripPageState extends ConsumerState<TripPage> {
   }
 
   Widget _buildSearchField() {
-    return Container(
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 180),
       height: 44,
       decoration: BoxDecoration(
-        color: Colors.grey.shade100,
+        color: Colors.grey.shade50,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade300, width: 1),
+        border: Border.all(
+          color: _searchFocused
+              ? AppColors.brandPrimary
+              : Colors.grey.shade300,
+          width: _searchFocused ? 1.5 : 1,
+        ),
+        boxShadow: _searchFocused
+            ? [
+                BoxShadow(
+                  color: AppColors.brandPrimary.withValues(alpha: 0.12),
+                  blurRadius: 10,
+                  offset: const Offset(0, 3),
+                ),
+              ]
+            : [],
       ),
       child: TextField(
         controller: _searchController,
         focusNode: _searchFocus,
         onChanged: _onSearchChanged,
+        textAlignVertical: TextAlignVertical.center,
+        style: const TextStyle(
+          fontSize: 13.5,
+          fontWeight: FontWeight.w500,
+        ),
         decoration: InputDecoration(
           isDense: true,
           hintText: 'Search trips...',
-          hintStyle: TextStyle(color: Colors.grey.shade500, fontSize: 13),
+          hintStyle: TextStyle(
+            color: Colors.grey.shade500,
+            fontWeight: FontWeight.w400,
+            fontSize: 13.5,
+          ),
           prefixIcon: Icon(
             Icons.search_rounded,
-            color: Colors.grey.shade600,
+            color: _searchFocused
+                ? AppColors.brandPrimary
+                : Colors.grey.shade600,
             size: 20,
           ),
           // Listen to the controller directly so toggling the clear button
@@ -829,23 +851,30 @@ class _TripPageState extends ConsumerState<TripPage> {
             valueListenable: _searchController,
             builder: (_, value, __) {
               if (value.text.isEmpty) return const SizedBox.shrink();
-              return IconButton(
-                icon: Icon(
-                  Icons.clear_rounded,
-                  color: Colors.grey.shade600,
-                  size: 18,
-                ),
-                onPressed: () {
+              return GestureDetector(
+                onTap: () {
                   _searchController.clear();
                   _onSearchChanged('');
                 },
+                child: Container(
+                  margin: const EdgeInsets.all(11),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade300.withValues(alpha: 0.5),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.close_rounded,
+                    color: Colors.grey.shade700,
+                    size: 14,
+                  ),
+                ),
               );
             },
           ),
           border: InputBorder.none,
           contentPadding: const EdgeInsets.symmetric(
             horizontal: 12,
-            vertical: 8,
+            vertical: 0,
           ),
         ),
       ),
