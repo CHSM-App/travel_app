@@ -1,16 +1,30 @@
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:travel_agency_app/Screens/bottom_navigation_bar.dart';
 import 'package:travel_agency_app/Screens/login.dart';
 import 'package:travel_agency_app/core/network/token_provider.dart';
+import 'package:travel_agency_app/core/notifications/notification_store.dart';
+import 'package:travel_agency_app/core/notifications/push_service.dart';
 import 'package:travel_agency_app/core/theme/app_colors.dart';
+import 'package:travel_agency_app/presentation/providers/repository_provider.dart';
 import 'package:travel_agency_app/presentation/providers/viewmodel_provider.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 final GlobalKey<ScaffoldMessengerState> rootScaffoldMessengerKey =
     GlobalKey<ScaffoldMessengerState>();
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  try {
+    await Firebase.initializeApp();
+    FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+  } catch (e) {
+    // App must still run if Firebase isn't configured yet (e.g. missing
+    // google-services.json on a dev machine).
+    debugPrint('Firebase init failed: $e');
+  }
   runApp(const ProviderScope(child: MyApp()));
 }
 
@@ -63,11 +77,22 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
     await ref.read(tokenProvider.notifier).loadTokens();
     await ref.read(loginViewModelProvider.notifier).loadFromStorage();
 
+    // Notifications: set up channels/permissions/listeners once at startup.
+    // Best-effort — must never block navigation off the splash screen.
+    try {
+      await NotificationStore.instance.load();
+      await PushService.init(ref.read(apiServiceProvider));
+    } catch (e) {
+      debugPrint('PushService init failed: $e');
+    }
+
     final tokenState = ref.read(tokenProvider);
 
     if (!mounted) return;
 
     if (tokenState.isLoggedIn) {
+      // Already logged in — make sure this device's token is registered.
+      PushService.registerToken();
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (_) => const MainBottomNav()),

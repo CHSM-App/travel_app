@@ -4,9 +4,11 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:travel_agency_app/Screens/customer_page.dart';
 import 'package:travel_agency_app/Screens/dashbord.dart';
+import 'package:travel_agency_app/Screens/notifications_page.dart';
 import 'package:travel_agency_app/Screens/setting.dart';
 import 'package:travel_agency_app/Screens/trip_page.dart';
 import 'package:travel_agency_app/Screens/vehicle_page.dart';
+import 'package:travel_agency_app/core/notifications/notification_store.dart';
 import 'package:travel_agency_app/core/theme/app_colors.dart';
 import 'package:travel_agency_app/presentation/providers/viewmodel_provider.dart';
 
@@ -61,10 +63,26 @@ class _MainBottomNavState extends ConsumerState<MainBottomNav>
   // Settings is intentionally NOT a pill-nav item — it lives as an icon in the
   // AppBar (index 4 in [pages], opened via the header settings button).
   final List<_NavItem> _navItems = const [
-    _NavItem(label: "Home",      icon: Icons.home_outlined,           activeIcon: Icons.home_rounded),
-    _NavItem(label: "Trips",     icon: Icons.card_travel_outlined,    activeIcon: Icons.card_travel_rounded),
-    _NavItem(label: "Fleets",  icon: Icons.directions_car_outlined, activeIcon: Icons.directions_car_rounded),
-    _NavItem(label: "Customers", icon: Icons.people_outline,          activeIcon: Icons.people_rounded),
+    _NavItem(
+      label: "Home",
+      icon: Icons.home_outlined,
+      activeIcon: Icons.home_rounded,
+    ),
+    _NavItem(
+      label: "Trips",
+      icon: Icons.card_travel_outlined,
+      activeIcon: Icons.card_travel_rounded,
+    ),
+    _NavItem(
+      label: "Fleets",
+      icon: Icons.directions_car_outlined,
+      activeIcon: Icons.directions_car_rounded,
+    ),
+    _NavItem(
+      label: "Customers",
+      icon: Icons.people_outline,
+      activeIcon: Icons.people_rounded,
+    ),
   ];
 
   @override
@@ -87,9 +105,10 @@ class _MainBottomNavState extends ConsumerState<MainBottomNav>
     );
     _iconScales = _iconControllers
         .map(
-          (c) => Tween<double>(begin: 1.0, end: 1.18).animate(
-            CurvedAnimation(parent: c, curve: Curves.elasticOut),
-          ),
+          (c) => Tween<double>(
+            begin: 1.0,
+            end: 1.18,
+          ).animate(CurvedAnimation(parent: c, curve: Curves.elasticOut)),
         )
         .toList();
 
@@ -192,7 +211,9 @@ class _MainBottomNavState extends ConsumerState<MainBottomNav>
                   child: SafeArea(
                     child: Padding(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 8),
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
                       child: Row(
                         children: [
                           Hero(
@@ -204,8 +225,9 @@ class _MainBottomNavState extends ConsumerState<MainBottomNav>
                                 color: Colors.white.withOpacity(0.2),
                                 borderRadius: BorderRadius.circular(14),
                                 border: Border.all(
-                                    color: Colors.white.withOpacity(0.45),
-                                    width: 1.5),
+                                  color: Colors.white.withOpacity(0.45),
+                                  width: 1.5,
+                                ),
                               ),
                               child: profileImageUrl != null
                                   ? ClipRRect(
@@ -257,9 +279,7 @@ class _MainBottomNavState extends ConsumerState<MainBottomNav>
                                 ),
                                 const SizedBox(height: 1),
                                 Text(
-                                  agencyName.isNotEmpty
-                                      ? agencyName
-                                      : userName,
+                                  agencyName.isNotEmpty ? agencyName : userName,
                                   style: const TextStyle(
                                     color: Colors.white,
                                     fontSize: 18,
@@ -272,11 +292,82 @@ class _MainBottomNavState extends ConsumerState<MainBottomNav>
                               ],
                             ),
                           ),
-                          const SizedBox(width: 8),
-                          // Settings — lives only here in the header (not in the
-                          // pill nav). Shows the Settings page (pages index 4).
+                          const SizedBox(width: 4),
+                          // Notifications — bell with an unread-count badge.
+                          // Sits before Settings; opens the full list on tap.
+                          AnimatedBuilder(
+                            animation: NotificationStore.instance,
+                            builder: (context, _) {
+                              final unread =
+                                  NotificationStore.instance.unreadCount;
+                              return Stack(
+                                clipBehavior: Clip.none,
+                                children: [
+                                  IconButton(
+                                    onPressed: () => Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) =>
+                                            const NotificationsPage(),
+                                      ),
+                                    ),
+                                    tooltip: 'Notifications',
+                                    icon: const Icon(
+                                      Icons.notifications_rounded,
+                                      color: Colors.white,
+                                      size: 26,
+                                    ),
+                                  ),
+                                  if (unread > 0)
+                                    Positioned(
+                                      right: 6,
+                                      top: 6,
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 5,
+                                          vertical: 1,
+                                        ),
+                                        constraints: const BoxConstraints(
+                                          minWidth: 18,
+                                          minHeight: 18,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: AppColors.danger,
+                                          borderRadius: BorderRadius.circular(
+                                            9,
+                                          ),
+                                          border: Border.all(
+                                            color: const Color(0xff000c33),
+                                            width: 1.5,
+                                          ),
+                                        ),
+                                        child: Center(
+                                          child: Text(
+                                            unread > 99 ? '99+' : '$unread',
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 10,
+                                              fontWeight: FontWeight.w800,
+                                              height: 1.1,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                ],
+                              );
+                            },
+                          ),
                           IconButton(
-                            onPressed: () => _onItemTapped(4),
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      const ModernSettingsPage(),
+                                ),
+                              );
+                            },
                             tooltip: 'Settings',
                             icon: const Icon(
                               Icons.settings_rounded,
@@ -298,10 +389,7 @@ class _MainBottomNavState extends ConsumerState<MainBottomNav>
             children: [
               // IndexedStack keeps each tab's state across switches.
               Positioned.fill(
-                child: IndexedStack(
-                  index: selectedIndex,
-                  children: pages,
-                ),
+                child: IndexedStack(index: selectedIndex, children: pages),
               ),
 
               // Each tab that supports adding an item now owns its own plain
@@ -309,12 +397,7 @@ class _MainBottomNavState extends ConsumerState<MainBottomNav>
               // no longer renders a shared add button here.
 
               // Floating glassmorphic pill nav with draggable indicator.
-              Positioned(
-                left: 0,
-                right: 0,
-                bottom: 0,
-                child: _buildPillNav(),
-              ),
+              Positioned(left: 0, right: 0, bottom: 0, child: _buildPillNav()),
             ],
           ),
         ),
@@ -325,8 +408,9 @@ class _MainBottomNavState extends ConsumerState<MainBottomNav>
   // ── Floating pill nav ─────────────────────────────────────
   Widget _buildPillNav() {
     final isCompact = MediaQuery.of(context).size.width < 360;
-    final navHeight =
-        isCompact ? NavTheme.compactNavHeight : NavTheme.regularNavHeight;
+    final navHeight = isCompact
+        ? NavTheme.compactNavHeight
+        : NavTheme.regularNavHeight;
 
     return SafeArea(
       top: false,
@@ -365,112 +449,114 @@ class _MainBottomNavState extends ConsumerState<MainBottomNav>
                 decoration: BoxDecoration(
                   color: Colors.white.withOpacity(0.55),
                   borderRadius: BorderRadius.circular(30),
-                  border: Border.all(
-                    color: NavTheme.navPillBorder,
-                    width: 0.3,
-                  ),
+                  border: Border.all(color: NavTheme.navPillBorder, width: 0.3),
                 ),
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  final totalWidth = constraints.maxWidth;
-                  final itemCount = _navItems.length;
-                  final itemWidth = totalWidth / itemCount;
-                  final pillWidth = itemWidth - 10;
-                  final pillHeight = navHeight - 10;
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    final totalWidth = constraints.maxWidth;
+                    final itemCount = _navItems.length;
+                    final itemWidth = totalWidth / itemCount;
+                    final pillWidth = itemWidth - 10;
+                    final pillHeight = navHeight - 10;
 
-                  final curCenter = (selectedIndex + 0.5) * itemWidth;
-                  final minCenter = itemWidth / 2;
-                  final maxCenter = totalWidth - itemWidth / 2;
-                  final dragCenter = ((_dragX ?? curCenter)
-                          .clamp(minCenter, maxCenter))
-                      .toDouble();
-                  final pillLeft = ((dragCenter - pillWidth / 2)
-                          .clamp(0.0, totalWidth - pillWidth))
-                      .toDouble();
+                    final curCenter = (selectedIndex + 0.5) * itemWidth;
+                    final minCenter = itemWidth / 2;
+                    final maxCenter = totalWidth - itemWidth / 2;
+                    final dragCenter = ((_dragX ?? curCenter).clamp(
+                      minCenter,
+                      maxCenter,
+                    )).toDouble();
+                    final pillLeft = ((dragCenter - pillWidth / 2).clamp(
+                      0.0,
+                      totalWidth - pillWidth,
+                    )).toDouble();
 
-                  return GestureDetector(
-                    behavior: HitTestBehavior.translucent,
-                    onHorizontalDragStart: (d) {
-                      setState(() {
-                        _isDragging = true;
-                        _dragX = d.localPosition.dx
+                    return GestureDetector(
+                      behavior: HitTestBehavior.translucent,
+                      onHorizontalDragStart: (d) {
+                        setState(() {
+                          _isDragging = true;
+                          _dragX = d.localPosition.dx
+                              .clamp(minCenter, maxCenter)
+                              .toDouble();
+                          _dragHoverIndex = selectedIndex;
+                        });
+                      },
+                      onHorizontalDragUpdate: (d) {
+                        final clamped = d.localPosition.dx
                             .clamp(minCenter, maxCenter)
                             .toDouble();
-                        _dragHoverIndex = selectedIndex;
-                      });
-                    },
-                    onHorizontalDragUpdate: (d) {
-                      final clamped = d.localPosition.dx
-                          .clamp(minCenter, maxCenter)
-                          .toDouble();
-                      final newHover = (clamped / itemWidth)
-                          .floor()
-                          .clamp(0, itemCount - 1);
-                      if (newHover != _dragHoverIndex) {
-                        HapticFeedback.selectionClick();
-                      }
-                      setState(() {
-                        _dragX = clamped;
-                        _dragHoverIndex = newHover;
-                      });
-                    },
-                    onHorizontalDragEnd: (_) {
-                      final raw = _dragX ?? curCenter;
-                      final newIdx =
-                          (raw / itemWidth).floor().clamp(0, itemCount - 1);
-                      setState(() {
-                        _isDragging = false;
-                        _dragX = null;
-                        _dragHoverIndex = null;
-                      });
-                      _onItemTapped(newIdx);
-                    },
-                    onHorizontalDragCancel: () {
-                      setState(() {
-                        _isDragging = false;
-                        _dragX = null;
-                        _dragHoverIndex = null;
-                      });
-                    },
-                    child: Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        AnimatedPositioned(
-                          duration: _isDragging
-                              ? Duration.zero
-                              : const Duration(milliseconds: 220),
-                          curve: Curves.easeInOut,
-                          top: 5,
-                          left: pillLeft,
-                          width: pillWidth,
-                          height: pillHeight,
-                          child: Container(
-                            decoration: BoxDecoration(
-                              color: NavTheme.navActivePill,
-                              borderRadius: BorderRadius.circular(22),
+                        final newHover = (clamped / itemWidth).floor().clamp(
+                          0,
+                          itemCount - 1,
+                        );
+                        if (newHover != _dragHoverIndex) {
+                          HapticFeedback.selectionClick();
+                        }
+                        setState(() {
+                          _dragX = clamped;
+                          _dragHoverIndex = newHover;
+                        });
+                      },
+                      onHorizontalDragEnd: (_) {
+                        final raw = _dragX ?? curCenter;
+                        final newIdx = (raw / itemWidth).floor().clamp(
+                          0,
+                          itemCount - 1,
+                        );
+                        setState(() {
+                          _isDragging = false;
+                          _dragX = null;
+                          _dragHoverIndex = null;
+                        });
+                        _onItemTapped(newIdx);
+                      },
+                      onHorizontalDragCancel: () {
+                        setState(() {
+                          _isDragging = false;
+                          _dragX = null;
+                          _dragHoverIndex = null;
+                        });
+                      },
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          AnimatedPositioned(
+                            duration: _isDragging
+                                ? Duration.zero
+                                : const Duration(milliseconds: 220),
+                            curve: Curves.easeInOut,
+                            top: 5,
+                            left: pillLeft,
+                            width: pillWidth,
+                            height: pillHeight,
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: NavTheme.navActivePill,
+                                borderRadius: BorderRadius.circular(22),
+                              ),
                             ),
                           ),
-                        ),
-                        Row(
-                          children: List.generate(itemCount, (i) {
-                            return Expanded(
-                              child: GestureDetector(
-                                behavior: HitTestBehavior.opaque,
-                                onTap: () => _onItemTapped(i),
-                                child: _buildTabCell(i, isCompact),
-                              ),
-                            );
-                          }),
-                        ),
-                      ],
-                    ),
-                  );
-                },
+                          Row(
+                            children: List.generate(itemCount, (i) {
+                              return Expanded(
+                                child: GestureDetector(
+                                  behavior: HitTestBehavior.opaque,
+                                  onTap: () => _onItemTapped(i),
+                                  child: _buildTabCell(i, isCompact),
+                                ),
+                              );
+                            }),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
               ),
             ),
           ),
         ),
-      ),
       ),
     );
   }
@@ -526,6 +612,9 @@ class _NavItem {
   final String label;
   final IconData icon;
   final IconData activeIcon;
-  const _NavItem(
-      {required this.label, required this.icon, required this.activeIcon});
+  const _NavItem({
+    required this.label,
+    required this.icon,
+    required this.activeIcon,
+  });
 }

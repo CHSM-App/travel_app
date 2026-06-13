@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "818199412133",
+    "project_id": "travelapp-d1a9c",
+    "storage_bucket": "travelapp-d1a9c.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:818199412133:android:3b4d19b28a127eee407c4c",
+        "android_client_info": {
+          "package_name": "com.example.travel_agency_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCHnHhsYh_s6PHCP3_pnIa7J3iplHVTf7E"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:818199412133:android:2de623765bdd2744407c4c",
+        "android_client_info": {
+          "package_name": "com.vengurlatech.travel_agency_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCHnHhsYh_s6PHCP3_pnIa7J3iplHVTf7E"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

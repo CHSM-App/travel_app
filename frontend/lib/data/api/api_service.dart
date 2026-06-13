@@ -63,6 +63,14 @@ abstract class ApiService {
   @POST("login/verifyOtp")
   Future<OtpResponse> verifyOtp(@Body() Map<String, dynamic> body);
 
+  // Push notifications — register/remove this device's FCM token.
+  // body: { admin_id, agency_id, fcm_token, platform } / { fcm_token }
+  @POST("users/registerDeviceToken")
+  Future<dynamic> registerDeviceToken(@Body() Map<String, dynamic> body);
+
+  @POST("users/removeDeviceToken")
+  Future<dynamic> removeDeviceToken(@Body() Map<String, dynamic> body);
+
   //----------------------------POST API CALL----------------------------------------------
 
   @POST("insert/Addtripbooking")

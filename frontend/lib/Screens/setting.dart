@@ -6,6 +6,7 @@ import 'package:travel_agency_app/Screens/help_center.dart';
 import 'package:travel_agency_app/Screens/login.dart';
 import 'package:travel_agency_app/Screens/profile.dart';
 import 'package:travel_agency_app/core/network/token_provider.dart';
+import 'package:travel_agency_app/core/notifications/push_service.dart';
 import 'package:travel_agency_app/core/theme/app_colors.dart';
 import 'package:travel_agency_app/core/widgets/error_view.dart';
 import 'package:travel_agency_app/domain/models/login_info.dart';
@@ -741,6 +742,8 @@ class _ModernSettingsPageState extends ConsumerState<ModernSettingsPage>
                         Navigator.pop(ctx);
                         final navigator = Navigator.of(context);
                         final tokenState = ref.read(tokenProvider);
+                        // Unregister this device's push token before tokens are cleared.
+                        await PushService.removeToken();
                         final response = await ref.read(authViewModelProvider.notifier).logout(
                           TokenResponse(refreshToken: tokenState.refreshToken ?? ''),
                         );
