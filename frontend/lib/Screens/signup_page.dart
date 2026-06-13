@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:travel_agency_app/Screens/login.dart';
+import 'package:travel_agency_app/Screens/otp_verification.dart';
 import 'package:travel_agency_app/core/theme/app_colors.dart';
 import 'package:travel_agency_app/domain/models/login_info.dart';
 import 'package:travel_agency_app/presentation/providers/viewmodel_provider.dart';
@@ -82,31 +83,44 @@ class _SignUpPageState extends ConsumerState<SignUpPage>
       return;
     }
 
+    final mobile = _mobileController.text.trim();
+
     final loginInfo = LoginInfo(
       name: _nameController.text.trim(),
       address: _addressController.text.trim(),
       agencyName: _agencyController.text.trim(),
       city: _cityController.text.trim(),
-      mobile: _mobileController.text.trim(),
+      mobile: mobile,
       email: _emailController.text.trim(),
       password: _passwordController.text.trim(),
     );
 
-    final response =
-        await ref.read(loginViewModelProvider.notifier).addAdmin(loginInfo);
+    // Verify the mobile number via WhatsApp OTP before creating the account.
+    // The OTP screen sends the code, verifies it, and only then runs the
+    // account-creation action, popping with `true` on full success.
+    final verified = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => OtpVerificationPage(
+          mobile: mobile,
+          purpose: 'register',
+          title: "Verify your number",
+          subtitle: "Enter the 6-digit code sent to your WhatsApp",
+          successMessage: "Account created successfully",
+          onVerified: () => ref
+              .read(loginViewModelProvider.notifier)
+              .addAdmin(loginInfo),
+        ),
+      ),
+    );
 
     if (!mounted) return;
 
-    if (response != null) {
-      _showMessage(response.message,
-          success: response.success == 1);
-
-      if (response.success == 1) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => const LoginPage()),
-        );
-      }
+    if (verified == true) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const LoginPage()),
+      );
     }
   }
 

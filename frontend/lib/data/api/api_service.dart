@@ -8,6 +8,7 @@ import 'package:travel_agency_app/domain/models/drivers.dart';
 import 'package:travel_agency_app/domain/models/fueltype.dart';
 import 'package:travel_agency_app/domain/models/login_info.dart';
 import 'package:travel_agency_app/domain/models/login_response.dart';
+import 'package:travel_agency_app/domain/models/otp_response.dart';
 import 'package:travel_agency_app/domain/models/reports_data.dart';
 import 'package:travel_agency_app/domain/models/services.dart';
 import 'package:travel_agency_app/domain/models/status.dart';
@@ -53,6 +54,14 @@ abstract class ApiService {
 
   @POST("login/forgotPassword")
   Future<LoginResponse> forgotPassword(@Body() LoginInfo logininfo);
+
+  // OTP (WhatsApp) — body: { mobile, purpose } / { mobile, otp, purpose }
+  // purpose is 'register' | 'forgot_pin'
+  @POST("login/sendOtp")
+  Future<OtpResponse> sendOtp(@Body() Map<String, dynamic> body);
+
+  @POST("login/verifyOtp")
+  Future<OtpResponse> verifyOtp(@Body() Map<String, dynamic> body);
 
   //----------------------------POST API CALL----------------------------------------------
 

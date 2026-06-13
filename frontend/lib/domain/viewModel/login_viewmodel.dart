@@ -6,6 +6,7 @@ import 'package:travel_agency_app/core/network/error_messages.dart';
 import 'package:travel_agency_app/core/storage/token_storage.dart';
 import 'package:travel_agency_app/domain/models/login_info.dart';
 import 'package:travel_agency_app/domain/models/login_response.dart';
+import 'package:travel_agency_app/domain/models/otp_response.dart';
 import 'package:travel_agency_app/domain/usecase/login_usecase.dart';
 
 class LoginState {
@@ -168,6 +169,40 @@ class LoginViewModel extends StateNotifier<LoginState> {
       state = state.copyWith(isLoading: false, error: msg);
 
       return LoginResponse(success: 0, message: msg);
+    }
+  }
+
+  //--------------------------------------------------
+  // OTP (WhatsApp) — used by registration & forgot-password flows
+  //--------------------------------------------------
+
+  /// Sends an OTP to [mobile]. [purpose] is 'register' or 'forgot_pin'.
+  /// Returns the response, or an OtpResponse(success:false) on error.
+  Future<OtpResponse> sendOtp(String mobile, String purpose) async {
+    try {
+      state = state.copyWith(isLoading: true, error: null);
+      final response = await usecase.sendOtp(mobile, purpose);
+      state = state.copyWith(isLoading: false);
+      return response;
+    } catch (e) {
+      final msg = friendlyErrorMessage(e);
+      state = state.copyWith(isLoading: false, error: msg);
+      return OtpResponse(success: false, message: msg);
+    }
+  }
+
+  /// Verifies [otp] for [mobile]. [purpose] is 'register' or 'forgot_pin'.
+  Future<OtpResponse> verifyOtp(
+      String mobile, String otp, String purpose) async {
+    try {
+      state = state.copyWith(isLoading: true, error: null);
+      final response = await usecase.verifyOtp(mobile, otp, purpose);
+      state = state.copyWith(isLoading: false);
+      return response;
+    } catch (e) {
+      final msg = friendlyErrorMessage(e);
+      state = state.copyWith(isLoading: false, error: msg);
+      return OtpResponse(success: false, message: msg);
     }
   }
 

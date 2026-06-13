@@ -43,8 +43,16 @@ app.use(express.json());
 // Public routes — no token required
 app.use('/login', loginRouter);
 
+// Public self-registration: AddAdmin must be reachable before the user has a
+// token (gated client-side by WhatsApp OTP). Every other /insert/* route stays
+// protected.
+const PUBLIC_INSERT_PATHS = ['/AddAdmin'];
+app.use('/insert', (req, res, next) => {
+  if (PUBLIC_INSERT_PATHS.includes(req.path)) return next();
+  return protect(req, res, next);
+}, insertRouter);
+
 // Protected routes — valid JWT access token required
-app.use('/insert',  protect, insertRouter);
 app.use('/users',   protect, usersRouter);
 app.use('/file',    protect, fileAccess);
 app.use('/upload',  protect, uploadRouter);

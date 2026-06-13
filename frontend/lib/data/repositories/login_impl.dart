@@ -4,6 +4,7 @@ import 'package:travel_agency_app/core/storage/token_storage.dart';
 import 'package:travel_agency_app/data/api/api_service.dart';
 import 'package:travel_agency_app/domain/models/login_info.dart';
 import 'package:travel_agency_app/domain/models/login_response.dart';
+import 'package:travel_agency_app/domain/models/otp_response.dart';
 import 'package:travel_agency_app/domain/repository/login_repo.dart';
 
 class LoginImpl implements LoginRepo {
@@ -49,6 +50,17 @@ class LoginImpl implements LoginRepo {
 @override
   Future<LoginResponse> forgotPassword(LoginInfo loginInfo) {
     return apiService.forgotPassword(loginInfo);
+  }
+
+  @override
+  Future<OtpResponse> sendOtp(String mobile, String purpose) {
+    return apiService.sendOtp({'mobile': mobile, 'purpose': purpose});
+  }
+
+  @override
+  Future<OtpResponse> verifyOtp(String mobile, String otp, String purpose) {
+    return apiService
+        .verifyOtp({'mobile': mobile, 'otp': otp, 'purpose': purpose});
   }
 
 @override
