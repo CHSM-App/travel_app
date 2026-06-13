@@ -4,13 +4,14 @@ const router = express.Router();
 const jwt = require('jsonwebtoken');
 require('dotenv').config();
 
-const sql = require('mssql');   // ✅ ADD THIS LINE
-const db = require('./db'); // your mssql pool wrapper
+const sql = require('mssql');
+const db = require('./db');
 const crypto = require('crypto');
 var bodyParser = require('body-parser');
 const path = require('path');
 
 const axios = require("axios");
+const { sendOtp, verifyOtp } = require('./otp');
 
 router.use(bodyParser.json());
 router.use(bodyParser.urlencoded({ extended: true }));
@@ -294,6 +295,55 @@ router.get('/privacy', (req, res) => {
 });
 
 
+// =====================================================
+// SEND OTP
+// Body: { mobile, purpose }  purpose: 'register' | 'forgot_pin'
+// =====================================================
+router.post('/sendOtp', async (req, res) => {
+  try {
+    const { mobile, purpose } = req.body;
+
+    if (!mobile || !purpose) {
+      return res.status(400).json({ success: false, message: 'mobile and purpose are required' });
+    }
+
+    if (!['register', 'forgot_pin'].includes(purpose)) {
+      return res.status(400).json({ success: false, message: "purpose must be 'register' or 'forgot_pin'" });
+    }
+
+    const result = await sendOtp(mobile, purpose);
+    return res.json({ success: true, ...result });
+  } catch (err) {
+    console.error('[sendOtp]', err.message);
+    return res.status(500).json({ success: false, message: err.message });
+  }
+});
 
 
-module.exports = router; 
+// =====================================================
+// VERIFY OTP
+// Body: { mobile, otp, purpose }
+// =====================================================
+router.post('/verifyOtp', async (req, res) => {
+  try {
+    const { mobile, otp, purpose } = req.body;
+
+    if (!mobile || !otp || !purpose) {
+      return res.status(400).json({ success: false, message: 'mobile, otp, and purpose are required' });
+    }
+
+    const valid = await verifyOtp(mobile, otp, purpose);
+
+    if (!valid) {
+      return res.status(400).json({ success: false, message: 'Invalid or expired OTP' });
+    }
+
+    return res.json({ success: true, message: 'OTP verified' });
+  } catch (err) {
+    console.error('[verifyOtp]', err.message);
+    return res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+
+module.exports = router;

@@ -14,6 +14,8 @@ const fileAccess = require('./routes/fileAccess');
 const loginRouter = require('./routes/login');
 const uploadRouter = require('./routes/uploadfile');
 const indexRouter = require('./routes/index');
+// Auth middleware
+const protect = require('./routes/middleware/protect');
 // DB
 const db = require('./routes/db');
 
@@ -35,16 +37,18 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.json());
 
 /* =========================
-   ROUTES (NO PROTECT)
+   ROUTES
 ========================= */
 
-
-app.use('/insert', insertRouter);
-app.use('/users', usersRouter);
-app.use('/file', fileAccess);
+// Public routes — no token required
 app.use('/login', loginRouter);
-app.use('/upload', uploadRouter);
-app.use('/index', indexRouter);
+
+// Protected routes — valid JWT access token required
+app.use('/insert',  protect, insertRouter);
+app.use('/users',   protect, usersRouter);
+app.use('/file',    protect, fileAccess);
+app.use('/upload',  protect, uploadRouter);
+app.use('/index',   protect, indexRouter);
 
 /* =========================
    BACKGROUND TASKS
