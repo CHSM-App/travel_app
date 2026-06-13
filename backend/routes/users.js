@@ -124,6 +124,48 @@ router.get('/distance', async (req, res) => {
 
 
 
+// ---- Google Places Autocomplete proxy (API key stays on the server) ----
+// The app's PlacesService hits this for Google-Maps-style location suggestions
+// in the trip booking form. Returns a flat list of place descriptions; the
+// client falls back to its own recent-locations on any empty/error response.
+router.get('/placeAutocomplete', async (req, res) => {
+  const input = (req.query.input || '').trim();
+  // Mirror the client's own guard (it won't call below 3 chars) and avoid
+  // billing Google for trivially short queries.
+  if (input.length < 3) return res.json([]);
+
+  try {
+    const url = new URL('https://maps.googleapis.com/maps/api/place/autocomplete/json');
+    url.searchParams.set('input', input);
+    // Bias results to India — this is an Indian travel agency app.
+    url.searchParams.set('components', 'country:in');
+    url.searchParams.set('key', process.env.GOOGLE_MAPS_API_KEY);
+
+    const googleRes = await fetch(url); // Node 18+ has fetch built in
+    const data = await googleRes.json();
+
+    // ZERO_RESULTS is a normal "nothing matched" — return an empty list, not an
+    // error, so the field quietly falls back to recent locations.
+    if (data.status !== 'OK' && data.status !== 'ZERO_RESULTS') {
+      return res.status(502).json({
+        error: 'Places lookup failed',
+        googleStatus: data.status,
+        googleMessage: data.error_message || null,
+      });
+    }
+
+    const suggestions = (data.predictions || [])
+      .map((p) => p.description)
+      .filter((d) => typeof d === 'string' && d.trim().length > 0);
+
+    res.json(suggestions);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+
+
 router.get('/fetchAvailableVehicles/:agency_id/:start_datetime/:end_datetime/:trip_id?', async (req, res) => {
 
   const { agency_id, start_datetime, end_datetime, trip_id} = req.params;
