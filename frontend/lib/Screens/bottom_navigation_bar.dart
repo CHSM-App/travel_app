@@ -332,10 +332,6 @@ class _MainBottomNavState extends ConsumerState<MainBottomNav>
       top: false,
       child: Padding(
         padding: const EdgeInsets.fromLTRB(20, 0, 20, 6),
-        // Shadow lives on the outer container — ClipRRect below would crop any
-        // shadow placed on the pill itself. Three layers: a wide indigo-tinted
-        // ambient, a tighter neutral key for grounding, and a crisp hairline
-        // that defines the bottom edge.
         child: Container(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(30),
@@ -367,8 +363,6 @@ class _MainBottomNavState extends ConsumerState<MainBottomNav>
               child: Container(
                 height: navHeight,
                 decoration: BoxDecoration(
-                  // Tiny lift in the base tint — pure glass on a light page
-                  // can read as flat; a hint of white gives the pill body.
                   color: Colors.white.withOpacity(0.55),
                   borderRadius: BorderRadius.circular(30),
                   border: Border.all(
