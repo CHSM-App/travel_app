@@ -17,6 +17,12 @@ import '../../core/network/dio_provider.dart';
 import '../../data/api/api_service.dart';
 
 
+// Shared ApiService instance (used by PushService for device-token registration).
+final apiServiceProvider = Provider<ApiService>((ref) {
+  final dio = ref.watch(dioProvider);
+  return ApiService(dio);
+});
+
 final authRepositoryProvider = Provider<AuthRepository>((ref) {
    final dio = ref.watch(dioProvider);
   final api = ApiService(dio);

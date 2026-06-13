@@ -18,6 +18,9 @@ const indexRouter = require('./routes/index');
 const protect = require('./routes/middleware/protect');
 // DB
 const db = require('./routes/db');
+// Daily reminders (FCM push)
+const cron = require('node-cron');
+const reminders = require('./routes/reminders');
 
 const app = express();
 
@@ -88,6 +91,14 @@ generateBill();
 // Run every 24 hours
 setInterval(cleanupRefreshTokens, 24 * 60 * 60 * 1000);
 setInterval(generateBill, 24 * 60 * 60 * 1000);
+
+// Daily reminder push at 08:00 IST — tomorrow's trips + PUC/insurance expiring
+// within 7 days, sent to each agency's registered devices.
+cron.schedule('0 8 * * *', () => {
+  reminders.sendDailyReminders().catch((err) =>
+    console.error('❌ Daily reminder error:', err.message)
+  );
+}, { timezone: 'Asia/Kolkata' });
 
 /* =========================
    404 HANDLER

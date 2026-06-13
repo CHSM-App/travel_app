@@ -4,6 +4,7 @@ var router = express.Router();
 var http=require('http');
 const jwt = require('jsonwebtoken');
 require('dotenv').config();
+const reminders = require('./reminders');
 
 let refreshTokens = [];
 
@@ -413,4 +414,64 @@ router.get('/paymentHistory/:trip_id', async (req, res) => {
 });
 
 
-module.exports = router; 
+// =====================================================
+// PUSH NOTIFICATIONS — device token registration
+// (protected routes; called after login when a token exists)
+// =====================================================
+
+// Body: { admin_id, agency_id, fcm_token, platform }
+router.post('/registerDeviceToken', async (req, res) => {
+  try {
+    const { admin_id, agency_id, fcm_token, platform } = req.body;
+    if (!fcm_token) {
+      return res.status(400).json({ success: false, message: 'fcm_token is required' });
+    }
+    await db.request()
+      .input('operation', 'register')
+      .input('admin_id', admin_id || null)
+      .input('agency_id', agency_id || null)
+      .input('fcm_token', fcm_token)
+      .input('platform', platform || null)
+      .execute('sp_device_token');
+    return res.json({ success: true });
+  } catch (err) {
+    console.error('[registerDeviceToken]', err.message);
+    return res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// Body: { fcm_token }
+router.post('/removeDeviceToken', async (req, res) => {
+  try {
+    const { fcm_token } = req.body;
+    if (!fcm_token) {
+      return res.status(400).json({ success: false, message: 'fcm_token is required' });
+    }
+    await db.request()
+      .input('operation', 'remove')
+      .input('fcm_token', fcm_token)
+      .execute('sp_device_token');
+    return res.json({ success: true });
+  } catch (err) {
+    console.error('[removeDeviceToken]', err.message);
+    return res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// Test trigger: immediately push the reminder summary to the caller's agency.
+// Body: { agency_id }
+router.post('/sendTestReminder', async (req, res) => {
+  try {
+    const { agency_id } = req.body;
+    if (!agency_id) {
+      return res.status(400).json({ success: false, message: 'agency_id is required' });
+    }
+    const result = await reminders.sendReminderForAgency(agency_id);
+    return res.json({ success: true, ...result });
+  } catch (err) {
+    console.error('[sendTestReminder]', err.message);
+    return res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+module.exports = router;

@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:travel_agency_app/Screens/bottom_navigation_bar.dart';
 import 'package:travel_agency_app/Screens/forgot_password.dart';
 import 'package:travel_agency_app/Screens/signup_page.dart';
+import 'package:travel_agency_app/core/notifications/push_service.dart';
 import 'package:travel_agency_app/core/theme/app_colors.dart';
 import 'package:travel_agency_app/domain/models/login_info.dart';
 import 'package:travel_agency_app/domain/models/token_response.dart';
@@ -76,6 +77,8 @@ class _LoginPageState extends ConsumerState<LoginPage>
       showMessage("Token generation failed");
       return;
     }
+    // Register this device for push notifications now that we're authenticated.
+    PushService.registerToken();
     if (mounted) {
       Navigator.pushReplacement(
         context,
