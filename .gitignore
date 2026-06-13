@@ -76,3 +76,10 @@ Desktop.ini
 *.iml
 *.ipr
 *.iws
+
+# ─────────────────────────────────────────────
+# SKILL DOCS — local only
+# ─────────────────────────────────────────────
+SKILL_ANIM.md
+SKILL_UI.md
+

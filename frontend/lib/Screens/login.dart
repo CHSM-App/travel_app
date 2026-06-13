@@ -74,7 +74,7 @@ class _LoginPageState extends ConsumerState<LoginPage>
         await ref.read(authViewModelProvider.notifier).createLogin(tokenRequest);
 
     if (tokenResult == null) {
-      showMessage("Token generation failed");
+      showMessage(ref.read(authViewModelProvider).error ?? "Token generation failed");
       return;
     }
     // Register this device for push notifications now that we're authenticated.

@@ -832,10 +832,10 @@ class _CustomerHistState extends ConsumerState<CustomerHist>
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.fromLTRB(0, 16, 0, 24),
         children: const [
-          SkeletonListItem(),
-          SkeletonListItem(),
-          SkeletonListItem(),
-          SkeletonListItem(),
+          TripCardSkeleton(),
+          TripCardSkeleton(),
+          TripCardSkeleton(),
+          TripCardSkeleton(),
         ],
       ),
     );

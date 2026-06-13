@@ -50,7 +50,6 @@ class MyApp extends StatelessWidget {
           backgroundColor: AppColors.brandHeader,
           foregroundColor: Colors.white,
           elevation: 0,
-          
         ),
       ),
 
@@ -78,8 +77,6 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
     await ref.read(tokenProvider.notifier).loadTokens();
     await ref.read(loginViewModelProvider.notifier).loadFromStorage();
 
-    // Notifications: set up channels/permissions/listeners once at startup.
-    // Best-effort — must never block navigation off the splash screen.
     try {
       await NotificationStore.instance.load();
       await PushService.init(ref.read(apiServiceProvider));
@@ -92,7 +89,6 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
     if (!mounted) return;
 
     if (tokenState.isLoggedIn) {
-      // Already logged in — make sure this device's token is registered.
       PushService.registerToken();
       Navigator.pushReplacement(
         context,

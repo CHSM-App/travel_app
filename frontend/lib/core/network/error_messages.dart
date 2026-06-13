@@ -5,6 +5,24 @@ import 'package:dio/dio.dart';
 const String kOfflineMessage =
     'You appear to be offline. Check your connection and try again.';
 
+/// Shown when the server dropped the connection mid-response — typically a
+/// backend restart or crash, NOT the user's device being offline. "Connection
+/// closed before full header was received" arrives this way, and showing the
+/// offline copy would be misleading, so we use a neutral retry message.
+const String kSomethingWentWrongMessage =
+    'Something went wrong. Please try again.';
+
+/// True when [e]'s raw text looks like the server accepted the socket and then
+/// closed it before replying (server restart/crash), as opposed to the device
+/// having no network at all.
+bool _isServerDroppedConnection(Object e) {
+  if (e is! DioException) return false;
+  final lower = (e.message ?? '').toLowerCase();
+  return lower.contains('connection closed') ||
+      lower.contains('connection reset') ||
+      lower.contains('connection refused');
+}
+
 /// True when [e] is a transport-level failure (no connection, timeout, or a
 /// device socket error wrapped as `unknown`). Use this in full-screen error
 /// states that want to show a wifi-off icon + offline copy, like the Trips page.
@@ -52,6 +70,10 @@ String friendlyErrorMessage(Object e) {
     if (msg.isNotEmpty) return msg;
   }
   if (e is DioException) {
+    // Server dropped the connection mid-response (restart/crash). Catch this
+    // before the transport branch so the user doesn't see misleading
+    // "you're offline" copy when their network is fine.
+    if (_isServerDroppedConnection(e)) return kSomethingWentWrongMessage;
     switch (e.type) {
       case DioExceptionType.connectionError:
       case DioExceptionType.connectionTimeout:

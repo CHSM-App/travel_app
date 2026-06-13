@@ -701,29 +701,39 @@ class _TripPageState extends ConsumerState<TripPage> {
                                   label: f.label,
                                   icon: f.icon,
                                   selected: tempFilter == f,
-                                  onTap: () =>
-                                      setSheetState(() => tempFilter = f),
+                                  onTap: () => setSheetState(() {
+                                    tempFilter = f;
+                                    // Payment status only applies to completed
+                                    // trips, so drop it when switching away.
+                                    if (f != TripFilter.completed) {
+                                      tempPayment = PaymentFilter.all;
+                                    }
+                                  }),
                                 ),
                             ],
                           ),
                           const SizedBox(height: 12),
 
                           // ── Payment status ────────────────────────────
-                          section(
-                            icon: Icons.payments_rounded,
-                            title: 'PAYMENT STATUS',
-                            chips: [
-                              for (final p in PaymentFilter.values)
-                                choiceChip(
-                                  label: p.label,
-                                  icon: p.icon,
-                                  selected: tempPayment == p,
-                                  onTap: () =>
-                                      setSheetState(() => tempPayment = p),
-                                ),
-                            ],
-                          ),
-                          const SizedBox(height: 12),
+                          // Only meaningful for completed trips, so shown
+                          // exclusively when the Completed status is selected.
+                          if (tempFilter == TripFilter.completed) ...[
+                            section(
+                              icon: Icons.payments_rounded,
+                              title: 'PAYMENT STATUS',
+                              chips: [
+                                for (final p in PaymentFilter.values)
+                                  choiceChip(
+                                    label: p.label,
+                                    icon: p.icon,
+                                    selected: tempPayment == p,
+                                    onTap: () =>
+                                        setSheetState(() => tempPayment = p),
+                                  ),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+                          ],
 
                           // ── Date range ────────────────────────────────
                           section(
@@ -889,13 +899,13 @@ class _TripPageState extends ConsumerState<TripPage> {
         color: AppColors.brandPrimary,
         child: ListView(
           physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.fromLTRB(0, 8, 0, 110),
+          padding: const EdgeInsets.fromLTRB(4, 8, 4, 110),
           children: const [
-            SkeletonListItem(),
-            SkeletonListItem(),
-            SkeletonListItem(),
-            SkeletonListItem(),
-            SkeletonListItem(),
+            TripCardSkeleton(),
+            TripCardSkeleton(),
+            TripCardSkeleton(),
+            TripCardSkeleton(),
+            TripCardSkeleton(),
           ],
         ),
       ),
