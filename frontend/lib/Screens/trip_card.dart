@@ -2591,20 +2591,20 @@ class TripCard extends ConsumerWidget {
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Container(
-                  width: 38,
-                  height: 38,
-                  decoration: BoxDecoration(
-                    color: _accentSoft,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Icon(
-                    Icons.directions_car_rounded,
-                    color: _accent,
-                    size: 20,
-                  ),
-                ),
-                const SizedBox(width: 10),
+                // Container(
+                //   width: 38,
+                //   height: 38,
+                //   decoration: BoxDecoration(
+                //     color: _accentSoft,
+                //     borderRadius: BorderRadius.circular(10),
+                //   ),
+                //   child: Icon(
+                //     Icons.directions_car_rounded,
+                //     color: _accent,
+                //     size: 20,
+                //   ),
+                // ),
+                // const SizedBox(width: 10),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,

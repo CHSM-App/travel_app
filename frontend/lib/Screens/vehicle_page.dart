@@ -298,48 +298,48 @@ class _VehiclePageState extends ConsumerState<VehiclePage>
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         // Vehicle icon with a status dot
-                        Stack(
-                          clipBehavior: Clip.none,
-                          children: [
-                            Container(
-                              width: 42,
-                              height: 42,
-                              decoration: BoxDecoration(
-                                color: _C.accent,
-                                borderRadius: BorderRadius.circular(12),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: _C.accent.withOpacity(0.25),
-                                    blurRadius: 8,
-                                    offset: const Offset(0, 3),
-                                  ),
-                                ],
-                              ),
-                              child: const Icon(
-                                Icons.directions_car_rounded,
-                                color: Colors.white,
-                                size: 20,
-                              ),
-                            ),
-                            // Status dot — green = available, orange = engaged
-                            Positioned(
-                              right: -2,
-                              bottom: -2,
-                              child: Container(
-                                width: 13,
-                                height: 13,
-                                decoration: BoxDecoration(
-                                  color: v.StatusId == 1 ? _C.green : _C.orange,
-                                  shape: BoxShape.circle,
-                                  border: Border.all(
-                                    color: _C.surface,
-                                    width: 2,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
+                        // Stack(
+                        //   clipBehavior: Clip.none,
+                        //   children: [
+                        //     Container(
+                        //       width: 42,
+                        //       height: 42,
+                        //       decoration: BoxDecoration(
+                        //         color: _C.accent,
+                        //         borderRadius: BorderRadius.circular(12),
+                        //         boxShadow: [
+                        //           BoxShadow(
+                        //             color: _C.accent.withOpacity(0.25),
+                        //             blurRadius: 8,
+                        //             offset: const Offset(0, 3),
+                        //           ),
+                        //         ],
+                        //       ),
+                        //       child: const Icon(
+                        //         Icons.directions_car_rounded,
+                        //         color: Colors.white,
+                        //         size: 20,
+                        //       ),
+                        //     ),
+                        //     // Status dot — green = available, orange = engaged
+                        //     Positioned(
+                        //       right: -2,
+                        //       bottom: -2,
+                        //       child: Container(
+                        //         width: 13,
+                        //         height: 13,
+                        //         decoration: BoxDecoration(
+                        //           color: v.StatusId == 1 ? _C.green : _C.orange,
+                        //           shape: BoxShape.circle,
+                        //           border: Border.all(
+                        //             color: _C.surface,
+                        //             width: 2,
+                        //           ),
+                        //         ),
+                        //       ),
+                        //     ),
+                        //   ],
+                        // ),
                         const SizedBox(width: 12),
 
                         // Name + plate
@@ -616,32 +616,32 @@ class _VehiclePageState extends ConsumerState<VehiclePage>
           child: Row(
             children: [
               // Avatar
-              Container(
-                width: 38,
-                height: 38,
-                decoration: BoxDecoration(
-                  color: _C.accent,
-                  borderRadius: BorderRadius.circular(10),
-                  boxShadow: [
-                    BoxShadow(
-                      color: _C.accent.withOpacity(0.2),
-                      blurRadius: 6,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Center(
-                  child: Text(
-                    _initials(d.name),
-                    style: const TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w800,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 10),
+              // Container(
+              //   width: 38,
+              //   height: 38,
+              //   decoration: BoxDecoration(
+              //     color: _C.accent,
+              //     borderRadius: BorderRadius.circular(10),
+              //     boxShadow: [
+              //       BoxShadow(
+              //         color: _C.accent.withOpacity(0.2),
+              //         blurRadius: 6,
+              //         offset: const Offset(0, 2),
+              //       ),
+              //     ],
+              //   ),
+              //   child: Center(
+              //     child: Text(
+              //       _initials(d.name),
+              //       style: const TextStyle(
+              //         fontSize: 13,
+              //         fontWeight: FontWeight.w800,
+              //         color: Colors.white,
+              //       ),
+              //     ),
+              //   ),
+              // ),
+              // const SizedBox(width: 10),
 
               // Name + phone
               Expanded(

@@ -1,0 +1,78 @@
+# ─────────────────────────────────────────────
+# SECRETS & ENVIRONMENT — never push these
+# ─────────────────────────────────────────────
+.env
+.env.*
+!.env.example
+backend/serviceAccountKey.json
+backend/**/*.pem
+backend/**/*.key
+backend/**/*.p12
+backend/**/*.pfx
+
+# ─────────────────────────────────────────────
+# NODE / BACKEND
+# ─────────────────────────────────────────────
+backend/node_modules/
+backend/npm-debug.log*
+backend/yarn-error.log
+backend/.npm
+backend/uploads/*
+!backend/uploads/.gitkeep
+backend/logs/
+backend/*.log
+
+# IIS / Windows hosting artefacts
+backend/web.config
+backend/.user.ini
+
+# ─────────────────────────────────────────────
+# FLUTTER / FRONTEND
+# ─────────────────────────────────────────────
+frontend/.dart_tool/
+frontend/.flutter-plugins
+frontend/.flutter-plugins-dependencies
+frontend/.pub-cache/
+frontend/.pub/
+frontend/build/
+frontend/coverage/
+frontend/**/.last_build_id
+frontend/**/*.g.dart.bak
+
+# Android build outputs
+frontend/android/.gradle/
+frontend/android/app/debug/
+frontend/android/app/profile/
+frontend/android/app/release/
+frontend/android/local.properties
+frontend/android/key.properties
+frontend/**/*.jks
+frontend/**/*.keystore
+
+# iOS build outputs
+frontend/ios/Pods/
+frontend/ios/.symlinks/
+frontend/ios/Flutter/Flutter.framework
+frontend/ios/Flutter/Flutter.podspec
+frontend/ios/Flutter/App.framework
+frontend/ios/Flutter/ephemeral/
+frontend/ios/Runner.xcworkspace/xcshareddata/
+frontend/ios/Runner/GeneratedPluginRegistrant.*
+
+# ─────────────────────────────────────────────
+# OS & EDITOR
+# ─────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+Desktop.ini
+*.swp
+*.swo
+*.log
+
+.vscode/settings.json
+.vscode/launch.json
+.vscode/tasks.json
+.idea/
+*.iml
+*.ipr
+*.iws

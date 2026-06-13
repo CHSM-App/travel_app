@@ -8,8 +8,54 @@ on:
       - main
       - master
       - develop
+
 name: "Build & Release"
+
 jobs:
+  # ──────────────────────────────────────────────────────────────
+  # JOB 1: Sync backend/ folder to the 'backend' branch on every push
+  # ──────────────────────────────────────────────────────────────
+  sync-backend:
+    name: Sync backend to 'backend' branch
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source branch (full history)
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.TOKEN }}
+
+      - name: Push backend/ contents to 'backend' branch
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Create an orphan branch so 'backend' only ever holds backend files
+          git checkout --orphan backend-tmp
+
+          # Unstage everything
+          git rm -rf --cached . > /dev/null
+
+          # Delete everything except the backend folder and .git
+          find . -mindepth 1 -maxdepth 1 \
+            ! -name backend \
+            ! -name .git \
+            -exec rm -rf {} +
+
+          # Promote backend/* to repo root
+          shopt -s dotglob
+          mv backend/* .
+          rm -rf backend
+
+          git add -A
+          git commit -m "chore: sync backend from ${GITHUB_REF_NAME}@${GITHUB_SHA::7} [skip ci]" || echo "Nothing to commit"
+
+          # Force-push to the 'backend' branch
+          git push origin HEAD:backend --force
+
+  # ──────────────────────────────────────────────────────────────
+  # JOB 2: Build Flutter app and publish a release
+  # ──────────────────────────────────────────────────────────────
   build:
     name: Build & Release
     runs-on: macos-latest
@@ -29,17 +75,10 @@ jobs:
           cd ..
           zip -r app.ipa Payload
       - run: flutter build apk --release --split-per-abi
+
       - name: Push to Releases
         uses: ncipollo/release-action@v1
         with:
           artifacts: "build/app/outputs/apk/release/*,build/ios/iphoneos/app.ipa"
           tag: v1.0.${{ github.run_number }}
           token: ${{ secrets.TOKEN }}
-
-
-
-
-
-
-# push to master, main, develop
-# pull request on main master
