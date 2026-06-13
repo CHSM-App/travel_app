@@ -50,6 +50,7 @@ class MyApp extends StatelessWidget {
           backgroundColor: AppColors.brandHeader,
           foregroundColor: Colors.white,
           elevation: 0,
+          
         ),
       ),
 
