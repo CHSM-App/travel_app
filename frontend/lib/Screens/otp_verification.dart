@@ -54,8 +54,12 @@ class _OtpVerificationPageState extends ConsumerState<OtpVerificationPage>
   static const int _otpLength = 6;
   static const int _resendSeconds = 30;
 
-  final TextEditingController _otpController = TextEditingController();
-  final FocusNode _otpFocus = FocusNode();
+  final List<TextEditingController> _otpControllers =
+      List.generate(_otpLength, (_) => TextEditingController());
+  final List<FocusNode> _otpFocusNodes =
+      List.generate(_otpLength, (_) => FocusNode());
+
+  String get _otp => _otpControllers.map((c) => c.text).join();
 
   late AnimationController _animController;
   late Animation<double> _fadeAnim;
@@ -82,7 +86,7 @@ class _OtpVerificationPageState extends ConsumerState<OtpVerificationPage>
     // Send the first OTP as soon as the screen mounts.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _sendOtp(initial: true);
-      _otpFocus.requestFocus();
+      _otpFocusNodes.first.requestFocus();
     });
   }
 
@@ -90,8 +94,12 @@ class _OtpVerificationPageState extends ConsumerState<OtpVerificationPage>
   void dispose() {
     _resendTimer?.cancel();
     _animController.dispose();
-    _otpController.dispose();
-    _otpFocus.dispose();
+    for (final c in _otpControllers) {
+      c.dispose();
+    }
+    for (final f in _otpFocusNodes) {
+      f.dispose();
+    }
     super.dispose();
   }
 
@@ -120,7 +128,7 @@ class _OtpVerificationPageState extends ConsumerState<OtpVerificationPage>
   }
 
   Future<void> _verify() async {
-    final otp = _otpController.text.trim();
+    final otp = _otp.trim();
     if (otp.length != _otpLength) {
       _showMessage("Please enter the $_otpLength-digit OTP");
       return;
@@ -473,77 +481,100 @@ class _OtpVerificationPageState extends ConsumerState<OtpVerificationPage>
     );
   }
 
-  /// 6 visual boxes driven by a single hidden text field, so we avoid the
-  /// focus-juggling bugs of per-digit controllers.
+  /// 6 independently editable boxes — tap any box to correct its digit. Typing
+  /// advances focus, backspace on an empty box steps back, and pasting a full
+  /// code distributes it across all boxes.
   Widget _buildOtpBoxes() {
-    final code = _otpController.text;
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: List.generate(_otpLength, _buildOtpBox),
+    );
+  }
 
-    return GestureDetector(
-      onTap: () => _otpFocus.requestFocus(),
-      child: Stack(
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: List.generate(_otpLength, (index) {
-              final hasDigit = index < code.length;
-              final isActive = index == code.length && _otpFocus.hasFocus;
-              return Container(
-                width: 46,
-                height: 56,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF5F7FF),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: isActive
-                        ? primaryColor
-                        : (hasDigit
-                            ? primaryColor.withOpacity(0.4)
-                            : Colors.grey.shade200),
-                    width: isActive ? 1.8 : 1.2,
-                  ),
-                ),
-                child: Text(
-                  hasDigit ? code[index] : "",
-                  style: const TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.w700,
-                    color: darkBlue,
-                  ),
-                ),
-              );
-            }),
+  Widget _buildOtpBox(int index) {
+    final hasDigit = _otpControllers[index].text.isNotEmpty;
+
+    return SizedBox(
+      width: 46,
+      height: 56,
+      child: KeyboardListener(
+        focusNode: FocusNode(skipTraversal: true),
+        onKeyEvent: (event) {
+          // Step back to the previous box when backspace is pressed on an
+          // already-empty box.
+          if (event is KeyDownEvent &&
+              event.logicalKey == LogicalKeyboardKey.backspace &&
+              _otpControllers[index].text.isEmpty &&
+              index > 0) {
+            _otpControllers[index - 1].clear();
+            _otpFocusNodes[index - 1].requestFocus();
+            setState(() {});
+          }
+        },
+        child: TextField(
+          controller: _otpControllers[index],
+          focusNode: _otpFocusNodes[index],
+          keyboardType: TextInputType.number,
+          textAlign: TextAlign.center,
+          maxLength: 1,
+          showCursor: true,
+          cursorColor: primaryColor,
+          style: const TextStyle(
+            fontSize: 22,
+            fontWeight: FontWeight.w700,
+            color: darkBlue,
           ),
-          // Transparent capture field over the boxes.
-          Positioned.fill(
-            child: Opacity(
-              opacity: 0.0,
-              child: TextField(
-                controller: _otpController,
-                focusNode: _otpFocus,
-                keyboardType: TextInputType.number,
-                maxLength: _otpLength,
-                showCursor: false,
-                enableInteractiveSelection: false,
-                inputFormatters: [
-                  FilteringTextInputFormatter.digitsOnly,
-                  LengthLimitingTextInputFormatter(_otpLength),
-                ],
-                decoration: const InputDecoration(
-                  counterText: "",
-                  border: InputBorder.none,
-                ),
-                onChanged: (value) {
-                  setState(() {});
-                  if (value.length == _otpLength && !_verifying) {
-                    _verify();
-                  }
-                },
+          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+          decoration: InputDecoration(
+            counterText: "",
+            filled: true,
+            fillColor: const Color(0xFFF5F7FF),
+            contentPadding: EdgeInsets.zero,
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(
+                color: hasDigit
+                    ? primaryColor.withOpacity(0.4)
+                    : Colors.grey.shade200,
+                width: 1.2,
               ),
             ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: primaryColor, width: 1.8),
+            ),
           ),
-        ],
+          onChanged: (value) => _onDigitChanged(index, value),
+          onTap: () {
+            // Place the cursor after the digit so typing overwrites cleanly.
+            _otpControllers[index].selection = TextSelection.collapsed(
+              offset: _otpControllers[index].text.length,
+            );
+          },
+        ),
       ),
     );
+  }
+
+  void _onDigitChanged(int index, String value) {
+    // Handle a pasted / autofilled multi-digit string by spreading it out.
+    if (value.length > 1) {
+      final digits = value.replaceAll(RegExp(r'\D'), '');
+      for (var i = 0; i < _otpLength; i++) {
+        _otpControllers[i].text = i < digits.length ? digits[i] : '';
+      }
+      final next =
+          digits.length >= _otpLength ? _otpLength - 1 : digits.length;
+      _otpFocusNodes[next].requestFocus();
+    } else if (value.isNotEmpty && index < _otpLength - 1) {
+      _otpFocusNodes[index + 1].requestFocus();
+    }
+
+    setState(() {});
+
+    if (_otp.length == _otpLength && !_verifying) {
+      FocusScope.of(context).unfocus();
+      _verify();
+    }
   }
 }

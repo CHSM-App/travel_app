@@ -442,12 +442,16 @@ class _CustomerHistState extends ConsumerState<CustomerHist>
                         const Icon(Icons.phone_rounded,
                             size: 11, color: _textSecondary),
                         const SizedBox(width: 4),
-                        Text(
-                          customer.phone ?? '--',
-                          style: const TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: _textSecondary,
+                        Flexible(
+                          child: Text(
+                            customer.phone ?? '--',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: _textSecondary,
+                            ),
                           ),
                         ),
                         if (hasAddress) ...[
@@ -905,6 +909,7 @@ class _CustomerHistState extends ConsumerState<CustomerHist>
         key: ValueKey(filtered[i].tripId),
         bookinginfo: filtered[i],
         status: filtered[i].status ?? 0,
+        onTripUpdated: _load,
       ),
     );
   }

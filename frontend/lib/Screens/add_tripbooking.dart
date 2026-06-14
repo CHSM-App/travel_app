@@ -2264,11 +2264,19 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
               final lower = s.toLowerCase();
               return lower.contains(q) && lower != q;
             })
-            .take(8)
+            .take(5)
             .toList();
-        if (past.isNotEmpty) return past;
-        // No previous trip matches this route → fall back to Google Places.
-        return _placeSuggestions(raw);
+        // Always also fetch Google Places (debounced) and merge it in AFTER the
+        // history matches, so the operator sees both their own past routes and
+        // fresh map suggestions. Dedup case-insensitively, keeping history's
+        // copy when a place appears in both.
+        final places = await _placeSuggestions(raw);
+        final seen = past.map((s) => s.toLowerCase()).toSet();
+        final merged = <String>[...past];
+        for (final p in places) {
+          if (seen.add(p.toLowerCase())) merged.add(p);
+        }
+        return merged;
       },
       onSelected: (String selection) {
         ctrl.text = selection;
@@ -2305,6 +2313,12 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
                     const Divider(height: 1, color: _C.divider),
                 itemBuilder: (_, i) {
                   final option = displayedOptions.elementAt(i);
+                  // History routes get a clock icon; Google Places suggestions
+                  // get a map pin, so the operator can tell at a glance which
+                  // came from their own past trips.
+                  final isFromHistory = options.any(
+                    (o) => o.toLowerCase() == option.toLowerCase(),
+                  );
                   return InkWell(
                     onTap: () => onSelected(option),
                     child: Padding(
@@ -2314,10 +2328,12 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
                       ),
                       child: Row(
                         children: [
-                          const Icon(
-                            Icons.location_on_outlined,
+                          Icon(
+                            isFromHistory
+                                ? Icons.history_rounded
+                                : Icons.location_on_outlined,
                             size: 16,
-                            color: _C.text2,
+                            color: isFromHistory ? _C.accent : _C.text2,
                           ),
                           const SizedBox(width: 10),
                           Expanded(
@@ -2332,11 +2348,31 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
                               ),
                             ),
                           ),
-                          const Icon(
-                            Icons.north_west_rounded,
-                            size: 14,
-                            color: _C.text2,
-                          ),
+                          if (isFromHistory)
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 7,
+                                vertical: 2,
+                              ),
+                              decoration: BoxDecoration(
+                                color: _C.accentSoft,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: const Text(
+                                "Past trip",
+                                style: TextStyle(
+                                  fontSize: 9.5,
+                                  fontWeight: FontWeight.w700,
+                                  color: _C.accent,
+                                ),
+                              ),
+                            )
+                          else
+                            const Icon(
+                              Icons.north_west_rounded,
+                              size: 14,
+                              color: _C.text2,
+                            ),
                         ],
                       ),
                     ),

@@ -989,6 +989,7 @@ class _DriverHistoryPageState
               key: ValueKey(filtered[i].tripId),
               bookinginfo: filtered[i],
               status: filtered[i].status ?? 0,
+              onTripUpdated: _refreshTrips,
             ),
           ),
         );

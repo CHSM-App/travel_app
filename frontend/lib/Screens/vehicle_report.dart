@@ -22,13 +22,12 @@ class _C {
   static const text3 = Color(0xFFA3ABBD);
   static const divider = Color(0xFFE6EAF2);
   static const dividerLight = Color(0xFFF1F4F9);
-  static const green = Color(0xFF10B981);
-  static const greenSoft = Color(0xFFD1FAE5);
-  static const red = Color(0xFFEF4444);
-  static const redSoft = Color(0xFFFEE2E2);
-  static const orange = Color(0xFFF59E0B);
-  static const orangeSoft = Color(0xFFFEF3C7);
-  static const gold = Color(0xFFD4AF37);
+  // Semantic money colors — the ONLY accent colors that carry meaning on this
+  // page. Green = money in / profit; red = loss / money owed. Drawn from the
+  // app theme so they match the rest of the app. Every other figure is brand
+  // clay (structure) or neutral grey (descriptive).
+  static const green = AppColors.success;
+  static const red = AppColors.danger;
 }
 
 /// Date-window filter applied to the trip ledger. Defaults to "This Month"
@@ -1136,14 +1135,14 @@ class _VehicleRevenueCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(13),
           border: Border.all(
             color: isTopPerformer
-                ? _C.gold.withValues(alpha: 0.45)
+                ? _C.accent.withValues(alpha: 0.45)
                 : _C.divider,
             width: isTopPerformer ? 1.3 : 1,
           ),
           boxShadow: [
             BoxShadow(
-              color: (isTopPerformer ? _C.gold : _C.accent)
-                  .withValues(alpha: isTopPerformer ? 0.09 : 0.04),
+              color: _C.accent
+                  .withValues(alpha: isTopPerformer ? 0.10 : 0.04),
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),
@@ -1161,13 +1160,13 @@ class _VehicleRevenueCard extends StatelessWidget {
                     vertical: 2.5,
                   ),
                   decoration: BoxDecoration(
-                    color: _C.gold,
+                    color: _C.accent,
                     borderRadius: const BorderRadius.vertical(
                       bottom: Radius.circular(7),
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: _C.gold.withValues(alpha: 0.30),
+                        color: _C.accent.withValues(alpha: 0.30),
                         blurRadius: 4,
                         offset: const Offset(0, 1),
                       ),
@@ -1365,12 +1364,14 @@ class _VehicleRevenueCard extends StatelessWidget {
   Widget _statsRow(bool isProfit, double net) {
     return Row(
       children: [
+        // Revenue (money in) → green. Expense (operational out) → neutral.
+        // Net is the bottom line: green when in profit, red when at a loss —
+        // the one figure that tells the vehicle's story at a glance.
         Expanded(
           child: _miniStat(
             label: 'Revenue',
             value: '₹${_formatCompact(stat.revenue)}',
-            color: _C.green,
-            bg: _C.greenSoft,
+            state: _C.green,
             icon: Icons.south_west_rounded,
           ),
         ),
@@ -1379,8 +1380,6 @@ class _VehicleRevenueCard extends StatelessWidget {
           child: _miniStat(
             label: 'Expense',
             value: '₹${_formatCompact(stat.expense)}',
-            color: _C.orange,
-            bg: _C.orangeSoft,
             icon: Icons.north_east_rounded,
           ),
         ),
@@ -1389,8 +1388,7 @@ class _VehicleRevenueCard extends StatelessWidget {
           child: _miniStat(
             label: 'Net',
             value: '${isProfit ? '' : '−'}₹${_formatCompact(net.abs())}',
-            color: isProfit ? _C.green : _C.red,
-            bg: isProfit ? _C.greenSoft : _C.redSoft,
+            state: isProfit ? _C.green : _C.red,
             icon: isProfit
                 ? Icons.trending_up_rounded
                 : Icons.trending_down_rounded,
@@ -1400,19 +1398,25 @@ class _VehicleRevenueCard extends StatelessWidget {
     );
   }
 
+  /// A compact figure tile. [state] tints the tile only when the figure carries
+  /// meaning (green = money in / profit, red = loss). Left null, the tile is a
+  /// neutral grey so descriptive figures don't compete for attention.
   Widget _miniStat({
     required String label,
     required String value,
-    required Color color,
-    required Color bg,
     required IconData icon,
+    Color? state,
   }) {
+    final fg = state ?? _C.text2;
+    final valueColor = state ?? _C.text1;
+    final bg = state == null ? _C.surfaceLight : state.withValues(alpha: 0.10);
+    final border = state == null ? _C.divider : state.withValues(alpha: 0.22);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 6),
       decoration: BoxDecoration(
         color: bg,
         borderRadius: BorderRadius.circular(9),
-        border: Border.all(color: color.withValues(alpha: 0.15)),
+        border: Border.all(color: border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1420,15 +1424,19 @@ class _VehicleRevenueCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(icon, size: 10, color: color),
+              Icon(icon, size: 10, color: fg),
               const SizedBox(width: 3),
-              Text(
-                label,
-                style: TextStyle(
-                  color: color,
-                  fontSize: 9,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 0.2,
+              Flexible(
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: fg,
+                    fontSize: 9,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 0.2,
+                  ),
                 ),
               ),
             ],
@@ -1439,7 +1447,7 @@ class _VehicleRevenueCard extends StatelessWidget {
             style: TextStyle(
               fontSize: 12.5,
               fontWeight: FontWeight.w800,
-              color: color,
+              color: valueColor,
               letterSpacing: -0.3,
               height: 1.1,
             ),
@@ -1488,7 +1496,7 @@ class _VehicleRevenueCard extends StatelessWidget {
   Widget _maintenanceNote() {
     return Row(
       children: [
-        const Icon(Icons.build_rounded, size: 10, color: _C.orange),
+        const Icon(Icons.build_rounded, size: 10, color: _C.text2),
         const SizedBox(width: 5),
         Expanded(
           child: Text(
@@ -1546,7 +1554,7 @@ class _ExpenseShareBar extends StatelessWidget {
                     widthFactor: w,
                     child: Container(
                       height: 5,
-                      color: isHeavy ? _C.red : _C.orange,
+                      color: isHeavy ? _C.red : _C.accent,
                     ),
                   ),
                 ),

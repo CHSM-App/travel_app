@@ -24,11 +24,12 @@ class _C {
   static const text3 = Color(0xFFA3ABBD);
   static const divider = Color(0xFFE6EAF2);
   static const dividerLight = Color(0xFFF1F4F9);
-  static const green = Color(0xFF10B981);
-  static const greenSoft = Color(0xFFD1FAE5);
-  static const orange = Color(0xFFF59E0B);
-  static const orangeSoft = Color(0xFFFEF3C7);
-  static const gold = Color(0xFFD4AF37);
+  // Semantic money colors — the ONLY accent colors that carry meaning on this
+  // page. Green = money received (paid); red = money owed (pending dues). Drawn
+  // from the app theme so they match the rest of the app. Every other figure is
+  // brand clay (structure) or neutral grey (descriptive).
+  static const green = AppColors.success;
+  static const red = AppColors.danger;
 }
 
 /// Date-window filter for the customer ledger. Defaults to "Month" — the cadence
@@ -1105,14 +1106,14 @@ class _CustomerRevenueCard extends StatelessWidget {
             borderRadius: BorderRadius.circular(13),
             border: Border.all(
               color: isTopPerformer
-                  ? _C.gold.withValues(alpha: 0.45)
+                  ? _C.accent.withValues(alpha: 0.45)
                   : _C.divider,
               width: isTopPerformer ? 1.3 : 1,
             ),
             boxShadow: [
               BoxShadow(
-                color: (isTopPerformer ? _C.gold : _C.accent)
-                    .withValues(alpha: isTopPerformer ? 0.09 : 0.04),
+                color: _C.accent
+                    .withValues(alpha: isTopPerformer ? 0.10 : 0.04),
                 blurRadius: 8,
                 offset: const Offset(0, 2),
               ),
@@ -1130,13 +1131,13 @@ class _CustomerRevenueCard extends StatelessWidget {
                       vertical: 2.5,
                     ),
                     decoration: BoxDecoration(
-                      color: _C.gold,
+                      color: _C.accent,
                       borderRadius: const BorderRadius.vertical(
                         bottom: Radius.circular(7),
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: _C.gold.withValues(alpha: 0.30),
+                          color: _C.accent.withValues(alpha: 0.30),
                           blurRadius: 4,
                           offset: const Offset(0, 1),
                         ),
@@ -1307,14 +1308,17 @@ class _CustomerRevenueCard extends StatelessWidget {
   }
 
   Widget _statsRow() {
+    // Received (money in / paid) → green. Pending dues are what the operator
+    // chases, so they turn red the moment any money is owed; a zero balance
+    // stays neutral grey so a fully-settled customer reads as calm.
+    final hasDue = stat.pending > 0;
     return Row(
       children: [
         Expanded(
           child: _miniStat(
             label: 'Received',
             value: '₹${_formatCompact(stat.received)}',
-            color: _C.green,
-            bg: _C.greenSoft,
+            state: _C.green,
             icon: Icons.south_west_rounded,
           ),
         ),
@@ -1323,8 +1327,7 @@ class _CustomerRevenueCard extends StatelessWidget {
           child: _miniStat(
             label: 'Pending',
             value: '₹${_formatCompact(stat.pending)}',
-            color: _C.orange,
-            bg: _C.orangeSoft,
+            state: hasDue ? _C.red : null,
             icon: Icons.pending_actions_rounded,
           ),
         ),
@@ -1332,19 +1335,25 @@ class _CustomerRevenueCard extends StatelessWidget {
     );
   }
 
+  /// A compact figure tile. [state] tints the tile only when the figure carries
+  /// meaning (green = money in / paid, red = money owed). Left null, the tile is
+  /// a neutral grey so settled / descriptive figures don't compete for attention.
   Widget _miniStat({
     required String label,
     required String value,
-    required Color color,
-    required Color bg,
     required IconData icon,
+    Color? state,
   }) {
+    final fg = state ?? _C.text2;
+    final valueColor = state ?? _C.text1;
+    final bg = state == null ? _C.surfaceLight : state.withValues(alpha: 0.10);
+    final border = state == null ? _C.divider : state.withValues(alpha: 0.22);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 6),
       decoration: BoxDecoration(
         color: bg,
         borderRadius: BorderRadius.circular(9),
-        border: Border.all(color: color.withValues(alpha: 0.15)),
+        border: Border.all(color: border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1352,7 +1361,7 @@ class _CustomerRevenueCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(icon, size: 10, color: color),
+              Icon(icon, size: 10, color: fg),
               const SizedBox(width: 3),
               Flexible(
                 child: Text(
@@ -1360,7 +1369,7 @@ class _CustomerRevenueCard extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    color: color,
+                    color: fg,
                     fontSize: 9,
                     fontWeight: FontWeight.w800,
                     letterSpacing: 0.2,
@@ -1375,7 +1384,7 @@ class _CustomerRevenueCard extends StatelessWidget {
             style: TextStyle(
               fontSize: 12.5,
               fontWeight: FontWeight.w800,
-              color: color,
+              color: valueColor,
               letterSpacing: -0.3,
               height: 1.1,
             ),

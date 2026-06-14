@@ -1230,7 +1230,13 @@ class _VehiclePageState extends ConsumerState<VehiclePage>
         children: [
           Icon(icon, size: 15),
           const SizedBox(width: 6),
-          Text(label),
+          Flexible(
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
           if (count != null) ...[
             const SizedBox(width: 6),
             Container(

@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:travel_agency_app/core/storage/constant.dart';
+import 'package:travel_agency_app/core/storage/token_storage.dart';
 
 /// Google Places autocomplete, proxied through OUR backend so the Google API
 /// key stays on the server (.env) — never shipped in the app. Mirrors
@@ -11,6 +12,15 @@ import 'package:travel_agency_app/core/storage/constant.dart';
 /// or Google's own shape:
 ///   { "predictions": [ { "description": "Panaji, Goa, India" }, ... ] }
 class PlacesService {
+  /// Builds the Authorization header from the stored access token, mirroring
+  /// the Dio interceptor. Returns an empty map when no token is stored.
+  static Future<Map<String, String>> _authHeaders() async {
+    final tokens = await TokenStorage.getTokens();
+    final token = tokens?['accessToken'];
+    if (token == null || token.isEmpty) return const {};
+    return {'Authorization': 'Bearer $token'};
+  }
+
   /// Returns place-description suggestions for [input]. Empty list for short
   /// queries, network errors, or non-200 responses — callers fall back to their
   /// own (e.g. recent-location) suggestions so the field never breaks.
@@ -22,7 +32,10 @@ class PlacesService {
       final url = Uri.parse('${baseUrl}users/placeAutocomplete').replace(
         queryParameters: {'input': q},
       );
-      final res = await http.get(url);
+      // `/users/*` is auth-protected on the backend, so the bearer token must be
+      // attached manually here — unlike the Dio client, the bare http package
+      // has no interceptor to inject it.
+      final res = await http.get(url, headers: await _authHeaders());
       if (res.statusCode != 200) return const [];
 
       final decoded = jsonDecode(res.body);

@@ -24,9 +24,11 @@ class _C {
   static const text3 = Color(0xFFA3ABBD);
   static const divider = Color(0xFFE6EAF2);
   static const dividerLight = Color(0xFFF1F4F9);
-  static const green = Color(0xFF10B981);
-  static const greenSoft = Color(0xFFD1FAE5);
-  static const gold = Color(0xFFD4AF37);
+  // Semantic money color — the ONLY accent that carries meaning on this page.
+  // Green = revenue the driver brought in (money in). Driver pay is an
+  // operational outflow shown in neutral grey. Drawn from the app theme so it
+  // matches the rest of the app; structure stays brand clay.
+  static const green = AppColors.success;
 }
 
 /// Date-window filter for the driver ledger. Defaults to "Month" — the cadence
@@ -1091,14 +1093,14 @@ class _DriverRevenueCard extends StatelessWidget {
             borderRadius: BorderRadius.circular(13),
             border: Border.all(
               color: isTopPerformer
-                  ? _C.gold.withValues(alpha: 0.45)
+                  ? _C.accent.withValues(alpha: 0.45)
                   : _C.divider,
               width: isTopPerformer ? 1.3 : 1,
             ),
             boxShadow: [
               BoxShadow(
-                color: (isTopPerformer ? _C.gold : _C.accent)
-                    .withValues(alpha: isTopPerformer ? 0.09 : 0.04),
+                color: _C.accent
+                    .withValues(alpha: isTopPerformer ? 0.10 : 0.04),
                 blurRadius: 8,
                 offset: const Offset(0, 2),
               ),
@@ -1116,13 +1118,13 @@ class _DriverRevenueCard extends StatelessWidget {
                       vertical: 2.5,
                     ),
                     decoration: BoxDecoration(
-                      color: _C.gold,
+                      color: _C.accent,
                       borderRadius: const BorderRadius.vertical(
                         bottom: Radius.circular(7),
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: _C.gold.withValues(alpha: 0.30),
+                          color: _C.accent.withValues(alpha: 0.30),
                           blurRadius: 4,
                           offset: const Offset(0, 1),
                         ),
@@ -1293,14 +1295,16 @@ class _DriverRevenueCard extends StatelessWidget {
   }
 
   Widget _statsRow() {
+    // Revenue (money the driver brought in) → green. Driver pay is an
+    // operational outflow, so it stays neutral grey rather than competing for
+    // attention with its own color.
     return Row(
       children: [
         Expanded(
           child: _miniStat(
             label: 'Revenue',
             value: '₹${_formatCompact(stat.received)}',
-            color: _C.green,
-            bg: _C.greenSoft,
+            state: _C.green,
             icon: Icons.south_west_rounded,
           ),
         ),
@@ -1309,8 +1313,6 @@ class _DriverRevenueCard extends StatelessWidget {
           child: _miniStat(
             label: 'Driver Pay',
             value: '₹${_formatCompact(stat.driverPay)}',
-            color: _C.accent,
-            bg: _C.accentSoft,
             icon: Icons.payments_rounded,
           ),
         ),
@@ -1318,19 +1320,25 @@ class _DriverRevenueCard extends StatelessWidget {
     );
   }
 
+  /// A compact figure tile. [state] tints the tile only when the figure carries
+  /// meaning (green = money in). Left null, the tile is a neutral grey so
+  /// descriptive figures don't compete for attention.
   Widget _miniStat({
     required String label,
     required String value,
-    required Color color,
-    required Color bg,
     required IconData icon,
+    Color? state,
   }) {
+    final fg = state ?? _C.text2;
+    final valueColor = state ?? _C.text1;
+    final bg = state == null ? _C.surfaceLight : state.withValues(alpha: 0.10);
+    final border = state == null ? _C.divider : state.withValues(alpha: 0.22);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 6),
       decoration: BoxDecoration(
         color: bg,
         borderRadius: BorderRadius.circular(9),
-        border: Border.all(color: color.withValues(alpha: 0.15)),
+        border: Border.all(color: border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1338,7 +1346,7 @@ class _DriverRevenueCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(icon, size: 10, color: color),
+              Icon(icon, size: 10, color: fg),
               const SizedBox(width: 3),
               Flexible(
                 child: Text(
@@ -1346,7 +1354,7 @@ class _DriverRevenueCard extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    color: color,
+                    color: fg,
                     fontSize: 9,
                     fontWeight: FontWeight.w800,
                     letterSpacing: 0.2,
@@ -1361,7 +1369,7 @@ class _DriverRevenueCard extends StatelessWidget {
             style: TextStyle(
               fontSize: 12.5,
               fontWeight: FontWeight.w800,
-              color: color,
+              color: valueColor,
               letterSpacing: -0.3,
               height: 1.1,
             ),

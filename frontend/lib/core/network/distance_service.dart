@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:travel_agency_app/core/storage/constant.dart';
+import 'package:travel_agency_app/core/storage/token_storage.dart';
 
 /// What our backend returns for a route lookup.
 class DistanceResult {
@@ -33,7 +34,16 @@ class DistanceService {
       },
     );
 
-    final res = await http.get(url);
+    // `/users/*` is auth-protected; attach the bearer token manually (the bare
+    // http package has no Dio interceptor to inject it).
+    final tokens = await TokenStorage.getTokens();
+    final token = tokens?['accessToken'];
+    final res = await http.get(
+      url,
+      headers: (token != null && token.isNotEmpty)
+          ? {'Authorization': 'Bearer $token'}
+          : null,
+    );
     if (res.statusCode != 200) return null;
 
     final data = jsonDecode(res.body) as Map<String, dynamic>;

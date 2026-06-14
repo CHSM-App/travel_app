@@ -475,12 +475,16 @@ Future<void> _toggleVehicleStatus() async {
           children: [
             Icon(icon, size: 11, color: Colors.white.withOpacity(0.85)),
             const SizedBox(width: 4),
-            Text(
-              label,
-              style: TextStyle(
-                color: Colors.white.withOpacity(0.82),
-                fontSize: 10,
-                fontWeight: FontWeight.w600,
+            Flexible(
+              child: Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: Colors.white.withOpacity(0.82),
+                  fontSize: 10,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
           ],
@@ -1620,6 +1624,17 @@ class _TripsTabState extends ConsumerState<_TripsTab> {
                           key: ValueKey(filtered[i].tripId),
                           bookinginfo: filtered[i],
                           status: filtered[i].status ?? 0,
+                          onTripUpdated: () async {
+                            final aid =
+                                ref.read(loginViewModelProvider).agencyId ?? '';
+                            if (aid.isNotEmpty) {
+                              ref.invalidate(vehicleReportLedgerProvider(aid));
+                            }
+                            await ref
+                                .read(addVehicleViewModelProvider.notifier)
+                                .getTripsByVehicle(
+                                    widget.vehicle.vehicleId ?? 0);
+                          },
                         ),
                       ),
                     ),
