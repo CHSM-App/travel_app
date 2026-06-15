@@ -1463,15 +1463,20 @@ class _TripsTab extends ConsumerStatefulWidget {
 
 class _TripsTabState extends ConsumerState<_TripsTab> {
   _VehicleTripFilter _filter = _VehicleTripFilter.all;
+  TripPaymentFilter _payment = TripPaymentFilter.all;
 
-  // Status dropdown + date filter (from the parent) + search toggle, mirroring
-  // TripPage / CustomerHist / DriverHistory.
+  // Always-visible search bar + single filter button that opens the shared
+  // TripPage-style filter sheet, mirroring TripPage / CustomerHist /
+  // DriverHistory. The date range is owned by the parent (shared across tabs).
   static const Duration _searchDebounce = Duration(milliseconds: 250);
   final TextEditingController _searchCtrl = TextEditingController();
-  final FocusNode _searchFocus = FocusNode();
   Timer? _debounceTimer;
-  bool _searchVisible = false;
   String _query = '';
+
+  // Index of the "Completed" status — the only status for which the payment
+  // filter is meaningful, matching TripPage.
+  static final int _completedIndex =
+      _VehicleTripFilter.values.indexOf(_VehicleTripFilter.completed);
 
   @override
   void initState() {
@@ -1487,7 +1492,6 @@ class _TripsTabState extends ConsumerState<_TripsTab> {
   void dispose() {
     _debounceTimer?.cancel();
     _searchCtrl.dispose();
-    _searchFocus.dispose();
     super.dispose();
   }
 
@@ -1501,21 +1505,35 @@ class _TripsTabState extends ConsumerState<_TripsTab> {
     });
   }
 
-  void _toggleSearch() {
+  /// Number of non-default filters active — drives the filter button's badge.
+  /// The date range lives on the parent (shared across tabs).
+  int get _activeFilterCount =>
+      (_filter != _VehicleTripFilter.all ? 1 : 0) +
+      (_payment != TripPaymentFilter.all ? 1 : 0) +
+      (widget.range != TripDateRange.all ? 1 : 0);
+
+  /// Opens the shared TripPage-style filter sheet and commits the result. The
+  /// date range is forwarded to the parent so the P&L summary and sibling tabs
+  /// stay in sync.
+  Future<void> _openFilterSheet() async {
+    final result = await showTripFilterSheet(
+      context: context,
+      statuses: [
+        for (final f in _VehicleTripFilter.values)
+          TripStatusOption(f.label, f.icon),
+      ],
+      statusIndex: _filter.index,
+      payment: _payment,
+      range: widget.range,
+      customRange: widget.customRange,
+      completedIndex: _completedIndex,
+    );
+    if (result == null || !mounted) return;
     setState(() {
-      _searchVisible = !_searchVisible;
-      if (!_searchVisible) {
-        _debounceTimer?.cancel();
-        _searchCtrl.clear();
-        _query = '';
-        _searchFocus.unfocus();
-      }
+      _filter = _VehicleTripFilter.values[result.statusIndex];
+      _payment = result.payment;
     });
-    if (_searchVisible) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) _searchFocus.requestFocus();
-      });
-    }
+    widget.onRangeChanged(result.range, result.customRange);
   }
 
   @override
@@ -1609,7 +1627,12 @@ class _TripsTabState extends ConsumerState<_TripsTab> {
                   .matches(tripSortKey(t), now, customRange: widget.customRange);
           return inPeriod && tripMatchesQuery(t, _query);
         }).toList();
-        final filtered = base.where((t) => _filter.matches(t)).toList();
+        // Status narrows first; the payment filter then narrows the completed
+        // bucket (it stays "All" for every other status, so it's a no-op there).
+        final filtered = base
+            .where((t) =>
+                _filter.matches(t) && _payment.matches(t.payment_status))
+            .toList();
 
         return Column(
           children: [
@@ -1648,7 +1671,7 @@ class _TripsTabState extends ConsumerState<_TripsTab> {
     );
   }
 
-  // ── Filter row: status dropdown + date filter + search toggle ───────────
+  // ── Filter row: always-visible search bar + single filter button ────────
   Widget _buildFilterRow() {
     return Container(
       decoration: const BoxDecoration(
@@ -1656,116 +1679,20 @@ class _TripsTabState extends ConsumerState<_TripsTab> {
         border: Border(bottom: BorderSide(color: _C.divider)),
       ),
       padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
-      child: AnimatedSwitcher(
-        duration: const Duration(milliseconds: 180),
-        transitionBuilder: (child, anim) =>
-            FadeTransition(opacity: anim, child: child),
-        child: _searchVisible ? _buildSearchRow() : _buildPrimaryRow(),
-      ),
-    );
-  }
-
-  Widget _buildPrimaryRow() {
-    return Row(
-      key: const ValueKey('primary'),
-      children: [
-        _buildStatusDropdown(),
-        const Spacer(),
-        TripDateFilterButton(
-          range: widget.range,
-          customRange: widget.customRange,
-          onChanged: widget.onRangeChanged,
-        ),
-        const SizedBox(width: 2),
-        IconButton(
-          icon: Icon(Icons.search_rounded, color: _C.text2, size: 22),
-          tooltip: 'Search',
-          onPressed: _toggleSearch,
-        ),
-      ],
-    );
-  }
-
-  Widget _buildSearchRow() {
-    return Row(
-      key: const ValueKey('search'),
-      children: [
-        IconButton(
-          icon: Icon(Icons.arrow_back_rounded, color: _C.text2),
-          onPressed: _toggleSearch,
-        ),
-        Expanded(
-          child: TripSearchField(
-            controller: _searchCtrl,
-            focusNode: _searchFocus,
-            onChanged: _onSearchChanged,
+      child: Row(
+        children: [
+          Expanded(
+            child: TripSearchBar(
+              controller: _searchCtrl,
+              onChanged: _onSearchChanged,
+            ),
           ),
-        ),
-      ],
-    );
-  }
-
-  // Status filter as a dropdown, styled like TripPage's status dropdown.
-  Widget _buildStatusDropdown() {
-    return Container(
-      height: 40,
-      padding: const EdgeInsets.symmetric(horizontal: 10),
-      decoration: BoxDecoration(
-        color: AppColors.brandPrimary,
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: DropdownButtonHideUnderline(
-        child: DropdownButton<_VehicleTripFilter>(
-          value: _filter,
-          isDense: true,
-          icon: const Icon(
-            Icons.keyboard_arrow_down_rounded,
-            color: Colors.white,
-            size: 20,
+          const SizedBox(width: 8),
+          TripFilterButton(
+            activeCount: _activeFilterCount,
+            onTap: _openFilterSheet,
           ),
-          dropdownColor: AppColors.brandPrimary,
-          borderRadius: BorderRadius.circular(10),
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
-          ),
-          selectedItemBuilder: (context) => [
-            for (final f in _VehicleTripFilter.values)
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(Icons.tune_rounded, size: 15, color: Colors.white),
-                  const SizedBox(width: 6),
-                  Text(
-                    'Status: ${f.label}',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ),
-          ],
-          items: [
-            for (final f in _VehicleTripFilter.values)
-              DropdownMenuItem(
-                value: f,
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(f.icon, size: 16, color: Colors.white),
-                    const SizedBox(width: 8),
-                    Text(f.label),
-                  ],
-                ),
-              ),
-          ],
-          onChanged: (value) {
-            if (value != null) setState(() => _filter = value);
-          },
-        ),
+        ],
       ),
     );
   }

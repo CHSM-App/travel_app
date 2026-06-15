@@ -15,23 +15,35 @@ import 'package:travel_agency_app/domain/models/booking_info.dart';
 import 'package:travel_agency_app/domain/models/customers.dart';
 import 'package:travel_agency_app/presentation/providers/viewmodel_provider.dart';
 
-/// Per-customer trip status filter. Status codes mirror those used in
-/// [TripCard]: 1=Active, 2=Unpaid, 3=Upcoming, 4=Paid, 5=Cancelled.
+/// Per-customer trip status filter, mirroring [TripPage]'s status axis.
+/// Status codes mirror those used in [TripCard]: 1=Active, 2=Unpaid,
+/// 3=Upcoming, 4=Paid, 5=Cancelled. "Completed" merges the unpaid (2) and
+/// fully paid (4) buckets; the [TripPaymentFilter] then narrows it.
 enum _TripStatusFilter {
-  all('All', Icons.list_alt_rounded, null),
-  active('Active', Icons.directions_car_rounded, 1),
-  upcoming('Upcoming', Icons.schedule_rounded, 3),
-  unpaid('Unpaid', Icons.payment_rounded, 2),
-  paid('Paid', Icons.check_circle_rounded, 4),
-  cancelled('Cancelled', Icons.cancel_rounded, 5);
+  all('All', Icons.list_alt_rounded),
+  active('Active', Icons.directions_car_rounded),
+  upcoming('Upcoming', Icons.schedule_rounded),
+  completed('Completed', Icons.task_alt_rounded),
+  cancelled('Cancelled', Icons.cancel_rounded);
 
-  const _TripStatusFilter(this.label, this.icon, this.status);
+  const _TripStatusFilter(this.label, this.icon);
   final String label;
   final IconData icon;
-  final int? status;
 
-  bool matches(BookingInfo trip) =>
-      status == null || trip.status == status;
+  bool matches(BookingInfo trip) {
+    switch (this) {
+      case _TripStatusFilter.all:
+        return true;
+      case _TripStatusFilter.active:
+        return trip.status == 1;
+      case _TripStatusFilter.upcoming:
+        return trip.status == 3;
+      case _TripStatusFilter.completed:
+        return trip.status == 2 || trip.status == 4;
+      case _TripStatusFilter.cancelled:
+        return trip.status == 5;
+    }
+  }
 }
 
 class CustomerHist extends ConsumerStatefulWidget {
@@ -68,17 +80,21 @@ class _CustomerHistState extends ConsumerState<CustomerHist>
   );
 
   _TripStatusFilter _filter = _TripStatusFilter.all;
+  TripPaymentFilter _payment = TripPaymentFilter.all;
 
   // Date-range + free-text search applied on top of the status filter,
-  // mirroring TripPage. Search is a toggled icon → field with a debounced query.
+  // mirroring TripPage's always-visible search bar + filter sheet.
   static const Duration _searchDebounce = Duration(milliseconds: 250);
   TripDateRange _range = TripDateRange.all;
   DateTimeRange? _customRange;
   final TextEditingController _searchCtrl = TextEditingController();
-  final FocusNode _searchFocus = FocusNode();
   Timer? _debounceTimer;
-  bool _searchVisible = false;
   String _query = '';
+
+  // Index of the "Completed" status — the only status for which the payment
+  // filter is meaningful, matching TripPage.
+  static final int _completedIndex =
+      _TripStatusFilter.values.indexOf(_TripStatusFilter.completed);
 
   // True while a PDF/Excel file is being generated for this customer.
   bool _exporting = false;
@@ -115,7 +131,6 @@ class _CustomerHistState extends ConsumerState<CustomerHist>
     _entryController.dispose();
     _debounceTimer?.cancel();
     _searchCtrl.dispose();
-    _searchFocus.dispose();
     super.dispose();
   }
 
@@ -129,21 +144,33 @@ class _CustomerHistState extends ConsumerState<CustomerHist>
     });
   }
 
-  void _toggleSearch() {
+  /// Number of non-default filters active — drives the filter button's badge.
+  int get _activeFilterCount =>
+      (_filter != _TripStatusFilter.all ? 1 : 0) +
+      (_payment != TripPaymentFilter.all ? 1 : 0) +
+      (_range != TripDateRange.all ? 1 : 0);
+
+  /// Opens the shared TripPage-style filter sheet and commits the result.
+  Future<void> _openFilterSheet() async {
+    final result = await showTripFilterSheet(
+      context: context,
+      statuses: [
+        for (final f in _TripStatusFilter.values)
+          TripStatusOption(f.label, f.icon),
+      ],
+      statusIndex: _filter.index,
+      payment: _payment,
+      range: _range,
+      customRange: _customRange,
+      completedIndex: _completedIndex,
+    );
+    if (result == null || !mounted) return;
     setState(() {
-      _searchVisible = !_searchVisible;
-      if (!_searchVisible) {
-        _debounceTimer?.cancel();
-        _searchCtrl.clear();
-        _query = '';
-        _searchFocus.unfocus();
-      }
+      _filter = _TripStatusFilter.values[result.statusIndex];
+      _payment = result.payment;
+      _range = result.range;
+      _customRange = result.customRange;
     });
-    if (_searchVisible) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) _searchFocus.requestFocus();
-      });
-    }
   }
 
   Future<void> _load() async {
@@ -328,10 +355,11 @@ class _CustomerHistState extends ConsumerState<CustomerHist>
         .toList();
   }
 
-  List<BookingInfo> _applyFilter(List<BookingInfo> trips) =>
-      _filter == _TripStatusFilter.all
-          ? trips
-          : trips.where(_filter.matches).toList();
+  // Status narrows first; the payment filter then narrows the completed bucket
+  // (it stays "All" for every other status, so it's a no-op there).
+  List<BookingInfo> _applyFilter(List<BookingInfo> trips) => trips
+      .where((t) => _filter.matches(t) && _payment.matches(t.payment_status))
+      .toList();
 
   String _getInitials(String? name) {
     if (name == null || name.trim().isEmpty) return '?';
@@ -914,8 +942,8 @@ class _CustomerHistState extends ConsumerState<CustomerHist>
     );
   }
 
-  // Filter row: status dropdown + date filter + search icon, which toggles to
-  // a back button + search field. Mirrors TripPage.
+  // Filter row: always-visible search bar + single filter button (with
+  // active-count badge) that opens the shared TripPage-style filter sheet.
   Widget _buildFilterRow() {
     return Container(
       decoration: const BoxDecoration(
@@ -923,122 +951,20 @@ class _CustomerHistState extends ConsumerState<CustomerHist>
         border: Border(bottom: BorderSide(color: _divider)),
       ),
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-      child: AnimatedSwitcher(
-        duration: const Duration(milliseconds: 180),
-        transitionBuilder: (child, anim) =>
-            FadeTransition(opacity: anim, child: child),
-        child: _searchVisible ? _buildSearchRow() : _buildPrimaryRow(),
-      ),
-    );
-  }
-
-  Widget _buildPrimaryRow() {
-    return Row(
-      key: const ValueKey('primary'),
-      children: [
-        _buildStatusDropdown(),
-        const Spacer(),
-        TripDateFilterButton(
-          range: _range,
-          customRange: _customRange,
-          onChanged: (r, c) => setState(() {
-            _range = r;
-            _customRange = c;
-          }),
-        ),
-        const SizedBox(width: 2),
-        IconButton(
-          icon: const Icon(Icons.search_rounded,
-              color: _textSecondary, size: 22),
-          tooltip: 'Search',
-          onPressed: _toggleSearch,
-        ),
-      ],
-    );
-  }
-
-  Widget _buildSearchRow() {
-    return Row(
-      key: const ValueKey('search'),
-      children: [
-        IconButton(
-          icon: const Icon(Icons.arrow_back_rounded, color: _textSecondary),
-          onPressed: _toggleSearch,
-        ),
-        Expanded(
-          child: TripSearchField(
-            controller: _searchCtrl,
-            focusNode: _searchFocus,
-            onChanged: _onSearchChanged,
+      child: Row(
+        children: [
+          Expanded(
+            child: TripSearchBar(
+              controller: _searchCtrl,
+              onChanged: _onSearchChanged,
+            ),
           ),
-        ),
-      ],
-    );
-  }
-
-  // Status filter as a dropdown, styled like TripPage's status dropdown.
-  Widget _buildStatusDropdown() {
-    return Container(
-      height: 40,
-      padding: const EdgeInsets.symmetric(horizontal: 10),
-      decoration: BoxDecoration(
-        color: AppColors.brandPrimary,
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: DropdownButtonHideUnderline(
-        child: DropdownButton<_TripStatusFilter>(
-          value: _filter,
-          isDense: true,
-          icon: const Icon(
-            Icons.keyboard_arrow_down_rounded,
-            color: Colors.white,
-            size: 20,
+          const SizedBox(width: 8),
+          TripFilterButton(
+            activeCount: _activeFilterCount,
+            onTap: _openFilterSheet,
           ),
-          dropdownColor: AppColors.brandPrimary,
-          borderRadius: BorderRadius.circular(10),
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
-          ),
-          // Prefix the closed state with "Status:" so it reads as a filter,
-          // matching TripPage.
-          selectedItemBuilder: (context) => [
-            for (final f in _TripStatusFilter.values)
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(Icons.tune_rounded, size: 15, color: Colors.white),
-                  const SizedBox(width: 6),
-                  Text(
-                    'Status: ${f.label}',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ),
-          ],
-          items: [
-            for (final f in _TripStatusFilter.values)
-              DropdownMenuItem(
-                value: f,
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(f.icon, size: 16, color: Colors.white),
-                    const SizedBox(width: 8),
-                    Text(f.label),
-                  ],
-                ),
-              ),
-          ],
-          onChanged: (value) {
-            if (value != null) setState(() => _filter = value);
-          },
-        ),
+        ],
       ),
     );
   }
