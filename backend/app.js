@@ -14,6 +14,7 @@ const fileAccess = require('./routes/fileAccess');
 const loginRouter = require('./routes/login');
 const uploadRouter = require('./routes/uploadfile');
 const indexRouter = require('./routes/index');
+const healthRouter = require('./routes/health');
 // Auth middleware
 const protect = require('./routes/middleware/protect');
 // DB
@@ -44,6 +45,7 @@ app.use(express.json());
 ========================= */
 
 // Public routes — no token required
+app.use('/health', healthRouter);
 app.use('/login', loginRouter);
 
 // Public self-registration: AddAdmin must be reachable before the user has a
@@ -58,7 +60,15 @@ app.use('/insert', (req, res, next) => {
 // Protected routes — valid JWT access token required
 app.use('/users',   protect, usersRouter);
 app.use('/file',    protect, fileAccess);
-app.use('/upload',  protect, uploadRouter);
+
+// Uploads: POSTs (creating files) require a valid token. GET (serving files)
+// is public so Image.network can render them without an auth header — safe
+// because filenames carry a 128-bit random token, making URLs unguessable.
+app.use('/upload', (req, res, next) => {
+  if (req.method === 'GET') return next();
+  return protect(req, res, next);
+}, uploadRouter);
+
 app.use('/index',   protect, indexRouter);
 
 /* =========================
@@ -124,8 +134,8 @@ app.use((err, req, res, next) => {
 /* =========================
    SERVER START
 ========================= */
-const PORT = process.env.PORT || 8000;
-app.listen(PORT, () => {
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Server running on port ${PORT}`);
 });
 
