@@ -124,6 +124,52 @@ class TripCard extends ConsumerWidget {
     return "Paid";
   }
 
+  // Trip lifecycle status derived from bookinginfo.status — mirrors the pill
+  // shown in the detail sheet header (1=Active, 2=Unpaid, 3=Upcoming,
+  // 4=Complete, 5=Cancelled).
+  ({Color color, IconData icon, String label}) get _tripStatusStyle {
+    switch (bookinginfo.status) {
+      case 1:
+        return (
+          color: const Color.fromARGB(255, 76, 137, 235),
+          icon: Icons.directions_car,
+          label: "Active",
+        );
+      case 2:
+        // Trip is finished; payment state is shown by the separate payment
+        // badge, so the lifecycle badge reads "Complete" (same as status 4).
+        return (
+          color: const Color(0xFF2ECC71),
+          icon: Icons.check_circle,
+          label: "Complete",
+        );
+      case 3:
+        return (
+          color: const Color(0xFF9B6DE0),
+          icon: Icons.upcoming_outlined,
+          label: "Upcoming",
+        );
+      case 4:
+        return (
+          color: const Color(0xFF2ECC71),
+          icon: Icons.check_circle,
+          label: "Complete",
+        );
+      case 5:
+        return (
+          color: const Color.fromARGB(255, 231, 95, 107),
+          icon: Icons.cancel_outlined,
+          label: "Cancelled",
+        );
+      default:
+        return (
+          color: const Color(0xFFADB5BD),
+          icon: Icons.info_outline,
+          label: "Unknown",
+        );
+    }
+  }
+
   /// Public entry point so other screens (e.g. the Transactions daybook) can
   /// open this trip's detail sheet without rendering/tapping the card itself.
   void showDetailSheet(BuildContext context, WidgetRef ref) =>
@@ -791,17 +837,15 @@ class TripCard extends ConsumerWidget {
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
                                     Icon(pillIcon, size: 11, color: pillColor),
-                                    if (!isSmall) ...[
-                                      const SizedBox(width: 4),
-                                      Text(
-                                        pillLabel,
-                                        style: TextStyle(
-                                          color: pillColor,
-                                          fontWeight: FontWeight.w600,
-                                          fontSize: 11,
-                                        ),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      pillLabel,
+                                      style: TextStyle(
+                                        color: pillColor,
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 11,
                                       ),
-                                    ],
+                                    ),
                                   ],
                                 ),
                               );
@@ -1623,7 +1667,10 @@ class TripCard extends ConsumerWidget {
                                           ),
                                           onPressed: () =>
                                               Navigator.pop(context, true),
-                                          child: const Text("Yes, Cancel"),
+                                          child: const Text(
+                                            "Yes, Cancel",
+                                            style: TextStyle(color: Colors.white),
+                                          ),
                                         ),
                                       ],
                                     ),
@@ -2688,10 +2735,46 @@ class TripCard extends ConsumerWidget {
                   ),
                 ),
                 const SizedBox(width: 8),
-                // Status pill + overflow
+                // Status pills: trip lifecycle status + payment status
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
+                    // Trip status pill (Active / Upcoming / Complete / …)
+                    Builder(
+                      builder: (_) {
+                        final ts = _tripStatusStyle;
+                        return Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 3,
+                          ),
+                          decoration: BoxDecoration(
+                            color: ts.color.withOpacity(0.12),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: ts.color.withOpacity(0.45),
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(ts.icon, size: 11, color: ts.color),
+                              const SizedBox(width: 3),
+                              Text(
+                                ts.label,
+                                style: TextStyle(
+                                  fontSize: 10.5,
+                                  fontWeight: FontWeight.w700,
+                                  color: ts.color,
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 4),
+                    // Payment status pill (Paid / Unpaid / Partially Paid)
                     Container(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 8,

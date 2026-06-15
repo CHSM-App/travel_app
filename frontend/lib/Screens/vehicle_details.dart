@@ -1,14 +1,17 @@
 import 'dart:async';
 
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:open_file/open_file.dart';
+import 'package:travel_agency_app/core/utils/report_saver.dart';
 import 'package:travel_agency_app/Screens/trip_card.dart';
 import 'package:travel_agency_app/Screens/add_vehicle.dart';
 import 'package:travel_agency_app/core/network/error_messages.dart';
 import 'package:travel_agency_app/core/storage/constant.dart';
+import 'package:travel_agency_app/core/storage/token_storage.dart';
 import 'package:travel_agency_app/core/theme/app_colors.dart';
 import 'package:travel_agency_app/core/utils/vehicle_report_export.dart';
 import 'package:travel_agency_app/core/widgets/error_view.dart';
@@ -3156,21 +3159,12 @@ class _OverviewTab extends StatelessWidget {
   }
 
   Future<void> _openDocument(BuildContext context, String url) async {
-    // PDFs open in an external viewer/browser; images open fullscreen in-app.
+    // Images open fullscreen in-app; PDFs are auth-protected (the server 401s
+    // an unauthenticated request), so we can't hand the bare URL to an external
+    // browser — instead download it with the Bearer token, then open the local
+    // file via the platform viewer.
     if (_isPdfUrl(url)) {
-      final uri = Uri.tryParse(url);
-      if (uri == null) {
-        _snack(context, 'Invalid document URL');
-        return;
-      }
-      final launched =
-          await launchUrl(uri, mode: LaunchMode.externalApplication);
-      if (!launched) {
-        final retry = await launchUrl(uri, mode: LaunchMode.platformDefault);
-        if (!retry && context.mounted) {
-          _snack(context, 'Could not open document');
-        }
-      }
+      await _openPdf(context, url);
       return;
     }
     if (!context.mounted) return;
@@ -3178,6 +3172,68 @@ class _OverviewTab extends StatelessWidget {
       context,
       MaterialPageRoute(builder: (_) => _FullscreenImagePage(networkUrl: url)),
     );
+  }
+
+  Future<void> _openPdf(BuildContext context, String url) async {
+    final uri = Uri.tryParse(url);
+    if (uri == null) {
+      _snack(context, 'Invalid document URL');
+      return;
+    }
+
+    // Loading indicator while the file downloads.
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(
+        child: CircularProgressIndicator(color: AppColors.brandPrimary),
+      ),
+    );
+
+    try {
+      final tokens = await TokenStorage.getTokens();
+      final token = tokens?['accessToken'];
+
+      // Fetch the bytes with the Bearer token (works on web and mobile, unlike
+      // Dio().download which needs a real filesystem path).
+      final resp = await Dio().get<List<int>>(
+        url,
+        options: Options(
+          responseType: ResponseType.bytes,
+          headers: {
+            if (token != null && token.isNotEmpty)
+              'Authorization': 'Bearer $token',
+          },
+        ),
+      );
+
+      final fileName = uri.pathSegments.isNotEmpty
+          ? uri.pathSegments.last
+          : 'document.pdf';
+
+      // saveReportBytes is platform-split: on web it triggers a browser
+      // download and returns null; on mobile it writes a temp file and returns
+      // its path so we can open it in the device viewer.
+      final path = await saveReportBytes(resp.data ?? const [], fileName);
+
+      if (context.mounted) Navigator.of(context).pop(); // dismiss loader
+
+      if (path != null) {
+        final result = await OpenFile.open(path);
+        if (result.type != ResultType.done && context.mounted) {
+          _snack(context, 'Could not open document: ${result.message}');
+        }
+      }
+    } catch (e) {
+      debugPrint('PDF download/open error: $e\nURL: $url');
+      if (context.mounted) Navigator.of(context).pop(); // dismiss loader
+      if (context.mounted) {
+        final detail = e is DioException
+            ? 'HTTP ${e.response?.statusCode ?? e.type.name}'
+            : e.toString();
+        _snack(context, 'Could not load document ($detail)');
+      }
+    }
   }
 
   void _snack(BuildContext context, String message) {
@@ -3295,6 +3351,18 @@ class _FullscreenImagePage extends StatelessWidget {
 
   const _FullscreenImagePage({required this.networkUrl});
 
+  // The /upload documents are auth-protected (return 401 without a token), so
+  // load the stored access token and send it as a Bearer header — same as the
+  // app's API calls do via the dio interceptor.
+  Future<Map<String, String>> _authHeaders() async {
+    final tokens = await TokenStorage.getTokens();
+    final token = tokens?['accessToken'];
+    return {
+      'Cache-Control': 'no-cache',
+      if (token != null && token.isNotEmpty) 'Authorization': 'Bearer $token',
+    };
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -3308,30 +3376,51 @@ class _FullscreenImagePage extends StatelessWidget {
         ),
       ),
       body: Center(
-        child: InteractiveViewer(
-          minScale: 0.5,
-          maxScale: 4,
-          child: Image.network(
-            networkUrl,
-            fit: BoxFit.contain,
-            headers: const {'Cache-Control': 'no-cache'},
-            loadingBuilder: (context, child, progress) {
-              if (progress == null) return child;
+        child: FutureBuilder<Map<String, String>>(
+          future: _authHeaders(),
+          builder: (context, snap) {
+            if (snap.connectionState != ConnectionState.done) {
               return const CircularProgressIndicator(color: Colors.white);
-            },
-            errorBuilder: (_, __, ___) => const Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.broken_image_rounded,
-                    color: Colors.white54, size: 48),
-                SizedBox(height: 12),
-                Text(
-                  'Could not load document',
-                  style: TextStyle(color: Colors.white54),
-                ),
-              ],
-            ),
-          ),
+            }
+            return InteractiveViewer(
+              minScale: 0.5,
+              maxScale: 4,
+              child: Image.network(
+                networkUrl,
+                fit: BoxFit.contain,
+                headers: snap.data,
+                loadingBuilder: (context, child, progress) {
+                  if (progress == null) return child;
+                  return const CircularProgressIndicator(color: Colors.white);
+                },
+            errorBuilder: (_, error, __) {
+              debugPrint('RC document load error: $error\nURL: $networkUrl');
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.broken_image_rounded,
+                      color: Colors.white54, size: 48),
+                  const SizedBox(height: 12),
+                  const Text(
+                    'Could not load document',
+                    style: TextStyle(color: Colors.white54),
+                  ),
+                  const SizedBox(height: 8),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    child: Text(
+                      networkUrl,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                          color: Colors.white30, fontSize: 11),
+                    ),
+                  ),
+                    ],
+                  );
+                },
+              ),
+            );
+          },
         ),
       ),
     );

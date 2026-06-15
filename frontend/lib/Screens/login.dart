@@ -158,25 +158,10 @@ class _LoginPageState extends ConsumerState<LoginPage>
                         children: [
                           // ── Logo ───────────────────────────
                           Center(
-                            child: Container(
-                              width: 80,
-                              height: 80,
-                              decoration: BoxDecoration(
-                                color: AppColors.brandPrimary,
-                                borderRadius: BorderRadius.circular(24),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: primaryColor.withOpacity(0.4),
-                                    blurRadius: 20,
-                                    offset: const Offset(0, 8),
-                                  ),
-                                ],
-                              ),
-                              child: const Icon(
-                                Icons.travel_explore,
-                                size: 42,
-                                color: Colors.white,
-                              ),
+                            child: Image.asset(
+                              'assets/branding/vego_logo.png',
+                              width: 120,
+                              fit: BoxFit.contain,
                             ),
                           ),
 

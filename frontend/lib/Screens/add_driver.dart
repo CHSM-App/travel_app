@@ -280,14 +280,7 @@ class _AddDriverPageState extends ConsumerState<AddDriverPage>
       _showSnack('Please select licence expiry date', isError: true);
       return;
     }
-    if (!widget.isEdit && _selectedLicenceFile == null) {
-      _showSnack('Licence document is required', isError: true);
-      return;
-    }
-    if (widget.isEdit && _licenceRemoved && _selectedLicenceFile == null) {
-      _showSnack('Please upload licence document', isError: true);
-      return;
-    }
+    // Licence document is optional — drivers can be saved without uploading one.
 
     final agencyId = ref.read(loginViewModelProvider).agencyId;
     if (agencyId == null ||
@@ -664,17 +657,15 @@ class _AddDriverPageState extends ConsumerState<AddDriverPage>
                   color: _textDark,
                 ),
               ),
-              if (!widget.isEdit) ...[
-                const SizedBox(width: 4),
-                Text(
-                  '*',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.red.shade500,
-                    fontWeight: FontWeight.w700,
-                  ),
+              const SizedBox(width: 4),
+              Text(
+                '(Optional)',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey.shade500,
+                  fontWeight: FontWeight.w500,
                 ),
-              ],
+              ),
             ],
           ),
           const SizedBox(height: 4),
