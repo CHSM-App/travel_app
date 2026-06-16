@@ -1176,7 +1176,7 @@ class _VehiclePageState extends ConsumerState<VehiclePage>
       child: TabBar(
         controller: _tabController,
         indicator: BoxDecoration(
-          color: _C.accent,
+          color: Color(0xFFED1C24),
           borderRadius: BorderRadius.circular(10),
           boxShadow: [
             BoxShadow(

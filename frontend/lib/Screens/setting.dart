@@ -300,7 +300,7 @@ class _ModernSettingsPageState extends ConsumerState<ModernSettingsPage>
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  profile?.email ?? 'No Email',
+                  profile?.mobile ?? '-',
                   style: TextStyle(fontSize: 13, color: Colors.white.withOpacity(0.82)),
                 ),
                 const SizedBox(height: 8),
