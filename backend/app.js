@@ -111,6 +111,24 @@ cron.schedule('0 8 * * *', () => {
 }, { timezone: 'Asia/Kolkata' });
 
 /* =========================
+   SPA CATCH-ALL (landing page / React Router)
+========================= */
+// Serve the built landing page (public/index.html) for any unmatched GET so
+// client-side routes like /privacy, /help, /delete-account work on direct load
+// and refresh. API routes are mounted above and known API prefixes are excluded
+// here, so genuine API misses still fall through to the JSON 404 below.
+const SPA_API_PREFIXES = ['/health', '/login', '/insert', '/users', '/file', '/upload', '/index'];
+app.get('*', (req, res, next) => {
+  if (SPA_API_PREFIXES.some((p) => req.path === p || req.path.startsWith(p + '/'))) {
+    return next();
+  }
+  res.set('Cache-Control', 'no-store, no-cache, must-revalidate');
+  res.sendFile(path.join(__dirname, 'public', 'index.html'), (err) => {
+    if (err) next();
+  });
+});
+
+/* =========================
    404 HANDLER
 ========================= */
 app.use((req, res, next) => {

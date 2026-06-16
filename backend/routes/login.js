@@ -333,8 +333,8 @@ router.post('/sendOtp', async (req, res) => {
       return res.status(400).json({ success: false, message: 'mobile and purpose are required' });
     }
 
-    if (!['register', 'forgot_pin'].includes(purpose)) {
-      return res.status(400).json({ success: false, message: "purpose must be 'register' or 'forgot_pin'" });
+    if (!['register', 'forgot_pin', 'delete_account'].includes(purpose)) {
+      return res.status(400).json({ success: false, message: "purpose must be 'register', 'forgot_pin' or 'delete_account'" });
     }
 
     const result = await sendOtp(mobile, purpose);
@@ -367,6 +367,89 @@ router.post('/verifyOtp', async (req, res) => {
     return res.json({ success: true, message: 'OTP verified' });
   } catch (err) {
     console.error('[verifyOtp]', err.message);
+    return res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+
+// =====================================================
+// DELETE ACCOUNT (request)
+// Used by the website's Delete Account page (Google Play data-deletion
+// compliance). Flow:
+//   1. /sendOtp       { mobile, purpose: 'delete_account' }  → WhatsApp OTP
+//   2. /deleteAccount { mobile, otp, reason? }               → verify + record
+//
+// We do NOT hard-delete here. The OTP is verified, the admin's details are
+// copied into account_deletion_requests with an optional reason, and the user
+// is told their account will be deleted within 30 days. The team reviews each
+// request and removes the account manually. (Run sql/account_deletion_requests.sql once.)
+// =====================================================
+router.post('/deleteAccount', async (req, res) => {
+  try {
+    const { mobile, otp, reason } = req.body;
+
+    if (!mobile || !otp) {
+      return res.status(400).json({ success: false, message: 'mobile and otp are required' });
+    }
+
+    // 1. Verify the OTP (single-use; consumed on success)
+    const valid = await verifyOtp(mobile, otp, 'delete_account');
+    if (!valid) {
+      return res.status(400).json({ success: false, message: 'Invalid or expired OTP' });
+    }
+
+    // 2. Resolve the admin so we can snapshot their details into the request
+    const adminRes = await db.request()
+      .input('operation', sql.NVarChar, 'GetAdminByMobile')
+      .input('mobile', sql.NVarChar(20), mobile)
+      .execute('sp_admin');
+
+    const admin = adminRes.recordset && adminRes.recordset[0];
+    if (!admin) {
+      return res.status(404).json({ success: false, message: 'No account found for this mobile number.' });
+    }
+
+    const safeReason = (reason && String(reason).trim().slice(0, 500)) || null;
+
+    // 3. Record the deletion request (reuse a pending one if it already exists)
+    const result = await db.request()
+      .input('admin_id',    sql.Int,           parseInt(admin.admin_id) || null)
+      .input('agency_id',   sql.NVarChar(20),  admin.agency_id   || null)
+      .input('name',        sql.NVarChar(100), admin.name        || null)
+      .input('email',       sql.NVarChar(100), admin.email       || null)
+      .input('mobile',      sql.NVarChar(20),  mobile)
+      .input('agency_name', sql.NVarChar(100), admin.agency_name || null)
+      .input('city',        sql.NVarChar(100), admin.city        || null)
+      .input('reason',      sql.NVarChar(500), safeReason)
+      .query(`
+        IF EXISTS (SELECT 1 FROM dbo.account_deletion_requests WHERE mobile = @mobile AND status = 'pending')
+        BEGIN
+          UPDATE dbo.account_deletion_requests
+            SET reason = COALESCE(@reason, reason)
+          WHERE mobile = @mobile AND status = 'pending';
+          SELECT TOP 1 scheduled_for FROM dbo.account_deletion_requests
+          WHERE mobile = @mobile AND status = 'pending' ORDER BY requested_at DESC;
+        END
+        ELSE
+        BEGIN
+          DECLARE @now DATETIME = GETUTCDATE();
+          INSERT INTO dbo.account_deletion_requests
+            (admin_id, agency_id, name, email, mobile, agency_name, city, reason, status, requested_at, scheduled_for)
+          OUTPUT INSERTED.scheduled_for
+          VALUES
+            (@admin_id, @agency_id, @name, @email, @mobile, @agency_name, @city, @reason, 'pending', @now, DATEADD(DAY, 30, @now));
+        END
+      `);
+
+    const scheduled = result.recordset && result.recordset[0] && result.recordset[0].scheduled_for;
+
+    return res.json({
+      success: true,
+      message: 'Your account deletion request has been received. Your account will be deleted within 30 days.',
+      scheduled_for: scheduled || null,
+    });
+  } catch (err) {
+    console.error('[deleteAccount]', err);
     return res.status(500).json({ success: false, message: err.message });
   }
 });
