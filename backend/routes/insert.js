@@ -1,6 +1,7 @@
 var express = require('express');
 var db = require("./db");
-const sql = require('mssql'); 
+const sql = require('mssql');
+const bcrypt = require('bcryptjs');
 var router = express.Router();
 var bodyParser = require('body-parser');
 router.use(bodyParser.json());
@@ -523,6 +524,14 @@ router.post('/AddAdmin', async (req, res) => {
     // decide operation automatically
     const operation = admin_id && admin_id > 0 ? "Update" : "Insert";
 
+    // Hash the 4-digit PIN before storing. bcrypt produces a salted ~60-char
+    // hash, so the DB `password` column must be NVARCHAR(100) (see sp_admin).
+    // Only hash when a PIN is actually provided so profile updates that don't
+    // change the PIN don't overwrite it with a hash of an empty string.
+    const hashedPassword = password
+      ? await bcrypt.hash(String(password), 10)
+      : password;
+
     const result = await db.request()
 
       .input("operation", sql.NVarChar(50), operation)
@@ -535,7 +544,7 @@ router.post('/AddAdmin', async (req, res) => {
 
       .input("mobile", sql.NVarChar(50), mobile)
 
-      .input("password", sql.NVarChar(50), password)
+      .input("password", sql.NVarChar(100), hashedPassword)
 
       .input("address", sql.NVarChar(100), address)
 

@@ -362,13 +362,19 @@ class _SignUpPageState extends ConsumerState<SignUpPage>
                           padding: const EdgeInsets.all(20),
                           child: Column(
                             children: [
-                              _buildLabel("Password"),
+                              _buildLabel("4-Digit PIN"),
                               const SizedBox(height: 8),
                               _buildField(
                                 controller: _passwordController,
-                                hint: "Create a password",
+                                hint: "Create a 4-digit PIN",
                                 icon: Icons.lock_outline_rounded,
                                 obscure: _obscurePassword,
+                                keyboard: TextInputType.number,
+                                inputFormatters: [
+                                  FilteringTextInputFormatter.digitsOnly,
+                                  LengthLimitingTextInputFormatter(4),
+                                ],
+                                maxLength: 4,
                                 suffixIcon: IconButton(
                                   icon: Icon(
                                     _obscurePassword
@@ -382,22 +388,28 @@ class _SignUpPageState extends ConsumerState<SignUpPage>
                                 ),
                                 validator: (v) {
                                   if (v == null || v.isEmpty) {
-                                    return "Password is required";
+                                    return "PIN is required";
                                   }
-                                  if (v.length < 6) {
-                                    return "Minimum 6 characters";
+                                  if (v.length != 4) {
+                                    return "PIN must be exactly 4 digits";
                                   }
                                   return null;
                                 },
                               ),
                               const SizedBox(height: 16),
-                              _buildLabel("Confirm Password"),
+                              _buildLabel("Confirm PIN"),
                               const SizedBox(height: 8),
                               _buildField(
                                 controller: _confirmPasswordController,
-                                hint: "Re-enter password",
+                                hint: "Re-enter PIN",
                                 icon: Icons.lock_person_outlined,
                                 obscure: _obscureConfirm,
+                                keyboard: TextInputType.number,
+                                inputFormatters: [
+                                  FilteringTextInputFormatter.digitsOnly,
+                                  LengthLimitingTextInputFormatter(4),
+                                ],
+                                maxLength: 4,
                                 suffixIcon: IconButton(
                                   icon: Icon(
                                     _obscureConfirm
@@ -411,10 +423,10 @@ class _SignUpPageState extends ConsumerState<SignUpPage>
                                 ),
                                 validator: (v) {
                                   if (v == null || v.isEmpty) {
-                                    return "Please confirm password";
+                                    return "Please confirm PIN";
                                   }
                                   if (v != _passwordController.text) {
-                                    return "Passwords do not match";
+                                    return "PINs do not match";
                                   }
                                   return null;
                                 },

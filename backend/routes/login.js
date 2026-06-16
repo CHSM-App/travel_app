@@ -7,6 +7,7 @@ require('dotenv').config();
 const sql = require('mssql');
 const db = require('./db');
 const crypto = require('crypto');
+const bcrypt = require('bcryptjs');
 var bodyParser = require('body-parser');
 const path = require('path');
 
@@ -162,27 +163,49 @@ router.post("/Adminlogin", async (req, res) => {
 
     if (!mobile || !password) {
       return res.status(400).json({
-        success: false,
-        message: "Mobile No and Password required"
+        success: 0,
+        message: "Mobile No and PIN required"
       });
     }
 
+    // PINs are stored as salted bcrypt hashes, which SQL cannot compare. Fetch
+    // the admin record (including the stored hash) by mobile, then verify the
+    // PIN here with bcrypt.compare.
     const result = await db.request()
-      .input("operation", sql.NVarChar, "Login")
+      .input("operation", sql.NVarChar, "GetAdminByMobile")
       .input("mobile", sql.NVarChar(20), mobile)
-      .input("password", sql.NVarChar(50), password)
       .execute("sp_admin");
 
-    const response = result.recordset[0];
+    const admin = result.recordset[0];
 
-    res.json(response);
+    if (!admin) {
+      return res.json({ success: 0, message: "Invalid mobile number or PIN" });
+    }
+
+    const match = await bcrypt.compare(String(password), admin.password || "");
+
+    if (!match) {
+      return res.json({ success: 0, message: "Invalid mobile number or PIN" });
+    }
+
+    res.json({
+      success: 1,
+      message: "Login successful",
+      admin_id: admin.admin_id,
+      name: admin.name,
+      email: admin.email,
+      mobile: admin.mobile,
+      agency_id: admin.agency_id,
+      image_url: admin.image_url,
+  
+    });
 
   } catch (err) {
 
     console.log(err);
 
     res.status(500).json({
-      success: false,
+      success: 0,
       message: err.message
     });
 
@@ -203,9 +226,12 @@ router.post("/forgotPassword", async (req, res) => {
     if (!mobile || !password) {
       return res.status(400).json({
         success: false,
-        message: "mobile no and new password required"
+        message: "mobile no and new PIN required"
       });
     }
+
+    // Hash the new PIN before storing (same scheme as signup).
+    const hashedPassword = await bcrypt.hash(String(password), 10);
 
     const result = await db.request()
       .input("operation", sql.NVarChar, "ForgotPassword")
@@ -213,7 +239,7 @@ router.post("/forgotPassword", async (req, res) => {
       .input("name", sql.NVarChar(50), "")
       .input("email", sql.NVarChar(50), "")
       .input("mobile", sql.NVarChar(20), mobile)
-      .input("password", sql.NVarChar(50), password)
+      .input("password", sql.NVarChar(100), hashedPassword)
       .input("address", sql.NVarChar(100), "")
       .input("agency_name", sql.NVarChar(50), "")
       .input("city", sql.NVarChar(50), "")

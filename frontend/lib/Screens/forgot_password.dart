@@ -241,7 +241,7 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage>
                               const SizedBox(height: 6),
                               Center(
                                 child: Text(
-                                  "Enter your mobile & set a new password",
+                                  "Enter your mobile & set a new PIN",
                                   style: TextStyle(
                                     fontSize: 13,
                                     color: Colors.grey.shade500,
@@ -304,25 +304,32 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage>
 
                                     const SizedBox(height: 16),
 
-                                    // ── New Password ────
-                                    _buildLabel("New Password"),
+                                    // ── New PIN ────
+                                    _buildLabel("New PIN"),
                                     const SizedBox(height: 8),
                                     TextFormField(
                                       controller: _passwordController,
                                       obscureText: _obscurePassword,
+                                      keyboardType: TextInputType.number,
+                                      maxLength: 4,
+                                      inputFormatters: [
+                                        FilteringTextInputFormatter
+                                            .digitsOnly,
+                                        LengthLimitingTextInputFormatter(4),
+                                      ],
                                       validator: (value) {
                                         if (value == null ||
                                             value.isEmpty) {
-                                          return "Please enter new password";
+                                          return "Please enter new PIN";
                                         }
-                                        if (value.length < 6) {
-                                          return "Password must be at least 6 characters";
+                                        if (value.length != 4) {
+                                          return "PIN must be exactly 4 digits";
                                         }
                                         return null;
                                       },
                                       decoration:
                                           _inputDecoration(
-                                        hint: "Enter new password",
+                                        hint: "Enter new 4-digit PIN",
                                         icon: Icons.lock_outline_rounded,
                                       ).copyWith(
                                         counterText: "",
@@ -345,27 +352,34 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage>
 
                                     const SizedBox(height: 16),
 
-                                    // ── Confirm Password ─
-                                    _buildLabel("Confirm Password"),
+                                    // ── Confirm PIN ─
+                                    _buildLabel("Confirm PIN"),
                                     const SizedBox(height: 8),
                                     TextFormField(
                                       controller:
                                           _confirmPasswordController,
                                       obscureText: _obscureConfirm,
+                                      keyboardType: TextInputType.number,
+                                      maxLength: 4,
+                                      inputFormatters: [
+                                        FilteringTextInputFormatter
+                                            .digitsOnly,
+                                        LengthLimitingTextInputFormatter(4),
+                                      ],
                                       validator: (value) {
                                         if (value == null ||
                                             value.isEmpty) {
-                                          return "Please confirm password";
+                                          return "Please confirm PIN";
                                         }
                                         if (value !=
                                             _passwordController.text) {
-                                          return "Passwords do not match";
+                                          return "PINs do not match";
                                         }
                                         return null;
                                       },
                                       decoration:
                                           _inputDecoration(
-                                        hint: "Re-enter new password",
+                                        hint: "Re-enter new 4-digit PIN",
                                         icon: Icons
                                             .lock_person_outlined,
                                       ).copyWith(

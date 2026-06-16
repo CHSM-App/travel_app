@@ -237,20 +237,29 @@ class _LoginPageState extends ConsumerState<LoginPage>
 
                                 const SizedBox(height: 16),
 
-                                // ── Password ───────────────
-                                _buildLabel("Password"),
+                                // ── PIN ───────────────
+                                _buildLabel("PIN"),
                                 const SizedBox(height: 8),
                                 TextFormField(
                                   controller: _passwordController,
                                   obscureText: _obscurePassword,
+                                  keyboardType: TextInputType.number,
+                                  maxLength: 4,
+                                  inputFormatters: [
+                                    FilteringTextInputFormatter.digitsOnly,
+                                    LengthLimitingTextInputFormatter(4),
+                                  ],
                                   validator: (value) {
                                     if (value == null || value.isEmpty) {
-                                      return "Please enter password";
+                                      return "Please enter your 4-digit PIN";
+                                    }
+                                    if (value.length != 4) {
+                                      return "PIN must be exactly 4 digits";
                                     }
                                     return null;
                                   },
                                   decoration: _inputDecoration(
-                                    hint: "Enter your password",
+                                    hint: "Enter your 4-digit PIN",
                                     icon: Icons.lock_outline_rounded,
                                   ).copyWith(
                                     counterText: "",
