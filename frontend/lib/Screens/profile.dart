@@ -432,6 +432,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
                                   'Mobile',
                                   Icons.phone_outlined,
                                   type: TextInputType.phone,
+                                  capitalization: TextCapitalization.none,
                                   max: 10,
                                   validate: (v) {
                                     if (v == null || v.isEmpty) {
@@ -448,6 +449,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
                                   'Email',
                                   Icons.email_outlined,
                                   type: TextInputType.emailAddress,
+                                  capitalization: TextCapitalization.none,
                                   validate: (v) {
                                     if (v == null || v.isEmpty) {
                                       return 'Required';
@@ -796,6 +798,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
     return TextFormField(
       controller: f.ctrl,
       keyboardType: f.type,
+      textCapitalization: f.capitalization,
       maxLines: 1,
       inputFormatters: [
         if (f.max != null) LengthLimitingTextInputFormatter(f.max!),
@@ -926,9 +929,13 @@ class _FieldItem {
   final TextInputType? type;
   final int? max;
   final String? Function(String?)? validate;
+  final TextCapitalization capitalization;
 
   const _FieldItem(this.ctrl, this.label, this.icon,
-      {this.type, this.max, this.validate});
+      {this.type,
+      this.max,
+      this.validate,
+      this.capitalization = TextCapitalization.words});
 }
 
 // ── Image picker sheet ────────────────────────────────────────────

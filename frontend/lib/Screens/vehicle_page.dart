@@ -1294,6 +1294,7 @@ class _VehiclePageState extends ConsumerState<VehiclePage>
       child: TextField(
         controller: _searchCtrl,
         focusNode: _searchFocus,
+        textCapitalization: TextCapitalization.words,
         onChanged: (_) => setState(() {}),
         textAlignVertical: TextAlignVertical.center,
         style: const TextStyle(

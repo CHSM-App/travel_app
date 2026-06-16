@@ -171,6 +171,7 @@ class _HelpCenterPageState extends State<HelpCenterPage> {
       ),
       child: TextField(
         controller: _searchCtrl,
+        textCapitalization: TextCapitalization.words,
         onChanged: (v) => setState(() => _query = v.trim().toLowerCase()),
         style: const TextStyle(
           fontSize: 14,

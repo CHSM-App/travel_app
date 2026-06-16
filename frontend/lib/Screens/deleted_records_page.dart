@@ -186,6 +186,7 @@ class _DeletedRecordsPageState extends ConsumerState<DeletedRecordsPage>
                     child: TextField(
                       controller: _searchCtrl,
                       focusNode: _searchFocus,
+                      textCapitalization: TextCapitalization.words,
                       onChanged: (_) => setState(() {}),
                       style: const TextStyle(
                         fontSize: 13,

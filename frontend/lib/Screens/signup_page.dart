@@ -251,6 +251,7 @@ class _SignUpPageState extends ConsumerState<SignUpPage>
                                 controller: _nameController,
                                 hint: "Enter your full name",
                                 icon: Icons.person_rounded,
+                                textCapitalization: TextCapitalization.words,
                                 validator: (v) => v == null || v.isEmpty
                                     ? "Name is required"
                                     : null,
@@ -658,6 +659,7 @@ class _SignUpPageState extends ConsumerState<SignUpPage>
     required IconData icon,
     bool obscure = false,
     TextInputType keyboard = TextInputType.text,
+    TextCapitalization textCapitalization = TextCapitalization.words,
     List<TextInputFormatter>? inputFormatters,
     int? maxLength,
     Widget? suffixIcon,
@@ -667,6 +669,7 @@ class _SignUpPageState extends ConsumerState<SignUpPage>
       controller: controller,
       obscureText: obscure,
       keyboardType: keyboard,
+      textCapitalization: textCapitalization,
       inputFormatters: inputFormatters,
       maxLength: maxLength,
       validator: validator,

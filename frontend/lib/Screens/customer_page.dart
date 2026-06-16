@@ -600,6 +600,7 @@ class _CustomerListPageState extends ConsumerState<CustomerListPage>
                           child: TextField(
                             controller: _searchCtrl,
                             focusNode: _searchFocus,
+                            textCapitalization: TextCapitalization.words,
                             onChanged: (v) =>
                                 setState(() => _query = v.toLowerCase().trim()),
                             textAlignVertical: TextAlignVertical.center,

@@ -1139,6 +1139,7 @@ Future<void> _toggleVehicleStatus() async {
     required String label,
     required IconData icon,
     TextInputType keyboard = TextInputType.text,
+    TextCapitalization textCapitalization = TextCapitalization.words,
     String? prefix,
     String? Function(String?)? validator,
     int maxLines = 1,
@@ -1146,6 +1147,7 @@ Future<void> _toggleVehicleStatus() async {
     return TextFormField(
       controller: controller,
       keyboardType: keyboard,
+      textCapitalization: textCapitalization,
       validator: validator,
       maxLines: maxLines,
       decoration: InputDecoration(

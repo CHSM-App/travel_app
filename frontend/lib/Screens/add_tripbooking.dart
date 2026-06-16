@@ -369,6 +369,7 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
     required bool Function(Customer c, String query) matcher,
     String? Function(String?)? validator,
     TextInputType? keyboard,
+    TextCapitalization textCapitalization = TextCapitalization.words,
     List<TextInputFormatter>? fmt,
   }) {
     return RawAutocomplete<Customer>(
@@ -397,6 +398,7 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
           iconBg: _C.orangeSoft,
           focusNode: fieldFocus,
           keyboard: keyboard,
+          textCapitalization: textCapitalization,
           fmt: fmt,
           validator: validator,
           onFieldSubmitted: (_) => onSubmit(),
@@ -1707,6 +1709,8 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
                                     focusNode: customerNameFocus,
                                     label: "Customer Name",
                                     icon: Icons.person_outline_rounded,
+                                    textCapitalization:
+                                        TextCapitalization.words,
                                     customers: customers,
                                     matcher: (c, q) => (c.name ?? '')
                                         .toLowerCase()
@@ -2414,6 +2418,7 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
     required Color iconBg,
     String? prefix,
     TextInputType? keyboard,
+    TextCapitalization textCapitalization = TextCapitalization.words,
     List<TextInputFormatter>? fmt,
     FocusNode? focusNode,
     void Function(String)? onFieldSubmitted,
@@ -2427,6 +2432,7 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
       onTap: onTap,
       onFieldSubmitted: onFieldSubmitted,
       keyboardType: keyboard,
+      textCapitalization: textCapitalization,
       inputFormatters: fmt,
       style: const TextStyle(
         fontSize: 14,
@@ -3529,6 +3535,7 @@ class _DropSheetState<T> extends State<_DropSheet<T>> {
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: TextField(
               controller: _searchCtrl,
+              textCapitalization: TextCapitalization.words,
               style: const TextStyle(
                 fontSize: 14,
                 color: _C.text1,

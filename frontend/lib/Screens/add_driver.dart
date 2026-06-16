@@ -403,15 +403,7 @@ class _AddDriverPageState extends ConsumerState<AddDriverPage>
               ),
             ),
             const SizedBox(width: 6),
-            if (!widget.isEdit)
-              Text(
-                '*',
-                style: TextStyle(
-                  color: Colors.red.shade500,
-                  fontWeight: FontWeight.w700,
-                ),
-              )
-            else
+            
               Text(
                 '(Optional)',
                 style: TextStyle(
@@ -658,14 +650,6 @@ class _AddDriverPageState extends ConsumerState<AddDriverPage>
                 ),
               ),
               const SizedBox(width: 4),
-              Text(
-                '(Optional)',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey.shade500,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
             ],
           ),
           const SizedBox(height: 4),

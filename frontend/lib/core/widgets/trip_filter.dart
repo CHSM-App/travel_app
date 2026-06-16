@@ -293,6 +293,7 @@ class TripSearchField extends StatelessWidget {
         controller: controller,
         focusNode: focusNode,
         onChanged: onChanged,
+        textCapitalization: TextCapitalization.words,
         style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
         decoration: InputDecoration(
           isDense: true,
@@ -388,6 +389,7 @@ class _TripSearchBarState extends State<TripSearchBar> {
         controller: widget.controller,
         focusNode: _focus,
         onChanged: widget.onChanged,
+        textCapitalization: TextCapitalization.words,
         textAlignVertical: TextAlignVertical.center,
         style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w500),
         decoration: InputDecoration(

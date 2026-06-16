@@ -834,6 +834,7 @@ class _TripPageState extends ConsumerState<TripPage> {
       child: TextField(
         controller: _searchController,
         focusNode: _searchFocus,
+        textCapitalization: TextCapitalization.words,
         onChanged: _onSearchChanged,
         textAlignVertical: TextAlignVertical.center,
         style: const TextStyle(
