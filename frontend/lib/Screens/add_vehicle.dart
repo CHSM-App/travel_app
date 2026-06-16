@@ -398,7 +398,7 @@ class _AddVehiclePageState extends ConsumerState<AddVehiclePage>
         const SizedBox(height: 16),
         _buildField(
           controller: perKm,
-          label: 'Charge per KM',
+          label: 'Charges per KM',
           hint: 'e.g. 12 — used to auto-calc trip charges',
           icon: Icons.currency_rupee_rounded,
           keyboardType: const TextInputType.numberWithOptions(decimal: true),

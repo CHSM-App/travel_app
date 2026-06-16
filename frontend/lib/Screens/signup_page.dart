@@ -87,11 +87,11 @@ class _SignUpPageState extends ConsumerState<SignUpPage>
 
     final loginInfo = LoginInfo(
       name: _nameController.text.trim(),
-      address: _addressController.text.trim(),
-      agencyName: _agencyController.text.trim(),
-      city: _cityController.text.trim(),
+      // address: _addressController.text.trim(),
+      // agencyName: _agencyController.text.trim(),
+      // city: _cityController.text.trim(),
       mobile: mobile,
-      email: _emailController.text.trim(),
+      // email: _emailController.text.trim(),
       password: _passwordController.text.trim(),
     );
 
@@ -201,25 +201,10 @@ class _SignUpPageState extends ConsumerState<SignUpPage>
                       children: [
                         // ── Logo ──────────────────────
                         Center(
-                          child: Container(
-                            width: 76,
-                            height: 76,
-                            decoration: BoxDecoration(
-                              color: AppColors.brandPrimary,
-                              borderRadius: BorderRadius.circular(22),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: primaryColor.withOpacity(0.4),
-                                  blurRadius: 20,
-                                  offset: const Offset(0, 8),
-                                ),
-                              ],
-                            ),
-                            child: const Icon(
-                              Icons.travel_explore,
-                              size: 38,
-                              color: Colors.white,
-                            ),
+                          child: Image.asset(
+                            'assets/branding/vego_logo.png',
+                            width: 120,
+                            fit: BoxFit.contain,
                           ),
                         ),
 
@@ -294,25 +279,25 @@ class _SignUpPageState extends ConsumerState<SignUpPage>
                                 },
                               ),
                               const SizedBox(height: 16),
-                              _buildLabel("Email Address"),
-                              const SizedBox(height: 8),
-                              _buildField(
-                                controller: _emailController,
-                                hint: "Enter your email",
-                                icon: Icons.email_outlined,
-                                keyboard: TextInputType.emailAddress,
-                                validator: (v) {
-                                  if (v == null || v.isEmpty) {
-                                    return "Email is required";
-                                  }
-                                  if (!RegExp(
-                                          r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$')
-                                      .hasMatch(v)) {
-                                    return "Enter a valid email";
-                                  }
-                                  return null;
-                                },
-                              ),
+                              // _buildLabel("Email Address"),
+                              // const SizedBox(height: 8),
+                              // _buildField(
+                              //   controller: _emailController,
+                              //   hint: "Enter your email",
+                              //   icon: Icons.email_outlined,
+                              //   keyboard: TextInputType.emailAddress,
+                              //   validator: (v) {
+                              //     if (v == null || v.isEmpty) {
+                              //       return "Email is required";
+                              //     }
+                              //     if (!RegExp(
+                              //             r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$')
+                              //         .hasMatch(v)) {
+                              //       return "Enter a valid email";
+                              //     }
+                              //     return null;
+                              //   },
+                              // ),
                             ],
                           ),
                         ),
@@ -320,52 +305,52 @@ class _SignUpPageState extends ConsumerState<SignUpPage>
                         const SizedBox(height: 20),
 
                         // ── Section: Agency Info ──────
-                        _sectionHeader(
-                            "Agency Details", Icons.apartment_rounded),
-                        const SizedBox(height: 14),
+                        // _sectionHeader(
+                        //     "Agency Details", Icons.apartment_rounded),
+                        // const SizedBox(height: 14),
 
-                        Container(
-                          decoration: _cardDecoration(),
-                          padding: const EdgeInsets.all(20),
-                          child: Column(
-                            children: [
-                              _buildLabel("Agency Name"),
-                              const SizedBox(height: 8),
-                              _buildField(
-                                controller: _agencyController,
-                                hint: "Enter agency name",
-                                icon: Icons.apartment_rounded,
-                                validator: (v) => v == null || v.isEmpty
-                                    ? "Agency name is required"
-                                    : null,
-                              ),
-                              const SizedBox(height: 16),
-                              _buildLabel("Address"),
-                              const SizedBox(height: 8),
-                              _buildField(
-                                controller: _addressController,
-                                hint: "Enter full address",
-                                icon: Icons.home_outlined,
-                                validator: (v) => v == null || v.isEmpty
-                                    ? "Address is required"
-                                    : null,
-                              ),
-                              const SizedBox(height: 16),
-                              _buildLabel("City"),
-                              const SizedBox(height: 8),
-                              _buildField(
-                                controller: _cityController,
-                                hint: "Enter city",
-                                icon: Icons.location_city_rounded,
-                                validator: (v) => v == null || v.isEmpty
-                                    ? "City is required"
-                                    : null,
-                              ),
-                            ],
-                          ),
-                        ),
+                        // Container(
+                        //   decoration: _cardDecoration(),
+                        //   padding: const EdgeInsets.all(20),
+                        //   child: Column(
+                        //     children: [
+                        //       _buildLabel("Agency Name"),
+                        //       const SizedBox(height: 8),
+                        //       _buildField(
+                        //         controller: _agencyController,
+                        //         hint: "Enter agency name",
+                        //         icon: Icons.apartment_rounded,
+                        //         validator: (v) => v == null || v.isEmpty
+                        //             ? "Agency name is required"
+                        //             : null,
+                        //       ),
+                        //       const SizedBox(height: 16),
+                        //       _buildLabel("Address"),
+                        //       const SizedBox(height: 8),
+                        //       _buildField(
+                        //         controller: _addressController,
+                        //         hint: "Enter full address",
+                        //         icon: Icons.home_outlined,
+                        //         validator: (v) => v == null || v.isEmpty
+                        //             ? "Address is required"
+                        //             : null,
+                        //       ),
+                        //       const SizedBox(height: 16),
+                        //       _buildLabel("City"),
+                        //       const SizedBox(height: 8),
+                        //       _buildField(
+                        //         controller: _cityController,
+                        //         hint: "Enter city",
+                        //         icon: Icons.location_city_rounded,
+                        //         validator: (v) => v == null || v.isEmpty
+                        //             ? "City is required"
+                        //             : null,
+                        //       ),
+                        //     ],
+                        //   ),
+                        // ),
 
-                        const SizedBox(height: 20),
+                        // const SizedBox(height: 20),
 
                         // ── Section: Security ─────────
                         _sectionHeader(
