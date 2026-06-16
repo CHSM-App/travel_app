@@ -278,9 +278,6 @@ class _ActionNeededCard extends ConsumerWidget {
     required this.isLoading,
   });
 
-  bool _isSameDay(DateTime a, DateTime b) =>
-      a.year == b.year && a.month == b.month && a.day == b.day;
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final unpaid = tripState.unpaidList.valueOrNull ?? const <BookingInfo>[];
@@ -299,13 +296,14 @@ class _ActionNeededCard extends ConsumerWidget {
     }
 
     final now = DateTime.now();
-    // The "Upcoming Trips" row surfaces tomorrow's pickups so the operator can
-    // prepare a day ahead — count trips whose start (or booking) day is tomorrow.
+    // The "Upcoming Trips" row surfaces every trip scheduled from tomorrow
+    // onward (start of tomorrow and later) so the operator sees the full
+    // pipeline ahead, not just the next day.
     final tomorrow = DateTime(now.year, now.month, now.day)
         .add(const Duration(days: 1));
     final startsTomorrow = upcoming.where((t) {
       final d = t.startDateTime ?? t.bookingDate;
-      return d != null && _isSameDay(d, tomorrow);
+      return d != null && !d.isBefore(tomorrow);
     }).length;
 
     final activeCount = active.length;
@@ -437,10 +435,10 @@ class _ActionNeededCard extends ConsumerWidget {
               title: 'Upcoming Trips',
               value: '$startsTomorrow',
               subtitle: startsTomorrow == 0
-                  ? 'Nothing scheduled for tomorrow'
+                  ? 'Nothing scheduled ahead'
                   : startsTomorrow == 1
-                      ? '1 pickup tomorrow'
-                      : '$startsTomorrow pickups tomorrow',
+                      ? '1 trip from tomorrow'
+                      : '$startsTomorrow trips from tomorrow',
               isLoading: isLoading && upcoming.isEmpty,
               muted: startsTomorrow == 0,
               onTap: () => goToTrips('upcoming', date: tomorrow),

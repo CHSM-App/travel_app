@@ -171,7 +171,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
                 'agency_id': agId,
               });
 
-          if (res != null && res['success'] == 1) {
+          if (res != null && _isUploadSuccess(res['success'])) {
             await ref
                 .read(loginViewModelProvider.notifier)
                 .adminProfile(adminId);
@@ -195,12 +195,77 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
 
   Future<void> _pickImage(ImageSource src) async {
     final f = await _picker.pickImage(source: src, imageQuality: 85);
-    if (f != null)
-      setState(() {
-        _profileImage = File(f.path);
-        _imageUrl = null;
-        _forceLetterAvatar = false;
-      });
+    if (f == null) return;
+
+    final picked = File(f.path);
+    setState(() {
+      _profileImage = picked;
+      _imageUrl = null;
+      _forceLetterAvatar = false;
+    });
+
+    // Upload immediately so the user gets instant "Image uploaded
+    // successfully" feedback instead of waiting for Save Changes.
+    await _uploadProfileImage(picked);
+  }
+
+  // Uploads [image] to the admin profile and shows a green success snackbar on
+  // success, or a red error snackbar on failure. Returns true when uploaded.
+  Future<bool> _uploadProfileImage(File image) async {
+    final list = ref.read(loginViewModelProvider).adminProfile.value;
+    final adminId = list?.firstOrNull?.adminId ?? 0;
+    final agId = list?.firstOrNull?.agencyId ?? '';
+
+    if (adminId == 0 || agId.isEmpty) {
+      _snack('Admin not found', error: true);
+      return false;
+    }
+
+    setState(() => _isSaving = true);
+
+    final res = await ref
+        .read(loginViewModelProvider.notifier)
+        .updateAdminProfile(image, adminId, agId);
+
+    if (res == null || !_isUploadSuccess(res['success'])) {
+      _snack(res?['message'] ?? res?['error'] ?? 'Image upload failed',
+          error: true);
+      setState(() => _isSaving = false);
+      return false;
+    }
+
+    await ref.read(loginViewModelProvider.notifier).adminProfile(adminId);
+    setState(() {
+      _imageUrl = _extractUploadedUrl(res);
+      _profileImage = null;
+      _avatarRefreshToken++;
+      _forceLetterAvatar = false;
+      _isSaving = false;
+    });
+    _snack('Image uploaded successfully');
+    return true;
+  }
+
+  // The upload API returns `success: true` (boolean), while older/other admin
+  // endpoints use `1` or `"1"`. Treat all of them as success.
+  bool _isUploadSuccess(dynamic v) {
+    if (v is bool) return v;
+    if (v is num) return v == 1;
+    if (v is String) {
+      final s = v.toLowerCase().trim();
+      return s == 'true' || s == '1';
+    }
+    return false;
+  }
+
+  // The secure-upload handler returns the saved URL in a top-level `urls` list;
+  // fall back to the older `data.imageUrl` shape if present.
+  String? _extractUploadedUrl(Map res) {
+    final urls = res['urls'];
+    if (urls is List && urls.isNotEmpty) return urls.first?.toString();
+    final data = res['data'];
+    if (data is Map) return data['imageUrl']?.toString();
+    return null;
   }
 
   Future<void> _saveProfile() async {
@@ -210,24 +275,13 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
 
     final list = ref.read(loginViewModelProvider).adminProfile.value;
     final adminId = list?.firstOrNull?.adminId ?? 0;
-    final agId = list?.firstOrNull?.agencyId ?? '';
 
+    // A staged image is normally uploaded as soon as it's picked, but if one is
+    // still pending (e.g. upload failed earlier) push it now before saving.
     if (_profileImage != null) {
-      final res = await ref
-          .read(loginViewModelProvider.notifier)
-          .updateAdminProfile(_profileImage!, adminId, agId);
-      if (res == null || res['success'] != 1) {
-        _snack(res?['message'] ?? 'Image upload failed', error: true);
-        setState(() => _isSaving = false);
-        return;
-      }
-      setState(() {
-        _imageUrl = res['data']?['imageUrl']?.toString();
-        _profileImage = null;
-        _avatarRefreshToken++;
-        _forceLetterAvatar = false;
-      });
-      _snack('Image uploaded successfully');
+      final ok = await _uploadProfileImage(_profileImage!);
+      if (!ok) return; // _uploadProfileImage already cleared _isSaving + snacked
+      setState(() => _isSaving = true);
     }
 
     final info = LoginInfo(

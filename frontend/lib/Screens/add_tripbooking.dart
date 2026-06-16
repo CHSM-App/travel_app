@@ -954,16 +954,24 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
   // Calls our backend for the road distance when BOTH locations are filled,
   // fills the Distance field, stores the pretty distance/duration text for the
   // info chip, then recomputes fuel.
-  Future<void> _maybeFetchDistance() async {
+  Future<void> _maybeFetchDistance({bool force = false}) async {
     final from = pickup.text.trim();
     final to = drop.text.trim();
-    if (from.isEmpty || to.isEmpty) return;
+    if (from.isEmpty || to.isEmpty) {
+      if (force) _snack("Enter pickup and drop locations first");
+      return;
+    }
     if (_fetchingDistance) return;
 
     // Skip if we already have a distance for this exact route (avoids the
-    // debounce + focus-loss both firing the same call).
+    // debounce + focus-loss both firing the same call). `force` (an explicit
+    // tap on "Click here to view distance") always re-hits the API.
     final route = "${from.toLowerCase()}→${to.toLowerCase()}";
-    if (route == _lastDistanceRoute && distance.text.trim().isNotEmpty) return;
+    if (!force &&
+        route == _lastDistanceRoute &&
+        distance.text.trim().isNotEmpty) {
+      return;
+    }
 
     setState(() => _fetchingDistance = true);
     try {
@@ -1149,6 +1157,34 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
   // Always shown doubled: the driver has to come back regardless of whether the
   // customer booked a return trip, so the round-trip time is the real estimate.
   // Distance is already shown in the Distance field, so it's not repeated here.
+  // Small tappable hint under the Distance field telling the user they can tap
+  // the field to auto-fetch the road distance from pickup → drop.
+  Widget _distanceHint() {
+    return Padding(
+      padding: const EdgeInsets.only(top: 8, left: 4),
+      child: GestureDetector(
+        onTap: () => _maybeFetchDistance(force: true),
+        behavior: HitTestBehavior.opaque,
+        child: Row(
+          children: [
+            const Icon(Icons.touch_app_rounded, size: 14, color: _C.accent),
+            const SizedBox(width: 6),
+            Text(
+              "Click here to view distance",
+              style: TextStyle(
+                fontSize: 12,
+                color: _C.accent,
+                fontWeight: FontWeight.w600,
+                decoration: TextDecoration.underline,
+                decorationColor: _C.accent.withOpacity(0.5),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _routeInfoChip() {
     if (_routeDurationMinutes == null && _routeDurationText == null) {
       return const SizedBox.shrink();
@@ -1763,12 +1799,12 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
 
                       const SizedBox(height: 12),
 
-                      // ── 03  ROUTE ────────────────────────────────────────────
+                      // ── 03  ROUTE & ASSIGNMENTS ──────────────────────────────
                       _FadeSlide(
                         anim: _anims[2],
                         child: _sectionCard(
                           icon: Icons.route_rounded,
-                          label: "Route Details",
+                          label: "Route & Assignments",
                           iconColor: _C.accent,
                           iconBg: _C.accentSoft,
                           badge: "03",
@@ -1825,25 +1861,9 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
                                       )
                                     : null,
                               ),
+                              _distanceHint(),
                               _routeInfoChip(),
-                            ],
-                          ),
-                        ),
-                      ),
-
-                      const SizedBox(height: 12),
-
-                      // ── 04  ASSIGNMENTS ──────────────────────────────────────
-                      _FadeSlide(
-                        anim: _anims[3],
-                        child: _sectionCard(
-                          icon: Icons.groups_2_rounded,
-                          label: "Assignments",
-                          iconColor: _C.green,
-                          iconBg: _C.greenSoft,
-                          badge: "04",
-                          child: Column(
-                            children: [
+                              _divider(),
                               // ── Vehicle ──────────────────────────────────────────
                               _assignLabel("Vehicle"),
                               const SizedBox(height: 6),
@@ -2578,7 +2598,16 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
     final inv = diff.isNegative;
     final h = diff.inHours;
     final m = diff.inMinutes.remainder(60);
-    final dur = inv ? "Invalid range" : (h == 0 ? "${m}m" : "${h}h ${m}m");
+    String dur;
+    if (inv) {
+      dur = "Invalid range";
+    } else if (diff.inHours >= 24) {
+      final d = diff.inDays;
+      final rh = diff.inHours.remainder(24);
+      dur = rh == 0 ? "${d}d" : "${d}d ${rh}h";
+    } else {
+      dur = h == 0 ? "${m}m" : "${h}h ${m}m";
+    }
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
