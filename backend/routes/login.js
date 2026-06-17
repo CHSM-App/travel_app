@@ -337,6 +337,23 @@ router.post('/sendOtp', async (req, res) => {
       return res.status(400).json({ success: false, message: "purpose must be 'register', 'forgot_pin', 'delete_account' or 'change_mobile'" });
     }
 
+    // For registration, reject up-front if the mobile already belongs to an
+    // account — otherwise the user only finds out after verifying the OTP. This
+    // lets the sign-up screen surface the error before navigating to the OTP page.
+    if (purpose === 'register') {
+      const adminRes = await db.request()
+        .input('operation', sql.NVarChar, 'GetAdminByMobile')
+        .input('mobile', sql.NVarChar(20), mobile)
+        .execute('sp_admin');
+      const admin = adminRes.recordset && adminRes.recordset[0];
+      if (admin) {
+        return res.status(409).json({
+          success: false,
+          message: 'An account with this mobile number already exists. Please sign in instead.',
+        });
+      }
+    }
+
     // For account deletion, confirm the mobile belongs to a real account before
     // sending an OTP — otherwise the user gets a code for an account that does
     // not exist and only finds out at the final step.

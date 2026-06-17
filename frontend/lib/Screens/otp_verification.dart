@@ -32,6 +32,16 @@ class OtpVerificationPage extends ConsumerStatefulWidget {
   /// Message shown (and surfaced to the caller via pop) on full success.
   final String successMessage;
 
+  /// When false, the caller has already sent the OTP (e.g. the sign-up screen
+  /// sends it first so it can surface "number already exists" before navigating
+  /// here). This screen then just starts the resend countdown instead of sending
+  /// a second OTP on mount.
+  final bool autoSendOtp;
+
+  /// Dev OTP captured by the caller's send (only when WhatsApp is disabled in
+  /// non-production). Shown in the "OTP sent" message when [autoSendOtp] is false.
+  final String? initialDevOtp;
+
   const OtpVerificationPage({
     super.key,
     required this.mobile,
@@ -40,6 +50,8 @@ class OtpVerificationPage extends ConsumerStatefulWidget {
     required this.subtitle,
     required this.onVerified,
     this.successMessage = "Verified successfully",
+    this.autoSendOtp = true,
+    this.initialDevOtp,
   });
 
   @override
@@ -83,9 +95,17 @@ class _OtpVerificationPageState extends ConsumerState<OtpVerificationPage>
     ).animate(CurvedAnimation(parent: _animController, curve: Curves.easeOut));
     _animController.forward();
 
-    // Send the first OTP as soon as the screen mounts.
+    // Send the first OTP as soon as the screen mounts — unless the caller
+    // already sent it, in which case just start the resend countdown.
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _sendOtp(initial: true);
+      if (widget.autoSendOtp) {
+        _sendOtp(initial: true);
+      } else {
+        _startResendCountdown();
+        final devNote =
+            widget.initialDevOtp != null ? " (dev OTP: ${widget.initialDevOtp})" : "";
+        _showMessage("OTP sent to your WhatsApp$devNote", success: true);
+      }
       _otpFocusNodes.first.requestFocus();
     });
   }

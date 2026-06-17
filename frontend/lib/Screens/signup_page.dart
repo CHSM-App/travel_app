@@ -95,15 +95,31 @@ class _SignUpPageState extends ConsumerState<SignUpPage>
       password: _passwordController.text.trim(),
     );
 
+    // Send the registration OTP from here first. The backend rejects this with
+    // a "number already exists" error when the mobile is already registered, so
+    // we surface that on this screen instead of navigating to the OTP page.
+    final otpResponse = await ref
+        .read(loginViewModelProvider.notifier)
+        .sendOtp(mobile, 'register');
+
+    if (!mounted) return;
+
+    if (!otpResponse.success) {
+      _showMessage(otpResponse.message ?? "Failed to send OTP");
+      return;
+    }
+
     // Verify the mobile number via WhatsApp OTP before creating the account.
-    // The OTP screen sends the code, verifies it, and only then runs the
-    // account-creation action, popping with `true` on full success.
+    // The OTP screen verifies the code (already sent above) and only then runs
+    // the account-creation action, popping with `true` on full success.
     final verified = await Navigator.push<bool>(
       context,
       MaterialPageRoute(
         builder: (_) => OtpVerificationPage(
           mobile: mobile,
           purpose: 'register',
+          autoSendOtp: false,
+          initialDevOtp: otpResponse.devOtp,
           title: "Verify your number",
           subtitle: "Enter the 6-digit code sent to your WhatsApp",
           successMessage: "Account created successfully",
