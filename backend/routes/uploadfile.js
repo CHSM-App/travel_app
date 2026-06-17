@@ -12,7 +12,7 @@ const {
 // Public base for the served file URLs (stored in the DB). Routes are mounted
 // under /upload (see app.js), so a file ends up at:
 //   {PUBLIC_BASE}/upload/<Type>/<agencyId>/<id>/<filename>
-const PUBLIC_BASE = 'https://travels.vengurlatech.com';
+const PUBLIC_BASE = 'https://vego.vengurlatech.com';
 
 // Each upload type's served folder lives next to this file (routes/<Type>/...).
 function typeDir(type) {

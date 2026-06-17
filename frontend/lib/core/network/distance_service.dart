@@ -26,7 +26,7 @@ class DistanceService {
     String destination,
   ) async {
     // baseUrl already ends with '/', so this becomes
-    // https://travels.vengurlatech.com/users/distance
+    // https://vego.vengurlatech.com/users/distance
     final url = Uri.parse('${baseUrl}users/distance').replace(
       queryParameters: {
         'origins': origin,

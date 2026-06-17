@@ -446,7 +446,7 @@ class _ModernSettingsPageState extends ConsumerState<ModernSettingsPage>
   // ─────────────────────────── PRIVACY POLICY ──────────────────────
 
   Future<void> _openPrivacyPolicy(BuildContext context) async {
-    final uri = Uri.parse('https://travels.vengurlatech.com/login/privacy');
+    final uri = Uri.parse('https://vego.vengurlatech.com/login/privacy');
     final launched =
         await launchUrl(uri, mode: LaunchMode.externalApplication);
     if (!launched && context.mounted) {

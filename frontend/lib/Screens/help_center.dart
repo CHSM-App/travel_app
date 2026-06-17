@@ -427,10 +427,10 @@ class _HelpCenterPageState extends State<HelpCenterPage> {
           const SizedBox(height: 10),
           _contactButton(
             label: 'View privacy policy',
-            value: 'travels.vengurlatech.com/login/privacy',
+            value: 'vego.vengurlatech.com/login/privacy',
             icon: Icons.shield_outlined,
             onTap: () => _launchUri(Uri.parse(
-                'https://travels.vengurlatech.com/login/privacy')),
+                'https://vego.vengurlatech.com/login/privacy')),
           ),
         ],
       ),
@@ -723,7 +723,7 @@ class _HelpCenterPageState extends State<HelpCenterPage> {
             _Faq(
               'Where can I read your privacy policy?',
               'Settings → Privacy & Security, or visit '
-                  'travels.vengurlatech.com/login/privacy in any browser.',
+                  'vego.vengurlatech.com/login/privacy in any browser.',
             ),
           ],
         ),

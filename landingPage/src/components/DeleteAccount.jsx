@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import Logo from './Logo'
 import { ArrowLeft, AlertTriangle, Phone, KeyRound, FileText, CheckCircle, XCircle, Loader2 } from 'lucide-react'
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://travels.vengurlatech.com'
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://vego.vengurlatech.com'
 
 async function apiPost(path, body) {
   const res = await fetch(`${API_BASE}${path}`, {
