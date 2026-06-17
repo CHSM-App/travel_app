@@ -1399,7 +1399,7 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
                     Text(
                       _setReminder
                           ? "Alerts at ${_fmtReminderAt(effective)}"
-                          : "Off · default 7 PM, day before",
+                          : "Off",
                       style: const TextStyle(fontSize: 11, color: _C.text2),
                     ),
                   ],
