@@ -8,6 +8,8 @@ import 'package:intl/intl.dart';
 import 'package:travel_agency_app/Screens/add_driver.dart';
 import 'package:travel_agency_app/Screens/add_vehicle.dart';
 import 'package:travel_agency_app/core/network/distance_service.dart';
+import 'package:travel_agency_app/core/notifications/ringtone_picker.dart';
+import 'package:travel_agency_app/core/notifications/trip_alarm_service.dart';
 import 'package:travel_agency_app/core/network/places_service.dart';
 import 'package:travel_agency_app/core/theme/app_colors.dart';
 import 'package:travel_agency_app/domain/models/booking_info.dart';
@@ -102,6 +104,12 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
   // Round trip → charged ×2. One-way → charged ×1.5 (base + half return leg).
   bool _isReturnTrip = false;
   bool _saving = false;
+
+  // Offline trip reminder. When on, an on-device alarm is scheduled after the
+  // trip saves. Defaults to 7 PM the day before start; the operator can pick a
+  // custom time. Only offered for future (not back-dated) trips.
+  bool _setReminder = false;
+  DateTime? _reminderAt;
   bool _fetchingDistance = false;
   String? _routeDistanceText; // e.g. "173 km"
   String? _routeDurationText; // e.g. "3 hours 46 mins"
@@ -185,6 +193,11 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
       driverCharges.text = b.driverCharges?.toString() ?? '';
       fuelCharges.text = b.fuelCharges?.toString() ?? '';
       amountReceived.text = b.amountReceived?.toString() ?? '';
+      // Reflect any reminder already set for this trip so editing keeps it.
+      if (TripAlarmService.hasAlarm(b.tripId)) {
+        _setReminder = true;
+        _reminderAt = TripAlarmService.alarmTime(b.tripId);
+      }
     }
 
     // Recompute the fare suggestion whenever the route text changes.
@@ -1336,6 +1349,167 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
     );
   }
 
+  // "MMM dd, yyyy • hh:mm a" for the reminder summary line.
+  String _fmtReminderAt(DateTime d) =>
+      DateFormat("MMM dd, yyyy  •  hh:mm a").format(d);
+
+  // Toggle + summary for the offline trip reminder. Switching on seeds the
+  // default (7 PM the day before start); tapping the row lets the operator pick
+  // a custom date/time using the same sheet as the start/end pickers.
+  Widget _reminderTile() {
+    final effective =
+        _reminderAt ?? TripAlarmService.defaultReminderFor(startDt!);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: _C.surfaceLight,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: _C.divider),
+      ),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: _C.accent.withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(
+                  Icons.notifications_active_rounded,
+                  size: 14,
+                  color: _C.accent,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      "Trip Reminder",
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: _C.text1,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      _setReminder
+                          ? "Alerts at ${_fmtReminderAt(effective)}"
+                          : "Off · default 7 PM, day before",
+                      style: const TextStyle(fontSize: 11, color: _C.text2),
+                    ),
+                  ],
+                ),
+              ),
+              Switch(
+                value: _setReminder,
+                activeColor: _C.accent,
+                onChanged: (v) => setState(() {
+                  _setReminder = v;
+                  if (v && _reminderAt == null) {
+                    _reminderAt = TripAlarmService.defaultReminderFor(startDt!);
+                  }
+                }),
+              ),
+            ],
+          ),
+          if (_setReminder)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 6, left: 2, right: 2),
+              child: Column(
+                children: [
+                  Row(
+                    children: [
+                      const SizedBox(width: 34),
+                      Expanded(
+                        child: _reminderChip(
+                          icon: Icons.edit_calendar_rounded,
+                          label: "Change reminder time",
+                          onTap: () async {
+                            final picked = await _showDateTimeSheet(
+                              earliest: DateTime.now(),
+                              initial: effective,
+                              title: "Reminder Date & Time",
+                              accent: _C.accent,
+                            );
+                            if (picked != null) {
+                              setState(() => _reminderAt = picked);
+                            }
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      const SizedBox(width: 34),
+                      Expanded(
+                        child: _reminderChip(
+                          icon: Icons.music_note_rounded,
+                          label:
+                              "Sound: ${TripAlarmService.currentSoundTitle ?? 'Default alarm tone'}",
+                          onTap: () async {
+                            final choice = await RingtonePicker.pick(
+                              current: TripAlarmService.currentSoundUri,
+                            );
+                            if (choice == null) return;
+                            await TripAlarmService.setSound(choice);
+                            if (mounted) setState(() {});
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  // Small pill button used inside the reminder tile (time / sound).
+  Widget _reminderChip({
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        decoration: BoxDecoration(
+          color: _C.accentSoft,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: _C.accent.withOpacity(0.25)),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, size: 14, color: _C.accent),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: _C.accent,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Future<void> _goAddVehicle() async {
     await Navigator.push(
       context,
@@ -1494,6 +1668,19 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
         return;
       }
       completionRecorded = true;
+    }
+
+    // Schedule (or refresh) the offline reminder alarm for a future trip.
+    if (_setReminder && tripId != null && startDt != null && !completed) {
+      final fireAt =
+          _reminderAt ?? TripAlarmService.defaultReminderFor(startDt!);
+      await TripAlarmService.schedule(
+        tripId: tripId,
+        fireAt: fireAt,
+        title: "Trip Reminder",
+        body:
+            "Upcoming trip: ${pickup.text} → ${drop.text} — starts ${DateFormat("MMM dd, hh:mm a").format(startDt!)}",
+      );
     }
 
     if (!mounted) return;
@@ -1795,6 +1982,11 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
                               if (startDt != null && endDt != null) ...[
                                 const SizedBox(height: 12),
                                 _durationBanner(),
+                              ],
+                              // Reminder only makes sense for a future trip.
+                              if (startDt != null && !_isCompletedTrip) ...[
+                                const SizedBox(height: 12),
+                                _reminderTile(),
                               ],
                             ],
                           ),

@@ -7,6 +7,7 @@ import 'package:travel_agency_app/Screens/login.dart';
 import 'package:travel_agency_app/core/network/token_provider.dart';
 import 'package:travel_agency_app/core/notifications/notification_store.dart';
 import 'package:travel_agency_app/core/notifications/push_service.dart';
+import 'package:travel_agency_app/core/notifications/trip_alarm_service.dart';
 import 'package:travel_agency_app/core/theme/app_colors.dart';
 import 'package:travel_agency_app/presentation/providers/repository_provider.dart';
 import 'package:travel_agency_app/presentation/providers/viewmodel_provider.dart';
@@ -80,6 +81,8 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
     try {
       await NotificationStore.instance.load();
       await PushService.init(ref.read(apiServiceProvider));
+      // Load persisted trip reminders so the bell icon shows the right state.
+      await TripAlarmService.ensureReady();
     } catch (e) {
       debugPrint('PushService init failed: $e');
     }

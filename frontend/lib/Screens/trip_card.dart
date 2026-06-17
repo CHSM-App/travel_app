@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:travel_agency_app/Screens/add_tripbooking.dart';
+import 'package:travel_agency_app/core/notifications/ringtone_picker.dart';
+import 'package:travel_agency_app/core/notifications/trip_alarm_service.dart';
 import 'package:travel_agency_app/core/theme/app_colors.dart';
 import 'package:travel_agency_app/domain/models/booking_info.dart';
 import 'package:travel_agency_app/presentation/providers/viewmodel_provider.dart';
@@ -1712,6 +1714,9 @@ class TripCard extends ConsumerWidget {
                                       );
                                       return;
                                     }
+                                    // Drop any pending reminder for a trip that
+                                    // is no longer happening.
+                                    await TripAlarmService.cancel(trip_id);
                                     if (onTripUpdated != null) {
                                       await onTripUpdated!();
                                     }
@@ -2734,6 +2739,9 @@ class TripCard extends ConsumerWidget {
                     ],
                   ),
                 ),
+                // Reminder bell — only meaningful for upcoming/active trips.
+                if (bookinginfo.status == 1 || bookinginfo.status == 3)
+                  _TripReminderBell(booking: bookinginfo),
                 const SizedBox(width: 8),
                 // Status pills: trip lifecycle status + payment status
                 Column(
@@ -2902,4 +2910,304 @@ class TripCard extends ConsumerWidget {
       ),
     );
   }
+}
+
+// ── Reminder bell ────────────────────────────────────────────────────────────
+// Small tappable bell on the trip card. Filled/coloured when a reminder is set,
+// outline when not. Tapping opens the reminder sheet; it rebuilds itself when
+// the alarm is set/removed so the icon reflects the new state immediately.
+class _TripReminderBell extends StatefulWidget {
+  final BookingInfo booking;
+  const _TripReminderBell({required this.booking});
+
+  @override
+  State<_TripReminderBell> createState() => _TripReminderBellState();
+}
+
+class _TripReminderBellState extends State<_TripReminderBell> {
+  @override
+  Widget build(BuildContext context) {
+    final hasAlarm = TripAlarmService.hasAlarm(widget.booking.tripId);
+    return GestureDetector(
+      onTap: () => _openTripReminderSheet(
+        context,
+        widget.booking,
+        () {
+          if (mounted) setState(() {});
+        },
+      ),
+      child: Container(
+        width: 30,
+        height: 30,
+        decoration: BoxDecoration(
+          color: hasAlarm
+              ? AppColors.brandPrimary.withOpacity(0.12)
+              : Colors.grey.shade100,
+          shape: BoxShape.circle,
+        ),
+        child: Icon(
+          hasAlarm
+              ? Icons.notifications_active_rounded
+              : Icons.notifications_none_rounded,
+          size: 16,
+          color: hasAlarm ? AppColors.brandPrimary : const Color(0xFF7B82A0),
+        ),
+      ),
+    );
+  }
+}
+
+// Format like "12 Jun 2026, 7:00 PM" for the reminder sheet.
+const List<String> _reminderMonths = [
+  'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+];
+String _fmtReminder(DateTime d) {
+  final h = d.hour % 12 == 0 ? 12 : d.hour % 12;
+  final m = d.minute.toString().padLeft(2, '0');
+  final ap = d.hour >= 12 ? 'PM' : 'AM';
+  return "${d.day} ${_reminderMonths[d.month - 1]} ${d.year}, $h:$m $ap";
+}
+
+// Bottom sheet to set / change / remove a trip's offline reminder alarm.
+Future<void> _openTripReminderSheet(
+  BuildContext context,
+  BookingInfo booking,
+  VoidCallback onChanged,
+) async {
+  final tripId = booking.tripId;
+  final start = booking.startDateTime;
+  if (tripId == null || start == null) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("This trip has no start time to remind about")),
+    );
+    return;
+  }
+
+  const accent = AppColors.brandPrimary;
+  const textSec = Color(0xFF7B82A0);
+  const danger = Color(0xFFE53935);
+
+  final route = "${booking.pickupLocation ?? '--'} → ${booking.dropLocation ?? '--'}";
+  final reminderTitle = "Trip Reminder";
+  String reminderBody() =>
+      "Upcoming trip: $route — starts ${_fmtReminder(start)}";
+
+  Future<void> doSchedule(DateTime fireAt) async {
+    final ok = await TripAlarmService.schedule(
+      tripId: tripId,
+      fireAt: fireAt,
+      title: reminderTitle,
+      body: reminderBody(),
+    );
+    if (!context.mounted) return;
+    Navigator.pop(context);
+    onChanged();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          ok
+              ? "Reminder set for ${_fmtReminder(fireAt)}"
+              : "That time has already passed — pick a later time",
+        ),
+        backgroundColor: ok ? const Color(0xFF2DB976) : danger,
+      ),
+    );
+  }
+
+  await showModalBottomSheet(
+    context: context,
+    backgroundColor: Colors.transparent,
+    builder: (ctx) {
+      final hasAlarm = TripAlarmService.hasAlarm(tripId);
+      final existing = TripAlarmService.alarmTime(tripId);
+      final defaultTime = TripAlarmService.defaultReminderFor(start);
+
+      Widget tile({
+        required IconData icon,
+        required Color color,
+        required String title,
+        String? subtitle,
+        required VoidCallback onTap,
+      }) {
+        return InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(14),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+            child: Row(
+              children: [
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: color.withOpacity(0.12),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(icon, size: 20, color: color),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF1A1D2E),
+                        ),
+                      ),
+                      if (subtitle != null) ...[
+                        const SizedBox(height: 2),
+                        Text(
+                          subtitle,
+                          style: const TextStyle(fontSize: 12, color: textSec),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                const Icon(Icons.chevron_right_rounded, color: textSec),
+              ],
+            ),
+          ),
+        );
+      }
+
+      return StatefulBuilder(
+        builder: (ctx, setSheet) => Container(
+        decoration: const BoxDecoration(
+          color: Color(0xFFF7F8FC),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: SafeArea(
+          top: false,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(height: 12),
+              Container(
+                width: 36,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(18, 16, 18, 6),
+                child: Row(
+                  children: [
+                    const Icon(Icons.notifications_active_rounded,
+                        color: accent, size: 22),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            "Trip Reminder",
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w800,
+                              color: Color(0xFF1A1D2E),
+                            ),
+                          ),
+                          Text(
+                            hasAlarm && existing != null
+                                ? "Set for ${_fmtReminder(existing)}"
+                                : "No reminder set",
+                            style: const TextStyle(fontSize: 12, color: textSec),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 6),
+              tile(
+                icon: Icons.schedule_rounded,
+                color: accent,
+                title: "Default — 7:00 PM, day before",
+                subtitle: _fmtReminder(defaultTime),
+                onTap: () => doSchedule(defaultTime),
+              ),
+              tile(
+                icon: Icons.edit_calendar_rounded,
+                color: const Color(0xFF7C3AED),
+                title: "Custom date & time",
+                subtitle: "Pick when you want to be reminded",
+                onTap: () async {
+                  final now = DateTime.now();
+                  final d = await showDatePicker(
+                    context: ctx,
+                    initialDate: defaultTime.isAfter(now) ? defaultTime : now,
+                    firstDate: now,
+                    lastDate: DateTime(2100),
+                  );
+                  if (d == null) return;
+                  if (!ctx.mounted) return;
+                  final t = await showTimePicker(
+                    context: ctx,
+                    initialTime: const TimeOfDay(hour: 19, minute: 0),
+                  );
+                  if (t == null) return;
+                  await doSchedule(
+                    DateTime(d.year, d.month, d.day, t.hour, t.minute),
+                  );
+                },
+              ),
+              Divider(height: 1, color: Colors.grey.shade200, indent: 16, endIndent: 16),
+              tile(
+                icon: Icons.music_note_rounded,
+                color: const Color(0xFF2DB976),
+                title: "Alarm sound",
+                subtitle:
+                    TripAlarmService.currentSoundTitle ?? "Default alarm tone",
+                onTap: () async {
+                  final choice = await RingtonePicker.pick(
+                    current: TripAlarmService.currentSoundUri,
+                  );
+                  if (choice == null) return;
+                  await TripAlarmService.setSound(choice);
+                  // If this trip already has an alarm, re-apply it so the new
+                  // sound takes effect now (channel sound is fixed at schedule).
+                  final cur = TripAlarmService.alarmTime(tripId);
+                  if (cur != null) {
+                    await TripAlarmService.schedule(
+                      tripId: tripId,
+                      fireAt: cur,
+                      title: reminderTitle,
+                      body: reminderBody(),
+                    );
+                  }
+                  setSheet(() {});
+                },
+              ),
+              if (hasAlarm)
+                tile(
+                  icon: Icons.notifications_off_rounded,
+                  color: danger,
+                  title: "Remove reminder",
+                  onTap: () async {
+                    await TripAlarmService.cancel(tripId);
+                    if (!ctx.mounted) return;
+                    Navigator.pop(ctx);
+                    onChanged();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text("Reminder removed")),
+                    );
+                  },
+                ),
+              const SizedBox(height: 8),
+            ],
+          ),
+        ),
+        ),
+      );
+    },
+  );
 }

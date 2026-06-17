@@ -1178,12 +1178,7 @@ class _VehiclePageState extends ConsumerState<VehiclePage>
         indicator: BoxDecoration(
           color: Color(0xFFED1C24),
           borderRadius: BorderRadius.circular(10),
-          boxShadow: [
-            BoxShadow(
-              color: _C.accent.withOpacity(0.3),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
+          boxShadow: [    
           ],
         ),
         indicatorPadding: const EdgeInsets.all(3),
