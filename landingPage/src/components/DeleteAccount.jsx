@@ -66,6 +66,8 @@ export default function DeleteAccount() {
     e.preventDefault(); clearError()
     if (!/^\d{10}$/.test(phone)) return setError('Enter a valid 10-digit phone number.')
     setLoading(true)
+    // The backend rejects (no OTP sent) if the number has no account or already
+    // has a pending deletion request — those errors keep the user on this step.
     try { await apiPost('/login/sendOtp', { mobile: phone, purpose: 'delete_account' }); setStep(1) }
     catch (err) { setError(err.message) } finally { setLoading(false) }
   }
@@ -129,7 +131,7 @@ export default function DeleteAccount() {
             </p>
             {scheduled && (
               <div className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 mb-5 text-xs font-semibold" style={{ background: '#f6eee6', color: '#92500f' }}>
-                Scheduled for deletion by {scheduled.toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}
+                Scheduled for deletion by {scheduled.toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' })}
               </div>
             )}
             <div className="rounded-xl p-4 text-left text-sm text-ink-soft leading-relaxed mb-6 border border-sand-border bg-sand-soft/50">

@@ -337,6 +337,42 @@ router.post('/sendOtp', async (req, res) => {
       return res.status(400).json({ success: false, message: "purpose must be 'register', 'forgot_pin' or 'delete_account'" });
     }
 
+    // For account deletion, confirm the mobile belongs to a real account before
+    // sending an OTP — otherwise the user gets a code for an account that does
+    // not exist and only finds out at the final step.
+    if (purpose === 'delete_account') {
+      const adminRes = await db.request()
+        .input('operation', sql.NVarChar, 'GetAdminByMobile')
+        .input('mobile', sql.NVarChar(20), mobile)
+        .execute('sp_admin');
+      const admin = adminRes.recordset && adminRes.recordset[0];
+      if (!admin) {
+        return res.status(404).json({ success: false, message: 'No account found for this mobile number.' });
+      }
+
+      // If a deletion request is already pending for this number, reject here
+      // (no OTP is sent) so the user stays on the phone-number step with an error.
+      const pendingRes = await db.request()
+        .input('mobile', sql.NVarChar(20), mobile)
+        .query(`SELECT TOP 1 scheduled_for FROM dbo.account_deletion_requests
+                WHERE mobile = @mobile AND status = 'pending'
+                ORDER BY requested_at DESC`);
+      const pending = pendingRes.recordset && pendingRes.recordset[0];
+      if (pending) {
+        // scheduled_for is stored as IST wall-clock; the driver hands it back
+        // as a UTC-labelled Date, so render it as-is (timeZone UTC = no shift).
+        const schedDate = pending.scheduled_for
+          ? new Date(pending.scheduled_for).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' })
+          : null;
+        return res.status(409).json({
+          success: false,
+          message: schedDate
+            ? `An account deletion request for this number is already pending (scheduled for deletion by ${schedDate}).`
+            : 'An account deletion request for this number is already pending.',
+        });
+      }
+    }
+
     const result = await sendOtp(mobile, purpose);
     return res.json({ success: true, ...result });
   } catch (err) {
@@ -432,7 +468,9 @@ router.post('/deleteAccount', async (req, res) => {
         END
         ELSE
         BEGIN
-          DECLARE @now DATETIME = GETUTCDATE();
+          -- Store IST wall-clock (server reviews these by hand). +330 min from
+          -- UTC is IST regardless of the SQL server's own timezone setting.
+          DECLARE @now DATETIME = DATEADD(MINUTE, 330, GETUTCDATE());
           INSERT INTO dbo.account_deletion_requests
             (admin_id, agency_id, name, email, mobile, agency_name, city, reason, status, requested_at, scheduled_for)
           OUTPUT INSERTED.scheduled_for
