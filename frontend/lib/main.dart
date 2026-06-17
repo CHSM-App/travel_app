@@ -9,6 +9,7 @@ import 'package:travel_agency_app/core/notifications/notification_store.dart';
 import 'package:travel_agency_app/core/notifications/push_service.dart';
 import 'package:travel_agency_app/core/notifications/trip_alarm_service.dart';
 import 'package:travel_agency_app/core/theme/app_colors.dart';
+import 'package:travel_agency_app/core/theme/app_scroll_behavior.dart';
 import 'package:travel_agency_app/presentation/providers/repository_provider.dart';
 import 'package:travel_agency_app/presentation/providers/viewmodel_provider.dart';
 
@@ -38,6 +39,8 @@ class MyApp extends StatelessWidget {
       navigatorKey: navigatorKey,
       scaffoldMessengerKey: rootScaffoldMessengerKey,
       debugShowCheckedModeBanner: false,
+      // iOS-style rubber-band scrolling across the whole app.
+      scrollBehavior: const AppScrollBehavior(),
       title: 'Vego',
       theme: ThemeData(
         useMaterial3: true,

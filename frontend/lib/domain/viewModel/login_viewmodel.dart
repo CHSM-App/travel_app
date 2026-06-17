@@ -206,6 +206,22 @@ class LoginViewModel extends StateNotifier<LoginState> {
     }
   }
 
+  /// Submits an OTP-verified account-deletion request. [otp] must come from a
+  /// prior [sendOtp] with purpose 'delete_account'. Returns the raw response
+  /// map ({ success, message, scheduled_for }) on success, or null on error
+  /// (with [state.error] set to a friendly message for the caller to show).
+  Future<dynamic> deleteAccount(String mobile, String otp, String? reason) async {
+    try {
+      state = state.copyWith(isLoading: true, error: null);
+      final response = await usecase.deleteAccount(mobile, otp, reason);
+      state = state.copyWith(isLoading: false);
+      return response;
+    } catch (e) {
+      state = state.copyWith(isLoading: false, error: friendlyErrorMessage(e));
+      return null;
+    }
+  }
+
   /// Persist a freshly-edited per-km rate to secure storage and live state so
   /// the booking form's auto-calc picks it up immediately (without re-login).
   Future<void> setPerKmCharge(double? rate) async {
@@ -263,7 +279,7 @@ Future<dynamic> deleteAdminProfile(Map<String, String> body) async {
       return response;
     }
 catch (e) {
-      state = state.copyWith(isLoading: false, error: e.toString());
+      state = state.copyWith(isLoading: false, error: friendlyErrorMessage(e));
       return null;
     }
   }

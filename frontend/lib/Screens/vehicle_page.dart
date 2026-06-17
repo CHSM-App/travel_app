@@ -7,6 +7,7 @@ import 'package:travel_agency_app/Screens/driver_history.dart';
 import 'package:travel_agency_app/Screens/vehicle_details.dart';
 import 'package:travel_agency_app/core/theme/app_colors.dart';
 import 'package:travel_agency_app/core/widgets/error_view.dart';
+import 'package:travel_agency_app/core/widgets/paginated_list_view.dart';
 import 'package:travel_agency_app/core/widgets/skeleton.dart';
 import 'package:travel_agency_app/domain/models/vehicles.dart';
 import 'package:travel_agency_app/domain/models/drivers.dart';
@@ -1413,21 +1414,13 @@ class _VehiclePageState extends ConsumerState<VehiclePage>
                           // Stats strip uses filtered for accurate counts
                           _statsStrip(filtered, true),
                           Expanded(
-                            child: RefreshIndicator(
+                            child: PaginatedListView<Vehicles>(
+                              items: filtered,
                               onRefresh: _refreshData,
-                              child: ListView.builder(
-                                physics:
-                                    const AlwaysScrollableScrollPhysics(), // 🔥 important
-                                padding: const EdgeInsets.fromLTRB(
-                                  16,
-                                  8,
-                                  16,
-                                  100,
-                                ),
-                                itemCount: filtered.length,
-                                itemBuilder: (_, i) =>
-                                    _vehicleCard(filtered[i], i),
-                              ),
+                              resetToken: q,
+                              itemLabel: 'vehicles',
+                              padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
+                              itemBuilder: (_, v, i) => _vehicleCard(v, i),
                             ),
                           ),
                         ],
@@ -1463,18 +1456,14 @@ class _VehiclePageState extends ConsumerState<VehiclePage>
                         children: [
                           _statsStrip(filtered, false),
                           Expanded(
-                            child: RefreshIndicator(
+                            child: PaginatedListView<Drivers>(
+                              items: filtered,
                               onRefresh: _refreshData,
-                              child: ListView.builder(
-                                physics: const AlwaysScrollableScrollPhysics(),
-                                padding: const EdgeInsets.only(
-                                  top: 4,
-                                  bottom: 100,
-                                ),
-                                itemCount: filtered.length,
-                                itemBuilder: (_, i) =>
-                                    _driverCard(filtered[i], i),
-                              ),
+                              resetToken: q,
+                              itemLabel: 'drivers',
+                              padding:
+                                  const EdgeInsets.only(top: 4, bottom: 100),
+                              itemBuilder: (_, d, i) => _driverCard(d, i),
                             ),
                           ),
                         ],

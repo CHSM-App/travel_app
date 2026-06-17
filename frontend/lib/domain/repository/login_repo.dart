@@ -15,6 +15,7 @@ abstract class LoginRepo {
   Future<LoginResponse> forgotPassword(LoginInfo loginInfo);
   Future<OtpResponse> sendOtp(String mobile, String purpose);
   Future<OtpResponse> verifyOtp(String mobile, String otp, String purpose);
+  Future<dynamic> deleteAccount(String mobile, String otp, String? reason);
   Future<List<LoginInfo>> adminProfile(int adminId);
     Future<dynamic> updateAdminProfile(File image, String adminId, String agencyId);
     Future<dynamic> deleteAdminProfile(Map<String, String> body);

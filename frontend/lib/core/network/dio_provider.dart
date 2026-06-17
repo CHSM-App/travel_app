@@ -1,4 +1,7 @@
+import 'dart:io';
+
 import 'package:dio/dio.dart';
+import 'package:dio/io.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:travel_agency_app/core/network/interceptor.dart';
 import 'package:travel_agency_app/core/network/retry_interceptor.dart';
@@ -25,6 +28,20 @@ final dioProvider = Provider<Dio>((ref) {
         'Content-Type': 'application/json',
       },
     ),
+  );
+
+  // The backend sits behind IIS/Node with `Keep-Alive: timeout=5`, so the
+  // server drops idle keep-alive connections after 5s. Dart's HttpClient
+  // defaults to a 15s idleTimeout and reuses pooled connections — reusing one
+  // the server already closed surfaces as "Connection closed before full
+  // header was received". Closing our idle sockets *before* the server does
+  // (3s < 5s) avoids that race at the source.
+  dio.httpClientAdapter = IOHttpClientAdapter(
+    createHttpClient: () {
+      final client = HttpClient();
+      client.idleTimeout = const Duration(seconds: 3);
+      return client;
+    },
   );
 
   dio.interceptors.add(LogInterceptor(requestBody: true, responseBody: true));

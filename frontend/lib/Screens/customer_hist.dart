@@ -7,8 +7,10 @@ import 'package:intl/intl.dart';
 import 'package:travel_agency_app/Screens/add_customer.dart';
 import 'package:travel_agency_app/Screens/trip_card.dart';
 import 'package:travel_agency_app/core/theme/app_colors.dart';
+import 'package:travel_agency_app/core/theme/app_scroll_behavior.dart';
 import 'package:travel_agency_app/core/utils/customer_report_export.dart';
 import 'package:travel_agency_app/core/widgets/error_view.dart';
+import 'package:travel_agency_app/core/widgets/paginated_list_view.dart';
 import 'package:travel_agency_app/core/widgets/skeleton.dart';
 import 'package:travel_agency_app/core/widgets/trip_filter.dart';
 import 'package:travel_agency_app/domain/models/booking_info.dart';
@@ -861,7 +863,7 @@ class _CustomerHistState extends ConsumerState<CustomerHist>
       onRefresh: _load,
       color: _accent,
       child: ListView(
-        physics: const AlwaysScrollableScrollPhysics(),
+        physics: kBouncyAlwaysScrollable,
         padding: const EdgeInsets.fromLTRB(0, 16, 0, 24),
         children: const [
           TripCardSkeleton(),
@@ -880,7 +882,7 @@ class _CustomerHistState extends ConsumerState<CustomerHist>
       color: _accent,
       child: LayoutBuilder(
         builder: (context, constraints) => SingleChildScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
+          physics: kBouncyAlwaysScrollable,
           child: ConstrainedBox(
             constraints: BoxConstraints(minHeight: constraints.maxHeight),
             child: Column(
@@ -934,7 +936,7 @@ class _CustomerHistState extends ConsumerState<CustomerHist>
         color: _accent,
         child: LayoutBuilder(
           builder: (context, constraints) => SingleChildScrollView(
-            physics: const AlwaysScrollableScrollPhysics(),
+            physics: kBouncyAlwaysScrollable,
             child: ConstrainedBox(
               constraints: BoxConstraints(minHeight: constraints.maxHeight),
               child: _filteredEmptyState(),
@@ -943,21 +945,19 @@ class _CustomerHistState extends ConsumerState<CustomerHist>
         ),
       );
     }
-    return RefreshIndicator(
+    return PaginatedListView<BookingInfo>(
+      items: filtered,
       onRefresh: _load,
-      color: _accent,
-      child: ListView.builder(
-        physics: const AlwaysScrollableScrollPhysics(),
-        // 8px here + each TripCard's own 8px margin = 16px side inset, matching
-        // the report card, filter row and loading skeletons above.
-        padding: const EdgeInsets.fromLTRB(8, 0, 8, 24),
-        itemCount: filtered.length,
-        itemBuilder: (_, i) => TripCard(
-          key: ValueKey(filtered[i].tripId),
-          bookinginfo: filtered[i],
-          status: filtered[i].status ?? 0,
-          onTripUpdated: _load,
-        ),
+      resetToken: '$_filter|$_payment|$_range|$_customRange|$_query',
+      // 8px here + each TripCard's own 8px margin = 16px side inset, matching
+      // the report card, filter row and loading skeletons above.
+      padding: const EdgeInsets.fromLTRB(8, 0, 8, 24),
+      itemLabel: 'trips',
+      itemBuilder: (_, trip, i) => TripCard(
+        key: ValueKey(trip.tripId),
+        bookinginfo: trip,
+        status: trip.status ?? 0,
+        onTripUpdated: _load,
       ),
     );
   }

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:travel_agency_app/Screens/trip_card.dart';
 import 'package:travel_agency_app/core/theme/app_colors.dart';
+import 'package:travel_agency_app/core/theme/app_scroll_behavior.dart';
 import 'package:travel_agency_app/core/widgets/error_view.dart';
 import 'package:travel_agency_app/domain/models/booking_info.dart';
 import 'package:travel_agency_app/domain/models/ledger_entry.dart';
@@ -295,7 +296,7 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> {
       backgroundColor: _C.surface,
       onRefresh: _refresh,
       child: ListView(
-        physics: const AlwaysScrollableScrollPhysics(),
+        physics: kBouncyAlwaysScrollable,
         padding: const EdgeInsets.fromLTRB(16, 14, 16, 32),
         children: [
           _overallCard(revenue, expense, inPeriod.length),

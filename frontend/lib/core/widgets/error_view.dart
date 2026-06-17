@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:travel_agency_app/core/network/error_messages.dart';
 import 'package:travel_agency_app/core/theme/app_colors.dart';
+import 'package:travel_agency_app/core/theme/app_scroll_behavior.dart';
 
 /// Common offline / error state for the whole app — mirrors the Trips page so
 /// every screen shows the SAME thing when a load fails: an indigo circle with a
@@ -107,7 +108,7 @@ class NetworkErrorView extends StatelessWidget {
       color: AppColors.brandPrimary,
       child: LayoutBuilder(
         builder: (context, constraints) => ListView(
-          physics: const AlwaysScrollableScrollPhysics(),
+          physics: kBouncyAlwaysScrollable,
           children: [
             ConstrainedBox(
               constraints: BoxConstraints(minHeight: constraints.maxHeight),

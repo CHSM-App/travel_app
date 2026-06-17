@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:travel_agency_app/Screens/driver_history.dart';
 import 'package:travel_agency_app/core/theme/app_colors.dart';
+import 'package:travel_agency_app/core/theme/app_scroll_behavior.dart';
 import 'package:travel_agency_app/core/utils/driver_report_export.dart';
 import 'package:travel_agency_app/core/widgets/error_view.dart';
 import 'package:travel_agency_app/core/widgets/trip_filter.dart' show tripSortKey;
@@ -392,7 +393,7 @@ class _DriverReportPageState extends ConsumerState<DriverReportPage> {
                     color: _C.accent,
                     backgroundColor: _C.surface,
                     child: ListView(
-                      physics: const AlwaysScrollableScrollPhysics(),
+                      physics: kBouncyAlwaysScrollable,
                       padding: const EdgeInsets.fromLTRB(16, 14, 16, 110),
                       children: [
                         _OverallCard(

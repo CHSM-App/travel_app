@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:travel_agency_app/core/utils/vehicle_report_export.dart';
 import 'package:travel_agency_app/Screens/vehicle_details.dart';
 import 'package:travel_agency_app/core/theme/app_colors.dart';
+import 'package:travel_agency_app/core/theme/app_scroll_behavior.dart';
 import 'package:travel_agency_app/core/widgets/error_view.dart';
 import 'package:travel_agency_app/domain/models/ledger_entry.dart';
 import 'package:travel_agency_app/domain/models/vehicles.dart';
@@ -400,7 +401,7 @@ class _VehicleReportPageState extends ConsumerState<VehicleReportPage> {
                     color: _C.accent,
                     backgroundColor: _C.surface,
                     child: ListView(
-                      physics: const AlwaysScrollableScrollPhysics(),
+                      physics: kBouncyAlwaysScrollable,
                       padding: const EdgeInsets.fromLTRB(16, 14, 16, 110),
                       children: [
                         _OverallCard(

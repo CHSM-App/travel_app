@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:travel_agency_app/core/widgets/error_view.dart';
 import 'package:travel_agency_app/core/theme/app_colors.dart';
+import 'package:travel_agency_app/core/theme/app_scroll_behavior.dart';
 import 'package:travel_agency_app/domain/models/login_info.dart';
 import 'package:travel_agency_app/presentation/providers/viewmodel_provider.dart';
 
@@ -660,7 +661,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
                     onRefresh: _refreshProfile,
                     color: _primary,
                     child: SingleChildScrollView(
-                    physics: const AlwaysScrollableScrollPhysics(),
+                    physics: kBouncyAlwaysScrollable,
                     child: Padding(
                       padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
                       child: Form(

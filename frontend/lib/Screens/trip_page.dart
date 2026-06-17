@@ -7,6 +7,8 @@ import 'package:travel_agency_app/Screens/add_tripbooking.dart';
 import 'package:travel_agency_app/Screens/trip_card.dart';
 import 'package:travel_agency_app/core/network/error_messages.dart';
 import 'package:travel_agency_app/core/theme/app_colors.dart';
+import 'package:travel_agency_app/core/theme/app_scroll_behavior.dart';
+import 'package:travel_agency_app/core/widgets/paginated_list_view.dart';
 import 'package:travel_agency_app/core/widgets/skeleton.dart';
 import 'package:travel_agency_app/core/network/network_state_notifier.dart';
 import 'package:travel_agency_app/domain/models/booking_info.dart';
@@ -899,7 +901,7 @@ class _TripPageState extends ConsumerState<TripPage> {
         onRefresh: () => _loadListForFilter(filter),
         color: AppColors.brandPrimary,
         child: ListView(
-          physics: const AlwaysScrollableScrollPhysics(),
+          physics: kBouncyAlwaysScrollable,
           padding: const EdgeInsets.fromLTRB(4, 8, 4, 110),
           children: const [
             TripCardSkeleton(),
@@ -943,29 +945,28 @@ class _TripPageState extends ConsumerState<TripPage> {
 
         final items = _groupByDay(filtered);
 
-        return RefreshIndicator(
+        return PaginatedListView<_RowItem>(
+          items: items,
+          // Extra bottom padding so the last card scrolls clear of the
+          // floating pill nav (nav height ~64 + margin + safety).
+          padding: const EdgeInsets.fromLTRB(12, 8, 12, 110),
           onRefresh: () => _loadListForFilter(filter),
-          color: AppColors.brandPrimary,
-          child: ListView.builder(
-            // Extra bottom padding so the last card scrolls clear of the
-            // floating pill nav (nav height ~64 + margin + safety).
-            padding: const EdgeInsets.fromLTRB(12, 8, 12, 110),
-            itemCount: items.length,
-            itemBuilder: (_, i) {
-              final item = items[i];
-              if (item.isHeader) {
-                return _buildSectionHeader(
-                    item.headerLabel!, item.headerCount!);
-              }
-              final trip = item.trip!;
-              return TripCard(
-                key: ValueKey(trip.tripId ?? i),
-                bookinginfo: trip,
-                status: trip.status ?? 0,
-                onTripUpdated: () => _loadListForFilter(filter),
-              );
-            },
-          ),
+          resetToken:
+              '$_searchQuery|${filter.key}|${_selectedPayment.label}|${_selectedRange.label}|${_customRange?.start}|${_customRange?.end}',
+          itemLabel: 'trips',
+          itemBuilder: (_, item, i) {
+            if (item.isHeader) {
+              return _buildSectionHeader(
+                  item.headerLabel!, item.headerCount!);
+            }
+            final trip = item.trip!;
+            return TripCard(
+              key: ValueKey(trip.tripId ?? i),
+              bookinginfo: trip,
+              status: trip.status ?? 0,
+              onTripUpdated: () => _loadListForFilter(filter),
+            );
+          },
         );
       },
     );
@@ -1116,7 +1117,7 @@ class _TripPageState extends ConsumerState<TripPage> {
       onRefresh: () => _loadListForFilter(filter),
       color: AppColors.brandPrimary,
       child: ListView(
-        physics: const AlwaysScrollableScrollPhysics(),
+        physics: kBouncyAlwaysScrollable,
         padding: const EdgeInsets.fromLTRB(24, 80, 24, 110),
         children: [
           Center(

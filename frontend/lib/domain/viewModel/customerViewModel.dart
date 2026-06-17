@@ -103,18 +103,18 @@ class CustomerViewModel extends StateNotifier<CustomerState> {
     );
     return customerId;
    }on DioException catch(e){
-    final serverMessage=e.response?.data?['message'];
+    final message = friendlyErrorMessage(e);
     state=state.copyWith(
       isLoading: false,
-      error: serverMessage?? 'Server error',
+      error: message,
     );
 
-   debugPrint("Server Error: $serverMessage");
+   debugPrint("Server Error: $message");
    rethrow;
    }catch(e){
     state=state.copyWith(
       isLoading: false,
-      error: e.toString(),
+      error: friendlyErrorMessage(e),
     );
     rethrow;
    }
@@ -131,14 +131,13 @@ Future<void> updateCustomer(Customer customer) async {
     if (spMsg != null) throw AppException(spMsg);
     state = state.copyWith(isLoading: false, data: result);
   } on DioException catch (e) {
-    final serverMessage = e.response?.data?['message']?.toString();
     state = state.copyWith(
       isLoading: false,
-      error: serverMessage ?? 'Server error',
+      error: friendlyErrorMessage(e),
     );
     rethrow;
   } catch (e) {
-    state = state.copyWith(isLoading: false, error: e.toString());
+    state = state.copyWith(isLoading: false, error: friendlyErrorMessage(e));
     rethrow;
   }
 }
@@ -159,7 +158,7 @@ Future<void> updateCustomer(Customer customer) async {
       state = state.copyWith(isLoading: false);
       return response;
     } catch (e) {
-      state = state.copyWith(isLoading: false, error: e.toString());
+      state = state.copyWith(isLoading: false, error: friendlyErrorMessage(e));
       rethrow;
     }
   }
@@ -281,11 +280,11 @@ Future<Map<String, dynamic>> deleteCustomer(int customerId) async {
       return {'success': false, 'message': result['message'] ?? 'Delete failed'};
     }
   } on DioException catch (e) {
-    final message = e.response?.data?['message'] ?? "Server error";
+    final message = friendlyErrorMessage(e);
     state = state.copyWith(isLoading: false, error: message);
     return {'success': false, 'message': message};
   } catch (e) {
-    final message = e.toString();
+    final message = friendlyErrorMessage(e);
     state = state.copyWith(isLoading: false, error: message);
     return {'success': false, 'message': message};
   }

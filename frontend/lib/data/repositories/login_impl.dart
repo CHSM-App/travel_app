@@ -63,6 +63,15 @@ class LoginImpl implements LoginRepo {
         .verifyOtp({'mobile': mobile, 'otp': otp, 'purpose': purpose});
   }
 
+  @override
+  Future<dynamic> deleteAccount(String mobile, String otp, String? reason) {
+    return apiService.deleteAccount({
+      'mobile': mobile,
+      'otp': otp,
+      if (reason != null && reason.isNotEmpty) 'reason': reason,
+    });
+  }
+
 @override
   Future<List<LoginInfo>> adminProfile(int adminId) {
     return apiService.adminProfile(adminId);

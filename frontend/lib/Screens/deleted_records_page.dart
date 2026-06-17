@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:travel_agency_app/core/theme/app_colors.dart';
+import 'package:travel_agency_app/core/theme/app_scroll_behavior.dart';
 import 'package:travel_agency_app/core/widgets/error_view.dart';
+import 'package:travel_agency_app/core/widgets/paginated_list_view.dart';
 import 'package:travel_agency_app/core/widgets/skeleton.dart';
 import 'package:travel_agency_app/domain/models/drivers.dart';
 import 'package:travel_agency_app/domain/models/vehicles.dart';
@@ -688,7 +690,7 @@ class _DeletedRecordsPageState extends ConsumerState<DeletedRecordsPage>
       onRefresh: () async => _loadDeletedItems(),
       color: _accent,
       child: ListView(
-        physics: const AlwaysScrollableScrollPhysics(),
+        physics: kBouncyAlwaysScrollable,
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
         children: const [
           SimpleCardSkeleton(
@@ -803,21 +805,20 @@ class _DeletedRecordsPageState extends ConsumerState<DeletedRecordsPage>
       );
     }
 
-    return RefreshIndicator(
-      onRefresh: _loadDeletedItems,
-      color: _accent,
-      child: Column(
-        children: [
-          _statsBanner(filtered.length, vehicle: true),
-          Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
-              itemCount: filtered.length,
-              itemBuilder: (_, i) => _vehicleCard(filtered[i], i),
-            ),
+    return Column(
+      children: [
+        _statsBanner(filtered.length, vehicle: true),
+        Expanded(
+          child: PaginatedListView<Vehicles>(
+            items: filtered,
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
+            onRefresh: _loadDeletedItems,
+            resetToken: q,
+            itemLabel: 'vehicles',
+            itemBuilder: (_, item, i) => _vehicleCard(item, i),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
@@ -839,21 +840,20 @@ class _DeletedRecordsPageState extends ConsumerState<DeletedRecordsPage>
       );
     }
 
-    return RefreshIndicator(
-      onRefresh: _loadDeletedItems,
-      color: _accent,
-      child: Column(
-        children: [
-          _statsBanner(filtered.length, vehicle: false),
-          Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
-              itemCount: filtered.length,
-              itemBuilder: (_, i) => _driverCard(filtered[i], i),
-            ),
+    return Column(
+      children: [
+        _statsBanner(filtered.length, vehicle: false),
+        Expanded(
+          child: PaginatedListView<Drivers>(
+            items: filtered,
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
+            onRefresh: _loadDeletedItems,
+            resetToken: q,
+            itemLabel: 'drivers',
+            itemBuilder: (_, item, i) => _driverCard(item, i),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 

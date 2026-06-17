@@ -427,10 +427,10 @@ class _HelpCenterPageState extends State<HelpCenterPage> {
           const SizedBox(height: 10),
           _contactButton(
             label: 'View privacy policy',
-            value: 'vego.vengurlatech.com/login/privacy',
+            value: 'vego.vengurlatech.com/privacy',
             icon: Icons.shield_outlined,
             onTap: () => _launchUri(Uri.parse(
-                'https://vego.vengurlatech.com/login/privacy')),
+                'https://vego.vengurlatech.com/privacy')),
           ),
         ],
       ),
@@ -721,9 +721,18 @@ class _HelpCenterPageState extends State<HelpCenterPage> {
                   'invalidates your refresh token on the server.',
             ),
             _Faq(
+              'How do I delete my account?',
+              'Settings → Delete Account. We send a one-time code to your '
+                  'registered WhatsApp number to confirm it\'s you, then '
+                  'permanently delete your account and all associated data '
+                  '(trips, vehicles, drivers, customers, payments and reports) '
+                  'within 30 days. You can also request this from '
+                  'vego.vengurlatech.com/delete-account in any browser.',
+            ),
+            _Faq(
               'Where can I read your privacy policy?',
               'Settings → Privacy & Security, or visit '
-                  'vego.vengurlatech.com/login/privacy in any browser.',
+                  'vego.vengurlatech.com/privacy in any browser.',
             ),
           ],
         ),

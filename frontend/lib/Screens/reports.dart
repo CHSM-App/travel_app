@@ -9,6 +9,7 @@ import 'package:pdf/widgets.dart' as pw;
 import 'package:share_plus/share_plus.dart' as share_plus;
 import 'package:travel_agency_app/core/network/error_messages.dart';
 import 'package:travel_agency_app/core/theme/app_colors.dart';
+import 'package:travel_agency_app/core/theme/app_scroll_behavior.dart';
 import 'package:travel_agency_app/core/widgets/error_view.dart';
 import 'package:travel_agency_app/domain/models/reports_data.dart';
 import 'package:travel_agency_app/presentation/providers/viewmodel_provider.dart';
@@ -1582,7 +1583,7 @@ class _BookingTab extends StatelessWidget {
     final totalNet    = data.fold(0.0, (s, e) => s + e.net);
     return Column(children: [
       _SummaryRow(items: [_SumItem(Icons.confirmation_number_outlined, 'Bookings', data.length.toString(), _primary), _SumItem(Icons.currency_rupee_rounded, 'Income', '₹${_fmt(totalIncome)}', _green), _SumItem(Icons.trending_up_rounded, 'Net', '₹${_fmt(totalNet.abs())}', totalNet >= 0 ? _green : _red)]),
-      Expanded(child: ListView.separated(physics: const AlwaysScrollableScrollPhysics(), padding: const EdgeInsets.fromLTRB(16, 8, 16, 24), itemCount: data.length, separatorBuilder: (_, __) => const SizedBox(height: 10), itemBuilder: (_, i) => _BookingCard(item: data[i], index: i))),
+      Expanded(child: ListView.separated(physics: kBouncyAlwaysScrollable, padding: const EdgeInsets.fromLTRB(16, 8, 16, 24), itemCount: data.length, separatorBuilder: (_, __) => const SizedBox(height: 10), itemBuilder: (_, i) => _BookingCard(item: data[i], index: i))),
     ]);
   }
 }
@@ -1702,7 +1703,7 @@ class _DriverTab extends StatelessWidget {
     final drivers = _aggregateDriver(data); final grand = drivers.fold(0.0, (s, d) => s + d.income);
     return Column(children: [
       _SummaryRow(items: [_SumItem(Icons.person_pin_outlined, 'Drivers', drivers.length.toString(), _green), _SumItem(Icons.confirmation_number_outlined, 'Trips', drivers.fold(0, (s, d) => s + d.trips).toString(), _textGrey), _SumItem(Icons.currency_rupee_rounded, 'Total', '₹${_fmt(grand)}', _green)]),
-      Expanded(child: ListView.separated(physics: const AlwaysScrollableScrollPhysics(), padding: const EdgeInsets.fromLTRB(16, 8, 16, 24), itemCount: drivers.length, separatorBuilder: (_, __) => const SizedBox(height: 10), itemBuilder: (_, i) => _AggCard(agg: drivers[i], grand: grand, color: _green, avatar: CircleAvatar(radius: 18, backgroundColor: _green.withOpacity(0.13), child: Text(drivers[i].name.isNotEmpty ? drivers[i].name[0].toUpperCase() : '?', style: const TextStyle(color: _green, fontSize: 14, fontWeight: FontWeight.w800)))))),
+      Expanded(child: ListView.separated(physics: kBouncyAlwaysScrollable, padding: const EdgeInsets.fromLTRB(16, 8, 16, 24), itemCount: drivers.length, separatorBuilder: (_, __) => const SizedBox(height: 10), itemBuilder: (_, i) => _AggCard(agg: drivers[i], grand: grand, color: _green, avatar: CircleAvatar(radius: 18, backgroundColor: _green.withOpacity(0.13), child: Text(drivers[i].name.isNotEmpty ? drivers[i].name[0].toUpperCase() : '?', style: const TextStyle(color: _green, fontSize: 14, fontWeight: FontWeight.w800)))))),
     ]);
   }
 }
@@ -1716,7 +1717,7 @@ class _VehicleTab extends StatelessWidget {
     final vehicles = _aggregateVehicle(data); final grand = vehicles.fold(0.0, (s, v) => s + v.income);
     return Column(children: [
       _SummaryRow(items: [_SumItem(Icons.directions_car_outlined, 'Vehicles', vehicles.length.toString(), _orange), _SumItem(Icons.confirmation_number_outlined, 'Trips', vehicles.fold(0, (s, v) => s + v.trips).toString(), _textGrey), _SumItem(Icons.currency_rupee_rounded, 'Total', '₹${_fmt(grand)}', _green)]),
-      Expanded(child: ListView.separated(physics: const AlwaysScrollableScrollPhysics(), padding: const EdgeInsets.fromLTRB(16, 8, 16, 24), itemCount: vehicles.length, separatorBuilder: (_, __) => const SizedBox(height: 10), itemBuilder: (_, i) => _AggCard(agg: vehicles[i], grand: grand, color: _orange, avatar: Container(width: 36, height: 36, decoration: BoxDecoration(color: const Color(0xFFFFF3E0), borderRadius: BorderRadius.circular(10)), alignment: Alignment.center, child: const Icon(Icons.directions_car_rounded, color: _orange, size: 18))))),
+      Expanded(child: ListView.separated(physics: kBouncyAlwaysScrollable, padding: const EdgeInsets.fromLTRB(16, 8, 16, 24), itemCount: vehicles.length, separatorBuilder: (_, __) => const SizedBox(height: 10), itemBuilder: (_, i) => _AggCard(agg: vehicles[i], grand: grand, color: _orange, avatar: Container(width: 36, height: 36, decoration: BoxDecoration(color: const Color(0xFFFFF3E0), borderRadius: BorderRadius.circular(10)), alignment: Alignment.center, child: const Icon(Icons.directions_car_rounded, color: _orange, size: 18))))),
     ]);
   }
 }
@@ -1730,7 +1731,7 @@ class _CustomerTab extends StatelessWidget {
     final customers = _aggregateCustomer(data); final grand = customers.fold(0.0, (s, c) => s + c.income);
     return Column(children: [
       _SummaryRow(items: [_SumItem(Icons.people_alt_outlined, 'Customers', customers.length.toString(), _purple), _SumItem(Icons.confirmation_number_outlined, 'Trips', customers.fold(0, (s, c) => s + c.trips).toString(), _textGrey), _SumItem(Icons.currency_rupee_rounded, 'Total', '₹${_fmt(grand)}', _green)]),
-      Expanded(child: ListView.separated(physics: const AlwaysScrollableScrollPhysics(), padding: const EdgeInsets.fromLTRB(16, 8, 16, 24), itemCount: customers.length, separatorBuilder: (_, __) => const SizedBox(height: 10), itemBuilder: (_, i) => _AggCard(agg: customers[i], grand: grand, color: _purple, avatar: CircleAvatar(radius: 18, backgroundColor: _purple.withOpacity(0.13), child: Text(customers[i].name.isNotEmpty ? customers[i].name[0].toUpperCase() : '?', style: const TextStyle(color: _purple, fontSize: 14, fontWeight: FontWeight.w800)))))),
+      Expanded(child: ListView.separated(physics: kBouncyAlwaysScrollable, padding: const EdgeInsets.fromLTRB(16, 8, 16, 24), itemCount: customers.length, separatorBuilder: (_, __) => const SizedBox(height: 10), itemBuilder: (_, i) => _AggCard(agg: customers[i], grand: grand, color: _purple, avatar: CircleAvatar(radius: 18, backgroundColor: _purple.withOpacity(0.13), child: Text(customers[i].name.isNotEmpty ? customers[i].name[0].toUpperCase() : '?', style: const TextStyle(color: _purple, fontSize: 14, fontWeight: FontWeight.w800)))))),
     ]);
   }
 }
@@ -1744,7 +1745,7 @@ class _RevenueTab extends StatelessWidget {
     final days = _aggregateRevenue(data); final totalIncome = days.fold(0.0, (s, d) => s + d.income); final totalNet = days.fold(0.0, (s, d) => s + d.net);
     return Column(children: [
       _SummaryRow(items: [_SumItem(Icons.calendar_today_rounded, 'Days', days.length.toString(), _red), _SumItem(Icons.currency_rupee_rounded, 'Income', '₹${_fmt(totalIncome)}', _green), _SumItem(Icons.trending_up_rounded, 'Net', '₹${_fmt(totalNet.abs())}', totalNet >= 0 ? _green : _red)]),
-      Expanded(child: ListView.separated(physics: const AlwaysScrollableScrollPhysics(), padding: const EdgeInsets.fromLTRB(16, 8, 16, 24), itemCount: days.length, separatorBuilder: (_, __) => const SizedBox(height: 10), itemBuilder: (_, i) => _RevenueDayCard(day: days[i], grand: totalIncome))),
+      Expanded(child: ListView.separated(physics: kBouncyAlwaysScrollable, padding: const EdgeInsets.fromLTRB(16, 8, 16, 24), itemCount: days.length, separatorBuilder: (_, __) => const SizedBox(height: 10), itemBuilder: (_, i) => _RevenueDayCard(day: days[i], grand: totalIncome))),
     ]);
   }
 }
@@ -1834,7 +1835,7 @@ class _LoadingView extends StatelessWidget {
 // pulled even when there is nothing to show.
 Widget _noData(DateFilterType ft, Color color) => LayoutBuilder(
   builder: (context, constraints) => SingleChildScrollView(
-    physics: const AlwaysScrollableScrollPhysics(),
+    physics: kBouncyAlwaysScrollable,
     child: ConstrainedBox(
       constraints: BoxConstraints(minHeight: constraints.maxHeight),
       child: Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [

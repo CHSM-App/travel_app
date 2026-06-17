@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:travel_agency_app/domain/models/booking_info.dart';
 import 'package:travel_agency_app/domain/models/drivers.dart';
+import 'package:travel_agency_app/core/network/error_messages.dart';
 import 'package:travel_agency_app/domain/usecase/adddriverUseCase.dart';
 
 @immutable
@@ -57,14 +58,13 @@ class AdddriverViewmodel extends StateNotifier<AddDriverState> {
       );
       return driverId;
     } on DioException catch (e) {
-      final serverMessage = _extractErrorMessage(e);
       state = state.copyWith(
         isLoading: false,
-        error: serverMessage ?? 'Server error',
+        error: friendlyErrorMessage(e),
       );
       rethrow;
     } catch (e) {
-      state = state.copyWith(isLoading: false, error: e.toString());
+      state = state.copyWith(isLoading: false, error: friendlyErrorMessage(e));
       rethrow;
     }
   }
@@ -78,7 +78,7 @@ class AdddriverViewmodel extends StateNotifier<AddDriverState> {
         data: result is Map<String, dynamic> ? result : null,
       );
     } catch (e) {
-      state = state.copyWith(isLoading: false, error: e.toString());
+      state = state.copyWith(isLoading: false, error: friendlyErrorMessage(e));
       rethrow;
     }
   }
@@ -98,7 +98,7 @@ class AdddriverViewmodel extends StateNotifier<AddDriverState> {
       state = state.copyWith(isLoading: false);
       return response;
     } catch (e) {
-      state = state.copyWith(isLoading: false, error: e.toString());
+      state = state.copyWith(isLoading: false, error: friendlyErrorMessage(e));
       rethrow;
     }
   }
@@ -194,24 +194,13 @@ Future<Map<String, dynamic>> deleteDriver(int driverId) async {
       return {'success': false, 'message': result['message'] ?? 'Delete failed'};
     }
   } on DioException catch (e) {
-    final message = _extractErrorMessage(e) ?? "Server error";
+    final message = friendlyErrorMessage(e);
     state = state.copyWith(isLoading: false, error: message);
     return {'success': false, 'message': message};
   } catch (e) {
-    final message = e.toString();
+    final message = friendlyErrorMessage(e);
     state = state.copyWith(isLoading: false, error: message);
     return {'success': false, 'message': message};
   }
-}
-
-String? _extractErrorMessage(DioException e) {
-  final raw = e.response?.data;
-  if (raw is Map<String, dynamic>) {
-    final msg = raw['message']?.toString().trim();
-    if (msg != null && msg.isNotEmpty) return msg;
-  }
-  final fallback = e.message?.trim();
-  if (fallback != null && fallback.isNotEmpty) return fallback;
-  return null;
 }
 }

@@ -11,9 +11,15 @@ import 'package:travel_agency_app/core/storage/token_storage.dart';
 ///
 /// Unlike [PushService] (FCM, server-pushed, needs internet), this schedules
 /// notifications straight to the OS AlarmManager via
-/// flutter_local_notifications' `zonedSchedule`. Once set, an alarm fires at the
-/// exact time with no network, the app closed, even in airplane mode. The
-/// manifest's boot receiver re-schedules pending alarms after a reboot.
+/// flutter_local_notifications' `zonedSchedule`. Once set, a reminder fires
+/// around the chosen time with no network, the app closed, even in airplane
+/// mode. The manifest's boot receiver re-schedules pending alarms after a
+/// reboot.
+///
+/// Scheduling is **inexact** (`inexactAllowWhileIdle`): a day-before reminder
+/// doesn't need to-the-minute precision, and this keeps the app off the
+/// restricted exact-alarm permissions that Google Play reserves for clock /
+/// calendar apps.
 ///
 /// One alarm per trip: the notification id IS the `tripId`, so re-scheduling a
 /// trip overwrites its previous alarm and cancelling is a single call.
@@ -63,7 +69,7 @@ class TripAlarmService {
   /// in another plugin just to read the device zone.
   static const _localZone = 'Asia/Kolkata';
 
-  /// Idempotent setup: timezone DB, plugin init, channel, exact-alarm
+  /// Idempotent setup: timezone DB, plugin init, channel, notification
   /// permission, and loading the persisted alarm map. Safe to call repeatedly.
   static Future<void> ensureReady() async {
     if (_ready || kIsWeb) return;
@@ -83,8 +89,6 @@ class TripAlarmService {
         AndroidFlutterLocalNotificationsPlugin>();
     await androidImpl?.createNotificationChannel(_channel);
     await androidImpl?.requestNotificationsPermission();
-    // Android 13+: needed for an alarm that fires at a precise minute.
-    await androidImpl?.requestExactAlarmsPermission();
 
     await _load();
     await _loadSound();
@@ -128,8 +132,7 @@ class TripAlarmService {
         playSound: true,
         enableVibration: true,
         audioAttributesUsage: AudioAttributesUsage.alarm,
-        category: AndroidNotificationCategory.alarm,
-        fullScreenIntent: true,
+        category: AndroidNotificationCategory.reminder,
         visibility: NotificationVisibility.public,
       );
     }
@@ -162,8 +165,7 @@ class TripAlarmService {
       sound: sound,
       enableVibration: true,
       audioAttributesUsage: AudioAttributesUsage.alarm,
-      category: AndroidNotificationCategory.alarm,
-      fullScreenIntent: true,
+      category: AndroidNotificationCategory.reminder,
       visibility: NotificationVisibility.public,
     );
   }
@@ -201,8 +203,9 @@ class TripAlarmService {
       body: body,
       scheduledDate: scheduled,
       notificationDetails: NotificationDetails(android: await _androidDetails()),
-      // Fire at the exact time even under Doze / battery optimisation.
-      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+      // Inexact + allow-while-idle: fires around the set time even under Doze,
+      // without needing the restricted exact-alarm permission.
+      androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
       payload: 'trip:$tripId',
     );
 

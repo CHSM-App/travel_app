@@ -1,4 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="ic_launcher_background">#FFFFFF</color>
+    <!-- Matches the Flutter splash background (AppColors.surface) so the native
+         launch window blends seamlessly into the splash — no separate flash. -->
+    <color name="splash_background">#F8FAFC</color>
 </resources>

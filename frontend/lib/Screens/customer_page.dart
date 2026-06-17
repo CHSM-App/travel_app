@@ -4,7 +4,9 @@ import 'package:intl/intl.dart';
 import 'package:travel_agency_app/Screens/add_customer.dart';
 import 'package:travel_agency_app/Screens/customer_hist.dart';
 import 'package:travel_agency_app/core/theme/app_colors.dart';
+import 'package:travel_agency_app/core/theme/app_scroll_behavior.dart';
 import 'package:travel_agency_app/core/widgets/error_view.dart';
+import 'package:travel_agency_app/core/widgets/paginated_list_view.dart';
 import 'package:travel_agency_app/core/widgets/skeleton.dart';
 import 'package:travel_agency_app/domain/models/customers.dart';
 import 'package:travel_agency_app/presentation/providers/viewmodel_provider.dart';
@@ -666,7 +668,7 @@ class _CustomerListPageState extends ConsumerState<CustomerListPage>
                   onRefresh: () async => _refresh(),
                   color: _C.indigo,
                   child: ListView(
-                    physics: const AlwaysScrollableScrollPhysics(),
+                    physics: kBouncyAlwaysScrollable,
                     padding: const EdgeInsets.fromLTRB(16, 14, 16, 110),
                     children: const [
                       CustomerCardSkeleton(),
@@ -687,14 +689,13 @@ class _CustomerListPageState extends ConsumerState<CustomerListPage>
                   if (filtered.isEmpty) {
                     return _emptyState(hasData: customers.isNotEmpty);
                   }
-                  return RefreshIndicator(
-                    color: _C.indigo,
+                  return PaginatedListView<Customer>(
+                    items: filtered,
+                    padding: const EdgeInsets.fromLTRB(16, 14, 16, 100),
                     onRefresh: () async => _refresh(),
-                    child: ListView.builder(
-                      padding: const EdgeInsets.fromLTRB(16, 14, 16, 100),
-                      itemCount: filtered.length,
-                      itemBuilder: (_, i) => _card(filtered[i], i),
-                    ),
+                    resetToken: _query,
+                    itemLabel: 'customers',
+                    itemBuilder: (_, item, i) => _card(item, i),
                   );
                 },
               ),

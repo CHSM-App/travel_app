@@ -29,6 +29,9 @@ class LoginUseCase {
   Future<OtpResponse> verifyOtp(String mobile, String otp, String purpose) {
     return loginRepo.verifyOtp(mobile, otp, purpose);
   }
+  Future<dynamic> deleteAccount(String mobile, String otp, String? reason) {
+    return loginRepo.deleteAccount(mobile, otp, reason);
+  }
   Future<List<LoginInfo>> adminProfile(int adminId) {
     return loginRepo.adminProfile(adminId);
   }

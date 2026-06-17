@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:travel_agency_app/Screens/delete_account_page.dart';
 import 'package:travel_agency_app/Screens/deleted_records_page.dart';
 import 'package:travel_agency_app/Screens/help_center.dart';
 import 'package:travel_agency_app/Screens/login.dart';
@@ -149,6 +150,17 @@ class _ModernSettingsPageState extends ConsumerState<ModernSettingsPage>
                               ),
                             );
                           },
+                        ),
+                        _MenuItem(
+                          Icons.delete_forever_outlined,
+                          'Delete Account',
+                          'Permanently delete your account & data',
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const DeleteAccountPage(),
+                            ),
+                          ),
                         ),
                       ]),
                       const SizedBox(height: 24),
@@ -446,7 +458,7 @@ class _ModernSettingsPageState extends ConsumerState<ModernSettingsPage>
   // ─────────────────────────── PRIVACY POLICY ──────────────────────
 
   Future<void> _openPrivacyPolicy(BuildContext context) async {
-    final uri = Uri.parse('https://vego.vengurlatech.com/login/privacy');
+    final uri = Uri.parse('https://vego.vengurlatech.com/privacy');
     final launched =
         await launchUrl(uri, mode: LaunchMode.externalApplication);
     if (!launched && context.mounted) {

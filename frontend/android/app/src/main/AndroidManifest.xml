@@ -1,16 +1,17 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 <uses-permission android:name="android.permission.INTERNET" />
+<!-- CAMERA: capturing vehicle / driver / customer photos via image_picker.
+     Gallery selection uses the Android Photo Picker (no storage permission
+     needed), so READ_EXTERNAL_STORAGE / READ_MEDIA_IMAGES are intentionally
+     NOT declared. -->
 <uses-permission android:name="android.permission.CAMERA"/>
-<uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
 <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
-<!-- On-device trip reminders: schedule exact alarms that fire offline, and
-     re-schedule them after a device reboot. Used by TripAlarmService. -->
-<uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM"/>
-<uses-permission android:name="android.permission.USE_EXACT_ALARM"/>
+<!-- On-device trip reminders: a notification that fires offline and is
+     re-scheduled after a device reboot. Used by TripAlarmService. Scheduling
+     is inexact, so no exact-alarm permission (SCHEDULE_EXACT_ALARM /
+     USE_EXACT_ALARM) is required — this is a record-keeping app, not a clock. -->
 <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
 <uses-permission android:name="android.permission.VIBRATE"/>
-<!-- Wake the screen / show the reminder over the lock screen like an alarm. -->
-<uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT"/>
 
     <application
         android:label="Vego"

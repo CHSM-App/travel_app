@@ -63,6 +63,12 @@ abstract class ApiService {
   @POST("login/verifyOtp")
   Future<OtpResponse> verifyOtp(@Body() Map<String, dynamic> body);
 
+  // Records a user-initiated account-deletion request (OTP-verified). The
+  // server soft-records it; the account is removed within 30 days. Body:
+  // { mobile, otp, reason? }. Returns { success, message, scheduled_for }.
+  @POST("login/deleteAccount")
+  Future<dynamic> deleteAccount(@Body() Map<String, dynamic> body);
+
   // Push notifications — register/remove this device's FCM token.
   // body: { admin_id, agency_id, fcm_token, platform } / { fcm_token }
   @POST("users/registerDeviceToken")

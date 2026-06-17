@@ -9,6 +9,7 @@ import 'package:travel_agency_app/domain/models/services.dart';
 import 'package:travel_agency_app/domain/models/status.dart';
 import 'package:travel_agency_app/domain/models/vehicles.dart';
 import 'package:travel_agency_app/domain/models/vehicletype.dart';
+import 'package:travel_agency_app/core/network/error_messages.dart';
 import 'package:travel_agency_app/domain/usecase/addVehicleUseCase.dart';
 
 @immutable
@@ -81,14 +82,13 @@ class AddVehicleViewModel extends StateNotifier<AddVehicleState> {
       state = state.copyWith(isLoading: false, data: result);
       return vehicleId;
     } on DioException catch (e) {
-      final serverMessage = e.response?.data?['message'];
       state = state.copyWith(
         isLoading: false,
-        error: serverMessage ?? 'Server error',
+        error: friendlyErrorMessage(e),
       );
       rethrow;
     } catch (e) {
-      state = state.copyWith(isLoading: false, error: e.toString());
+      state = state.copyWith(isLoading: false, error: friendlyErrorMessage(e));
       rethrow;
     }
   }
@@ -100,7 +100,7 @@ class AddVehicleViewModel extends StateNotifier<AddVehicleState> {
       final result = await usecase.updateVehicle(vehicle);
       state = state.copyWith(isLoading: false, data: result);
     } catch (e) {
-      state = state.copyWith(isLoading: false, error: e.toString());
+      state = state.copyWith(isLoading: false, error: friendlyErrorMessage(e));
       rethrow;
     }
   }
@@ -150,7 +150,7 @@ class AddVehicleViewModel extends StateNotifier<AddVehicleState> {
       state = state.copyWith(isLoading: false);
       return response;
     } catch (e) {
-      state = state.copyWith(isLoading: false, error: e.toString());
+      state = state.copyWith(isLoading: false, error: friendlyErrorMessage(e));
       return null;
     }
   }
@@ -181,7 +181,7 @@ class AddVehicleViewModel extends StateNotifier<AddVehicleState> {
       final result = await usecase.addService(service);
       state = state.copyWith(isLoading: false, data: result);
     } catch (e) {
-      state = state.copyWith(isLoading: false, error: e.toString());
+      state = state.copyWith(isLoading: false, error: friendlyErrorMessage(e));
     }
   }
 
@@ -191,7 +191,7 @@ class AddVehicleViewModel extends StateNotifier<AddVehicleState> {
       final result = await usecase.updateService(serviceId, services);
       state = state.copyWith(isLoading: false, data: result);
     } catch (e) {
-      state = state.copyWith(isLoading: false, error: e.toString());
+      state = state.copyWith(isLoading: false, error: friendlyErrorMessage(e));
     }
   }
 
@@ -201,7 +201,7 @@ class AddVehicleViewModel extends StateNotifier<AddVehicleState> {
       await usecase.deleteService(serviceId);
       state = state.copyWith(isLoading: false);
     } catch (e) {
-      state = state.copyWith(isLoading: false, error: e.toString());
+      state = state.copyWith(isLoading: false, error: friendlyErrorMessage(e));
       rethrow;
     }
   }
@@ -227,11 +227,11 @@ class AddVehicleViewModel extends StateNotifier<AddVehicleState> {
         };
       }
     } on DioException catch (e) {
-      final message = e.response?.data?['message'] ?? "Server error";
+      final message = friendlyErrorMessage(e);
       state = state.copyWith(isLoading: false, error: message);
       return {'success': false, 'message': message};
     } catch (e) {
-      final message = e.toString();
+      final message = friendlyErrorMessage(e);
       state = state.copyWith(isLoading: false, error: message);
       return {'success': false, 'message': message};
     }

@@ -1,8 +1,10 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:travel_agency_app/Screens/login.dart';
 import 'package:travel_agency_app/Screens/otp_verification.dart';
+import 'package:travel_agency_app/Screens/terms_conditions.dart';
 import 'package:travel_agency_app/core/theme/app_colors.dart';
 import 'package:travel_agency_app/domain/models/login_info.dart';
 import 'package:travel_agency_app/presentation/providers/viewmodel_provider.dart';
@@ -30,6 +32,7 @@ class _SignUpPageState extends ConsumerState<SignUpPage>
       TextEditingController();
 
   final _formKey = GlobalKey<FormState>();
+  final TapGestureRecognizer _termsRecognizer = TapGestureRecognizer();
   bool _agreeTerms = false;
   bool _obscurePassword = true;
   bool _obscureConfirm = true;
@@ -61,6 +64,7 @@ class _SignUpPageState extends ConsumerState<SignUpPage>
   @override
   void dispose() {
     _animController.dispose();
+    _termsRecognizer.dispose();
     _nameController.dispose();
     _addressController.dispose();
     _agencyController.dispose();
@@ -138,6 +142,13 @@ class _SignUpPageState extends ConsumerState<SignUpPage>
         MaterialPageRoute(builder: (_) => const LoginPage()),
       );
     }
+  }
+
+  void _openTerms() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const TermsConditionsPage()),
+    );
   }
 
   void _showMessage(String message, {bool success = false}) {
@@ -507,15 +518,20 @@ class _SignUpPageState extends ConsumerState<SignUpPage>
                                           fontSize: 13,
                                           color: Colors.grey.shade700,
                                         ),
-                                        children: const [
-                                          TextSpan(
+                                        children: [
+                                          const TextSpan(
                                               text: "I agree to the "),
                                           TextSpan(
                                             text: "Terms & Conditions",
-                                            style: TextStyle(
+                                            style: const TextStyle(
                                               color: primaryColor,
                                               fontWeight: FontWeight.w600,
+                                              decoration:
+                                                  TextDecoration.underline,
+                                              decorationColor: primaryColor,
                                             ),
+                                            recognizer: _termsRecognizer
+                                              ..onTap = _openTerms,
                                           ),
                                         ],
                                       ),

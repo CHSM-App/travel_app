@@ -13,6 +13,7 @@ import 'package:travel_agency_app/core/network/error_messages.dart';
 import 'package:travel_agency_app/core/storage/constant.dart';
 import 'package:travel_agency_app/core/storage/token_storage.dart';
 import 'package:travel_agency_app/core/theme/app_colors.dart';
+import 'package:travel_agency_app/core/theme/app_scroll_behavior.dart';
 import 'package:travel_agency_app/core/utils/vehicle_report_export.dart';
 import 'package:travel_agency_app/core/widgets/error_view.dart';
 import 'package:travel_agency_app/core/widgets/skeleton.dart';
@@ -1554,7 +1555,7 @@ class _TripsTabState extends ConsumerState<_TripsTab> {
 
     return state.when(
       loading: () => ListView(
-        physics: const AlwaysScrollableScrollPhysics(),
+        physics: kBouncyAlwaysScrollable,
         padding: const EdgeInsets.fromLTRB(0, 8, 0, 24),
         children: const [
           TripCardSkeleton(),
@@ -1578,7 +1579,7 @@ class _TripsTabState extends ConsumerState<_TripsTab> {
             child: LayoutBuilder(
               builder: (context, constraints) {
                 return SingleChildScrollView(
-                  physics: const AlwaysScrollableScrollPhysics(),
+                  physics: kBouncyAlwaysScrollable,
                   child: ConstrainedBox(
                     constraints:
                         BoxConstraints(minHeight: constraints.maxHeight),
@@ -1665,7 +1666,7 @@ class _TripsTabState extends ConsumerState<_TripsTab> {
                 child: filtered.isEmpty
                   ? _filteredEmptyState()
                   : ListView.builder(
-                      physics: const AlwaysScrollableScrollPhysics(),
+                      physics: kBouncyAlwaysScrollable,
                       padding: const EdgeInsets.fromLTRB(0, 8, 0, 100),
                       itemCount: filtered.length,
                       itemBuilder: (_, i) => _AnimatedListItem(
@@ -1727,7 +1728,7 @@ class _TripsTabState extends ConsumerState<_TripsTab> {
   Widget _filteredEmptyState() {
     return LayoutBuilder(
       builder: (context, constraints) => SingleChildScrollView(
-        physics: const AlwaysScrollableScrollPhysics(),
+        physics: kBouncyAlwaysScrollable,
         child: ConstrainedBox(
           constraints: BoxConstraints(minHeight: constraints.maxHeight),
           child: Center(
@@ -1878,7 +1879,7 @@ class _TxnTabState extends ConsumerState<_TxnTab> {
         Expanded(
           child: ledgerAsync.when(
             loading: () => ListView(
-              physics: const AlwaysScrollableScrollPhysics(),
+              physics: kBouncyAlwaysScrollable,
               padding: const EdgeInsets.fromLTRB(0, 8, 0, 24),
               children: const [
                 SimpleCardSkeleton(
@@ -1944,7 +1945,7 @@ class _TxnTabState extends ConsumerState<_TxnTab> {
       backgroundColor: _C.surface,
       onRefresh: _refresh,
       child: ListView(
-        physics: const AlwaysScrollableScrollPhysics(),
+        physics: kBouncyAlwaysScrollable,
         padding: const EdgeInsets.fromLTRB(16, 14, 16, 100),
         children: _daySections(rows, amountColor),
       ),
@@ -2434,7 +2435,7 @@ class _TxnTabState extends ConsumerState<_TxnTab> {
     return LayoutBuilder(
       builder: (context, constraints) {
         return SingleChildScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
+          physics: kBouncyAlwaysScrollable,
           child: ConstrainedBox(
             constraints: BoxConstraints(minHeight: constraints.maxHeight),
             child: Center(
@@ -2654,7 +2655,7 @@ class _MaintTabState extends ConsumerState<_MaintTab> {
         Expanded(
           child: serviceAsync.when(
             loading: () => ListView(
-              physics: const AlwaysScrollableScrollPhysics(),
+              physics: kBouncyAlwaysScrollable,
               padding: const EdgeInsets.fromLTRB(0, 8, 0, 24),
               children: const [
                 SimpleCardSkeleton(
@@ -2710,7 +2711,7 @@ class _MaintTabState extends ConsumerState<_MaintTab> {
                 backgroundColor: _C.surface,
                 onRefresh: _refresh,
                 child: ListView(
-                physics: const AlwaysScrollableScrollPhysics(),
+                physics: kBouncyAlwaysScrollable,
                 padding: const EdgeInsets.fromLTRB(16, 14, 16, 100),
                 children: [
                   // Empty state
@@ -2958,7 +2959,7 @@ class _OverviewTab extends ConsumerWidget {
       backgroundColor: _C.surface,
       onRefresh: () => _refresh(ref),
       child: ListView(
-        physics: const AlwaysScrollableScrollPhysics(),
+        physics: kBouncyAlwaysScrollable,
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
         children: [
          const SizedBox(height: 14),
