@@ -190,38 +190,7 @@ class _ModernSettingsPageState extends ConsumerState<ModernSettingsPage>
     );
   }
 
-  // ─────────────────────────── TOP BAR ────────────────────────────
 
-  Widget _buildTopBar() {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
-      child: Row(
-        children: [
-          Text(
-            'Settings',
-            style: TextStyle(
-              fontSize: 26,
-              fontWeight: FontWeight.w800,
-              color: _textDark,
-              letterSpacing: -0.5,
-            ),
-          ),
-          const Spacer(),
-          Container(
-            decoration: BoxDecoration(
-              color: _primaryLight,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: IconButton(
-              icon: Icon(Icons.notifications_outlined, color: _primary, size: 22),
-              onPressed: () {},
-              tooltip: 'Notifications',
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
   // ─────────────────────────── PROFILE ────────────────────────────
 

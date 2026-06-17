@@ -17,7 +17,11 @@ const String kSomethingWentWrongMessage =
 /// having no network at all.
 bool _isServerDroppedConnection(Object e) {
   if (e is! DioException) return false;
-  final lower = (e.message ?? '').toLowerCase();
+  // The descriptive text can live on `message` OR on the wrapped `error`
+  // (e.g. the underlying HttpException "Connection closed before full header
+  // was received"), so check both.
+  final lower =
+      '${e.message ?? ''} ${e.error ?? ''}'.toLowerCase();
   return lower.contains('connection closed') ||
       lower.contains('connection reset') ||
       lower.contains('connection refused');

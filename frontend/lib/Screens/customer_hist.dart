@@ -926,18 +926,38 @@ class _CustomerHistState extends ConsumerState<CustomerHist>
   Widget _tripsData(List<BookingInfo> trips) {
     final base = _dateAndQueryFiltered(trips);
     final filtered = _applyFilter(base);
-    if (filtered.isEmpty) return _filteredEmptyState();
-    return ListView.builder(
-      physics: const BouncingScrollPhysics(),
-      // 8px here + each TripCard's own 8px margin = 16px side inset, matching
-      // the report card, filter row and loading skeletons above.
-      padding: const EdgeInsets.fromLTRB(8, 0, 8, 24),
-      itemCount: filtered.length,
-      itemBuilder: (_, i) => TripCard(
-        key: ValueKey(filtered[i].tripId),
-        bookinginfo: filtered[i],
-        status: filtered[i].status ?? 0,
-        onTripUpdated: _load,
+    if (filtered.isEmpty) {
+      // Keep the list pull-to-refreshable even when the active filter hides
+      // every trip, by making the empty message scroll over full height.
+      return RefreshIndicator(
+        onRefresh: _load,
+        color: _accent,
+        child: LayoutBuilder(
+          builder: (context, constraints) => SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minHeight: constraints.maxHeight),
+              child: _filteredEmptyState(),
+            ),
+          ),
+        ),
+      );
+    }
+    return RefreshIndicator(
+      onRefresh: _load,
+      color: _accent,
+      child: ListView.builder(
+        physics: const AlwaysScrollableScrollPhysics(),
+        // 8px here + each TripCard's own 8px margin = 16px side inset, matching
+        // the report card, filter row and loading skeletons above.
+        padding: const EdgeInsets.fromLTRB(8, 0, 8, 24),
+        itemCount: filtered.length,
+        itemBuilder: (_, i) => TripCard(
+          key: ValueKey(filtered[i].tripId),
+          bookinginfo: filtered[i],
+          status: filtered[i].status ?? 0,
+          onTripUpdated: _load,
+        ),
       ),
     );
   }

@@ -1159,57 +1159,71 @@ class _VehiclePageState extends ConsumerState<VehiclePage>
       orElse: () => null,
     );
 
+    // Segmented toggle: a recessed grey track holds two equal segments, with the
+    // active one lifted as a red pill. The grey background + the faint divider
+    // between segments make it obvious at a glance that these are two switchable
+    // tabs (Vehicles / Drivers) rather than one solid bar.
+    final showSeparator = !_tabController.indexIsChanging;
     return Container(
-      height: 44,
+      height: 46,
+      padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: _C.surface,
-        borderRadius: BorderRadius.circular(12),
+        color: _C.surfaceLight,
+        borderRadius: BorderRadius.circular(13),
         border: Border.all(color: _C.divider),
-        boxShadow: [
-          BoxShadow(
-            color: _C.accent.withValues(alpha: 0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
       ),
-      child: TabBar(
-        controller: _tabController,
-        indicator: BoxDecoration(
-          color: Color(0xFFED1C24),
-          borderRadius: BorderRadius.circular(10),
-          boxShadow: [    
-          ],
-        ),
-        indicatorPadding: const EdgeInsets.all(3),
-        indicatorSize: TabBarIndicatorSize.tab,
-        labelColor: Colors.white,
-        unselectedLabelColor: _C.text2,
-        labelStyle: const TextStyle(
-          fontSize: 13,
-          fontWeight: FontWeight.w700,
-        ),
-        unselectedLabelStyle: const TextStyle(
-          fontSize: 13,
-          fontWeight: FontWeight.w500,
-        ),
-        dividerColor: Colors.transparent,
-        onTap: (_) {
-          _searchCtrl.clear();
-          setState(() => _searchVisible = false);
-        },
-        tabs: [
-          _tab(
-            Icons.directions_car_rounded,
-            'Vehicles',
-            vehicleCount,
-            selected: _tabController.index == 0,
-          ),
-          _tab(
-            Icons.person_rounded,
-            'Drivers',
-            driverCount,
-            selected: _tabController.index == 1,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          // Hairline divider between the two segments, hidden once a pill
+          // covers it so it never peeks out from under the indicator.
+          if (showSeparator)
+            Container(width: 1, height: 18, color: _C.divider),
+          TabBar(
+            controller: _tabController,
+            indicator: BoxDecoration(
+              color: const Color(0xFFED1C24),
+              borderRadius: BorderRadius.circular(10),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFFED1C24).withValues(alpha: 0.32),
+                  blurRadius: 8,
+                  offset: const Offset(0, 3),
+                ),
+              ],
+            ),
+            indicatorPadding: EdgeInsets.zero,
+            indicatorSize: TabBarIndicatorSize.tab,
+            labelColor: Colors.white,
+            unselectedLabelColor: _C.text1,
+            labelStyle: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w800,
+            ),
+            unselectedLabelStyle: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+            ),
+            dividerColor: Colors.transparent,
+            splashBorderRadius: BorderRadius.circular(10),
+            onTap: (_) {
+              _searchCtrl.clear();
+              setState(() => _searchVisible = false);
+            },
+            tabs: [
+              _tab(
+                Icons.directions_car_rounded,
+                'Vehicles',
+                vehicleCount,
+                selected: _tabController.index == 0,
+              ),
+              _tab(
+                Icons.person_rounded,
+                'Drivers',
+                driverCount,
+                selected: _tabController.index == 1,
+              ),
+            ],
           ),
         ],
       ),

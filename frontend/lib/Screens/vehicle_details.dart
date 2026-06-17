@@ -1507,6 +1507,16 @@ class _TripsTabState extends ConsumerState<_TripsTab> {
     });
   }
 
+  /// Pull-to-refresh: invalidate the shared ledger and refetch this vehicle's
+  /// trips so the list and P&L summary pick up server-side changes.
+  Future<void> _refresh() async {
+    final aid = ref.read(loginViewModelProvider).agencyId ?? '';
+    if (aid.isNotEmpty) ref.invalidate(vehicleReportLedgerProvider(aid));
+    await ref
+        .read(addVehicleViewModelProvider.notifier)
+        .getTripsByVehicle(widget.vehicle.vehicleId ?? 0);
+  }
+
   /// Number of non-default filters active — drives the filter button's badge.
   /// The date range lives on the parent (shared across tabs).
   int get _activeFilterCount =>
@@ -1561,44 +1571,52 @@ class _TripsTabState extends ConsumerState<_TripsTab> {
       ),
       data: (allTrips) {
         if (allTrips.isEmpty) {
-          return LayoutBuilder(
-            builder: (context, constraints) {
-              return SingleChildScrollView(
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(minHeight: constraints.maxHeight),
-                  child: Center(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 24),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.route_outlined,
-                            size: 70,
-                            color: _C.accent.withOpacity(0.6),
-                          ),
-                          const SizedBox(height: 16),
-                          const Text(
-                            "No trips yet",
-                            style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
+          return RefreshIndicator(
+            color: _C.accent,
+            backgroundColor: _C.surface,
+            onRefresh: _refresh,
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                return SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  child: ConstrainedBox(
+                    constraints:
+                        BoxConstraints(minHeight: constraints.maxHeight),
+                    child: Center(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 24),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.route_outlined,
+                              size: 70,
+                              color: _C.accent.withOpacity(0.6),
                             ),
-                          ),
-                          const SizedBox(height: 8),
-                          const Text(
-                            "Trip history will appear here.",
-                            textAlign: TextAlign.center,
-                            style: TextStyle(fontSize: 14, color: Colors.grey),
-                          ),
-                          const SizedBox(height: 30),
-                        ],
+                            const SizedBox(height: 16),
+                            const Text(
+                              "No trips yet",
+                              style: TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            const Text(
+                              "Trip history will appear here.",
+                              textAlign: TextAlign.center,
+                              style:
+                                  TextStyle(fontSize: 14, color: Colors.grey),
+                            ),
+                            const SizedBox(height: 30),
+                          ],
+                        ),
                       ),
                     ),
                   ),
-                ),
-              );
-            },
+                );
+              },
+            ),
           );
         }
 
@@ -1640,10 +1658,14 @@ class _TripsTabState extends ConsumerState<_TripsTab> {
           children: [
             _buildFilterRow(),
             Expanded(
-              child: filtered.isEmpty
+              child: RefreshIndicator(
+                color: _C.accent,
+                backgroundColor: _C.surface,
+                onRefresh: _refresh,
+                child: filtered.isEmpty
                   ? _filteredEmptyState()
                   : ListView.builder(
-                      physics: const BouncingScrollPhysics(),
+                      physics: const AlwaysScrollableScrollPhysics(),
                       padding: const EdgeInsets.fromLTRB(0, 8, 0, 100),
                       itemCount: filtered.length,
                       itemBuilder: (_, i) => _AnimatedListItem(
@@ -1666,6 +1688,7 @@ class _TripsTabState extends ConsumerState<_TripsTab> {
                         ),
                       ),
                     ),
+              ),
             ),
           ],
         );
@@ -1700,8 +1723,14 @@ class _TripsTabState extends ConsumerState<_TripsTab> {
   }
 
   // Shown when the vehicle has trips but none match the active filter.
+  // Scrolls over full height so the surrounding RefreshIndicator stays pullable.
   Widget _filteredEmptyState() {
-    return Center(
+    return LayoutBuilder(
+      builder: (context, constraints) => SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        child: ConstrainedBox(
+          constraints: BoxConstraints(minHeight: constraints.maxHeight),
+          child: Center(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 24),
         child: Column(
@@ -1723,6 +1752,9 @@ class _TripsTabState extends ConsumerState<_TripsTab> {
               style: TextStyle(fontSize: 13, color: Colors.grey),
             ),
           ],
+        ),
+      ),
+          ),
         ),
       ),
     );
@@ -2501,6 +2533,14 @@ class _MaintTabState extends ConsumerState<_MaintTab> {
     });
   }
 
+  /// Pull-to-refresh: refetch this vehicle's maintenance/service records.
+  Future<void> _refresh() async {
+    await ref.read(addVehicleViewModelProvider.notifier).getServiceRecords(
+          ref.read(loginViewModelProvider).agencyId ?? '',
+          widget.vehicle.vehicleId ?? 0,
+        );
+  }
+
   void _confirmDelete(BuildContext context, Services service) {
   showDialog(
     context: context,
@@ -2665,7 +2705,12 @@ class _MaintTabState extends ConsumerState<_MaintTab> {
                       .matches(s.serviceDate, now, customRange: widget.customRange))
                   .toList();
 
-              return ListView(
+              return RefreshIndicator(
+                color: _C.accent,
+                backgroundColor: _C.surface,
+                onRefresh: _refresh,
+                child: ListView(
+                physics: const AlwaysScrollableScrollPhysics(),
                 padding: const EdgeInsets.fromLTRB(16, 14, 16, 100),
                 children: [
                   // Empty state
@@ -2716,6 +2761,7 @@ class _MaintTabState extends ConsumerState<_MaintTab> {
                     );
                   }).toList(),
                 ],
+              ),
               );
             },
           ),

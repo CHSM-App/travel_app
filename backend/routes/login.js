@@ -333,8 +333,8 @@ router.post('/sendOtp', async (req, res) => {
       return res.status(400).json({ success: false, message: 'mobile and purpose are required' });
     }
 
-    if (!['register', 'forgot_pin', 'delete_account'].includes(purpose)) {
-      return res.status(400).json({ success: false, message: "purpose must be 'register', 'forgot_pin' or 'delete_account'" });
+    if (!['register', 'forgot_pin', 'delete_account', 'change_mobile'].includes(purpose)) {
+      return res.status(400).json({ success: false, message: "purpose must be 'register', 'forgot_pin', 'delete_account' or 'change_mobile'" });
     }
 
     // For account deletion, confirm the mobile belongs to a real account before

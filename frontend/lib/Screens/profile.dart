@@ -29,6 +29,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
   final addressController = TextEditingController();
   final agencyController  = TextEditingController();
   final cityController    = TextEditingController();
+  final otpController     = TextEditingController();
 
   File?   _profileImage;
   String? _imageUrl;
@@ -36,6 +37,15 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
   bool _didPopulateInitialProfile = false;
   int _avatarRefreshToken = 0;
   bool _forceLetterAvatar = false;
+
+  // ── Mobile-number change via OTP ───────────────────
+  // The mobile field is editable, but a new number only takes effect once it
+  // has been verified with an OTP sent to that number.
+  String _originalMobile = '';
+  bool _otpSent = false;
+  bool _mobileVerified = false;
+  bool _sendingOtp = false;
+  bool _verifyingOtp = false;
 
   // ── Design tokens ─────────────────────────────────
   static const _primary = AppColors.brandPrimary;
@@ -70,6 +80,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
     addressController.dispose();
     agencyController.dispose();
     cityController.dispose();
+    otpController.dispose();
     super.dispose();
   }
 
@@ -78,6 +89,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
     if (!_didPopulateInitialProfile) {
       if (nameController.text.isEmpty) nameController.text = p.name ?? '';
       if (mobileController.text.isEmpty) mobileController.text = p.mobile ?? '';
+      _originalMobile = mobileController.text.trim();
       if (emailController.text.isEmpty) emailController.text = p.email ?? '';
       if (addressController.text.isEmpty) {
         addressController.text = p.address ?? '';
@@ -268,8 +280,238 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
     return null;
   }
 
+  // Re-fetches the admin profile from the server for pull-to-refresh.
+  Future<void> _refreshProfile() async {
+    await ref
+        .read(loginViewModelProvider.notifier)
+        .adminProfile(ref.read(loginViewModelProvider).adminId);
+  }
+
+  bool get _mobileChanged =>
+      mobileController.text.trim() != _originalMobile.trim();
+
+  // Sends an OTP to the newly-entered mobile number (purpose 'change_mobile').
+  Future<void> _sendMobileOtp() async {
+    final newMobile = mobileController.text.trim();
+    if (newMobile.length != 10) {
+      _snack('Enter a valid 10-digit mobile number', error: true);
+      return;
+    }
+    HapticFeedback.lightImpact();
+    setState(() => _sendingOtp = true);
+    final res = await ref
+        .read(loginViewModelProvider.notifier)
+        .sendOtp(newMobile, 'change_mobile');
+    setState(() => _sendingOtp = false);
+
+    if (res.success) {
+      setState(() {
+        _otpSent = true;
+        _mobileVerified = false;
+        otpController.clear();
+      });
+      _snack(res.devOtp != null
+          ? 'OTP sent (dev: ${res.devOtp})'
+          : 'OTP sent to $newMobile');
+    } else {
+      _snack(res.message ?? 'Failed to send OTP', error: true);
+    }
+  }
+
+  // Verifies the OTP for the new mobile number. On success the number is marked
+  // verified and will be persisted on the next "Save Changes".
+  Future<void> _verifyMobileOtp() async {
+    final newMobile = mobileController.text.trim();
+    final otp = otpController.text.trim();
+    if (otp.isEmpty) {
+      _snack('Enter the OTP', error: true);
+      return;
+    }
+    HapticFeedback.lightImpact();
+    setState(() => _verifyingOtp = true);
+    final res = await ref
+        .read(loginViewModelProvider.notifier)
+        .verifyOtp(newMobile, otp, 'change_mobile');
+    setState(() => _verifyingOtp = false);
+
+    if (res.success) {
+      setState(() {
+        _mobileVerified = true;
+        _otpSent = false;
+        otpController.clear();
+      });
+      _snack('Mobile number verified');
+    } else {
+      _snack(res.message ?? 'Invalid or expired OTP', error: true);
+    }
+  }
+
+  // OTP verification UI shown beneath the Mobile field when the number changes.
+  Widget _mobileOtpSection() {
+    if (!_mobileChanged) return const SizedBox.shrink();
+
+    const padding = EdgeInsets.fromLTRB(44, 0, 12, 10);
+
+    if (_mobileVerified) {
+      return const Padding(
+        padding: padding,
+        child: Row(
+          children: [
+            Icon(Icons.verified_rounded, color: _green, size: 14),
+            SizedBox(width: 6),
+            Text(
+              'New number verified',
+              style: TextStyle(
+                fontSize: 11,
+                color: _green,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    final canSend = mobileController.text.trim().length == 10;
+
+    return Padding(
+      padding: padding,
+      child: !_otpSent
+          ? Row(
+              children: [
+                const Expanded(
+                  child: Text(
+                    'Verify your new mobile number to update it',
+                    style: TextStyle(fontSize: 10.5, color: _textMid),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                _otpButton(
+                  'Send OTP',
+                  _sendingOtp,
+                  canSend ? _sendMobileOtp : null,
+                ),
+              ],
+            )
+          : Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: otpController,
+                        keyboardType: TextInputType.number,
+                        maxLength: 6,
+                        style: const TextStyle(
+                          fontSize: 13.5,
+                          color: _textDark,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 2,
+                        ),
+                        cursorColor: _primary,
+                        inputFormatters: [
+                          LengthLimitingTextInputFormatter(6),
+                        ],
+                        decoration: InputDecoration(
+                          counterText: '',
+                          isDense: true,
+                          hintText: 'Enter OTP',
+                          hintStyle: const TextStyle(
+                            fontSize: 12,
+                            color: _textMid,
+                            letterSpacing: 0,
+                            fontWeight: FontWeight.w500,
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 10),
+                          filled: true,
+                          fillColor: _bg,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(9),
+                            borderSide: const BorderSide(color: _divider),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(9),
+                            borderSide: const BorderSide(color: _divider),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(9),
+                            borderSide:
+                                const BorderSide(color: _primary, width: 1.4),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    _otpButton('Verify', _verifyingOtp, _verifyMobileOtp),
+                  ],
+                ),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: TextButton(
+                    onPressed: _sendingOtp ? null : _sendMobileOtp,
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 4),
+                      minimumSize: const Size(0, 0),
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                    child: Text(
+                      _sendingOtp ? 'Sending…' : 'Resend OTP',
+                      style: const TextStyle(
+                        fontSize: 11,
+                        color: _primary,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+    );
+  }
+
+  Widget _otpButton(String label, bool loading, VoidCallback? onTap) {
+    return SizedBox(
+      height: 32,
+      child: ElevatedButton(
+        onPressed: loading ? null : onTap,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: _primary,
+          foregroundColor: Colors.white,
+          disabledBackgroundColor: _primary.withOpacity(0.4),
+          disabledForegroundColor: Colors.white,
+          padding: const EdgeInsets.symmetric(horizontal: 14),
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(9),
+          ),
+          textStyle:
+              const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700),
+        ),
+        child: loading
+            ? const SizedBox(
+                width: 14,
+                height: 14,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: Colors.white,
+                ),
+              )
+            : Text(label),
+      ),
+    );
+  }
+
   Future<void> _saveProfile() async {
     if (!_formKey.currentState!.validate()) return;
+
+    // A changed mobile number must be OTP-verified before it can be saved.
+    if (_mobileChanged && !_mobileVerified) {
+      _snack('Please verify your new mobile number', error: true);
+      return;
+    }
+
     HapticFeedback.mediumImpact();
     setState(() => _isSaving = true);
 
@@ -297,6 +539,11 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
     final res = await ref.read(loginViewModelProvider.notifier).addAdmin(info);
     if (res?.success == 1) {
       await ref.read(loginViewModelProvider.notifier).adminProfile(adminId);
+      // The new number is now the baseline; clear the verification UI.
+      _originalMobile = mobileController.text.trim();
+      _otpSent = false;
+      _mobileVerified = false;
+      otpController.clear();
       _snack('Profile updated successfully');
     } else {
       _snack(res?.message ?? 'Update failed', error: true);
@@ -409,8 +656,11 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
 
                 // ── FORM BODY (fills remaining space) ──
                 Expanded(
-                  child: SingleChildScrollView(
-                    physics: const BouncingScrollPhysics(),
+                  child: RefreshIndicator(
+                    onRefresh: _refreshProfile,
+                    color: _primary,
+                    child: SingleChildScrollView(
+                    physics: const AlwaysScrollableScrollPhysics(),
                     child: Padding(
                       padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
                       child: Form(
@@ -434,6 +684,18 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
                                   type: TextInputType.phone,
                                   capitalization: TextCapitalization.none,
                                   max: 10,
+                                  onChanged: (v) {
+                                    setState(() {
+                                      // Any edit invalidates a prior verification;
+                                      // reverting to the original clears the OTP UI.
+                                      _mobileVerified = false;
+                                      if (v.trim() == _originalMobile.trim()) {
+                                        _otpSent = false;
+                                        otpController.clear();
+                                      }
+                                    });
+                                  },
+                                  below: _mobileOtpSection(),
                                   validate: (v) {
                                     if (v == null || v.isEmpty) {
                                       return 'Required';
@@ -451,8 +713,10 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
                                   type: TextInputType.emailAddress,
                                   capitalization: TextCapitalization.none,
                                   validate: (v) {
-                                    if (v == null || v.isEmpty) {
-                                      return 'Required';
+                                    // Email is optional; validate format only when
+                                    // a value is entered.
+                                    if (v == null || v.trim().isEmpty) {
+                                      return null;
                                     }
                                     if (!v.contains('@')) {
                                       return 'Invalid email';
@@ -471,6 +735,8 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
                                   agencyController,
                                   'Agency Name',
                                   Icons.business_outlined,
+                                  // Optional field.
+                                  validate: (_) => null,
                                 ),
                                 _FieldItem(
                                   cityController,
@@ -490,6 +756,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
                         ),
                       ),
                     ),
+                  ),
                   ),
                 ),
               ],
@@ -778,6 +1045,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
               return Column(
                 children: [
                   _buildField(fields[i]),
+                  if (fields[i].below != null) fields[i].below!,
                   if (!isLast)
                     const Divider(
                       height: 1,
@@ -800,6 +1068,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
       keyboardType: f.type,
       textCapitalization: f.capitalization,
       maxLines: 1,
+      onChanged: f.onChanged,
       inputFormatters: [
         if (f.max != null) LengthLimitingTextInputFormatter(f.max!),
       ],
@@ -930,11 +1199,18 @@ class _FieldItem {
   final int? max;
   final String? Function(String?)? validate;
   final TextCapitalization capitalization;
+  final void Function(String)? onChanged;
+
+  /// Optional widget rendered directly beneath the field (inside the card),
+  /// used by the mobile field for its OTP-verification UI.
+  final Widget? below;
 
   const _FieldItem(this.ctrl, this.label, this.icon,
       {this.type,
       this.max,
       this.validate,
+      this.onChanged,
+      this.below,
       this.capitalization = TextCapitalization.words});
 }
 
