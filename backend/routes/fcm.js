@@ -7,8 +7,9 @@
  * rest of the API keeps working until a valid key is dropped in.
  *
  * IMPORTANT: serviceAccountKey.json must belong to THIS app's Firebase project
- * (travelapp-d1a9c). The old key (society-management-32053) will init fine but
- * every send fails because the device tokens belong to a different project.
+ * (vego-6b986). A key for any other project (e.g. society-management-32053 or
+ * travelapp-d1a9c) will init fine but every send fails because the device
+ * tokens belong to a different project.
  */
 
 const admin = require('firebase-admin');

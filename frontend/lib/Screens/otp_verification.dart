@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -102,8 +103,9 @@ class _OtpVerificationPageState extends ConsumerState<OtpVerificationPage>
         _sendOtp(initial: true);
       } else {
         _startResendCountdown();
-        final devNote =
-            widget.initialDevOtp != null ? " (dev OTP: ${widget.initialDevOtp})" : "";
+        final devNote = (kDebugMode && widget.initialDevOtp != null)
+            ? " (dev OTP: ${widget.initialDevOtp})"
+            : "";
         _showMessage("OTP sent to your WhatsApp$devNote", success: true);
       }
       _otpFocusNodes.first.requestFocus();
@@ -130,12 +132,14 @@ class _OtpVerificationPageState extends ConsumerState<OtpVerificationPage>
     final response = await ref
         .read(loginViewModelProvider.notifier)
         .sendOtp(widget.mobile, widget.purpose);
-
+  
     if (!mounted) return;
 
     if (response.success) {
       _startResendCountdown();
-      final devNote = response.devOtp != null ? " (dev OTP: ${response.devOtp})" : "";
+      final devNote = (kDebugMode && response.devOtp != null)
+          ? " (dev OTP: ${response.devOtp})"
+          : "";
       _showMessage(
         initial
             ? "OTP sent to your WhatsApp$devNote"

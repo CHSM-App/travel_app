@@ -8,7 +8,7 @@ plugins {
 }
 
 android {
-    namespace = "com.vengurlatech.travel_agency_app"
+    namespace = "com.vengurlatech.vego"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -24,7 +24,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.vengurlatech.travel_agency_app"
+        applicationId = "com.vengurlatech.vego"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         // Firebase Messaging requires minSdk 23+.

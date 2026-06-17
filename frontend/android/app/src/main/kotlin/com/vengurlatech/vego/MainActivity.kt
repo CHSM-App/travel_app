@@ -1,4 +1,4 @@
-package com.vengurlatech.travel_agency_app
+package com.vengurlatech.vego
 
 import android.app.Activity
 import android.content.Intent

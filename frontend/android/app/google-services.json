@@ -1,40 +1,21 @@
 {
   "project_info": {
-    "project_number": "818199412133",
-    "project_id": "travelapp-d1a9c",
-    "storage_bucket": "travelapp-d1a9c.firebasestorage.app"
+    "project_number": "855979383711",
+    "project_id": "vego-6b986",
+    "storage_bucket": "vego-6b986.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:818199412133:android:3b4d19b28a127eee407c4c",
+        "mobilesdk_app_id": "1:855979383711:android:91a621d53d908c3c6b3baa",
         "android_client_info": {
-          "package_name": "com.example.travel_agency_app"
+          "package_name": "com.vengurlatech.vego"
         }
       },
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyCHnHhsYh_s6PHCP3_pnIa7J3iplHVTf7E"
-        }
-      ],
-      "services": {
-        "appinvite_service": {
-          "other_platform_oauth_client": []
-        }
-      }
-    },
-    {
-      "client_info": {
-        "mobilesdk_app_id": "1:818199412133:android:2de623765bdd2744407c4c",
-        "android_client_info": {
-          "package_name": "com.vengurlatech.travel_agency_app"
-        }
-      },
-      "oauth_client": [],
-      "api_key": [
-        {
-          "current_key": "AIzaSyCHnHhsYh_s6PHCP3_pnIa7J3iplHVTf7E"
+          "current_key": "AIzaSyC9Csw7ZkhyUZOcwwCke0uDYTCMRzAL-6Y"
         }
       ],
       "services": {

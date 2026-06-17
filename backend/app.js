@@ -102,9 +102,9 @@ generateBill();
 setInterval(cleanupRefreshTokens, 24 * 60 * 60 * 1000);
 setInterval(generateBill, 24 * 60 * 60 * 1000);
 
-// Daily reminder push at 08:00 IST — tomorrow's trips + PUC/insurance expiring
-// within 7 days, sent to each agency's registered devices.
-cron.schedule('0 8 * * *', () => {
+// Daily reminder push at 23:00 IST (11 PM, night before) — tomorrow's trips +
+// PUC/insurance expiring within 7 days, sent to each agency's registered devices.
+cron.schedule('0 23 * * *', () => {
   reminders.sendDailyReminders().catch((err) =>
     console.error('❌ Daily reminder error:', err.message)
   );

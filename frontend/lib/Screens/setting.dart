@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:travel_agency_app/Screens/delete_account_page.dart';
 import 'package:travel_agency_app/Screens/deleted_records_page.dart';
 import 'package:travel_agency_app/Screens/help_center.dart';
 import 'package:travel_agency_app/Screens/login.dart';
@@ -28,7 +27,6 @@ class _ModernSettingsPageState extends ConsumerState<ModernSettingsPage>
   late Animation<Offset> _slideAnimation;
 
   bool notificationsEnabled = true;
-  bool locationEnabled = true;
 
   // App color palette — matches dashboard indigo theme
   static const Color _primary = AppColors.brandPrimary;
@@ -155,12 +153,7 @@ class _ModernSettingsPageState extends ConsumerState<ModernSettingsPage>
                           Icons.delete_forever_outlined,
                           'Delete Account',
                           'Permanently delete your account & data',
-                          onTap: () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const DeleteAccountPage(),
-                            ),
-                          ),
+                          onTap: () => _openDeleteAccount(context),
                         ),
                       ]),
                       const SizedBox(height: 24),
@@ -332,14 +325,6 @@ class _ModernSettingsPageState extends ConsumerState<ModernSettingsPage>
             onChanged: (v) => setState(() => notificationsEnabled = v),
             isFirst: true,
           ),
-          _divider(),
-          _toggleTile(
-            icon: Icons.location_on_outlined,
-            label: 'Location Services',
-            subtitle: 'Enable GPS tracking',
-            value: locationEnabled,
-            onChanged: (v) => setState(() => locationEnabled = v),
-          ),
         ],
       ),
     );
@@ -465,6 +450,24 @@ class _ModernSettingsPageState extends ConsumerState<ModernSettingsPage>
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Could not open privacy policy'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  // ─────────────────────────── DELETE ACCOUNT ─────────────────────
+
+  /// Opens the public account-deletion form on the Vego website, where the user
+  /// verifies their number via WhatsApp OTP and confirms permanent deletion.
+  Future<void> _openDeleteAccount(BuildContext context) async {
+    final uri = Uri.parse('https://vego.vengurlatech.com/delete-account');
+    final launched =
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+    if (!launched && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Could not open the account deletion page'),
           backgroundColor: Colors.red,
         ),
       );
