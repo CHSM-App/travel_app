@@ -2929,17 +2929,38 @@ class _MR {
 // Vehicle specs that used to live in the header stats strip — capacity,
 // mileage, fuel — plus the rest of the vehicle's identity, in a clean card.
 // ════════════════════════════════════════════════════════════════════════════
-class _OverviewTab extends StatelessWidget {
+class _OverviewTab extends ConsumerWidget {
   final Vehicles vehicle;
   const _OverviewTab({required this.vehicle});
 
+  /// Pull-to-refresh: invalidate the shared ledger and refetch this vehicle's
+  /// trips + service records so the P&L summary (above the tabs) and any
+  /// derived figures pick up server-side changes.
+  Future<void> _refresh(WidgetRef ref) async {
+    final agencyId = ref.read(loginViewModelProvider).agencyId ?? '';
+    if (agencyId.isNotEmpty) {
+      ref.invalidate(vehicleReportLedgerProvider(agencyId));
+    }
+    final vid = vehicle.vehicleId ?? 0;
+    await Future.wait([
+      ref.read(addVehicleViewModelProvider.notifier).getTripsByVehicle(vid),
+      ref
+          .read(addVehicleViewModelProvider.notifier)
+          .getServiceRecords(agencyId, vid),
+    ]);
+  }
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final v = vehicle;
-    return ListView(
-      physics: const BouncingScrollPhysics(),
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
-      children: [
+    return RefreshIndicator(
+      color: _C.accent,
+      backgroundColor: _C.surface,
+      onRefresh: () => _refresh(ref),
+      child: ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
+        children: [
          const SizedBox(height: 14),
         _specCard(
           title: 'Compliance',
@@ -2998,9 +3019,10 @@ class _OverviewTab extends StatelessWidget {
             ),
           ],
         ),
-       
-        _buildDocumentsCard(context),
-      ],
+
+          _buildDocumentsCard(context),
+        ],
+      ),
     );
   }
 

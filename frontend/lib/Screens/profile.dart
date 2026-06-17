@@ -742,11 +742,15 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
                                   cityController,
                                   'City',
                                   Icons.location_city_outlined,
+                                  // Optional field.
+                                  validate: (_) => null,
                                 ),
                                 _FieldItem(
                                   addressController,
                                   'Address',
                                   Icons.home_outlined,
+                                  // Optional field.
+                                  validate: (_) => null,
                                 ),
                               ],
                             ),
