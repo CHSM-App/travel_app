@@ -779,7 +779,11 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
               padding: EdgeInsets.only(
                 bottom: MediaQuery.of(ctx).viewInsets.bottom + 12,
               ),
-              child: Column(
+              // Constrain to the visible height and let the content scroll, so
+              // the fixed-height calendar + time row + buttons never overflow
+              // the bottom on shorter screens.
+              child: SingleChildScrollView(
+                child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Container(
@@ -1004,6 +1008,7 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
                     ),
                   ),
                 ],
+              ),
               ),
             );
           },
