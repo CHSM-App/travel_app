@@ -3,9 +3,9 @@ import 'dart:io';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:travel_agency_app/core/notifications/notification_store.dart';
-import 'package:travel_agency_app/core/storage/token_storage.dart';
-import 'package:travel_agency_app/data/api/api_service.dart';
+import 'package:vego/core/notifications/notification_store.dart';
+import 'package:vego/core/storage/token_storage.dart';
+import 'package:vego/data/api/api_service.dart';
 
 /// Background/terminated FCM handler. Must be a top-level (or static) function
 /// annotated with @pragma('vm:entry-point'). Notification-type messages are

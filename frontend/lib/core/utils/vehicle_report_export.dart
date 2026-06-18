@@ -9,12 +9,12 @@ import 'package:open_file/open_file.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:share_plus/share_plus.dart' as share_plus;
-import 'package:travel_agency_app/core/theme/app_colors.dart';
-import 'package:travel_agency_app/core/utils/report_saver.dart';
-import 'package:travel_agency_app/core/widgets/trip_filter.dart' show tripSortKey;
-import 'package:travel_agency_app/domain/models/booking_info.dart';
-import 'package:travel_agency_app/domain/models/services.dart';
-import 'package:travel_agency_app/domain/models/vehicles.dart';
+import 'package:vego/core/theme/app_colors.dart';
+import 'package:vego/core/utils/report_saver.dart';
+import 'package:vego/core/widgets/trip_filter.dart' show tripSortKey;
+import 'package:vego/domain/models/booking_info.dart';
+import 'package:vego/domain/models/services.dart';
+import 'package:vego/domain/models/vehicles.dart';
 
 // ── Design tokens (mirror the report screens) ──────────────────────────────
 class _Tok {

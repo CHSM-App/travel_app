@@ -1,6 +1,6 @@
 {
-    "name": "travel_agency_app",
-    "short_name": "travel_agency_app",
+    "name": "vego",
+    "short_name": "vego",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

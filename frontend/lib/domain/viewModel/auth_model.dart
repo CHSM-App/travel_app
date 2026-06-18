@@ -1,9 +1,9 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:travel_agency_app/core/network/error_messages.dart';
-import 'package:travel_agency_app/core/network/token_provider.dart';
-import 'package:travel_agency_app/domain/models/token_response.dart';
-import 'package:travel_agency_app/domain/usecase/auth_use_case.dart';
+import 'package:vego/core/network/error_messages.dart';
+import 'package:vego/core/network/token_provider.dart';
+import 'package:vego/domain/models/token_response.dart';
+import 'package:vego/domain/usecase/auth_use_case.dart';
 
 @immutable
 class AuthState {

@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:travel_agency_app/Screens/bottom_navigation_bar.dart';
-import 'package:travel_agency_app/Screens/forgot_password.dart';
-import 'package:travel_agency_app/Screens/signup_page.dart';
-import 'package:travel_agency_app/core/notifications/push_service.dart';
-import 'package:travel_agency_app/core/theme/app_colors.dart';
-import 'package:travel_agency_app/domain/models/login_info.dart';
-import 'package:travel_agency_app/domain/models/token_response.dart';
-import 'package:travel_agency_app/presentation/providers/viewmodel_provider.dart';
+import 'package:vego/Screens/bottom_navigation_bar.dart';
+import 'package:vego/Screens/forgot_password.dart';
+import 'package:vego/Screens/signup_page.dart';
+import 'package:vego/core/notifications/push_service.dart';
+import 'package:vego/core/theme/app_colors.dart';
+import 'package:vego/domain/models/login_info.dart';
+import 'package:vego/domain/models/token_response.dart';
+import 'package:vego/presentation/providers/viewmodel_provider.dart';
 
 class LoginPage extends ConsumerStatefulWidget {
   const LoginPage({super.key});

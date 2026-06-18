@@ -1,16 +1,16 @@
 // ignore: file_names
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:travel_agency_app/domain/models/ledger_entry.dart';
-import 'package:travel_agency_app/domain/viewModel/addDriver_viewmodel.dart';
-import 'package:travel_agency_app/domain/viewModel/addVehicle_viewmodel.dart';
-import 'package:travel_agency_app/domain/viewModel/auth_model.dart';
-import 'package:travel_agency_app/domain/viewModel/customerViewModel.dart';
-import 'package:travel_agency_app/domain/viewModel/login_viewmodel.dart';
-import 'package:travel_agency_app/domain/viewModel/report_viewmodel.dart';
-import 'package:travel_agency_app/domain/viewModel/trippage_viewmodel.dart';
-import 'package:travel_agency_app/domain/viewModel/tripbooking_viewmodel.dart';
-import 'package:travel_agency_app/presentation/providers/usecase_provider.dart';
+import 'package:vego/domain/models/ledger_entry.dart';
+import 'package:vego/domain/viewModel/addDriver_viewmodel.dart';
+import 'package:vego/domain/viewModel/addVehicle_viewmodel.dart';
+import 'package:vego/domain/viewModel/auth_model.dart';
+import 'package:vego/domain/viewModel/customerViewModel.dart';
+import 'package:vego/domain/viewModel/login_viewmodel.dart';
+import 'package:vego/domain/viewModel/report_viewmodel.dart';
+import 'package:vego/domain/viewModel/trippage_viewmodel.dart';
+import 'package:vego/domain/viewModel/tripbooking_viewmodel.dart';
+import 'package:vego/presentation/providers/usecase_provider.dart';
 
 final authViewModelProvider =
     StateNotifierProvider<AuthViewModel, AuthState>((ref) {

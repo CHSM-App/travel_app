@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:travel_agency_app/core/notifications/notification_store.dart';
-import 'package:travel_agency_app/core/theme/app_colors.dart';
+import 'package:vego/core/notifications/notification_store.dart';
+import 'package:vego/core/theme/app_colors.dart';
 
 /// Full list of notifications the app has received (FCM daily reminders, etc.).
 /// Reads from [NotificationStore] and marks everything read on open.

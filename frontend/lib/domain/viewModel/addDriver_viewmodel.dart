@@ -2,10 +2,10 @@ import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:travel_agency_app/domain/models/booking_info.dart';
-import 'package:travel_agency_app/domain/models/drivers.dart';
-import 'package:travel_agency_app/core/network/error_messages.dart';
-import 'package:travel_agency_app/domain/usecase/adddriverUseCase.dart';
+import 'package:vego/domain/models/booking_info.dart';
+import 'package:vego/domain/models/drivers.dart';
+import 'package:vego/core/network/error_messages.dart';
+import 'package:vego/domain/usecase/adddriverUseCase.dart';
 
 @immutable
 class AddDriverState {

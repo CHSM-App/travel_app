@@ -1,5 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:travel_agency_app/core/storage/token_storage.dart';
+import 'package:vego/core/storage/token_storage.dart';
 
 class TokenState {
   final String? accessToken;

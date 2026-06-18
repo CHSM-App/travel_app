@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:travel_agency_app/core/theme/app_colors.dart';
-import 'package:travel_agency_app/core/theme/app_scroll_behavior.dart';
+import 'package:vego/core/theme/app_colors.dart';
+import 'package:vego/core/theme/app_scroll_behavior.dart';
 
 /// A drop-in replacement for `ListView.builder` that renders a long list one
 /// page at a time and reveals the next page as the user scrolls near the bottom

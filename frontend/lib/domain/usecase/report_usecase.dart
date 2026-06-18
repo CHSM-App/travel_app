@@ -1,6 +1,6 @@
 
-import 'package:travel_agency_app/domain/models/reports_data.dart';
-import 'package:travel_agency_app/domain/repository/report_repo.dart';
+import 'package:vego/domain/models/reports_data.dart';
+import 'package:vego/domain/repository/report_repo.dart';
 
 class ReportUsecase {
   final ReportRepository reportRepository;

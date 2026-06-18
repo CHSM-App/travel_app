@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:travel_agency_app/core/theme/app_colors.dart';
+import 'package:vego/core/theme/app_colors.dart';
 
 /// Terms & Conditions shown from the Sign Up page.
 ///

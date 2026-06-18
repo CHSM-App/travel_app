@@ -6,11 +6,11 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:open_file/open_file.dart';
-import 'package:travel_agency_app/core/storage/constant.dart';
-import 'package:travel_agency_app/core/theme/app_colors.dart';
-import 'package:travel_agency_app/domain/models/customers.dart';
-import 'package:travel_agency_app/core/network/error_messages.dart';
-import 'package:travel_agency_app/presentation/providers/viewmodel_provider.dart';
+import 'package:vego/core/storage/constant.dart';
+import 'package:vego/core/theme/app_colors.dart';
+import 'package:vego/domain/models/customers.dart';
+import 'package:vego/core/network/error_messages.dart';
+import 'package:vego/presentation/providers/viewmodel_provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class AddCustomerPage extends ConsumerStatefulWidget {

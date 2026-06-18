@@ -4,18 +4,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-import 'package:travel_agency_app/Screens/add_customer.dart';
-import 'package:travel_agency_app/Screens/trip_card.dart';
-import 'package:travel_agency_app/core/theme/app_colors.dart';
-import 'package:travel_agency_app/core/theme/app_scroll_behavior.dart';
-import 'package:travel_agency_app/core/utils/customer_report_export.dart';
-import 'package:travel_agency_app/core/widgets/error_view.dart';
-import 'package:travel_agency_app/core/widgets/paginated_list_view.dart';
-import 'package:travel_agency_app/core/widgets/skeleton.dart';
-import 'package:travel_agency_app/core/widgets/trip_filter.dart';
-import 'package:travel_agency_app/domain/models/booking_info.dart';
-import 'package:travel_agency_app/domain/models/customers.dart';
-import 'package:travel_agency_app/presentation/providers/viewmodel_provider.dart';
+import 'package:vego/Screens/add_customer.dart';
+import 'package:vego/Screens/trip_card.dart';
+import 'package:vego/core/theme/app_colors.dart';
+import 'package:vego/core/theme/app_scroll_behavior.dart';
+import 'package:vego/core/utils/customer_report_export.dart';
+import 'package:vego/core/widgets/error_view.dart';
+import 'package:vego/core/widgets/paginated_list_view.dart';
+import 'package:vego/core/widgets/skeleton.dart';
+import 'package:vego/core/widgets/trip_filter.dart';
+import 'package:vego/domain/models/booking_info.dart';
+import 'package:vego/domain/models/customers.dart';
+import 'package:vego/presentation/providers/viewmodel_provider.dart';
 
 /// Per-customer trip status filter, mirroring [TripPage]'s status axis.
 /// Status codes mirror those used in [TripCard]: 1=Active, 2=Unpaid,

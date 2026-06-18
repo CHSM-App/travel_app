@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:travel_agency_app/Screens/add_tripbooking.dart';
-import 'package:travel_agency_app/core/notifications/ringtone_picker.dart';
-import 'package:travel_agency_app/core/notifications/trip_alarm_service.dart';
-import 'package:travel_agency_app/core/theme/app_colors.dart';
-import 'package:travel_agency_app/domain/models/booking_info.dart';
-import 'package:travel_agency_app/presentation/providers/viewmodel_provider.dart';
+import 'package:vego/Screens/add_tripbooking.dart';
+import 'package:vego/core/notifications/ringtone_picker.dart';
+import 'package:vego/core/notifications/trip_alarm_service.dart';
+import 'package:vego/core/theme/app_colors.dart';
+import 'package:vego/domain/models/booking_info.dart';
+import 'package:vego/presentation/providers/viewmodel_provider.dart';
 
 class TripCard extends ConsumerWidget {
   final BookingInfo bookinginfo;

@@ -1,6 +1,6 @@
 // import 'package:flutter/material.dart';
 // import 'package:flutter_riverpod/flutter_riverpod.dart';
-// import 'package:travel_agency_app/core/network/network_state_notifier.dart';
+// import 'package:vego/core/network/network_state_notifier.dart';
 
 // class NetworkOverlay extends ConsumerWidget {
 //   final Widget child;

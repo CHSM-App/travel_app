@@ -3,14 +3,14 @@ import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:travel_agency_app/domain/models/booking_info.dart';
-import 'package:travel_agency_app/domain/models/fueltype.dart';
-import 'package:travel_agency_app/domain/models/services.dart';
-import 'package:travel_agency_app/domain/models/status.dart';
-import 'package:travel_agency_app/domain/models/vehicles.dart';
-import 'package:travel_agency_app/domain/models/vehicletype.dart';
-import 'package:travel_agency_app/core/network/error_messages.dart';
-import 'package:travel_agency_app/domain/usecase/addVehicleUseCase.dart';
+import 'package:vego/domain/models/booking_info.dart';
+import 'package:vego/domain/models/fueltype.dart';
+import 'package:vego/domain/models/services.dart';
+import 'package:vego/domain/models/status.dart';
+import 'package:vego/domain/models/vehicles.dart';
+import 'package:vego/domain/models/vehicletype.dart';
+import 'package:vego/core/network/error_messages.dart';
+import 'package:vego/domain/usecase/addVehicleUseCase.dart';
 
 @immutable
 class AddVehicleState {

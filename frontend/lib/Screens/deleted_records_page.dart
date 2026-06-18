@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:travel_agency_app/core/theme/app_colors.dart';
-import 'package:travel_agency_app/core/theme/app_scroll_behavior.dart';
-import 'package:travel_agency_app/core/widgets/error_view.dart';
-import 'package:travel_agency_app/core/widgets/paginated_list_view.dart';
-import 'package:travel_agency_app/core/widgets/skeleton.dart';
-import 'package:travel_agency_app/domain/models/drivers.dart';
-import 'package:travel_agency_app/domain/models/vehicles.dart';
-import 'package:travel_agency_app/presentation/providers/viewmodel_provider.dart';
+import 'package:vego/core/theme/app_colors.dart';
+import 'package:vego/core/theme/app_scroll_behavior.dart';
+import 'package:vego/core/widgets/error_view.dart';
+import 'package:vego/core/widgets/paginated_list_view.dart';
+import 'package:vego/core/widgets/skeleton.dart';
+import 'package:vego/domain/models/drivers.dart';
+import 'package:vego/domain/models/vehicles.dart';
+import 'package:vego/presentation/providers/viewmodel_provider.dart';
 
 class DeletedRecordsPage extends ConsumerStatefulWidget {
   const DeletedRecordsPage({super.key});

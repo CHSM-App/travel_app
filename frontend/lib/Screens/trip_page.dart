@@ -3,17 +3,17 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:travel_agency_app/Screens/add_tripbooking.dart';
-import 'package:travel_agency_app/Screens/trip_card.dart';
-import 'package:travel_agency_app/core/network/error_messages.dart';
-import 'package:travel_agency_app/core/theme/app_colors.dart';
-import 'package:travel_agency_app/core/theme/app_scroll_behavior.dart';
-import 'package:travel_agency_app/core/widgets/paginated_list_view.dart';
-import 'package:travel_agency_app/core/widgets/skeleton.dart';
-import 'package:travel_agency_app/core/network/network_state_notifier.dart';
-import 'package:travel_agency_app/domain/models/booking_info.dart';
-import 'package:travel_agency_app/domain/viewModel/trippage_viewmodel.dart';
-import 'package:travel_agency_app/presentation/providers/viewmodel_provider.dart';
+import 'package:vego/Screens/add_tripbooking.dart';
+import 'package:vego/Screens/trip_card.dart';
+import 'package:vego/core/network/error_messages.dart';
+import 'package:vego/core/theme/app_colors.dart';
+import 'package:vego/core/theme/app_scroll_behavior.dart';
+import 'package:vego/core/widgets/paginated_list_view.dart';
+import 'package:vego/core/widgets/skeleton.dart';
+import 'package:vego/core/network/network_state_notifier.dart';
+import 'package:vego/domain/models/booking_info.dart';
+import 'package:vego/domain/viewModel/trippage_viewmodel.dart';
+import 'package:vego/presentation/providers/viewmodel_provider.dart';
 
 /// Trip status filter. `key` is the wire value used by the cross-screen
 /// [tripPageInitialFilterProvider] deep-link signal. Payment is a separate,

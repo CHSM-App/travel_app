@@ -6,18 +6,18 @@
     "configurations": [
         
         {
-            "name": "travel_agency_app",
+            "name": "vego",
             "request": "launch",
             "type": "dart"
         },
         {
-            "name": "travel_agency_app (profile mode)",
+            "name": "vego (profile mode)",
             "request": "launch",
             "type": "dart",
             "flutterMode": "profile"
         },
         {
-            "name": "travel_agency_app (release mode)",
+            "name": "vego (release mode)",
             "request": "launch",
             "type": "dart",
             "flutterMode": "release"

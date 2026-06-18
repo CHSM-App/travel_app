@@ -1,7 +1,7 @@
 import 'dart:io';
 
-import 'package:travel_agency_app/domain/models/booking_info.dart';
-import 'package:travel_agency_app/domain/models/customers.dart';
+import 'package:vego/domain/models/booking_info.dart';
+import 'package:vego/domain/models/customers.dart';
 
 abstract class CustomerRepository {
  

@@ -1,9 +1,9 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:travel_agency_app/Screens/login.dart';
-import 'package:travel_agency_app/domain/models/token_response.dart';
-import 'package:travel_agency_app/main.dart';
+import 'package:vego/Screens/login.dart';
+import 'package:vego/domain/models/token_response.dart';
+import 'package:vego/main.dart';
 
 import '../../data/repositories/auth_impl.dart';
 import 'token_provider.dart';

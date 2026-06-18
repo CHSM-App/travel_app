@@ -1,7 +1,7 @@
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:travel_agency_app/domain/models/reports_data.dart';
-import 'package:travel_agency_app/domain/usecase/report_usecase.dart';
+import 'package:vego/domain/models/reports_data.dart';
+import 'package:vego/domain/usecase/report_usecase.dart';
 
 // ─────────────────────────────────────────────────────────────
 //  STATE

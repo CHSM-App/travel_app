@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:travel_agency_app/core/theme/app_colors.dart';
-import 'package:travel_agency_app/domain/models/booking_info.dart';
+import 'package:vego/core/theme/app_colors.dart';
+import 'package:vego/domain/models/booking_info.dart';
 
 /// Shared trip-list filtering controls, ported from [TripPage] so the
 /// customer-history, driver-history and vehicle-revenue screens all expose the

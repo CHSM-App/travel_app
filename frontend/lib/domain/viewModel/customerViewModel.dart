@@ -3,10 +3,10 @@ import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:travel_agency_app/core/network/error_messages.dart';
-import 'package:travel_agency_app/domain/models/booking_info.dart';
-import 'package:travel_agency_app/domain/models/customers.dart';
-import 'package:travel_agency_app/domain/usecase/customerUseCase.dart';
+import 'package:vego/core/network/error_messages.dart';
+import 'package:vego/domain/models/booking_info.dart';
+import 'package:vego/domain/models/customers.dart';
+import 'package:vego/domain/usecase/customerUseCase.dart';
 
 class CustomerState {
 

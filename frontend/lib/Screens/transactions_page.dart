@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-import 'package:travel_agency_app/Screens/trip_card.dart';
-import 'package:travel_agency_app/core/theme/app_colors.dart';
-import 'package:travel_agency_app/core/theme/app_scroll_behavior.dart';
-import 'package:travel_agency_app/core/widgets/error_view.dart';
-import 'package:travel_agency_app/domain/models/booking_info.dart';
-import 'package:travel_agency_app/domain/models/ledger_entry.dart';
-import 'package:travel_agency_app/presentation/providers/viewmodel_provider.dart';
+import 'package:vego/Screens/trip_card.dart';
+import 'package:vego/core/theme/app_colors.dart';
+import 'package:vego/core/theme/app_scroll_behavior.dart';
+import 'package:vego/core/widgets/error_view.dart';
+import 'package:vego/domain/models/booking_info.dart';
+import 'package:vego/domain/models/ledger_entry.dart';
+import 'package:vego/presentation/providers/viewmodel_provider.dart';
 
 /// Which side of the daybook to show. Revenue = money received, Expense =
 /// trip expenses + maintenance.

@@ -1,7 +1,7 @@
 import 'dart:io';
 
-import 'package:travel_agency_app/domain/models/customers.dart';
-import 'package:travel_agency_app/domain/repository/CustomerRepository.dart';
+import 'package:vego/domain/models/customers.dart';
+import 'package:vego/domain/repository/CustomerRepository.dart';
 class customerUseCase {
   // Add your use case methods here
   final CustomerRepository customerrepository;

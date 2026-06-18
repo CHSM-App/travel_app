@@ -1,11 +1,11 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:travel_agency_app/domain/usecase/addVehicleUseCase.dart';
-import 'package:travel_agency_app/domain/usecase/adddriverUseCase.dart';
-import 'package:travel_agency_app/domain/usecase/auth_use_case.dart';
-import 'package:travel_agency_app/domain/usecase/customerUseCase.dart';
-import 'package:travel_agency_app/domain/usecase/login_usecase.dart';
-import 'package:travel_agency_app/domain/usecase/report_usecase.dart';
-import 'package:travel_agency_app/domain/usecase/tripbooking_usecase.dart';
+import 'package:vego/domain/usecase/addVehicleUseCase.dart';
+import 'package:vego/domain/usecase/adddriverUseCase.dart';
+import 'package:vego/domain/usecase/auth_use_case.dart';
+import 'package:vego/domain/usecase/customerUseCase.dart';
+import 'package:vego/domain/usecase/login_usecase.dart';
+import 'package:vego/domain/usecase/report_usecase.dart';
+import 'package:vego/domain/usecase/tripbooking_usecase.dart';
 
 import 'repository_provider.dart';
 

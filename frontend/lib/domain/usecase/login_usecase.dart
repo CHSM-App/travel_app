@@ -3,10 +3,10 @@
 
 import 'dart:io';
 
-import 'package:travel_agency_app/domain/models/login_info.dart';
-import 'package:travel_agency_app/domain/models/login_response.dart';
-import 'package:travel_agency_app/domain/models/otp_response.dart';
-import 'package:travel_agency_app/domain/repository/login_repo.dart';
+import 'package:vego/domain/models/login_info.dart';
+import 'package:vego/domain/models/login_response.dart';
+import 'package:vego/domain/models/otp_response.dart';
+import 'package:vego/domain/repository/login_repo.dart';
 
 class LoginUseCase {
   final LoginRepo loginRepo;

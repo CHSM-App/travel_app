@@ -5,18 +5,18 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:travel_agency_app/Screens/trip_card.dart';
-import 'package:travel_agency_app/core/storage/constant.dart';
-import 'package:travel_agency_app/core/theme/app_colors.dart';
-import 'package:travel_agency_app/core/theme/app_scroll_behavior.dart';
-import 'package:travel_agency_app/core/utils/driver_report_export.dart';
-import 'package:travel_agency_app/core/widgets/error_view.dart';
-import 'package:travel_agency_app/core/widgets/paginated_list_view.dart';
-import 'package:travel_agency_app/core/widgets/skeleton.dart';
-import 'package:travel_agency_app/core/widgets/trip_filter.dart';
-import 'package:travel_agency_app/domain/models/booking_info.dart';
-import 'package:travel_agency_app/domain/models/drivers.dart';
-import 'package:travel_agency_app/presentation/providers/viewmodel_provider.dart';
+import 'package:vego/Screens/trip_card.dart';
+import 'package:vego/core/storage/constant.dart';
+import 'package:vego/core/theme/app_colors.dart';
+import 'package:vego/core/theme/app_scroll_behavior.dart';
+import 'package:vego/core/utils/driver_report_export.dart';
+import 'package:vego/core/widgets/error_view.dart';
+import 'package:vego/core/widgets/paginated_list_view.dart';
+import 'package:vego/core/widgets/skeleton.dart';
+import 'package:vego/core/widgets/trip_filter.dart';
+import 'package:vego/domain/models/booking_info.dart';
+import 'package:vego/domain/models/drivers.dart';
+import 'package:vego/presentation/providers/viewmodel_provider.dart';
 
 /// Client-side status filter for the driver's trip list. All of a driver's
 /// trips are fetched once, so filtering happens in memory — keyed on

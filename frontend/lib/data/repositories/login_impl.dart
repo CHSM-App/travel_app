@@ -1,11 +1,11 @@
 import 'dart:io';
 
-import 'package:travel_agency_app/core/storage/token_storage.dart';
-import 'package:travel_agency_app/data/api/api_service.dart';
-import 'package:travel_agency_app/domain/models/login_info.dart';
-import 'package:travel_agency_app/domain/models/login_response.dart';
-import 'package:travel_agency_app/domain/models/otp_response.dart';
-import 'package:travel_agency_app/domain/repository/login_repo.dart';
+import 'package:vego/core/storage/token_storage.dart';
+import 'package:vego/data/api/api_service.dart';
+import 'package:vego/domain/models/login_info.dart';
+import 'package:vego/domain/models/login_response.dart';
+import 'package:vego/domain/models/otp_response.dart';
+import 'package:vego/domain/repository/login_repo.dart';
 
 class LoginImpl implements LoginRepo {
   final ApiService apiService;

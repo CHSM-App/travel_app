@@ -1,5 +1,5 @@
 
-import 'package:travel_agency_app/domain/models/reports_data.dart';
+import 'package:vego/domain/models/reports_data.dart';
 
 
 abstract class ReportRepository {

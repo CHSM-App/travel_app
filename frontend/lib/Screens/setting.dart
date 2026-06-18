@@ -1,17 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:travel_agency_app/Screens/deleted_records_page.dart';
-import 'package:travel_agency_app/Screens/help_center.dart';
-import 'package:travel_agency_app/Screens/login.dart';
-import 'package:travel_agency_app/Screens/profile.dart';
-import 'package:travel_agency_app/core/network/token_provider.dart';
-import 'package:travel_agency_app/core/notifications/push_service.dart';
-import 'package:travel_agency_app/core/theme/app_colors.dart';
-import 'package:travel_agency_app/core/widgets/error_view.dart';
-import 'package:travel_agency_app/domain/models/login_info.dart';
-import 'package:travel_agency_app/domain/models/token_response.dart';
-import 'package:travel_agency_app/presentation/providers/viewmodel_provider.dart';
+import 'package:vego/Screens/deleted_records_page.dart';
+import 'package:vego/Screens/help_center.dart';
+import 'package:vego/Screens/login.dart';
+import 'package:vego/Screens/profile.dart';
+import 'package:vego/core/network/token_provider.dart';
+import 'package:vego/core/notifications/push_service.dart';
+import 'package:vego/core/theme/app_colors.dart';
+import 'package:vego/core/widgets/error_view.dart';
+import 'package:vego/domain/models/login_info.dart';
+import 'package:vego/domain/models/token_response.dart';
+import 'package:vego/presentation/providers/viewmodel_provider.dart';
 
 class ModernSettingsPage extends ConsumerStatefulWidget {
   const ModernSettingsPage({Key? key}) : super(key: key);

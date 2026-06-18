@@ -7,12 +7,12 @@ import 'package:open_file/open_file.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:share_plus/share_plus.dart' as share_plus;
-import 'package:travel_agency_app/core/network/error_messages.dart';
-import 'package:travel_agency_app/core/theme/app_colors.dart';
-import 'package:travel_agency_app/core/theme/app_scroll_behavior.dart';
-import 'package:travel_agency_app/core/widgets/error_view.dart';
-import 'package:travel_agency_app/domain/models/reports_data.dart';
-import 'package:travel_agency_app/presentation/providers/viewmodel_provider.dart';
+import 'package:vego/core/network/error_messages.dart';
+import 'package:vego/core/theme/app_colors.dart';
+import 'package:vego/core/theme/app_scroll_behavior.dart';
+import 'package:vego/core/widgets/error_view.dart';
+import 'package:vego/domain/models/reports_data.dart';
+import 'package:vego/presentation/providers/viewmodel_provider.dart';
 
 // ─────────────────────────────────────────────────────────────
 //  DESIGN TOKENS

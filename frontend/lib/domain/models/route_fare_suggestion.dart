@@ -1,4 +1,4 @@
-import 'package:travel_agency_app/domain/models/booking_info.dart';
+import 'package:vego/domain/models/booking_info.dart';
 
 /// Derived from a customer's past trips: what we charged this customer the
 /// last time they travelled the same Pickup → Drop route, plus the average

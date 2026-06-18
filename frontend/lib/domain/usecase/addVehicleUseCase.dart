@@ -1,13 +1,13 @@
 import 'dart:io';
 
-import 'package:travel_agency_app/domain/models/booking_info.dart';
-import 'package:travel_agency_app/domain/models/fueltype.dart';
-import 'package:travel_agency_app/domain/models/ledger_entry.dart';
-import 'package:travel_agency_app/domain/models/services.dart';
-import 'package:travel_agency_app/domain/models/status.dart';
-import 'package:travel_agency_app/domain/models/vehicles.dart';
-import 'package:travel_agency_app/domain/models/vehicletype.dart';
-import 'package:travel_agency_app/domain/repository/AddVehicleRepository.dart';
+import 'package:vego/domain/models/booking_info.dart';
+import 'package:vego/domain/models/fueltype.dart';
+import 'package:vego/domain/models/ledger_entry.dart';
+import 'package:vego/domain/models/services.dart';
+import 'package:vego/domain/models/status.dart';
+import 'package:vego/domain/models/vehicles.dart';
+import 'package:vego/domain/models/vehicletype.dart';
+import 'package:vego/domain/repository/AddVehicleRepository.dart';
 
 class AddVehicleUseCase {
   final Addvehiclerepository addvehiclerepository;

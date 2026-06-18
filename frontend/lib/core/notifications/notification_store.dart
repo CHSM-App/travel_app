@@ -1,7 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
-import 'package:travel_agency_app/core/storage/token_storage.dart';
+import 'package:vego/core/storage/token_storage.dart';
 
 /// A single notification entry shown in the in-app notifications list.
 class AppNotification {

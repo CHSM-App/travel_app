@@ -156,7 +156,7 @@ router.post("/owner-response1", async (req, res) => {
   }
 
   // 1️⃣ Save Owner response in DB  
-  await sql.query`
+  await db.query`
     INSERT INTO VisitorResponse (visitor_id, owner_id, flat_id, response, response_time)
     VALUES (${visitorId}, ${ownerId}, ${flatId}, ${response}, GETDATE())
   `;

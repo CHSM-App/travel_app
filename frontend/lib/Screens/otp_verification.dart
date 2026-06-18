@@ -4,9 +4,9 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:travel_agency_app/core/theme/app_colors.dart';
-import 'package:travel_agency_app/domain/models/login_response.dart';
-import 'package:travel_agency_app/presentation/providers/viewmodel_provider.dart';
+import 'package:vego/core/theme/app_colors.dart';
+import 'package:vego/domain/models/login_response.dart';
+import 'package:vego/presentation/providers/viewmodel_provider.dart';
 
 /// Reusable WhatsApp OTP verification screen.
 ///

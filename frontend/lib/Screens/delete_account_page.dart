@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:travel_agency_app/Screens/login.dart';
-import 'package:travel_agency_app/core/notifications/push_service.dart';
-import 'package:travel_agency_app/core/storage/token_storage.dart';
-import 'package:travel_agency_app/core/theme/app_colors.dart';
-import 'package:travel_agency_app/presentation/providers/viewmodel_provider.dart';
+import 'package:vego/Screens/login.dart';
+import 'package:vego/core/notifications/push_service.dart';
+import 'package:vego/core/storage/token_storage.dart';
+import 'package:vego/core/theme/app_colors.dart';
+import 'package:vego/presentation/providers/viewmodel_provider.dart';
 
 /// In-app account deletion (Google Play data-deletion compliance).
 ///

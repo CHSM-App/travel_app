@@ -2,15 +2,15 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:travel_agency_app/Screens/customer_page.dart';
-import 'package:travel_agency_app/Screens/dashbord.dart';
-import 'package:travel_agency_app/Screens/notifications_page.dart';
-import 'package:travel_agency_app/Screens/setting.dart';
-import 'package:travel_agency_app/Screens/trip_page.dart';
-import 'package:travel_agency_app/Screens/vehicle_page.dart';
-import 'package:travel_agency_app/core/notifications/notification_store.dart';
-import 'package:travel_agency_app/core/theme/app_colors.dart';
-import 'package:travel_agency_app/presentation/providers/viewmodel_provider.dart';
+import 'package:vego/Screens/customer_page.dart';
+import 'package:vego/Screens/dashbord.dart';
+import 'package:vego/Screens/notifications_page.dart';
+import 'package:vego/Screens/setting.dart';
+import 'package:vego/Screens/trip_page.dart';
+import 'package:vego/Screens/vehicle_page.dart';
+import 'package:vego/core/notifications/notification_store.dart';
+import 'package:vego/core/theme/app_colors.dart';
+import 'package:vego/presentation/providers/viewmodel_provider.dart';
 
 // ── Pill nav theme ──────────────────────────────────────────────────────────
 class NavTheme {

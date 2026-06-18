@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:travel_agency_app/Screens/customer_report.dart';
-import 'package:travel_agency_app/Screens/driver_report.dart';
-import 'package:travel_agency_app/Screens/transactions_page.dart';
-import 'package:travel_agency_app/Screens/vehicle_report.dart';
-import 'package:travel_agency_app/core/theme/app_colors.dart';
+import 'package:vego/Screens/customer_report.dart';
+import 'package:vego/Screens/driver_report.dart';
+import 'package:vego/Screens/transactions_page.dart';
+import 'package:vego/Screens/vehicle_report.dart';
+import 'package:vego/core/theme/app_colors.dart';
 
 /// Reports hub. A simple launcher that lists the four report types —
 /// Transaction, Vehicle, Customer and Driver — and routes to each on tap.

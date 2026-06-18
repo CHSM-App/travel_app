@@ -1,3 +1,3 @@
-# travel_agency_app
+# vego
 
 A new Flutter project.

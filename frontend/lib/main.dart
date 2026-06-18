@@ -2,16 +2,16 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:travel_agency_app/Screens/bottom_navigation_bar.dart';
-import 'package:travel_agency_app/Screens/login.dart';
-import 'package:travel_agency_app/core/network/token_provider.dart';
-import 'package:travel_agency_app/core/notifications/notification_store.dart';
-import 'package:travel_agency_app/core/notifications/push_service.dart';
-import 'package:travel_agency_app/core/notifications/trip_alarm_service.dart';
-import 'package:travel_agency_app/core/theme/app_colors.dart';
-import 'package:travel_agency_app/core/theme/app_scroll_behavior.dart';
-import 'package:travel_agency_app/presentation/providers/repository_provider.dart';
-import 'package:travel_agency_app/presentation/providers/viewmodel_provider.dart';
+import 'package:vego/Screens/bottom_navigation_bar.dart';
+import 'package:vego/Screens/login.dart';
+import 'package:vego/core/network/token_provider.dart';
+import 'package:vego/core/notifications/notification_store.dart';
+import 'package:vego/core/notifications/push_service.dart';
+import 'package:vego/core/notifications/trip_alarm_service.dart';
+import 'package:vego/core/theme/app_colors.dart';
+import 'package:vego/core/theme/app_scroll_behavior.dart';
+import 'package:vego/presentation/providers/repository_provider.dart';
+import 'package:vego/presentation/providers/viewmodel_provider.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 final GlobalKey<ScaffoldMessengerState> rootScaffoldMessengerKey =

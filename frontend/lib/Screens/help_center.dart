@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:travel_agency_app/core/theme/app_colors.dart';
+import 'package:vego/core/theme/app_colors.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class HelpCenterPage extends StatefulWidget {

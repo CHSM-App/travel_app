@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:travel_agency_app/core/storage/constant.dart';
-import 'package:travel_agency_app/core/storage/token_storage.dart';
+import 'package:vego/core/storage/constant.dart';
+import 'package:vego/core/storage/token_storage.dart';
 
 /// What our backend returns for a route lookup.
 class DistanceResult {

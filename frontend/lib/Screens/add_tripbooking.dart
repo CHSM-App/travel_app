@@ -5,19 +5,20 @@ import 'package:flutter/gestures.dart' show PointerScrollEvent;
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-import 'package:travel_agency_app/Screens/add_driver.dart';
-import 'package:travel_agency_app/Screens/add_vehicle.dart';
-import 'package:travel_agency_app/core/network/distance_service.dart';
-import 'package:travel_agency_app/core/notifications/ringtone_picker.dart';
-import 'package:travel_agency_app/core/notifications/trip_alarm_service.dart';
-import 'package:travel_agency_app/core/network/places_service.dart';
-import 'package:travel_agency_app/core/theme/app_colors.dart';
-import 'package:travel_agency_app/domain/models/booking_info.dart';
-import 'package:travel_agency_app/domain/models/customers.dart';
-import 'package:travel_agency_app/domain/models/vehicles.dart';
-import 'package:travel_agency_app/domain/models/route_fare_suggestion.dart';
-import 'package:travel_agency_app/domain/models/tripbooking_info.dart';
-import 'package:travel_agency_app/presentation/providers/viewmodel_provider.dart';
+import 'package:vego/Screens/add_driver.dart';
+import 'package:vego/Screens/add_vehicle.dart';
+import 'package:vego/Screens/customer_hist.dart';
+import 'package:vego/core/network/distance_service.dart';
+import 'package:vego/core/notifications/ringtone_picker.dart';
+import 'package:vego/core/notifications/trip_alarm_service.dart';
+import 'package:vego/core/network/places_service.dart';
+import 'package:vego/core/theme/app_colors.dart';
+import 'package:vego/domain/models/booking_info.dart';
+import 'package:vego/domain/models/customers.dart';
+import 'package:vego/domain/models/vehicles.dart';
+import 'package:vego/domain/models/route_fare_suggestion.dart';
+import 'package:vego/domain/models/tripbooking_info.dart';
+import 'package:vego/presentation/providers/viewmodel_provider.dart';
 
 // ─── Design Tokens ─────────────────────────────────────────────────────────
 class _C {
@@ -341,6 +342,63 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
     customerAddress.text = c.address ?? '';
     _suppressCustomerFieldListener = false;
     setState(() => selCustomer = c.customerId);
+  }
+
+  // Compact "View History" pill shown once an existing customer is linked.
+  // Resolves the linked customer from the loaded list (by selCustomer id) and
+  // opens [CustomerHist] for that customer.
+  Widget _viewHistoryButton(List<Customer> customers) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(8),
+        onTap: () {
+          Customer? linked;
+          for (final c in customers) {
+            if (c.customerId == selCustomer) {
+              linked = c;
+              break;
+            }
+          }
+          // Fall back to a customer built from the inline fields if the linked
+          // record isn't in the loaded list (keeps the button functional).
+          linked ??= Customer(
+            customerId: selCustomer,
+            name: customerName.text.trim(),
+            phone: customerPhone.text.trim(),
+            address: customerAddress.text.trim(),
+          );
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => CustomerHist(customer: linked!),
+            ),
+          );
+        },
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          decoration: BoxDecoration(
+            color: _C.accentSoft,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: const Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.history_rounded, size: 13, color: _C.accent),
+              SizedBox(width: 5),
+              Text(
+                "View History",
+                style: TextStyle(
+                  fontSize: 11.5,
+                  color: _C.accent,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   // Rebuilds the completion summary (balance / payment-status preview) as the
@@ -1918,21 +1976,24 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
                                   if (selCustomer != null) ...[
                                     const SizedBox(height: 8),
                                     Row(
-                                      children: const [
-                                        Icon(
+                                      children: [
+                                        const Icon(
                                           Icons.check_circle_rounded,
                                           size: 13,
                                           color: _C.green,
                                         ),
-                                        SizedBox(width: 6),
-                                        Text(
-                                          "Existing customer linked",
-                                          style: TextStyle(
-                                            fontSize: 11.5,
-                                            color: _C.green,
-                                            fontWeight: FontWeight.w600,
+                                        const SizedBox(width: 6),
+                                        const Expanded(
+                                          child: Text(
+                                            "Existing customer linked",
+                                            style: TextStyle(
+                                              fontSize: 11.5,
+                                              color: _C.green,
+                                              fontWeight: FontWeight.w600,
+                                            ),
                                           ),
                                         ),
+                                        _viewHistoryButton(customers),
                                       ],
                                     ),
                                   ],

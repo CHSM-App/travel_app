@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:travel_agency_app/core/storage/constant.dart';
-import 'package:travel_agency_app/core/storage/token_storage.dart';
+import 'package:vego/core/storage/constant.dart';
+import 'package:vego/core/storage/token_storage.dart';
 
 /// Google Places autocomplete, proxied through OUR backend so the Google API
 /// key stays on the server (.env) — never shipped in the app. Mirrors

@@ -807,7 +807,7 @@ router.post("/DeleteAdminProfile", async (req, res) => {
       });
     }
 
-    const pool = await sql.connect();
+    const pool = await db.connect();
     const result = await pool.request()
       .input("operation", "DeleteProfile")             // always use DeleteProfile
       .input("admin_id", sql.Int, parseInt(admin_id))

@@ -2,12 +2,12 @@
 import 'dart:io';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:travel_agency_app/core/network/error_messages.dart';
-import 'package:travel_agency_app/core/storage/token_storage.dart';
-import 'package:travel_agency_app/domain/models/login_info.dart';
-import 'package:travel_agency_app/domain/models/login_response.dart';
-import 'package:travel_agency_app/domain/models/otp_response.dart';
-import 'package:travel_agency_app/domain/usecase/login_usecase.dart';
+import 'package:vego/core/network/error_messages.dart';
+import 'package:vego/core/storage/token_storage.dart';
+import 'package:vego/domain/models/login_info.dart';
+import 'package:vego/domain/models/login_response.dart';
+import 'package:vego/domain/models/otp_response.dart';
+import 'package:vego/domain/usecase/login_usecase.dart';
 
 class LoginState {
   final bool isLoading;
