@@ -102,7 +102,7 @@ const SMALL = [
   { icon: <Car size={18} />, t: 'Fleet & vehicles', d: 'Registration, capacity, mileage, per-km rate and full service history per vehicle.', bg: '#e4eafb', fg: '#2563eb' },
   { icon: <UserCheck size={18} />, t: 'Driver management', d: 'Contacts, licences and assignments — the right driver on every trip.', bg: '#ecf4de', fg: '#4d7c0f' },
   { icon: <ShieldCheck size={18} />, t: 'Compliance alerts', d: 'PUC, insurance and licence expiry reminders before they lapse.', bg: '#f7e3e0', fg: '#b91c1c' },
-  { icon: <BellRing size={18} />, t: 'Daily reminders', d: "Push alerts for tomorrow's trips, dues and renewals — even when closed.", bg: '#f7edd6', fg: '#c2860b' },
+  { icon: <BellRing size={18} />, t: 'Daily reminders', d: "Push alerts for tomorrow's trips.", bg: '#f7edd6', fg: '#c2860b' },
   { icon: <Route size={18} />, t: 'Round-trip pricing', d: 'One-way and return fares calculated correctly, every single time.', bg: '#f6eee6', fg: '#b5651d' },
   { icon: <Wallet size={18} />, t: 'Expense logging', d: 'Fuel, tolls, repairs and maintenance, captured against each trip.', bg: '#faf0d4', fg: '#ca8a04' },
 ]
@@ -134,7 +134,7 @@ export default function Features() {
             idx="02 — Money"
             eyebrow="Payment tracking"
             title="Always know exactly who owes what."
-            body="Advances, part-payments and pending balances are tracked per trip and per customer. Payment dates are recorded separately from booking dates, so your books stay honest."
+            body="partial-payments and pending balances are tracked per trip and per customer. Payment dates are recorded separately from booking dates, so your books stay honest."
             bullets={['Per-trip & per-customer balances', 'Partial payments supported', 'Unpaid trips surfaced on the dashboard']}
             visual={<PaymentsVisual />}
           />
