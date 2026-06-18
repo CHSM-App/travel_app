@@ -87,12 +87,18 @@ String friendlyErrorMessage(Object e) {
       case DioExceptionType.badCertificate:
         return 'Secure connection failed';
       case DioExceptionType.badResponse:
-        // Prefer the server's own message. Different backend routes use
-        // different keys: most use `message`, the upload routes use `error`.
-        // Try both before falling back.
+        final code = e.response?.statusCode;
+        // 5xx means the server itself failed. Its body often carries an
+        // internal/technical reason (e.g. "Connection is closed.", "database
+        // not ready") that must never reach the user — show a neutral retry
+        // message instead.
+        if (code != null && code >= 500) return kSomethingWentWrongMessage;
+        // For client errors (4xx) prefer the server's own message — these are
+        // user-actionable (validation, "account already exists", OTP errors).
+        // Different routes use different keys: most use `message`, the upload
+        // routes use `error`. Try both before falling back.
         final fromBody = _messageFromBody(e.response?.data);
         if (fromBody != null) return fromBody;
-        final code = e.response?.statusCode;
         return code != null ? 'Server error ($code)' : 'Server error';
       case DioExceptionType.cancel:
         return 'Request cancelled';
