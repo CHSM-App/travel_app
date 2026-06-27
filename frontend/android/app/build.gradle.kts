@@ -74,4 +74,7 @@ flutter {
 dependencies {
     // Core library desugaring — required by flutter_local_notifications.
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
+    // Play In-App Updates — required by in_app_update Flutter plugin.
+    implementation("com.google.android.play:app-update:2.1.0")
+    implementation("com.google.android.play:app-update-ktx:2.1.0")
 }

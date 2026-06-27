@@ -766,60 +766,31 @@ class TripCard extends ConsumerWidget {
                           Builder(
                             builder: (_) {
                               Color pillColor;
-                              IconData pillIcon;
                               String pillLabel;
 
                               switch (bookinginfo.status) {
                                 case 1:
-                                  pillColor = const Color.fromARGB(
-                                    255,
-                                    118,
-                                    166,
-                                    245,
-                                  ); // Blue
-                                  pillIcon = Icons.directions_car;
+                                  pillColor = const Color.fromARGB(255, 118, 166, 245);
                                   pillLabel = "Active";
                                   break;
-
                                 case 2:
-                                  pillColor = const Color(
-                                    0xFFFF6B00,
-                                  ); // Deep Orange
-                                  pillIcon = Icons.schedule;
+                                  pillColor = const Color(0xFFFF6B00);
                                   pillLabel = "Unpaid";
                                   break;
-
                                 case 3:
-                                  pillColor = const Color.fromARGB(
-                                    255,
-                                    211,
-                                    183,
-                                    252,
-                                  ); // Purple
-                                  pillIcon = Icons.upcoming_outlined;
+                                  pillColor = const Color.fromARGB(255, 211, 183, 252);
                                   pillLabel = "Upcoming";
                                   break;
-
                                 case 4:
-                                  pillColor = const Color(0xFF2ECC71); // Green
-                                  pillIcon = Icons.check_circle;
+                                  pillColor = const Color(0xFF2ECC71);
                                   pillLabel = "Complete";
                                   break;
-
                                 case 5:
-                                  pillColor = const Color.fromARGB(
-                                    255,
-                                    231,
-                                    95,
-                                    107,
-                                  ); // Red
-                                  pillIcon = Icons.cancel_outlined;
+                                  pillColor = const Color.fromARGB(255, 231, 95, 107);
                                   pillLabel = "Cancelled";
                                   break;
-
                                 default:
-                                  pillColor = const Color(0xFFADB5BD); // Grey
-                                  pillIcon = Icons.info_outline;
+                                  pillColor = const Color(0xFFADB5BD);
                                   pillLabel = "Unknown";
                               }
 
@@ -835,20 +806,13 @@ class TripCard extends ConsumerWidget {
                                     color: pillColor.withOpacity(0.55),
                                   ),
                                 ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(pillIcon, size: 11, color: pillColor),
-                                    const SizedBox(width: 4),
-                                    Text(
-                                      pillLabel,
-                                      style: TextStyle(
-                                        color: pillColor,
-                                        fontWeight: FontWeight.w600,
-                                        fontSize: 11,
-                                      ),
-                                    ),
-                                  ],
+                                child: Text(
+                                  pillLabel,
+                                  style: TextStyle(
+                                    color: pillColor,
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 11,
+                                  ),
                                 ),
                               );
                             },

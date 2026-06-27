@@ -2,6 +2,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:in_app_update/in_app_update.dart';
 import 'package:vego/Screens/bottom_navigation_bar.dart';
 import 'package:vego/Screens/login.dart';
 import 'package:vego/core/network/token_provider.dart';
@@ -77,7 +78,22 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
     _initAuth();
   }
 
+  Future<void> _checkUpdate() async {
+    try {
+      final info = await InAppUpdate.checkForUpdate();
+      if (info.updateAvailability != UpdateAvailability.updateAvailable) return;
+      if (info.updatePriority >= 4) {
+        await InAppUpdate.performImmediateUpdate();
+      } else {
+        await InAppUpdate.startFlexibleUpdate();
+      }
+    } catch (e) {
+      debugPrint('in_app_update error: $e');
+    }
+  }
+
   Future<void> _initAuth() async {
+    await _checkUpdate();
     await ref.read(tokenProvider.notifier).loadTokens();
     await ref.read(loginViewModelProvider.notifier).loadFromStorage();
 

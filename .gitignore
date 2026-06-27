@@ -78,6 +78,12 @@ Desktop.ini
 *.iws
 
 # ─────────────────────────────────────────────
+# DEPLOY — Play Store upload script
+# ─────────────────────────────────────────────
+deploy/service-account.json
+deploy/node_modules/
+
+# ─────────────────────────────────────────────
 # SKILL DOCS — local only
 # ─────────────────────────────────────────────
 SKILL_ANIM.md

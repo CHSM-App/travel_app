@@ -1,7 +1,7 @@
 name: vego
 description: "Trips and fleet management App"
 publish_to: 'none'
-version: 1.0.0+1 
+version: 1.0.1+2
 
 
 environment:
@@ -43,6 +43,8 @@ dependencies:
   share_plus: ^7.2.1
   firebase_core: ^4.10.0
   firebase_messaging: ^16.3.0
+  in_app_update: ^4.2.3
+  package_info_plus: ^8.0.2
   flutter_local_notifications: ^22.0.0
   # Required by flutter_local_notifications.zonedSchedule for on-device,
   # offline trip-reminder alarms (see core/notifications/trip_alarm_service.dart).
