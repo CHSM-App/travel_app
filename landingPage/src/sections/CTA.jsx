@@ -26,7 +26,7 @@ export default function CTA() {
               <DownloadButtons size="lg" onDark />
             </div>
             <p className="text-white/70 text-xs mt-8">
-              Coming soon to Google Play & the App Store · No credit card required
+              Available on Google Play
             </p>
           </div>
         </div>
