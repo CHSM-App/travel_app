@@ -25,6 +25,11 @@ const OTP_TEMPLATE = process.env.WHATSAPP_TPL_OTP  || '';
 
 const OTP_EXPIRY_MINUTES = 10;
 const OTP_LENGTH         = 6;
+const IST_OFFSET_MS      = 5.5 * 60 * 60 * 1000; // SQL Server GETDATE() returns IST
+
+function nowIst() {
+  return new Date(Date.now() + IST_OFFSET_MS);
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Phone normaliser — returns "91XXXXXXXXXX" or null
@@ -85,7 +90,7 @@ function postJson(path, body) {
 
 async function saveOtp(phone, otpCode, purpose) {
   const otpHash  = crypto.createHash('sha256').update(otpCode).digest('hex');
-  const expiresAt = new Date(Date.now() + OTP_EXPIRY_MINUTES * 60 * 1000);
+  const expiresAt = new Date(nowIst().getTime() + OTP_EXPIRY_MINUTES * 60 * 1000);
 
   // Invalidate previous unused OTPs for this phone+purpose, then insert new one
   await (await db).request()
@@ -190,7 +195,7 @@ async function verifyOtp(phone, otpCode, purpose) {
     .input('phone',      sql.NVarChar(20), normPhone)
     .input('purpose',    sql.NVarChar(20), purpose)
     .input('otp_hash',   sql.NVarChar(64), otpHash)
-    .input('expires_at', sql.DateTime,     new Date())
+    .input('expires_at', sql.DateTime,     nowIst())
     .execute('sp_otp');
 
   const rows = result.recordset || [];
