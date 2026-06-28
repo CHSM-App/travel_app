@@ -132,10 +132,18 @@ class _OtpVerificationPageState extends ConsumerState<OtpVerificationPage>
     final response = await ref
         .read(loginViewModelProvider.notifier)
         .sendOtp(widget.mobile, widget.purpose);
-  
+
     if (!mounted) return;
 
     if (response.success) {
+      if (!initial) {
+        // Clear the input so the user doesn't accidentally submit the old code,
+        // which is now invalidated on the server.
+        for (final c in _otpControllers) {
+          c.clear();
+        }
+        _otpFocusNodes.first.requestFocus();
+      }
       _startResendCountdown();
       final devNote = (kDebugMode && response.devOtp != null)
           ? " (dev OTP: ${response.devOtp})"
@@ -143,7 +151,7 @@ class _OtpVerificationPageState extends ConsumerState<OtpVerificationPage>
       _showMessage(
         initial
             ? "OTP sent to your WhatsApp$devNote"
-            : "OTP resent to your WhatsApp$devNote",
+            : "New OTP sent. Your previous code is no longer valid.$devNote",
         success: true,
       );
     } else {
