@@ -502,7 +502,7 @@ class _TravelReportPageState extends ConsumerState<TravelReportPage>
                   final hasData  = names.isNotEmpty;
                   final selCount = tabSel.length;
                   final isAll    = st.isAllSelected(tab, names);
-                  final isPart   = st.isPartial(tab, names);
+                  // final isPart   = st.isPartial(tab, names);
 
                   return Container(
                     margin: const EdgeInsets.only(bottom: 10),

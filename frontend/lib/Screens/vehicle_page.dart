@@ -107,18 +107,18 @@ class _VehiclePageState extends ConsumerState<VehiclePage>
     if (mounted) _refreshData();
   }
 
-  String _initials(String? name) {
-    if (name == null || name.trim().isEmpty) return '?';
-    final parts = name
-        .trim()
-        .split(RegExp(r'\s+'))
-        .where((s) => s.isNotEmpty)
-        .toList();
-    if (parts.isEmpty) return '?';
-    return parts.length >= 2
-        ? '${parts[0][0]}${parts[1][0]}'.toUpperCase()
-        : parts[0][0].toUpperCase();
-  }
+  // String _initials(String? name) {
+  //   if (name == null || name.trim().isEmpty) return '?';
+  //   final parts = name
+  //       .trim()
+  //       .split(RegExp(r'\s+'))
+  //       .where((s) => s.isNotEmpty)
+  //       .toList();
+  //   if (parts.isEmpty) return '?';
+  //   return parts.length >= 2
+  //       ? '${parts[0][0]}${parts[1][0]}'.toUpperCase()
+  //       : parts[0][0].toUpperCase();
+  // }
 
   // ── Fuel Badge ────────────────────────────────────────────────────
   Widget _fuelBadge(String? fuelType) {
@@ -169,23 +169,23 @@ class _VehiclePageState extends ConsumerState<VehiclePage>
   }
 
   // ── Dot info item ─────────────────────────────────────────────────
-  Widget _dot(IconData icon, String value) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(icon, size: 12, color: _C.text2),
-        const SizedBox(width: 4),
-        Text(
-          value,
-          style: const TextStyle(
-            fontSize: 11,
-            fontWeight: FontWeight.w500,
-            color: _C.text2,
-          ),
-        ),
-      ],
-    );
-  }
+  // Widget _dot(IconData icon, String value) {
+  //   return Row(
+  //     mainAxisSize: MainAxisSize.min,
+  //     children: [
+  //       Icon(icon, size: 12, color: _C.text2),
+  //       const SizedBox(width: 4),
+  //       Text(
+  //         value,
+  //         style: const TextStyle(
+  //           fontSize: 11,
+  //           fontWeight: FontWeight.w500,
+  //           color: _C.text2,
+  //         ),
+  //       ),
+  //     ],
+  //   );
+  // }
 
   // ── Three-dot menu ────────────────────────────────────────────────
   Widget _menuBtn({

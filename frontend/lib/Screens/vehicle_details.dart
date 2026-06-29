@@ -151,50 +151,50 @@ class _VehicleManagePageState extends ConsumerState<VehicleManagePage>
     }
   }
 
-Future<void> _toggleVehicleStatus() async {
-  try {
-    int newStatus;
+// Future<void> _toggleVehicleStatus() async {
+//   try {
+//     int newStatus;
 
-    if (_currentStatus == 3) {
-      newStatus = 1; // Maintenance -> Available
-    } else {
-      newStatus = 3; // Available -> Maintenance
-    }
+//     if (_currentStatus == 3) {
+//       newStatus = 1; // Maintenance -> Available
+//     } else {
+//       newStatus = 3; // Available -> Maintenance
+//     }
 
-    // await ref.read(addVehicleViewModelProvider.notifier)
-    //     .updateVehicleStatus(
-    //   widget.vehicle.vehicleId ?? 0,
-    //   newStatus,
-    // );
+//     // await ref.read(addVehicleViewModelProvider.notifier)
+//     //     .updateVehicleStatus(
+//     //   widget.vehicle.vehicleId ?? 0,
+//     //   newStatus,
+//     // );
 
-    setState(() {
-      _currentStatus = newStatus;
-    });
+//     setState(() {
+//       _currentStatus = newStatus;
+//     });
 
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            newStatus == 3
-                ? "Vehicle moved to Maintenance"
-                : "Vehicle is now Available",
-          ),
-          backgroundColor:
-              newStatus == 3 ? Colors.orange : Colors.green,
-        ),
-      );
-    }
-  } catch (e) {
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(friendlyErrorMessage(e)),
-          backgroundColor: Colors.red,
-        ),
-      );
-    }
-  }
-}
+//     if (mounted) {
+//       ScaffoldMessenger.of(context).showSnackBar(
+//         SnackBar(
+//           content: Text(
+//             newStatus == 3
+//                 ? "Vehicle moved to Maintenance"
+//                 : "Vehicle is now Available",
+//           ),
+//           backgroundColor:
+//               newStatus == 3 ? Colors.orange : Colors.green,
+//         ),
+//       );
+//     }
+//   } catch (e) {
+//     if (mounted) {
+//       ScaffoldMessenger.of(context).showSnackBar(
+//         SnackBar(
+//           content: Text(friendlyErrorMessage(e)),
+//           backgroundColor: Colors.red,
+//         ),
+//       );
+//     }
+//   }
+// }
   
   @override
   void dispose() {

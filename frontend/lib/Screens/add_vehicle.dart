@@ -56,7 +56,7 @@ class _AddVehiclePageState extends ConsumerState<AddVehiclePage>
   late Animation<double> _fadeAnim;
 
   static const Color _primary = AppColors.brandPrimary;
-  static const Color _primaryDark = AppColors.brandPrimaryDark;
+  // static const Color _primaryDark = AppColors.brandPrimaryDark;
   static const Color _accent = Color(0xFF00BFA5);
   static const Color _surface = Color(0xFFF4F6FB);
   static const Color _cardBg = Colors.white;
@@ -1815,37 +1815,7 @@ class _AddVehiclePageState extends ConsumerState<AddVehiclePage>
     );
   }
 
-  IconData _getStatusIcon(String s) {
-    switch (s.toLowerCase()) {
-      case 'active':
-      case 'available':
-        return Icons.check_circle_rounded;
-      case 'inactive':
-      case 'unavailable':
-        return Icons.cancel_rounded;
-      case 'maintenance':
-      case 'under maintenance':
-        return Icons.build_circle_rounded;
-      default:
-        return Icons.info_rounded;
-    }
-  }
 
-  Color _getStatusColor(String s) {
-    switch (s.toLowerCase()) {
-      case 'active':
-      case 'available':
-        return const Color(0xFF00BFA5);
-      case 'inactive':
-      case 'unavailable':
-        return Colors.red.shade500;
-      case 'maintenance':
-      case 'under maintenance':
-        return Colors.orange.shade600;
-      default:
-        return Colors.grey.shade600;
-    }
-  }
 
   void _showSnack(String message, {bool isError = false}) {
     if (!mounted) return;

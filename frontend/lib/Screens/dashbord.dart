@@ -5,7 +5,6 @@ import 'package:vego/Screens/add_driver.dart';
 import 'package:vego/Screens/add_tripbooking.dart';
 import 'package:vego/Screens/add_vehicle.dart';
 import 'package:vego/Screens/report_page.dart';
-import 'package:vego/Screens/reports.dart';
 import 'package:vego/Screens/transactions_page.dart';
 import 'package:vego/core/theme/app_colors.dart';
 import 'package:vego/core/widgets/skeleton.dart';
@@ -964,43 +963,7 @@ class _ReportsBanner extends StatelessWidget {
   }
 }
 
-class _StatChip extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final bool isSmall;
-  const _StatChip(
-      {required this.icon, required this.label, required this.isSmall});
 
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.symmetric(
-        horizontal: isSmall ? 8 : 10,
-        vertical: isSmall ? 4 : 5,
-      ),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.18),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white.withOpacity(0.25), width: 1),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, color: Colors.white, size: isSmall ? 10 : 12),
-          const SizedBox(width: 4),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: isSmall ? 9 : 10,
-              color: Colors.white,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
 
 
 
@@ -1303,107 +1266,7 @@ class _ActionCard extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────
-// RECENT ACTIVITY
-// ─────────────────────────────────────────────────────────
-class _RecentActivity extends StatelessWidget {
-  final bool isSmall;
-  const _RecentActivity({required this.isSmall});
 
-  @override
-  Widget build(BuildContext context) {
-    final activities = [
-      _ActivityData(Icons.check_circle_rounded, const Color(0xFF00BFA5),
-          const Color(0xFFE0F7F4), "Invoice #1021 Paid", "2 hours ago"),
-      _ActivityData(Icons.shopping_bag_rounded, TravelAdminDashboard.primaryColor,
-          AppColors.brandSoft, "New Order Received", "Today, 10:30 AM"),
-      _ActivityData(Icons.directions_car_rounded, const Color(0xFFFF6D00),
-          const Color(0xFFFFF3E0), "Vehicle Added", "Yesterday"),
-    ];
-
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(isSmall ? 14 : 20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.indigo.withOpacity(0.07),
-            blurRadius: 18,
-            offset: const Offset(0, 7),
-          ),
-        ],
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: List.generate(activities.length, (index) {
-          final a = activities[index];
-          final avatarSize = isSmall ? 36.0 : 42.0;
-          final iconSize = isSmall ? 17.0 : 20.0;
-
-          return Column(
-            children: [
-              Padding(
-                padding: EdgeInsets.symmetric(
-                  horizontal: isSmall ? 12 : 16,
-                  vertical: isSmall ? 10 : 14,
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      width: avatarSize,
-                      height: avatarSize,
-                      decoration: BoxDecoration(
-                        color: a.iconBg,
-                        borderRadius: BorderRadius.circular(isSmall ? 10 : 12),
-                      ),
-                      child: Icon(a.icon, color: a.iconColor, size: iconSize),
-                    ),
-                    SizedBox(width: isSmall ? 10 : 14),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            a.title,
-                            style: TextStyle(
-                              fontSize: isSmall ? 12 : 14,
-                              fontWeight: FontWeight.w600,
-                              color: TravelAdminDashboard.darkBlue,
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                            maxLines: 1,
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            a.subtitle,
-                            style: TextStyle(
-                              fontSize: isSmall ? 10 : 12,
-                              color: Colors.grey.shade500,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Icon(Icons.chevron_right_rounded,
-                        color: Colors.grey.shade300,
-                        size: isSmall ? 16 : 20),
-                  ],
-                ),
-              ),
-              if (index < activities.length - 1)
-                Divider(
-                  height: 1,
-                  color: Colors.grey.shade100,
-                  indent: isSmall ? 58 : 70,
-                  endIndent: 12,
-                ),
-            ],
-          );
-        }),
-      ),
-    );
-  }
-}
 
 // ─────────────────────────────────────────────────────────
 // DATA MODELS
@@ -1436,13 +1299,7 @@ class _ActionData {
   const _ActionData(this.title, this.icon, this.color, this.bgColor);
 }
 
-class _ActivityData {
-  final IconData icon;
-  final Color iconColor, iconBg;
-  final String title, subtitle;
-  const _ActivityData(
-      this.icon, this.iconColor, this.iconBg, this.title, this.subtitle);
-}
+
 
 class _DashboardStats {
   final int bookings;

@@ -2571,7 +2571,7 @@ class TripCard extends ConsumerWidget {
     // digit). Falls back to showing the whole string as the name.
     final String rawVehicle = (bookinginfo.vehicle_info ?? 'Vehicle N/A');
     String vehicleName = rawVehicle;
-    String? vehicleReg;
+    // String? vehicleReg;
     // final int spaceIdx = rawVehicle.lastIndexOf(' ');
     // if (spaceIdx > 0) {
     //   final last = rawVehicle.substring(spaceIdx + 1);
@@ -2642,26 +2642,26 @@ class TripCard extends ConsumerWidget {
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
-                          if (vehicleReg != null) ...[
-                            Text(
-                              "  ·  ",
-                              style: TextStyle(
-                                fontSize: isSmall ? 11 : 12,
-                                color: _textSec,
-                              ),
-                            ),
-                            Flexible(
-                              child: Text(
-                                vehicleReg,
-                                style: TextStyle(
-                                  fontSize: isSmall ? 11 : 12,
-                                  fontWeight: FontWeight.w600,
-                                  color: _textSec,
-                                ),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ],
+                          // if (vehicleReg != null) ...[
+                          //   Text(
+                          //     "  ·  ",
+                          //     style: TextStyle(
+                          //       fontSize: isSmall ? 11 : 12,
+                          //       color: _textSec,
+                          //     ),
+                          //   ),
+                          //   Flexible(
+                          //     child: Text(
+                          //       vehicleReg,
+                          //       style: TextStyle(
+                          //         fontSize: isSmall ? 11 : 12,
+                          //         fontWeight: FontWeight.w600,
+                          //         color: _textSec,
+                          //       ),
+                          //       overflow: TextOverflow.ellipsis,
+                          //     ),
+                          //   ),
+                          // ],
                         ],
                       ),
                       const SizedBox(height: 3),

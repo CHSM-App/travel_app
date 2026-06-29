@@ -311,48 +311,9 @@ class _ModernSettingsPageState extends ConsumerState<ModernSettingsPage>
     );
   }
 
-  // ─────────────────────────── TOGGLE GROUP ───────────────────────
+  
 
-  Widget _buildToggleGroup() {
-    return _card(
-      child: Column(
-        children: [
-          _toggleTile(
-            icon: Icons.notifications_outlined,
-            label: 'Push Notifications',
-            subtitle: 'Receive booking alerts',
-            value: notificationsEnabled,
-            onChanged: (v) => setState(() => notificationsEnabled = v),
-            isFirst: true,
-          ),
-        ],
-      ),
-    );
-  }
 
-  Widget _toggleTile({
-    required IconData icon,
-    required String label,
-    required String subtitle,
-    required bool value,
-    required ValueChanged<bool> onChanged,
-    bool isFirst = false,
-  }) {
-    return Padding(
-      padding: EdgeInsets.only(top: isFirst ? 0 : 0),
-      child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-        leading: _iconBox(icon),
-        title: Text(label, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: _textDark)),
-        subtitle: Text(subtitle, style: TextStyle(fontSize: 12, color: _textMid)),
-        trailing: Switch.adaptive(
-          value: value,
-          onChanged: onChanged,
-          activeColor: _primary,
-        ),
-      ),
-    );
-  }
 
   // ─────────────────────────── MENU GROUP ─────────────────────────
 
