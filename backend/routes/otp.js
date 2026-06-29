@@ -85,7 +85,7 @@ function postJson(path, body) {
 
 async function saveOtp(phone, otpCode, purpose) {
   const otpHash  = crypto.createHash('sha256').update(otpCode).digest('hex');
-  const expiresAt = new Date(Date.now() + OTP_EXPIRY_MINUTES * 60 * 1000);
+  const expiresAt = new Date(Date.now() + OTP_EXPIRY_MINUTES * 60 * 1000 + 330 * 60 * 1000);
 
   // Invalidate previous unused OTPs for this phone+purpose, then insert new one
   await (await db).request()
