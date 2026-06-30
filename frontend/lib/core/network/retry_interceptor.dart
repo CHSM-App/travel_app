@@ -6,6 +6,11 @@ import 'package:dio/dio.dart';
 /// interceptor already handles) are never retried because re-sending them
 /// would fail the same way.
 ///
+/// 5xx retries cover both idempotent and non-idempotent methods because
+/// transient server/DB errors (500, 502, 503, 504) are worth retrying — the
+/// server either didn't process the request at all (DB connection pool
+/// exhausted, cold start) or the response was lost in transit.
+///
 /// Opt a single request out by setting `extra: {'disableRetry': true}` on it.
 class RetryInterceptor extends Interceptor {
   final Dio dio;
@@ -90,9 +95,12 @@ class RetryInterceptor extends Interceptor {
       case DioExceptionType.receiveTimeout:
         return _isIdempotent(err.requestOptions.method);
       case DioExceptionType.badResponse:
+        // Retry all 5xx — transient server/DB errors (pool exhausted, cold
+        // start, gateway timeout) are worth retrying regardless of method.
+        // Non-transient 5xx (e.g. a bug that always throws 500) will exhaust
+        // maxRetries and surface the error normally.
         final code = err.response?.statusCode ?? 0;
-        return code >= 500 && code < 600 &&
-            _isIdempotent(err.requestOptions.method);
+        return code >= 500 && code < 600;
       default:
         return false;
     }
