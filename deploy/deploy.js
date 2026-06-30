@@ -1,4 +1,18 @@
 #!/usr/bin/env node
+// ─── Deploy commands ──────────────────────────────────────────────────────────
+// Normal release (priority 3, 100% rollout):
+//   node deploy.js --priority=3 --fraction=1.0
+//
+// FORCE UPDATE — users MUST update before they can use the app:
+//   node deploy.js --priority=5 --fraction=1.0 --force
+//
+//   Uses: Google Play In-App Update API (android.publisher v3) + Flutter
+//         in_app_update package (frontend/pubspec.yaml).
+//         Priority 5 → InAppUpdate.performImmediateUpdate() on the device,
+//         which shows a full-screen update UI the user cannot dismiss.
+//
+// priority: 0–5 (0 = lowest / optional, 4–5 = immediate / forced)
+
 'use strict';
 
 const fs = require('fs');
