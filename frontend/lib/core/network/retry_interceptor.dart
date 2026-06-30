@@ -72,8 +72,21 @@ class RetryInterceptor extends Interceptor {
         // Request almost certainly never completed — safe for any method.
         return true;
       case DioExceptionType.unknown:
-        // Usually a SocketException (no network) wrapped by Dio.
-        return err.error is Exception;
+        // SocketException "connection closed" / "connection reset" means the
+        // server dropped the keep-alive socket before the request was sent.
+        // Safe to retry any method because the server never saw the request.
+        final error = err.error;
+        if (error is Exception) {
+          final msg = error.toString().toLowerCase();
+          final closedBeforeSent = msg.contains('connection closed') ||
+              msg.contains('connection reset') ||
+              msg.contains('broken pipe') ||
+              msg.contains('software caused connection abort');
+          if (closedBeforeSent) return true;
+          // Other unknown errors (no network, dns fail) — retry any method.
+          return true;
+        }
+        return false;
       case DioExceptionType.receiveTimeout:
         return _isIdempotent(err.requestOptions.method);
       case DioExceptionType.badResponse:
