@@ -6,6 +6,11 @@ import 'package:dio/dio.dart';
 /// interceptor already handles) are never retried because re-sending them
 /// would fail the same way.
 ///
+/// 5xx retries cover both idempotent and non-idempotent methods because
+/// transient server/DB errors (500, 502, 503, 504) are worth retrying — the
+/// server either didn't process the request at all (DB connection pool
+/// exhausted, cold start) or the response was lost in transit.
+///
 /// Opt a single request out by setting `extra: {'disableRetry': true}` on it.
 class RetryInterceptor extends Interceptor {
   final Dio dio;
@@ -72,14 +77,30 @@ class RetryInterceptor extends Interceptor {
         // Request almost certainly never completed — safe for any method.
         return true;
       case DioExceptionType.unknown:
-        // Usually a SocketException (no network) wrapped by Dio.
-        return err.error is Exception;
+        // SocketException "connection closed" / "connection reset" means the
+        // server dropped the keep-alive socket before the request was sent.
+        // Safe to retry any method because the server never saw the request.
+        final error = err.error;
+        if (error is Exception) {
+          final msg = error.toString().toLowerCase();
+          final closedBeforeSent = msg.contains('connection closed') ||
+              msg.contains('connection reset') ||
+              msg.contains('broken pipe') ||
+              msg.contains('software caused connection abort');
+          if (closedBeforeSent) return true;
+          // Other unknown errors (no network, dns fail) — retry any method.
+          return true;
+        }
+        return false;
       case DioExceptionType.receiveTimeout:
         return _isIdempotent(err.requestOptions.method);
       case DioExceptionType.badResponse:
+        // Retry all 5xx — transient server/DB errors (pool exhausted, cold
+        // start, gateway timeout) are worth retrying regardless of method.
+        // Non-transient 5xx (e.g. a bug that always throws 500) will exhaust
+        // maxRetries and surface the error normally.
         final code = err.response?.statusCode ?? 0;
-        return code >= 500 && code < 600 &&
-            _isIdempotent(err.requestOptions.method);
+        return code >= 500 && code < 600;
       default:
         return false;
     }

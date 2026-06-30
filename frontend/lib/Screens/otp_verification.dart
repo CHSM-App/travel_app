@@ -166,8 +166,9 @@ class _OtpVerificationPageState extends ConsumerState<OtpVerificationPage>
       return;
     }
 
+    _verifying = true;
     FocusScope.of(context).unfocus();
-    setState(() => _verifying = true);
+    setState(() {});
 
     final notifier = ref.read(loginViewModelProvider.notifier);
     final verifyResult =
@@ -603,10 +604,5 @@ class _OtpVerificationPageState extends ConsumerState<OtpVerificationPage>
     }
 
     setState(() {});
-
-    if (_otp.length == _otpLength && !_verifying) {
-      FocusScope.of(context).unfocus();
-      _verify();
-    }
   }
 }
