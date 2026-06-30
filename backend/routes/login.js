@@ -3,6 +3,23 @@ const express = require('express');
 const router = express.Router();
 const jwt = require('jsonwebtoken');
 require('dotenv').config();
+const rateLimit = require('express-rate-limit');
+
+const adminLoginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  handler: (req, res) => res.status(429).json({ success: 0, message: 'Too many login attempts. Please try again after 15 minutes.' }),
+});
+
+const createLoginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  handler: (req, res) => res.status(429).json({ error: 'Too many login attempts. Please try again after 15 minutes.' }),
+});
 
 const sql = require('mssql');
 const db = require('./db');
@@ -38,7 +55,7 @@ function createRefreshTokenPayload(mobile) {
  * Login (creates access + refresh token)
  * Expect mobile in req.body
  */
-router.post('/Createlogin', async (req, res) => {
+router.post('/Createlogin', createLoginLimiter, async (req, res) => {
   try {
     const { mobile, deviceDetails } = req.body;
 	 
@@ -155,7 +172,7 @@ router.post('/logout', async (req, res) => {
 // =====================================================
 // LOGIN ADMIN API
 // =====================================================
-router.post("/Adminlogin", async (req, res) => {
+router.post("/Adminlogin", adminLoginLimiter, async (req, res) => {
 
   try {
 
