@@ -1,0 +1,52 @@
+[dotenv@17.2.3] injecting env (4) from .env -- tip: ⚙️  suppress all logs with { quiet: true }
+[dotenv@17.2.3] injecting env (0) from .env -- tip: 🗂️ backup and recover secrets: https://dotenvx.com/ops
+[dotenv@17.2.3] injecting env (0) from .env -- tip: ⚙️  suppress all logs with { quiet: true }
+[dotenv@17.2.3] injecting env (0) from .env -- tip: ⚙️  suppress all logs with { quiet: true }
+Listning on :\\.\pipe\486cd593-908b-4172-a8f2-7965286d2cfe
+[0mGET /users/Home/BasicInfo?pre_mob=8262878298&fId=8&OwnerId=8 [31m500 [0m78.255 ms - 33[0m
+[0mGET /users/FamilyMembers/8 [31m500 [0m63.760 ms - 33[0m
+[0mGET /users/VehicleList/8/C10001 [31m500 [0m63.182 ms - 33[0m
+[0mGET /users/familyHelper/getPersonList [31m500 [0m62.654 ms - 33[0m
+[0mGET /users/FamilyMemberHelper/8 [31m500 [0m62.328 ms - 33[0m
+Connection Successful
+[0mGET / [32m200 [0m3.321 ms - 18[0m
+[0mGET / [32m200 [0m2.657 ms - 18[0m
+[0mGET /users/Home/CheckPhone?pre_mob=9130526594 [32m200 [0m54.888 ms - 26[0m
+[0mGET /users/Otp/CheckUser?pre_mob=9130526594 [32m200 [0m15.765 ms - 836[0m
+[0mPOST /users/CreateLogin?mobile=9130526594 [32m200 [0m10.765 ms - 350[0m
+[0mGET /users/Home/BasicInfo?pre_mob=9130526594&fId=6&OwnerId=3 [32m200 [0m11.635 ms - 836[0m
+[0mGET /users/Home/BasicInfo?pre_mob=9130526594&fId=6&OwnerId=3 [32m200 [0m7.313 ms - 836[0m
+[0mGET /users/Notifications/C10001/3 [32m200 [0m14.340 ms - 1291[0m
+[0mGET /upload/ProfilePhoto/3/1759220270248scaled_fa4d8eaf-bb7f-42f7-81d2-2e772b32baf47169185265840279339.jpg [32m200 [0m7.943 ms - 315000[0m
+[0mGET /users/Home/TotalDue/6 [32m200 [0m11.866 ms - 22[0m
+[0mGET /users/Home/TotalDue/6 [32m200 [0m8.755 ms - 22[0m
+[0mPOST /notify/OwnerApp/Insert/NewToken?owner_id=3&type=Family&token=dkLGTaSbThuxqhrdVKd-pz%3AAPA91bHeP1yW9A0cQeqdA193YP5pa_uF__ybXiK7dbW_y1dhKAV9t8u03IctT6um_Zm2V-60TsL8ZwwsiatZz-RaFNrKDHYwYHG6k6onmQ3y0JYqxfu8aZI [32m200 [0m6.187 ms - 41[0m
+[0mPOST /notify/OwnerApp/Insert/NewToken?owner_id=3&type=Family&token=dkLGTaSbThuxqhrdVKd-pz%3AAPA91bHeP1yW9A0cQeqdA193YP5pa_uF__ybXiK7dbW_y1dhKAV9t8u03IctT6um_Zm2V-60TsL8ZwwsiatZz-RaFNrKDHYwYHG6k6onmQ3y0JYqxfu8aZI [32m200 [0m5.071 ms - 41[0m
+[0mGET /users/visitor/2025-11-17/6 [32m200 [0m9.395 ms - 2[0m
+[0mGET /users/Community/Broadcast?society_id=C10001&owner_id=3 [32m200 [0m31.121 ms - 1465[0m
+[0mGET /users/Notifications/C10001/3 [32m200 [0m6.130 ms - 1291[0m
+[0mGET /users/Home/BasicInfo?pre_mob=9130526594&fId=6&OwnerId=3 [32m200 [0m114.883 ms - 836[0m
+[0mGET /users/VehicleList/6/C10001 [32m200 [0m113.013 ms - 2[0m
+[0mGET /users/familyHelper/getPersonList [32m200 [0m105.117 ms - 481[0m
+[0mGET /users/FamilyMemberHelper/6 [32m200 [0m113.990 ms - 2[0m
+[0mGET /users/FamilyMembers/6 [32m200 [0m107.690 ms - 470[0m
+[0mGET /users/Home/TotalDue/6 [32m200 [0m6.019 ms - 22[0m
+[0mPOST /notify/OwnerApp/Insert/NewToken?owner_id=3&type=Family&token=dkLGTaSbThuxqhrdVKd-pz%3AAPA91bHeP1yW9A0cQeqdA193YP5pa_uF__ybXiK7dbW_y1dhKAV9t8u03IctT6um_Zm2V-60TsL8ZwwsiatZz-RaFNrKDHYwYHG6k6onmQ3y0JYqxfu8aZI [32m200 [0m3.746 ms - 41[0m
+[0mGET /users/visitor/2025-11-17/6 [32m200 [0m8.522 ms - 2[0m
+[0mGET /users/Community/Broadcast?society_id=C10001&owner_id=3 [32m200 [0m15.576 ms - 1465[0m
+[0mGET /users/Notifications/C10001/3 [32m200 [0m8.762 ms - 1291[0m
+[0mGET /users/Home/CheckPhone?pre_mob=7057133255 [32m200 [0m9.001 ms - 76[0m
+[0mGET /users/Otp/CheckUser?pre_mob=7057133255 [32m200 [0m8.024 ms - 2503[0m
+[0mPOST /users/CreateLogin?mobile=7057133255 [32m200 [0m5.359 ms - 350[0m
+[0mGET /users/Home/BasicInfo?pre_mob=7057133255&fId=7&OwnerId=7 [32m200 [0m7.672 ms - 899[0m
+[0mGET /users/Home/BasicInfo?pre_mob=7057133255&fId=7&OwnerId=7 [32m200 [0m9.277 ms - 899[0m
+[0mGET /users/Notifications/C10001/7 [32m200 [0m8.589 ms - 418[0m
+[0mGET /users/Home/TotalDue/7 [32m200 [0m9.955 ms - 21[0m
+[0mGET /users/Home/TotalDue/7 [32m200 [0m10.066 ms - 21[0m
+[0mGET /upload/ProfilePhoto/7/1759220153220scaled_a3b92779-8129-4700-a4b0-ec353d66d37b7540620241183869528.jpg [32m200 [0m3.759 ms - 358828[0m
+[0mGET /users/Home/TotalDue/7 [32m200 [0m5.181 ms - 21[0m
+[0mPOST /notify/OwnerApp/Insert/NewToken?owner_id=7&type=Owner&token=dkLGTaSbThuxqhrdVKd-pz%3AAPA91bHeP1yW9A0cQeqdA193YP5pa_uF__ybXiK7dbW_y1dhKAV9t8u03IctT6um_Zm2V-60TsL8ZwwsiatZz-RaFNrKDHYwYHG6k6onmQ3y0JYqxfu8aZI [32m200 [0m5.203 ms - 41[0m
+[0mPOST /notify/OwnerApp/Insert/NewToken?owner_id=7&type=Owner&token=dkLGTaSbThuxqhrdVKd-pz%3AAPA91bHeP1yW9A0cQeqdA193YP5pa_uF__ybXiK7dbW_y1dhKAV9t8u03IctT6um_Zm2V-60TsL8ZwwsiatZz-RaFNrKDHYwYHG6k6onmQ3y0JYqxfu8aZI [32m200 [0m9.239 ms - 41[0m
+[0mGET /users/visitor/2025-11-17/7 [32m200 [0m10.701 ms - 3182[0m
+[0mGET /users/Community/Broadcast?society_id=C10001&owner_id=7 [32m200 [0m22.508 ms - 1465[0m
+[0mGET /users/Notifications/C10001/7 [32m200 [0m5.622 ms - 418[0m
