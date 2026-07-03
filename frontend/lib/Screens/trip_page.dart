@@ -1,16 +1,14 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:vego/Screens/add_tripbooking.dart';
 import 'package:vego/Screens/trip_card.dart';
-import 'package:vego/core/network/error_messages.dart';
 import 'package:vego/core/theme/app_colors.dart';
 import 'package:vego/core/theme/app_scroll_behavior.dart';
+import 'package:vego/core/widgets/error_view.dart';
 import 'package:vego/core/widgets/paginated_list_view.dart';
 import 'package:vego/core/widgets/skeleton.dart';
-import 'package:vego/core/network/network_state_notifier.dart';
 import 'package:vego/domain/models/booking_info.dart';
 import 'package:vego/domain/viewModel/trippage_viewmodel.dart';
 import 'package:vego/presentation/providers/viewmodel_provider.dart';
@@ -946,33 +944,10 @@ class _TripPageState extends ConsumerState<TripPage> {
           ],
         ),
       ),
-      error: (e, _) {
-        final isOffline = !ref.watch(networkStateProvider).isConnected;
-        final isNetworkError = e is DioException &&
-            (e.type == DioExceptionType.connectionError ||
-                e.type == DioExceptionType.connectionTimeout ||
-                e.type == DioExceptionType.sendTimeout ||
-                e.type == DioExceptionType.receiveTimeout);
-
-        if (isOffline || isNetworkError) {
-          return _buildMessageState(
-            filter: filter,
-            icon: Icons.wifi_off_rounded,
-            iconColor: AppColors.brandPrimary,
-            title: 'You appear to be offline',
-            subtitle:
-                'Check your connection and pull to refresh, or tap retry.',
-          );
-        }
-
-        return _buildMessageState(
-          filter: filter,
-          icon: Icons.error_outline_rounded,
-          iconColor: AppColors.brandPrimary,
-          title: 'Error loading trips',
-          subtitle: friendlyErrorMessage(e),
-        );
-      },
+      error: (e, _) => NetworkErrorView(
+        error: e,
+        onRetry: () => _loadListForFilter(filter),
+      ),
       data: (trips) {
         final filtered = _filterAndSearch(trips);
         if (filtered.isEmpty) return _buildEmptyState(filter);
