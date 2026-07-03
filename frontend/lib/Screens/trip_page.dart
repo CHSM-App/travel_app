@@ -182,6 +182,13 @@ class _TripPageState extends ConsumerState<TripPage> {
   String _searchQuery = '';
   bool _searchFocused = false;
 
+  // True while the current filter selection was set by a dashboard "Action
+  // Needed" deep link and hasn't been touched manually since. Lets us reset
+  // the filters back to defaults the moment the user backs out to the
+  // dashboard from that specific visit, without disturbing filters the user
+  // picked themselves.
+  bool _filterFromDeepLink = false;
+
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocus = FocusNode();
   Timer? _debounceTimer;
@@ -211,6 +218,7 @@ class _TripPageState extends ConsumerState<TripPage> {
         _selectedRange = DateRange.custom;
         _customRange = _fromDayRange(initialDate);
       }
+      _filterFromDeepLink = true;
       ref.read(tripPageInitialFilterProvider.notifier).state = null;
       ref.read(tripPageInitialDateProvider.notifier).state = null;
     }
@@ -306,6 +314,19 @@ class _TripPageState extends ConsumerState<TripPage> {
     if (filterChanged) _loadListForFilter(filter);
   }
 
+  /// Resets every filter axis back to "All", used when backing out to the
+  /// dashboard from a deep-linked visit so the next manual visit to Trips
+  /// starts clean.
+  void _resetFilters() {
+    setState(() {
+      _selectedFilter = TripFilter.all;
+      _selectedPayment = PaymentFilter.all;
+      _selectedRange = DateRange.all;
+      _customRange = null;
+    });
+    _loadListForFilter(TripFilter.all);
+  }
+
   /// Commits the filter selections made in the bottom sheet back to the page,
   /// reloading the list only when the status filter actually changed (the
   /// payment and date filters are applied client-side, so they don't re-fetch).
@@ -321,6 +342,7 @@ class _TripPageState extends ConsumerState<TripPage> {
       _selectedPayment = payment;
       _selectedRange = range;
       _customRange = customRange;
+      _filterFromDeepLink = false;
     });
     if (filterChanged) _loadListForFilter(filter);
   }
@@ -380,8 +402,20 @@ class _TripPageState extends ConsumerState<TripPage> {
       // Apply (or clear) the companion date filter so the deep-linked list lands
       // in a predictable state — pinned to a single day, or back to "All".
       _applyDeepLinkDate(ref.read(tripPageInitialDateProvider));
+      _filterFromDeepLink = true;
       ref.read(tripPageInitialFilterProvider.notifier).state = null;
       ref.read(tripPageInitialDateProvider.notifier).state = null;
+    });
+
+    // Backing out to the dashboard (tab switches to Home) right after a
+    // deep-linked visit should leave Trips clean for next time — but only
+    // that one visit; once the user touches a filter manually the flag is
+    // cleared and this listener leaves their selection alone.
+    ref.listen<int>(bottomNavIndexProvider, (prev, next) {
+      if (next == 0 && prev != 0 && _filterFromDeepLink) {
+        _filterFromDeepLink = false;
+        _resetFilters();
+      }
     });
 
     return Scaffold(
