@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:vego/Screens/deleted_records_page.dart';
 import 'package:vego/Screens/help_center.dart';
@@ -27,6 +28,7 @@ class _ModernSettingsPageState extends ConsumerState<ModernSettingsPage>
   late Animation<Offset> _slideAnimation;
 
   bool notificationsEnabled = true;
+  String _appVersion = '';
 
   // App color palette — matches dashboard indigo theme
   static const Color _primary = AppColors.brandPrimary;
@@ -56,6 +58,7 @@ class _ModernSettingsPageState extends ConsumerState<ModernSettingsPage>
       // ref.read(loginViewModelProvider.notifier).adminProfile(ref.read(loginViewModelProvider).adminId);
     });
 
+    _loadPackageInfo();
     _animationController.forward();
   }
 
@@ -63,6 +66,14 @@ class _ModernSettingsPageState extends ConsumerState<ModernSettingsPage>
   void dispose() {
     _animationController.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadPackageInfo() async {
+    final info = await PackageInfo.fromPlatform();
+    if (!mounted) return;
+    setState(() {
+      _appVersion = info.version;
+    });
   }
 
   @override
@@ -172,7 +183,12 @@ class _ModernSettingsPageState extends ConsumerState<ModernSettingsPage>
                           'Get in touch with our team',
                           onTap: () => _showContactSheet(context),
                         ),
-                        _MenuItem(Icons.info_outline_rounded, 'About', 'Version 1.0.0', onTap: () => _showAboutDialog(context)),
+                        _MenuItem(
+                          Icons.info_outline_rounded,
+                          'About',
+                          _appVersion.isNotEmpty ? 'Version $_appVersion' : 'App version',
+                          onTap: () => _showAboutDialog(context),
+                        ),
                       ]),
                       const SizedBox(height: 24),
 
@@ -560,6 +576,7 @@ class _ModernSettingsPageState extends ConsumerState<ModernSettingsPage>
     showDialog(
       context: context,
       builder: (_) => Dialog(
+        backgroundColor: Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
         child: Padding(
           padding: const EdgeInsets.all(28),
@@ -570,22 +587,23 @@ class _ModernSettingsPageState extends ConsumerState<ModernSettingsPage>
                 width: 70,
                 height: 70,
                 decoration: BoxDecoration(
-                  color: _primary,
                   borderRadius: BorderRadius.circular(20),
                 ),
-                child: const Icon(Icons.directions_car_rounded, color: Colors.white, size: 36),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(20),
+                  child: Image.asset('assets/branding/vego_icon.png', fit: BoxFit.cover),
+                ),
               ),
               const SizedBox(height: 16),
-              const Text('Travel Agency App', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: _textDark)),
+              const Text('Vego',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: _textDark)),
               const SizedBox(height: 6),
-              Text('Version 1.0.0', style: TextStyle(fontSize: 13, color: _textMid)),
-              const SizedBox(height: 6),
-              Text('Build 100', style: TextStyle(fontSize: 12, color: _textMid)),
+              Text('Version ${_appVersion.isNotEmpty ? _appVersion : '-'}', style: TextStyle(fontSize: 13, color: _textMid)),
               const SizedBox(height: 20),
               Divider(color: _surface, thickness: 1.5),
               const SizedBox(height: 12),
               Text(
-                '© 2025 Travel Agency. All rights reserved.\nBuilt with ❤️ using Flutter.',
+                '© 2025 Vego. All rights reserved.',
                 textAlign: TextAlign.center,
                 style: TextStyle(fontSize: 12, color: _textMid, height: 1.6),
               ),
