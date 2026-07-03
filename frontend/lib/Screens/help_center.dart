@@ -55,6 +55,8 @@ class _HelpCenterPageState extends State<HelpCenterPage> {
                   ..._buildCategories(),
                   const SizedBox(height: 24),
                   _contactCard(),
+                  const SizedBox(height: 18),
+                  _deleteAccountCard(),
                   const SizedBox(height: 28),
                 ],
               ),
@@ -435,6 +437,78 @@ class _HelpCenterPageState extends State<HelpCenterPage> {
         ],
       ),
     );
+  }
+
+  // ─────────────────── DELETE ACCOUNT ───────────────────
+  Widget _deleteAccountCard() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: _cardBg,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: _divider),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(9),
+                decoration: BoxDecoration(
+                  color: Colors.red.shade50,
+                  borderRadius: BorderRadius.circular(11),
+                ),
+                child: Icon(Icons.delete_forever_outlined,
+                    color: Colors.red.shade600, size: 18),
+              ),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text('Delete Account',
+                        style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w800,
+                            color: _textDark)),
+                    SizedBox(height: 2),
+                    Text(
+                      'Permanently delete your account & data.',
+                      style: TextStyle(fontSize: 12, color: _textMid),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          _contactButton(
+            label: 'Delete my account',
+            value: 'vego.vengurlatech.com/delete-account',
+            icon: Icons.delete_forever_outlined,
+            onTap: () => _openDeleteAccount(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Opens the public account-deletion form on the Vego website, where the user
+  /// verifies their number via WhatsApp OTP and confirms permanent deletion.
+  Future<void> _openDeleteAccount() async {
+    final uri = Uri.parse('https://vego.vengurlatech.com/delete-account');
+    final launched =
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+    if (!launched && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Could not open the account deletion page'),
+          backgroundColor: Colors.red.shade600,
+        ),
+      );
+    }
   }
 
   Widget _contactButton({

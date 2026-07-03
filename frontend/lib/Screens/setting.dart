@@ -149,12 +149,6 @@ class _ModernSettingsPageState extends ConsumerState<ModernSettingsPage>
                             );
                           },
                         ),
-                        _MenuItem(
-                          Icons.delete_forever_outlined,
-                          'Delete Account',
-                          'Permanently delete your account & data',
-                          onTap: () => _openDeleteAccount(context),
-                        ),
                       ]),
                       const SizedBox(height: 24),
 
@@ -411,24 +405,6 @@ class _ModernSettingsPageState extends ConsumerState<ModernSettingsPage>
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Could not open privacy policy'),
-          backgroundColor: Colors.red,
-        ),
-      );
-    }
-  }
-
-  // ─────────────────────────── DELETE ACCOUNT ─────────────────────
-
-  /// Opens the public account-deletion form on the Vego website, where the user
-  /// verifies their number via WhatsApp OTP and confirms permanent deletion.
-  Future<void> _openDeleteAccount(BuildContext context) async {
-    final uri = Uri.parse('https://vego.vengurlatech.com/delete-account');
-    final launched =
-        await launchUrl(uri, mode: LaunchMode.externalApplication);
-    if (!launched && context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Could not open the account deletion page'),
           backgroundColor: Colors.red,
         ),
       );
