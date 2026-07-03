@@ -979,8 +979,20 @@ class _DriverHistoryPageState
       error: (e, _) => NetworkErrorView(error: e, onRetry: _refreshTrips),
       data: (trips) {
         if (trips.isEmpty) {
-          return const Center(
-              child: Text("No trips for this driver"));
+          return RefreshIndicator(
+            onRefresh: _refreshTrips,
+            color: _accent,
+            child: ListView(
+              physics: kBouncyAlwaysScrollable,
+              children: [
+                SizedBox(
+                  height: MediaQuery.of(context).size.height * 0.6,
+                  child: const Center(
+                      child: Text("No trips for this driver")),
+                ),
+              ],
+            ),
+          );
         }
 
         // Date-range + search narrow the list first; the status chips (and
@@ -998,7 +1010,21 @@ class _DriverHistoryPageState
                 _filter.matches(t) && _payment.matches(t.payment_status))
             .toList();
 
-        if (filtered.isEmpty) return _filteredEmptyState();
+        if (filtered.isEmpty) {
+          return RefreshIndicator(
+            onRefresh: _refreshTrips,
+            color: _accent,
+            child: ListView(
+              physics: kBouncyAlwaysScrollable,
+              children: [
+                SizedBox(
+                  height: MediaQuery.of(context).size.height * 0.6,
+                  child: _filteredEmptyState(),
+                ),
+              ],
+            ),
+          );
+        }
 
         return PaginatedListView<BookingInfo>(
           items: filtered,

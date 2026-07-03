@@ -267,15 +267,18 @@ class _CustomerListPageState extends ConsumerState<CustomerListPage>
                         ),
                         const SizedBox(width: 12),
                         // Outstanding amount
-                        Text(
-                          hasDues
-                              ? _fullMoney(customer.pendingAmount!)
-                              : 'No dues',
-                          style: TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w800,
-                            color: hasDues ? _C.error : _C.success,
-                            letterSpacing: -0.3,
+                        Padding(
+                          padding: const EdgeInsets.only(right: 10),
+                          child: Text(
+                            hasDues
+                                ? _fullMoney(customer.pendingAmount!)
+                                : 'No dues',
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w800,
+                              color: hasDues ? _C.error : _C.success,
+                              letterSpacing: -0.3,
+                            ),
                           ),
                         ),
                       ],
@@ -687,7 +690,21 @@ class _CustomerListPageState extends ConsumerState<CustomerListPage>
                 data: (customers) {
                   final filtered = _applyFilter(customers);
                   if (filtered.isEmpty) {
-                    return _emptyState(hasData: customers.isNotEmpty);
+                    return RefreshIndicator(
+                      onRefresh: () async => _refresh(),
+                      color: _C.indigo,
+                      child: ListView(
+                        physics: kBouncyAlwaysScrollable,
+                        children: [
+                          SizedBox(
+                            height:
+                                MediaQuery.of(context).size.height * 0.6,
+                            child: _emptyState(
+                                hasData: customers.isNotEmpty),
+                          ),
+                        ],
+                      ),
+                    );
                   }
                   return PaginatedListView<Customer>(
                     items: filtered,

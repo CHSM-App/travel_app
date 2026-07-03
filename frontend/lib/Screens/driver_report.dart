@@ -371,10 +371,24 @@ class _DriverReportPageState extends ConsumerState<DriverReportPage> {
                     NetworkErrorView(error: e, onRetry: _refreshAll),
                 data: (drivers) {
                   if (drivers.isEmpty) {
-                    return _emptyState(
-                      Icons.person_rounded,
-                      'No drivers yet',
-                      'Add a driver to start tracking trips and payouts',
+                    return RefreshIndicator(
+                      onRefresh: _refreshAll,
+                      color: _C.accent,
+                      backgroundColor: _C.surface,
+                      child: ListView(
+                        physics: kBouncyAlwaysScrollable,
+                        children: [
+                          SizedBox(
+                            height:
+                                MediaQuery.of(context).size.height * 0.6,
+                            child: _emptyState(
+                              Icons.person_rounded,
+                              'No drivers yet',
+                              'Add a driver to start tracking trips and payouts',
+                            ),
+                          ),
+                        ],
+                      ),
                     );
                   }
                   final now = DateTime.now();

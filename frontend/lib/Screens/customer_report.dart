@@ -384,10 +384,24 @@ class _CustomerReportPageState extends ConsumerState<CustomerReportPage> {
                     NetworkErrorView(error: e, onRetry: _refreshAll),
                 data: (customers) {
                   if (customers.isEmpty) {
-                    return _emptyState(
-                      Icons.people_rounded,
-                      'No customers yet',
-                      'Add a customer to start tracking trips and dues',
+                    return RefreshIndicator(
+                      onRefresh: _refreshAll,
+                      color: _C.accent,
+                      backgroundColor: _C.surface,
+                      child: ListView(
+                        physics: kBouncyAlwaysScrollable,
+                        children: [
+                          SizedBox(
+                            height:
+                                MediaQuery.of(context).size.height * 0.6,
+                            child: _emptyState(
+                              Icons.people_rounded,
+                              'No customers yet',
+                              'Add a customer to start tracking trips and dues',
+                            ),
+                          ),
+                        ],
+                      ),
                     );
                   }
                   final now = DateTime.now();

@@ -385,10 +385,24 @@ class _VehicleReportPageState extends ConsumerState<VehicleReportPage> {
                     NetworkErrorView(error: e, onRetry: _refreshAll),
                 data: (vehicles) {
                   if (vehicles.isEmpty) {
-                    return _emptyState(
-                      Icons.directions_car_rounded,
-                      'No vehicles yet',
-                      'Add a vehicle to start tracking revenue and expenses',
+                    return RefreshIndicator(
+                      onRefresh: _refreshAll,
+                      color: _C.accent,
+                      backgroundColor: _C.surface,
+                      child: ListView(
+                        physics: kBouncyAlwaysScrollable,
+                        children: [
+                          SizedBox(
+                            height:
+                                MediaQuery.of(context).size.height * 0.6,
+                            child: _emptyState(
+                              Icons.directions_car_rounded,
+                              'No vehicles yet',
+                              'Add a vehicle to start tracking revenue and expenses',
+                            ),
+                          ),
+                        ],
+                      ),
                     );
                   }
                   final ledger =

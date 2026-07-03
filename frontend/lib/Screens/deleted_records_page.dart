@@ -796,12 +796,24 @@ class _DeletedRecordsPageState extends ConsumerState<DeletedRecordsPage>
         .toList();
 
     if (filtered.isEmpty) {
-      return _emptyState(
-        icon: Icons.directions_car_rounded,
-        title: q.isNotEmpty ? 'No results found' : 'No deleted vehicles',
-        subtitle: q.isNotEmpty
-            ? 'Try a different search term.'
-            : 'Deleted vehicles will appear here.',
+      return RefreshIndicator(
+        onRefresh: () async => _loadDeletedItems(),
+        color: _accent,
+        child: ListView(
+          physics: kBouncyAlwaysScrollable,
+          children: [
+            SizedBox(
+              height: MediaQuery.of(context).size.height * 0.6,
+              child: _emptyState(
+                icon: Icons.directions_car_rounded,
+                title: q.isNotEmpty ? 'No results found' : 'No deleted vehicles',
+                subtitle: q.isNotEmpty
+                    ? 'Try a different search term.'
+                    : 'Deleted vehicles will appear here.',
+              ),
+            ),
+          ],
+        ),
       );
     }
 
@@ -831,12 +843,24 @@ class _DeletedRecordsPageState extends ConsumerState<DeletedRecordsPage>
         .toList();
 
     if (filtered.isEmpty) {
-      return _emptyState(
-        icon: Icons.person_rounded,
-        title: q.isNotEmpty ? 'No results found' : 'No deleted drivers',
-        subtitle: q.isNotEmpty
-            ? 'Try a different search term.'
-            : 'Deleted drivers will appear here.',
+      return RefreshIndicator(
+        onRefresh: () async => _loadDeletedItems(),
+        color: _accent,
+        child: ListView(
+          physics: kBouncyAlwaysScrollable,
+          children: [
+            SizedBox(
+              height: MediaQuery.of(context).size.height * 0.6,
+              child: _emptyState(
+                icon: Icons.person_rounded,
+                title: q.isNotEmpty ? 'No results found' : 'No deleted drivers',
+                subtitle: q.isNotEmpty
+                    ? 'Try a different search term.'
+                    : 'Deleted drivers will appear here.',
+              ),
+            ),
+          ],
+        ),
       );
     }
 

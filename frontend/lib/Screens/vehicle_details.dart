@@ -1936,7 +1936,14 @@ class _TxnTabState extends ConsumerState<_TxnTab> {
       ..sort((a, b) =>
           (b.entryDate ?? DateTime(0)).compareTo(a.entryDate ?? DateTime(0)));
 
-    if (rows.isEmpty) return _emptyState();
+    if (rows.isEmpty) {
+      return RefreshIndicator(
+        color: _C.accent,
+        backgroundColor: _C.surface,
+        onRefresh: _refresh,
+        child: _emptyState(),
+      );
+    }
 
     final amountColor = _isRevenue ? _C.green : _C.red;
 

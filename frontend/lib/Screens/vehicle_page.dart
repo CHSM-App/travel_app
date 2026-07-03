@@ -6,6 +6,7 @@ import 'package:vego/Screens/add_driver.dart';
 import 'package:vego/Screens/driver_history.dart';
 import 'package:vego/Screens/vehicle_details.dart';
 import 'package:vego/core/theme/app_colors.dart';
+import 'package:vego/core/theme/app_scroll_behavior.dart';
 import 'package:vego/core/widgets/error_view.dart';
 import 'package:vego/core/widgets/paginated_list_view.dart';
 import 'package:vego/core/widgets/skeleton.dart';
@@ -1400,12 +1401,27 @@ class _VehiclePageState extends ConsumerState<VehiclePage>
                           .toList();
 
                       if (filtered.isEmpty) {
-                        return _empty(
-                          Icons.directions_car_rounded,
-                          q.isNotEmpty ? 'No results' : 'No vehicles yet',
-                          q.isNotEmpty
-                              ? 'Try a different search term'
-                              : 'Add your first vehicle below',
+                        return RefreshIndicator(
+                          onRefresh: _refreshData,
+                          color: _C.accent,
+                          child: ListView(
+                            physics: kBouncyAlwaysScrollable,
+                            children: [
+                              SizedBox(
+                                height:
+                                    MediaQuery.of(context).size.height * 0.6,
+                                child: _empty(
+                                  Icons.directions_car_rounded,
+                                  q.isNotEmpty
+                                      ? 'No results'
+                                      : 'No vehicles yet',
+                                  q.isNotEmpty
+                                      ? 'Try a different search term'
+                                      : 'Add your first vehicle below',
+                                ),
+                              ),
+                            ],
+                          ),
                         );
                       }
 
@@ -1444,12 +1460,27 @@ class _VehiclePageState extends ConsumerState<VehiclePage>
                           .toList();
 
                       if (filtered.isEmpty) {
-                        return _empty(
-                          Icons.person_rounded,
-                          q.isNotEmpty ? 'No results' : 'No drivers yet',
-                          q.isNotEmpty
-                              ? 'Try a different search term'
-                              : 'Add your first driver below',
+                        return RefreshIndicator(
+                          onRefresh: _refreshData,
+                          color: _C.accent,
+                          child: ListView(
+                            physics: kBouncyAlwaysScrollable,
+                            children: [
+                              SizedBox(
+                                height:
+                                    MediaQuery.of(context).size.height * 0.6,
+                                child: _empty(
+                                  Icons.person_rounded,
+                                  q.isNotEmpty
+                                      ? 'No results'
+                                      : 'No drivers yet',
+                                  q.isNotEmpty
+                                      ? 'Try a different search term'
+                                      : 'Add your first driver below',
+                                ),
+                              ),
+                            ],
+                          ),
                         );
                       }
                       return Column(
