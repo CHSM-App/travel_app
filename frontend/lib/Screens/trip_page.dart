@@ -958,7 +958,7 @@ class _TripPageState extends ConsumerState<TripPage> {
           return _buildMessageState(
             filter: filter,
             icon: Icons.wifi_off_rounded,
-            iconColor: Colors.grey.shade500,
+            iconColor: AppColors.brandPrimary,
             title: 'You appear to be offline',
             subtitle:
                 'Check your connection and pull to refresh, or tap retry.',
@@ -968,7 +968,7 @@ class _TripPageState extends ConsumerState<TripPage> {
         return _buildMessageState(
           filter: filter,
           icon: Icons.error_outline_rounded,
-          iconColor: Colors.red.shade300,
+          iconColor: AppColors.brandPrimary,
           title: 'Error loading trips',
           subtitle: friendlyErrorMessage(e),
         );
@@ -1152,52 +1152,56 @@ class _TripPageState extends ConsumerState<TripPage> {
       color: AppColors.brandPrimary,
       child: ListView(
         physics: kBouncyAlwaysScrollable,
-        padding: const EdgeInsets.fromLTRB(24, 80, 24, 110),
+        padding: const EdgeInsets.fromLTRB(24, 0, 24, 110),
         children: [
-          Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: Colors.indigo.shade50,
-                    shape: BoxShape.circle,
+          SizedBox(
+            height: MediaQuery.of(context).size.height * 0.6,
+            child: Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: const BoxDecoration(
+                      color: AppColors.brandSoft,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(icon, size: 56, color: iconColor),
                   ),
-                  child: Icon(icon, size: 56, color: iconColor),
-                ),
-                const SizedBox(height: 20),
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 17,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.black87,
+                  const SizedBox(height: 20),
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.black87,
+                    ),
+                    textAlign: TextAlign.center,
                   ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  subtitle,
-                  style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
-                  textAlign: TextAlign.center,
-                ),
-                if (showRetry) ...[
-                  const SizedBox(height: 14),
-                  ElevatedButton.icon(
-                    onPressed: () => _loadListForFilter(filter),
-                    icon: const Icon(Icons.refresh_rounded, size: 18),
-                    label: const Text('Retry'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.brandPrimary,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
+                  const SizedBox(height: 6),
+                  Text(
+                    subtitle,
+                    style:
+                        TextStyle(fontSize: 13, color: Colors.grey.shade600),
+                    textAlign: TextAlign.center,
+                  ),
+                  if (showRetry) ...[
+                    const SizedBox(height: 14),
+                    ElevatedButton.icon(
+                      onPressed: () => _loadListForFilter(filter),
+                      icon: const Icon(Icons.refresh_rounded, size: 18),
+                      label: const Text('Retry'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.brandPrimary,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
                       ),
                     ),
-                  ),
+                  ],
                 ],
-              ],
+              ),
             ),
           ),
         ],
@@ -1208,7 +1212,7 @@ class _TripPageState extends ConsumerState<TripPage> {
   Widget _buildEmptyState(TripFilter filter) => _buildMessageState(
         filter: filter,
         icon: filter.icon,
-        iconColor: Colors.indigo.shade300,
+        iconColor: AppColors.brandPrimary,
         title: filter.emptyTitle,
         subtitle: filter.emptySubtitle,
         showRetry: false,
