@@ -77,6 +77,16 @@ class _CustomerListPageState extends ConsumerState<CustomerListPage>
     ref.read(customerViewModelProvider.notifier).fetchCustomerslist(agencyId);
   }
 
+  // Opens the customer's history/detail page. It pops with `true` if the
+  // customer was edited or deleted there, so only refresh in that case.
+  Future<void> _openCustomerHist(Customer customer) async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => CustomerHist(customer: customer)),
+    );
+    if (result == true && mounted) _refresh();
+  }
+
   // Opens the Add Customer form, then refreshes the list so the new customer
   // shows without a manual pull-to-refresh.
   Future<void> _openAddCustomer() async {
@@ -155,11 +165,7 @@ class _CustomerListPageState extends ConsumerState<CustomerListPage>
             child: InkWell(
               splashColor: _C.indigoLight,
               highlightColor: _C.indigoLight.withValues(alpha: 0.5),
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (_) => CustomerHist(customer: customer)),
-              ),
+              onTap: () => _openCustomerHist(customer),
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(12, 9, 6, 9),
                 child: Column(
@@ -339,8 +345,7 @@ class _CustomerListPageState extends ConsumerState<CustomerListPage>
       onSelected: (val) {
         switch (val) {
           case 'view':
-            Navigator.push(context,
-                MaterialPageRoute(builder: (_) => CustomerHist(customer: customer)));
+            _openCustomerHist(customer);
             break;
           case 'edit':
             _editCustomer(customer);

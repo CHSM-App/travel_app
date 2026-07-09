@@ -1628,6 +1628,7 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
     // skipping the autocomplete entirely or editing autofilled values). Create
     // the customer in the DB first so we have a real customerId for the trip.
     int? customerId = selCustomer;
+    final bool newCustomerCreated = customerId == null;
     if (customerId == null) {
       final newCustomer = Customer(
         customerId: 0,
@@ -1716,6 +1717,17 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
       // Recover the new trip id from the create response so we can complete it.
       tripId = _findTripId(ref.read(tripBookingViewModelProvider).data);
       debugPrint("Created trip with id $tripId");
+    }
+
+    // The Customers-tab list is keyed off trips, so a brand-new customer only
+    // shows up there once they actually have a trip — refresh now that the
+    // trip has been saved, instead of right after creating the customer.
+    if (newCustomerCreated) {
+      try {
+        await ref
+            .read(customerViewModelProvider.notifier)
+            .fetchCustomerslist(agencyId);
+      } catch (_) {}
     }
 
     // For a back-dated trip, stamp the end time + final charges + amount

@@ -78,6 +78,16 @@ class AddVehicleViewModel extends StateNotifier<AddVehicleState> {
     state = state.copyWith(isLoading: true, clearData: true, clearError: true);
     try {
       final result = await usecase.addVehicle(vehicle);
+      // Backend returns `success` as either a SQL bit (0/1, decoded as an
+      // int by the JSON layer) or a bool depending on the route — check both
+      // so a rejected insert (e.g. duplicate vehicle number) doesn't fall
+      // through to the VehicleId cast below and surface as a raw TypeError.
+      final success = result is Map ? result['success'] : null;
+      if (success == false || success == 0) {
+        throw AppException(
+          result['message']?.toString() ?? 'Failed to add vehicle',
+        );
+      }
       final int vehicleId = result['VehicleId'] as int;
       state = state.copyWith(isLoading: false, data: result);
       return vehicleId;
