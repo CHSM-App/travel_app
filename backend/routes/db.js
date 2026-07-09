@@ -1,11 +1,12 @@
 const mssql = require('mssql');
+require('dotenv').config();
 
 const sqlConfig = {
-    user: 'travel_admin',      // Replace with your username
-    password: 'Travel@admin_123',//'@x8#H8$?hEQJU',   // Replace with your password
-    server: 'winsome.grabweb.in',        // Replace with your server
-    database: 'travel_agency',
-    port: 5691,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    server: process.env.DB_SERVER,
+    database: process.env.DB_NAME,
+    port: Number(process.env.DB_PORT),
     options: {
         encrypt: true, // Use this if you're on Windows Azure
         trustServerCertificate: true // Change to true for local dev / self-signed certs

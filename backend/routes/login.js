@@ -292,8 +292,8 @@ router.post("/forgotPassword", async (req, res) => {
 
 //Send OTP
 const API_URL = "http://papi.messagebot.in/SendSmsV2";
-const API_TOKEN = "L2Uj2dK9ARQrfUy2";
-const SOURCE_ID = "SMSALA"; // your approved sender ID
+const API_TOKEN = process.env.SMS_API_TOKEN;
+const SOURCE_ID = process.env.SMS_SOURCE_ID; // your approved sender ID
 
 router.post("/send-sms", async (req, res) => {
   const { phone, message, dltEntityId, dltTemplateId } = req.body;
