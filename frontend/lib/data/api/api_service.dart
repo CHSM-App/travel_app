@@ -176,6 +176,9 @@ abstract class ApiService {
   @GET("users/customerList/{agency_id}")
   Future<List<Customer>> customerList(@Path("agency_id") String agencyId);
 
+  @GET("users/deletedCustomerList/{agency_id}")
+  Future<List<Customer>> deletedCustomerList(@Path("agency_id") String agencyId);
+
   @GET("users/VehicleTypeList")
   Future<List<VehicleType>> vehicleTypeList();
 

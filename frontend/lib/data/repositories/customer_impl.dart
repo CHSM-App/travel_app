@@ -16,6 +16,11 @@ class CustomerImpl implements CustomerRepository {
   }
 
   @override
+  Future<List<Customer>> deletedCustomerList(String agencyId) {
+    return apiService.deletedCustomerList(agencyId);
+  }
+
+  @override
   Future<List<BookingInfo>> customerhist(int customer_id) {
     return apiService.customerhist(customer_id);
   }

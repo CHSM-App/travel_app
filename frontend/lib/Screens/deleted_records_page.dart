@@ -5,6 +5,7 @@ import 'package:vego/core/theme/app_scroll_behavior.dart';
 import 'package:vego/core/widgets/error_view.dart';
 import 'package:vego/core/widgets/paginated_list_view.dart';
 import 'package:vego/core/widgets/skeleton.dart';
+import 'package:vego/domain/models/customers.dart';
 import 'package:vego/domain/models/drivers.dart';
 import 'package:vego/domain/models/vehicles.dart';
 import 'package:vego/presentation/providers/viewmodel_provider.dart';
@@ -44,11 +45,12 @@ class _DeletedRecordsPageState extends ConsumerState<DeletedRecordsPage>
   bool _searchVisible = false;
 
   bool get _isVehicleTab => _tabController.index == 0;
+  bool get _isDriverTab => _tabController.index == 1;
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(length: 3, vsync: this);
     _tabController.addListener(() => setState(() {}));
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) _loadDeletedItems();
@@ -61,6 +63,7 @@ class _DeletedRecordsPageState extends ConsumerState<DeletedRecordsPage>
     await Future.wait([
       ref.read(tripBookingViewModelProvider.notifier).deletedVehicleList(agencyId),
       ref.read(tripBookingViewModelProvider.notifier).deletedDriverList(agencyId),
+      ref.read(customerViewModelProvider.notifier).fetchDeletedCustomerList(agencyId),
     ]);
   }
 
@@ -154,6 +157,16 @@ class _DeletedRecordsPageState extends ConsumerState<DeletedRecordsPage>
                             ],
                           ),
                         ),
+                        Tab(
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.groups_rounded, size: 15),
+                              SizedBox(width: 5),
+                              Text('Customers'),
+                            ],
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -198,7 +211,9 @@ class _DeletedRecordsPageState extends ConsumerState<DeletedRecordsPage>
                       decoration: InputDecoration(
                         hintText: _isVehicleTab
                             ? 'Search deleted vehicles…'
-                            : 'Search deleted drivers…',
+                            : _isDriverTab
+                                ? 'Search deleted drivers…'
+                                : 'Search deleted customers…',
                         hintStyle: const TextStyle(
                           fontSize: 13,
                           color: _text2,
@@ -248,7 +263,7 @@ class _DeletedRecordsPageState extends ConsumerState<DeletedRecordsPage>
           const Padding(
             padding: EdgeInsets.fromLTRB(16, 14, 16, 2),
             child: Text(
-              'Deleted Vehicles & Drivers',
+              'Deleted Vehicles, Drivers & Customers',
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w800,
@@ -271,7 +286,7 @@ class _DeletedRecordsPageState extends ConsumerState<DeletedRecordsPage>
   }
 
   /// Stats banner shown at top of each list
-  Widget _statsBanner(int count, {required bool vehicle}) {
+  Widget _statsBanner(int count, {required IconData icon, required String noun}) {
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 12, 16, 6),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
@@ -290,16 +305,14 @@ class _DeletedRecordsPageState extends ConsumerState<DeletedRecordsPage>
               borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(
-              vehicle
-                  ? Icons.no_transfer_rounded
-                  : Icons.person_remove_alt_1_rounded,
+              icon,
               color: _red,
               size: 16,
             ),
           ),
           const SizedBox(width: 10),
           Text(
-            '$count deleted ${vehicle ? 'vehicle${count != 1 ? 's' : ''}' : 'driver${count != 1 ? 's' : ''}'}',
+            '$count deleted $noun${count != 1 ? 's' : ''}',
             style: const TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w700,
@@ -591,6 +604,120 @@ class _DeletedRecordsPageState extends ConsumerState<DeletedRecordsPage>
     );
   }
 
+  /// Customer card
+  Widget _customerCard(Customer c, int i) {
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0, end: 1),
+      duration: Duration(milliseconds: 200 + i * 40),
+      curve: Curves.easeOutCubic,
+      builder: (_, val, child) => Opacity(
+        opacity: val,
+        child: Transform.translate(
+          offset: Offset(0, 10 * (1 - val)),
+          child: child,
+        ),
+      ),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 8),
+        decoration: BoxDecoration(
+          color: _surface,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: _divider, width: 1),
+          boxShadow: [
+            BoxShadow(
+              color: _accent.withOpacity(0.05),
+              blurRadius: 8,
+              offset: const Offset(0, 3),
+            ),
+          ],
+        ),
+        child: Material(
+          color: Colors.transparent,
+          borderRadius: BorderRadius.circular(14),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(14),
+            onTap: () {},
+            child: Padding(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              child: Row(
+                children: [
+                  Container(
+                    width: 38,
+                    height: 38,
+                    decoration: BoxDecoration(
+                      color: _red,
+                      borderRadius: BorderRadius.circular(10),
+                      boxShadow: [
+                        BoxShadow(
+                          color: _red.withOpacity(0.2),
+                          blurRadius: 6,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Center(
+                      child: Text(
+                        _initials(c.name),
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w800,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          c.name ?? 'Unknown customer',
+                          style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w800,
+                            color: _text1,
+                            letterSpacing: -0.1,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        if (c.phone != null && c.phone!.isNotEmpty) ...[
+                          const SizedBox(height: 3),
+                          Row(
+                            children: [
+                              const Icon(
+                                Icons.phone_rounded,
+                                size: 11,
+                                color: _red,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                c.phone!,
+                                style: const TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w600,
+                                  color: _text2,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  _deletedBadge(),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _statChip(IconData icon, String value, String label) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
@@ -819,7 +946,7 @@ class _DeletedRecordsPageState extends ConsumerState<DeletedRecordsPage>
 
     return Column(
       children: [
-        _statsBanner(filtered.length, vehicle: true),
+        _statsBanner(filtered.length, icon: Icons.no_transfer_rounded, noun: 'vehicle'),
         Expanded(
           child: PaginatedListView<Vehicles>(
             items: filtered,
@@ -866,7 +993,7 @@ class _DeletedRecordsPageState extends ConsumerState<DeletedRecordsPage>
 
     return Column(
       children: [
-        _statsBanner(filtered.length, vehicle: false),
+        _statsBanner(filtered.length, icon: Icons.person_remove_alt_1_rounded, noun: 'driver'),
         Expanded(
           child: PaginatedListView<Drivers>(
             items: filtered,
@@ -881,6 +1008,53 @@ class _DeletedRecordsPageState extends ConsumerState<DeletedRecordsPage>
     );
   }
 
+  Widget _customersContent(List<Customer> customers) {
+    final q = _searchCtrl.text.toLowerCase();
+    final filtered = customers
+        .where((c) =>
+            (c.name?.toLowerCase().contains(q) ?? false) ||
+            (c.phone?.toLowerCase().contains(q) ?? false))
+        .toList();
+
+    if (filtered.isEmpty) {
+      return RefreshIndicator(
+        onRefresh: () async => _loadDeletedItems(),
+        color: _accent,
+        child: ListView(
+          physics: kBouncyAlwaysScrollable,
+          children: [
+            SizedBox(
+              height: MediaQuery.of(context).size.height * 0.6,
+              child: _emptyState(
+                icon: Icons.groups_rounded,
+                title: q.isNotEmpty ? 'No results found' : 'No deleted customers',
+                subtitle: q.isNotEmpty
+                    ? 'Try a different search term.'
+                    : 'Deleted customers will appear here.',
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Column(
+      children: [
+        _statsBanner(filtered.length, icon: Icons.person_remove_alt_1_rounded, noun: 'customer'),
+        Expanded(
+          child: PaginatedListView<Customer>(
+            items: filtered,
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
+            onRefresh: _loadDeletedItems,
+            resetToken: q,
+            itemLabel: 'customers',
+            itemBuilder: (_, item, i) => _customerCard(item, i),
+          ),
+        ),
+      ],
+    );
+  }
+
   // ─── Build ────────────────────────────────────────────────────────────────
 
   @override
@@ -888,6 +1062,7 @@ class _DeletedRecordsPageState extends ConsumerState<DeletedRecordsPage>
     final state       = ref.watch(tripBookingViewModelProvider);
     final vehicleState = state.fetchDeletedVehicleList;
     final driverState  = state.fetchDeletedDriverList;
+    final customerState = ref.watch(customerViewModelProvider).deletedCustomerList;
 
     return Scaffold(
       backgroundColor: _bg,
@@ -932,6 +1107,14 @@ class _DeletedRecordsPageState extends ConsumerState<DeletedRecordsPage>
                     onRetry: _loadDeletedItems,
                   ),
                   data: _driversContent,
+                ),
+                customerState.when(
+                  loading: () => _loadingState('Loading deleted customers…'),
+                  error: (e, _) => NetworkErrorView(
+                    error: e,
+                    onRetry: _loadDeletedItems,
+                  ),
+                  data: _customersContent,
                 ),
               ],
             ),

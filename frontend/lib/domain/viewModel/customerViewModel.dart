@@ -16,6 +16,7 @@ class CustomerState {
   final AsyncValue<List<Customer>> customerList;
   final int? adminId;
     final AsyncValue<List<BookingInfo>> customerHist;
+  final AsyncValue<List<Customer>> deletedCustomerList;
 
   const CustomerState({
    this.isLoading = false,
@@ -24,6 +25,7 @@ class CustomerState {
     this.customerList = const AsyncValue.loading(),
     this.adminId,
     this.customerHist= const AsyncValue.loading(),
+    this.deletedCustomerList = const AsyncValue.loading(),
   });
 
   //AsyncValue<List<BookingInfo>>? get customerHist => null; 
@@ -35,6 +37,7 @@ class CustomerState {
     AsyncValue<List<Customer>>? customerList,
     int? adminId,
     AsyncValue<List<BookingInfo>>? customerHist,
+    AsyncValue<List<Customer>>? deletedCustomerList,
 
   }) {
     return CustomerState(
@@ -44,8 +47,9 @@ class CustomerState {
       customerList: customerList ?? this.customerList,
       adminId: adminId ?? this.adminId,
       customerHist: customerHist ?? this.customerHist,
+      deletedCustomerList: deletedCustomerList ?? this.deletedCustomerList,
     );
-  } 
+  }
 }
 class CustomerViewModel extends StateNotifier<CustomerState> {
   final customerUseCase usecase;
@@ -61,6 +65,16 @@ class CustomerViewModel extends StateNotifier<CustomerState> {
       state = state.copyWith(customerList: AsyncValue.data(result));
     } catch (e, st) {
       state = state.copyWith(customerList: AsyncValue.error(e, st));
+    }
+  }
+
+  Future<void> fetchDeletedCustomerList(String agencyId) async {
+    state = state.copyWith(deletedCustomerList: const AsyncValue.loading());
+    try {
+      final result = await usecase.deletedCustomerList(agencyId);
+      state = state.copyWith(deletedCustomerList: AsyncValue.data(result));
+    } catch (e, st) {
+      state = state.copyWith(deletedCustomerList: AsyncValue.error(e, st));
     }
   }
 
