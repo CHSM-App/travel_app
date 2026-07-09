@@ -573,7 +573,7 @@ class _RowDivider extends StatelessWidget {
 // a soft decorative ring, large icon, headline, and an arrow
 // pill. Tap anywhere on the card opens the trip-booking form.
 // ─────────────────────────────────────────────────────────
-class _NewBookingHero extends StatelessWidget {
+class _NewBookingHero extends ConsumerWidget {
   final bool isSmall;
   const _NewBookingHero({required this.isSmall});
 
@@ -581,16 +581,26 @@ class _NewBookingHero extends StatelessWidget {
   /// out as the primary call-to-action against the warm-charcoal headers.
   static const Color _airtelRed = Color(0xFFED1C24);
 
+  // Awaits the booking form and refreshes the Trips list so a booking added
+  // from the dashboard shows up without a manual pull-to-refresh (the Trips
+  // tab stays alive in the bottom nav's IndexedStack).
+  Future<void> _openAddTrip(BuildContext context, WidgetRef ref) async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => TripBookingForm()),
+    );
+    final agencyId = ref.read(loginViewModelProvider).agencyId ?? '';
+    if (agencyId.isEmpty) return;
+    ref.read(tripPageViewModelProvider.notifier).refreshAll(agencyId);
+  }
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Material(
       color: Colors.transparent,
       child: InkWell(
         borderRadius: BorderRadius.circular(isSmall ? 16 : 20),
-        onTap: () => Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => TripBookingForm()),
-        ),
+        onTap: () => _openAddTrip(context, ref),
         child: Ink(
           decoration: BoxDecoration(
             color: _airtelRed,
@@ -1186,40 +1196,54 @@ class _QuickActionsGrid extends StatelessWidget {
   }
 }
 
-class _ActionCard extends StatelessWidget {
+class _ActionCard extends ConsumerWidget {
   final _ActionData data;
   final bool isSmall;
   const _ActionCard({required this.data, required this.isSmall});
 
-  void _navigate(BuildContext context) {
+  // Each "add" form is awaited, then the matching list's provider is
+  // refreshed so the new item shows up without a manual pull-to-refresh
+  // (list tabs stay alive in the bottom nav's IndexedStack).
+  Future<void> _navigate(BuildContext context, WidgetRef ref) async {
+    final agencyId = ref.read(loginViewModelProvider).agencyId ?? '';
     switch (data.title) {
       case 'New Booking':
-        Navigator.push(
+        await Navigator.push(
             context, MaterialPageRoute(builder: (_) => TripBookingForm()));
+        if (agencyId.isEmpty) return;
+        ref.read(tripPageViewModelProvider.notifier).refreshAll(agencyId);
         break;
       case 'New Vehicle':
-        Navigator.push(
+        await Navigator.push(
             context, MaterialPageRoute(builder: (_) => AddVehiclePage()));
+        if (agencyId.isEmpty) return;
+        ref.read(tripBookingViewModelProvider.notifier).vehicleList(agencyId);
         break;
       case 'New Driver':
-        Navigator.push(
+        await Navigator.push(
             context, MaterialPageRoute(builder: (_) => AddDriverPage()));
+        if (agencyId.isEmpty) return;
+        ref.read(tripBookingViewModelProvider.notifier).driverList(agencyId);
         break;
       case 'New Customer':
-        Navigator.push(
+        await Navigator.push(
             context, MaterialPageRoute(builder: (_) => AddCustomerPage()));
+        if (agencyId.isEmpty) return;
+        ref
+            .read(customerViewModelProvider.notifier)
+            .fetchCustomerslist(agencyId);
         break;
     }
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final iconSize = isSmall ? 30.0 : 34.0;
     final iconInner = isSmall ? 15.0 : 17.0;
     final pad = isSmall ? 8.0 : 10.0;
 
     return InkWell(
-      onTap: () => _navigate(context),
+      onTap: () => _navigate(context, ref),
       borderRadius: BorderRadius.circular(isSmall ? 12 : 14),
       child: Container(
         padding: EdgeInsets.all(pad),

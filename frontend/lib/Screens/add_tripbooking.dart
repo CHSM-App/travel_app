@@ -1493,8 +1493,18 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
                           icon: Icons.edit_calendar_rounded,
                           label: "Change reminder time",
                           onTap: () async {
+                            final now = DateTime.now();
+                            // The default reminder (day before trip start) can
+                            // fall before today when the trip starts today/soon,
+                            // so the calendar's lower bound must not exceed it —
+                            // otherwise CalendarDatePicker asserts
+                            // initialDate >= firstDate.
+                            final reminderEarliest = effective.isBefore(now)
+                                ? DateTime(effective.year, effective.month,
+                                    effective.day)
+                                : DateTime(now.year, now.month, now.day);
                             final picked = await _showDateTimeSheet(
-                              earliest: DateTime.now(),
+                              earliest: reminderEarliest,
                               initial: effective,
                               title: "Reminder Date & Time",
                               accent: _C.accent,

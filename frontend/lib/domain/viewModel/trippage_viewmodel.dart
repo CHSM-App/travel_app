@@ -124,6 +124,20 @@ class TripPageViewModel extends StateNotifier<TripPageState> {
   }
 
 
+  /// Reloads every status bucket. Used by entry points outside the Trips page
+  /// (e.g. the dashboard's "New Booking" shortcut) that don't know which
+  /// filter tab is currently selected there, so they refresh them all.
+  Future<void> refreshAll(String agencyId) async {
+    await Future.wait([
+      allTrips(agencyId),
+      activeList(agencyId),
+      upcomingList(agencyId),
+      historyList(agencyId),
+      unpaidList(agencyId),
+      cancelledList(agencyId),
+    ]);
+  }
+
   /// "All" tab: no single backend endpoint returns every trip, so fetch the
   /// five status lists in parallel, de-dupe by trip id (a trip can appear in
   /// more than one list, e.g. partially-paid history), and sort newest-first.

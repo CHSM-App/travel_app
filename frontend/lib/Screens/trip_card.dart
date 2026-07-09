@@ -823,15 +823,18 @@ class TripCard extends ConsumerWidget {
                               bookinginfo.status == 2 ||
                               bookinginfo.status == 3)
                             GestureDetector(
-                              onTap: () {
+                              onTap: () async {
                                 Navigator.pop(ctx);
-                                Navigator.push(
+                                await Navigator.push(
                                   context,
                                   MaterialPageRoute(
                                     builder: (_) =>
                                         TripBookingForm(booking: bookinginfo),
                                   ),
                                 );
+                                if (onTripUpdated != null) {
+                                  await onTripUpdated!();
+                                }
                               },
                               child: Container(
                                 width: 28,

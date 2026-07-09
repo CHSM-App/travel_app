@@ -9,6 +9,32 @@ router.use(bodyParser.json());
 router.use(bodyParser.urlencoded({ extended: true }));
 
 //-----------TRAVELS APP POST API----------------------//
+
+// pickup_location/drop_location columns are NVARCHAR(300). Google Places
+// autocomplete descriptions (building, street, area, city, district, state,
+// PIN, country) can run well past that and SQL Server rejects the insert
+// with "String or binary data would be truncated". Rather than hard-cutting
+// the string mid-word, drop the least useful trailing segments (country,
+// PIN code, ...) first, keeping the most identifying part of the address.
+function compressLocation(value, maxLen = 300) {
+  if (typeof value !== 'string' || value.length <= maxLen) return value;
+
+  const segments = value.split(',').map(s => s.trim()).filter(Boolean);
+  while (segments.length > 2 && segments.join(', ').length > maxLen) {
+    segments.pop();
+  }
+
+  let result = segments.join(', ');
+  if (result.length > maxLen) {
+    // Still too long (e.g. one very long segment) — cut at the last word
+    // boundary within the limit instead of mid-word.
+    result = result.slice(0, maxLen);
+    const lastSpace = result.lastIndexOf(' ');
+    if (lastSpace > 0) result = result.slice(0, lastSpace);
+  }
+  return result;
+}
+
 router.post('/Addtripbooking', async (req, res) => {
   try {
     console.log("REQ BODY ===>", req.body);
@@ -52,8 +78,8 @@ router.post('/Addtripbooking', async (req, res) => {
   .input("trip_id", sql.Int, 0)
   .input("vehicle_id", sql.Int, vehicleid)
   .input("driver_id", sql.Int, driverid)
-  .input("pickup_location", sql.NVarChar(50), pickuplocation)
-  .input("drop_location", sql.NVarChar(50), droplocation)
+  .input("pickup_location", sql.NVarChar(300), compressLocation(pickuplocation))
+  .input("drop_location", sql.NVarChar(300), compressLocation(droplocation))
   .input("distance", sql.Decimal(7,2), distance)
   .input("fuel_required", sql.Decimal(7,2), fuelrequired)
   .input("toll_charges", sql.Decimal(10,2), tollcharges)
@@ -114,8 +140,8 @@ router.post('/updateTripbooking/:trip_id', async (req, res) => {
       .input('vehicle_id', vehicleid)
       .input('driver_id', driverid)
       .input('Customer_id', Customerid)
-      .input('pickup_location', pickuplocation)
-      .input('drop_location', droplocation)
+      .input('pickup_location', sql.NVarChar(300), compressLocation(pickuplocation))
+      .input('drop_location', sql.NVarChar(300), compressLocation(droplocation))
       .input('distance', distance)
       .input('fuel_required', fuelrequired)
       .input('fuel_charges', fuelcharges || 0)

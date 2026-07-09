@@ -96,10 +96,20 @@ class TokenInterceptor extends Interceptor {
           );
 
       return _retryRequest(err, handler);
-    } catch (_) {
+    } catch (e) {
       _isRefreshing = false;
-      await ref.read(tokenProvider.notifier).clearTokens();
-      _goToLogin();
+
+      final isInvalidRefreshToken = e is DioException &&
+          (e.response?.statusCode == 401 || e.response?.statusCode == 403);
+
+      if (isInvalidRefreshToken) {
+        await ref.read(tokenProvider.notifier).clearTokens();
+        _goToLogin();
+      }
+      // Network/transport/server errors during refresh don't mean the
+      // session is invalid — leave tokens intact so the user isn't
+      // logged out over a transient failure.
+
       return handler.next(err);
     }
   }
