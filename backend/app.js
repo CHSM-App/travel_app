@@ -104,7 +104,7 @@ setInterval(generateBill, 24 * 60 * 60 * 1000);
 
 // Daily reminder push at 15:50 IST (3:50 PM, day before) — tomorrow's trips +
 // PUC/insurance expiring within 7 days, sent to each agency's registered devices.
-cron.schedule('50 15 * * *', () => {
+cron.schedule('0 19 * * *', () => {
   reminders.sendDailyReminders().catch((err) =>
     console.error('❌ Daily reminder error:', err.message)
   );
