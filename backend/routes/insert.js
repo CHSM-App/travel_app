@@ -465,10 +465,19 @@ router.post('/AddDriver', async (req, res) => {
 
     console.log("SP RESULT:", result.recordset);
 
+    const row = result.recordset[0];
+
+    if (row && row.success === 0) {
+      return res.status(409).json({
+        success: false,
+        message: row.message || "This mobile number is already registered with another driver."
+      });
+    }
+
     res.json({
       success: true,
       message: "Driver inserted successfully",
-      data: result.recordset[0]   // ✅ returns driverId
+      data: row   // ✅ returns driverId
     });
 
   } catch (err) {
@@ -504,9 +513,9 @@ router.post('/Updatedriver', async (req, res) => {
       });
     }
 
-    const operation = driverId ? "Update" : "Insert";
+    const operation = "Update"; // sp_driver keys insert vs. update off @driverid=0, not @operation
 
-    await db.request()
+    const result = await db.request()
       .input("operation", sql.NVarChar, operation)
       .input("driverid", sql.Int, driverId || 0)
       .input("name", sql.VarChar, name)
@@ -515,11 +524,20 @@ router.post('/Updatedriver', async (req, res) => {
       .input("licenceNo", sql.VarChar, licenceNo)
 	   .input("agency_id", sql.VarChar, agency_id)
       .input("licenceExpiry", sql.DateTime, licenceExpiry)
-      .execute("sp_Driver"); 
+      .execute("sp_Driver");
+
+    const row = result.recordset && result.recordset[0];
+
+    if (row && row.success === 0) {
+      return res.status(409).json({
+        success: false,
+        message: row.message || "This mobile number is already registered with another driver."
+      });
+    }
 
     res.json({
       success: true,
-      message: operation === "Update"
+      message: driverId
         ? "Driver updated successfully"
         : "Driver inserted successfully"
     });
