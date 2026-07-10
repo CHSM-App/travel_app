@@ -140,6 +140,33 @@ class LoginViewModel extends StateNotifier<LoginState> {
 
       final response = await usecase.addAdmin(loginInfo);
 
+      // On successful account creation, persist the returned session details
+      // the same way login() does. This lets the post-signup profile-setup
+      // wizard (add vehicle/driver/customer) read agencyId immediately,
+      // without requiring the user to log in first.
+      if (response.success == 1) {
+        await TokenStorage.saveValue('admin_id', response.adminId.toString());
+        await TokenStorage.saveValue('name', response.name ?? "");
+        await TokenStorage.saveValue('email', response.email ?? "");
+        await TokenStorage.saveValue('mobile', response.mobile ?? "");
+        await TokenStorage.saveValue('agency_id', response.agencyId ?? "");
+        await TokenStorage.saveValue(
+          'per_km_charge',
+          response.perKmCharge?.toString() ?? "",
+        );
+
+        await loadFromStorage();
+
+        // The Insert/Update recordset from AddAdmin doesn't reliably echo
+        // back agency_id (it's assigned inside the stored proc). Try the
+        // profile-fetch fallback here too — this only succeeds if a valid
+        // access token already exists (e.g. addAdmin called from the
+        // logged-in Profile screen). Right after signup there is no token
+        // yet, so callers there must call ensureAgencyId() again once
+        // createLogin() has minted one.
+        await ensureAgencyId();
+      }
+
       state = state.copyWith(isLoading: false);
 
       return response;
@@ -148,6 +175,27 @@ class LoginViewModel extends StateNotifier<LoginState> {
       state = state.copyWith(isLoading: false, error: msg);
 
       return LoginResponse(success: 0, message: msg);
+    }
+  }
+
+  /// If [state.agencyId] is missing, looks it up via the profile-fetch
+  /// endpoint (the same one the Profile screen uses) and persists it.
+  /// Requires a valid access token — call this after login/createLogin has
+  /// minted one, not from inside addAdmin() during signup (no token yet).
+  Future<void> ensureAgencyId() async {
+    if (state.agencyId != null && state.agencyId!.trim().isNotEmpty) return;
+    if (state.adminId <= 0) return;
+
+    try {
+      final profile = await usecase.adminProfile(state.adminId);
+      final agencyId = profile.isNotEmpty ? profile.first.agencyId : null;
+      if (agencyId != null && agencyId.trim().isNotEmpty) {
+        await TokenStorage.saveValue('agency_id', agencyId);
+        await loadFromStorage();
+      }
+    } catch (_) {
+      // Best-effort — if this lookup fails, agencyId can be picked up later
+      // on a normal login.
     }
   }
 

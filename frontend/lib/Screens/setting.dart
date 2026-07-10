@@ -149,8 +149,8 @@ class _ModernSettingsPageState extends ConsumerState<ModernSettingsPage>
                         ),
                         _MenuItem(
                           Icons.delete_sweep_outlined,
-                          'Deleted Records',
-                          'View removed vehicles, drivers & customers',
+                          'Deleted Vehicles & Drivers',
+                          'View removed vehicles and drivers',
                           onTap: () {
                             Navigator.push(
                               context,

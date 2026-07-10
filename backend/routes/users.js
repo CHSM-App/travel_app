@@ -84,22 +84,6 @@ router.get('/CustomerList/:agency_id', async (req, res) => {
 });
 
 
-router.get('/deletedCustomerList/:agency_id', async (req, res) => {
-	  const {agency_id} = req.params;
-  try {
-     const result = await db.request()
-      .input('operation', 'fetchDeletedCustomers')
-	  .input('agency_id', agency_id)
-      .execute('sp_Customer');
-
-    res.json(result.recordset);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-
-
 // ---- Google Distance Matrix proxy (API key stays on the server) ----
 router.get('/distance', async (req, res) => {
   const { origins, destinations } = req.query;

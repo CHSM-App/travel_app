@@ -4,9 +4,11 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:vego/Screens/login.dart';
 import 'package:vego/Screens/otp_verification.dart';
+import 'package:vego/Screens/profile_setup_page.dart';
 import 'package:vego/Screens/terms_conditions.dart';
 import 'package:vego/core/theme/app_colors.dart';
 import 'package:vego/domain/models/login_info.dart';
+import 'package:vego/domain/models/token_response.dart';
 import 'package:vego/presentation/providers/viewmodel_provider.dart';
 
 class SignUpPage extends ConsumerStatefulWidget {
@@ -137,9 +139,32 @@ class _SignUpPageState extends ConsumerState<SignUpPage>
     if (!mounted) return;
 
     if (verified == true) {
+      // Mint an access/refresh token pair now (same as the login screen does)
+      // so the profile-setup wizard's API calls (vehicle/driver/customer
+      // lookups) are authenticated instead of hitting 401s. If this fails,
+      // skip straight to login rather than dropping the user into a wizard
+      // that will 401 on every request.
+      final tokenResult = await ref
+          .read(authViewModelProvider.notifier)
+          .createLogin(TokenResponse(mobile: mobile, deviceDetails: ""));
+
+      if (!mounted) return;
+
+      // addAdmin() ran before this token existed, so its own agencyId
+      // lookup couldn't reach the token-gated profile endpoint. Retry now
+      // that a valid access token is in place, before the wizard needs it.
+      if (tokenResult != null) {
+        await ref.read(loginViewModelProvider.notifier).ensureAgencyId();
+      }
+
+      if (!mounted) return;
+
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (_) => const LoginPage()),
+        MaterialPageRoute(
+          builder: (_) =>
+              tokenResult != null ? const ProfileSetupPage() : const LoginPage(),
+        ),
       );
     }
   }

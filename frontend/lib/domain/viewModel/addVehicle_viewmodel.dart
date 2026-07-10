@@ -246,4 +246,26 @@ class AddVehicleViewModel extends StateNotifier<AddVehicleState> {
       return {'success': false, 'message': message};
     }
   }
+
+  Future<Map<String, dynamic>> restoreVehicle(int vehicleid) async {
+    state = state.copyWith(isLoading: true, error: null);
+
+    try {
+      final result = await usecase.restoreVehicle(vehicleid);
+      state = state.copyWith(isLoading: false);
+      final isSuccess = result['success'] == true || result['success'] == 'true';
+      return {
+        'success': isSuccess,
+        'message': result['message'] ?? (isSuccess ? 'Restored successfully' : 'Restore failed'),
+      };
+    } on DioException catch (e) {
+      final message = friendlyErrorMessage(e);
+      state = state.copyWith(isLoading: false, error: message);
+      return {'success': false, 'message': message};
+    } catch (e) {
+      final message = friendlyErrorMessage(e);
+      state = state.copyWith(isLoading: false, error: message);
+      return {'success': false, 'message': message};
+    }
+  }
 }

@@ -17,4 +17,5 @@ abstract class Adddriverrepository {
 
   Future<List<BookingInfo>> fetchDriverHistory(int driverId);
   Future<Map<String, dynamic>> deleteDriver(int driverId);
+  Future<Map<String, dynamic>> restoreDriver(int driverId);
 }

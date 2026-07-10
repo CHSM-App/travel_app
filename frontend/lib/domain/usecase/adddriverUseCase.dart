@@ -34,4 +34,8 @@ class AddDeiverUseCase {
 Future<Map<String, dynamic>> deleteDriver(int driverId) {
     return adddriverrepository.deleteDriver(driverId);
   }
+
+  Future<Map<String, dynamic>> restoreDriver(int driverId) {
+    return adddriverrepository.restoreDriver(driverId);
+  }
 }

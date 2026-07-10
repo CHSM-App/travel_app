@@ -885,39 +885,42 @@ class _CustomerHistState extends ConsumerState<CustomerHist>
           physics: kBouncyAlwaysScrollable,
           child: ConstrainedBox(
             constraints: BoxConstraints(minHeight: constraints.maxHeight),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Container(
-                  width: 80,
-                  height: 80,
-                  decoration: BoxDecoration(
-                    color: _accentSoft,
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                        color: _accent.withValues(alpha: 0.15), width: 2),
+            child: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 80,
+                    height: 80,
+                    decoration: BoxDecoration(
+                      color: _accentSoft,
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                          color: _accent.withValues(alpha: 0.15), width: 2),
+                    ),
+                    child: const Icon(
+                      Icons.directions_car_outlined,
+                      size: 32,
+                      color: _accent,
+                    ),
                   ),
-                  child: const Icon(
-                    Icons.directions_car_outlined,
-                    size: 32,
-                    color: _accent,
+                  const SizedBox(height: 18),
+                  const Text(
+                    "No Trips Yet",
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                      color: _textPrimary,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 18),
-                const Text(
-                  "No Trips Yet",
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w800,
-                    color: _textPrimary,
+                  const SizedBox(height: 6),
+                  const Text(
+                    "No travel history for this customer.",
+                    style: TextStyle(fontSize: 13, color: _textSecondary),
                   ),
-                ),
-                const SizedBox(height: 6),
-                const Text(
-                  "No travel history for this customer.",
-                  style: TextStyle(fontSize: 13, color: _textSecondary),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),

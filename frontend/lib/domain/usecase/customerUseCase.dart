@@ -11,10 +11,6 @@ class customerUseCase {
     return customerrepository.customerList(agencyId);
   }
 
-  Future<dynamic> deletedCustomerList(String agencyId) {
-    return customerrepository.deletedCustomerList(agencyId);
-  }
-
 
  Future<dynamic> customerhist(int customer_id) {
     return customerrepository.customerhist(customer_id);

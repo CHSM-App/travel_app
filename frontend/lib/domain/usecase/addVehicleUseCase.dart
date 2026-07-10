@@ -72,6 +72,10 @@ class AddVehicleUseCase {
     return addvehiclerepository.deleteVehicle(vehicleid);
   }
 
+  Future<dynamic> restoreVehicle(int vehicleid) {
+    return addvehiclerepository.restoreVehicle(vehicleid);
+  }
+
   Future<dynamic> deleteService(int serviceId) { 
      return addvehiclerepository.deleteService(serviceId);
   }

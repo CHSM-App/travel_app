@@ -7,7 +7,6 @@ abstract class CustomerRepository {
  
 
   Future<List<Customer>> customerList(String agencyId);
-  Future<List<Customer>> deletedCustomerList(String agencyId);
 
   Future<List<BookingInfo>> customerhist(int customer_id);
  Future<dynamic> addcustomer(Customer customer);

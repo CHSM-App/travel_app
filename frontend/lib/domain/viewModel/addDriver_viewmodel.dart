@@ -203,4 +203,25 @@ Future<Map<String, dynamic>> deleteDriver(int driverId) async {
     return {'success': false, 'message': message};
   }
 }
+
+Future<Map<String, dynamic>> restoreDriver(int driverId) async {
+  state = state.copyWith(isLoading: true, clearError: true);
+  try {
+    final result = await usecase.restoreDriver(driverId);
+    state = state.copyWith(isLoading: false, data: result);
+    final isSuccess = result['success'] == true || result['success'] == 'true';
+    return {
+      'success': isSuccess,
+      'message': result['message'] ?? (isSuccess ? 'Restored successfully' : 'Restore failed'),
+    };
+  } on DioException catch (e) {
+    final message = friendlyErrorMessage(e);
+    state = state.copyWith(isLoading: false, error: message);
+    return {'success': false, 'message': message};
+  } catch (e) {
+    final message = friendlyErrorMessage(e);
+    state = state.copyWith(isLoading: false, error: message);
+    return {'success': false, 'message': message};
+  }
+}
 }

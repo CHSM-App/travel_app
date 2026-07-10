@@ -822,6 +822,74 @@ router.post('/updateService/:service_id', async (req, res) => {
 });
 
 
+// ================= RESTORE VEHICLE =================
+router.post('/restoreVehicle/:vehicleid', async (req, res) => {
+  try {
+
+    const { vehicleid } = req.params;
+
+    if (!vehicleid) {
+      return res.status(400).json({
+        success: false,
+        message: "vehicleid is required"
+      });
+    }
+
+    const result = await db.request()
+      .input("operation", sql.NVarChar, "RESTORE")
+      .input("vehicleid", sql.Int, vehicleid)
+      .execute("sp_Vehicle");
+
+    const response = result.recordset?.[0] || {};
+
+    res.json({
+      success: response.status === 1,
+      message: response.message || "Vehicle restored successfully"
+    });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({
+      success: false,
+      message: err.message
+    });
+  }
+});
+
+// ================= RESTORE DRIVER =================
+router.post('/restoreDriver/:driverId', async (req, res) => {
+  try {
+
+    const { driverId } = req.params;
+
+    if (!driverId) {
+      return res.status(400).json({
+        success: false,
+        message: "driverId is required"
+      });
+    }
+
+    const result = await db.request()
+      .input("operation", sql.NVarChar, "RESTORE")
+      .input("driverId", sql.Int, driverId)
+      .execute("sp_driver");
+
+    const response = result.recordset?.[0] || {};
+
+    res.json({
+      success: response.status === 1,
+      message: response.message || "Driver restored successfully"
+    });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({
+      success: false,
+      message: err.message
+    });
+  }
+});
+
 router.post("/DeleteAdminProfile", async (req, res) => {
   try {
     const { admin_id, agency_id } = req.body;

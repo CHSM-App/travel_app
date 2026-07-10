@@ -27,6 +27,8 @@ abstract class Addvehiclerepository {
   Future<List<LedgerEntry>> getVehicleReport(String agencyId);
     Future<dynamic> deleteVehicle(int vehicleid);
 
+  Future<dynamic> restoreVehicle(int vehicleid);
+
   Future<dynamic> updateService(int serviceId, Services services);
 
   Future<dynamic> deleteService(int serviceId);
