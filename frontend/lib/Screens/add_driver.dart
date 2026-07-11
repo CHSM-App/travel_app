@@ -1038,6 +1038,9 @@ class _AddDriverPageState extends ConsumerState<AddDriverPage>
       SnackBar(
         content: Text(message),
         backgroundColor: isError ? Colors.red.shade600 : _accent,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        margin: const EdgeInsets.fromLTRB(16, 0, 16, 90),
       ),
     );
   }

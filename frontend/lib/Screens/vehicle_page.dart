@@ -55,6 +55,20 @@ class _VehiclePageState extends ConsumerState<VehiclePage>
 
   bool get _isVehicleTab => _tabController.index == 0;
 
+  // Floating snackbar with enough bottom margin to clear the floating pill
+  // nav bar (MainBottomNav) instead of rendering underneath/behind it.
+  void _snack(String msg, Color color) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(msg),
+        backgroundColor: color,
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.fromLTRB(16, 0, 16, 90),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+    );
+  }
+
   @override
   void initState() {
     super.initState();
@@ -449,14 +463,7 @@ class _VehiclePageState extends ConsumerState<VehiclePage>
                                           '';
                                       final vehicleId = v.vehicleId;
                                       if (vehicleId == null || vehicleId <= 0) {
-                                        ScaffoldMessenger.of(
-                                          context,
-                                        ).showSnackBar(
-                                          const SnackBar(
-                                            content: Text('Cannot delete yet'),
-                                            backgroundColor: _C.red,
-                                          ),
-                                        );
+                                        _snack('Cannot delete yet', _C.red);
                                         return;
                                       }
                                       final result = await ref
@@ -473,33 +480,21 @@ class _VehiclePageState extends ConsumerState<VehiclePage>
                                                   .notifier,
                                             )
                                             .vehicleList(agencyId);
-                                        ScaffoldMessenger.of(
-                                          context,
-                                        ).showSnackBar(
-                                          SnackBar(
-                                            content: Text(
-                                              result['message']?.toString() ??
-                                                  '${v.name} deleted successfully',
-                                            ),
-                                            backgroundColor: _C.green,
-                                          ),
+                                        _snack(
+                                          result['message']?.toString() ??
+                                              '${v.name} deleted successfully',
+                                          _C.green,
                                         );
                                       } else {
-                                        ScaffoldMessenger.of(
-                                          context,
-                                        ).showSnackBar(
-                                          SnackBar(
-                                            content: Text(
-                                              result['message']?.toString() ??
-                                                  ref
-                                                      .read(
-                                                        addVehicleViewModelProvider,
-                                                      )
-                                                      .error ??
-                                                  'Cannot delete yet',
-                                            ),
-                                            backgroundColor: _C.red,
-                                          ),
+                                        _snack(
+                                          result['message']?.toString() ??
+                                              ref
+                                                  .read(
+                                                    addVehicleViewModelProvider,
+                                                  )
+                                                  .error ??
+                                              'Cannot delete yet',
+                                          _C.red,
                                         );
                                       }
                                     },
@@ -765,27 +760,17 @@ class _VehiclePageState extends ConsumerState<VehiclePage>
                           ref
                               .read(tripBookingViewModelProvider.notifier)
                               .driverList(agencyId);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                result['message']?.toString() ??
-                                    '${d.name} deleted successfully',
-                              ),
-                              backgroundColor: _C.green,
-                            ),
+                          _snack(
+                            result['message']?.toString() ??
+                                '${d.name} deleted successfully',
+                            _C.green,
                           );
                         } else {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                result['message']?.toString() ??
-                                    ref
-                                        .read(addDriverViewModelProvider)
-                                        .error ??
-                                    'Cannot delete yet',
-                              ),
-                              backgroundColor: _C.red,
-                            ),
+                          _snack(
+                            result['message']?.toString() ??
+                                ref.read(addDriverViewModelProvider).error ??
+                                'Cannot delete yet',
+                            _C.red,
                           );
                         }
                       },

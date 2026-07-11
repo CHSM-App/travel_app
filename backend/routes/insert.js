@@ -464,7 +464,7 @@ router.post('/AddDriver', async (req, res) => {
       .execute("sp_driver");
 
     console.log("SP RESULT:", result.recordset);
-
+    
     const row = result.recordset[0];
 
     if (row && row.success === 0) {

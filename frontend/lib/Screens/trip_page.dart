@@ -103,23 +103,29 @@ AsyncValue<List<BookingInfo>> _mergeCompleted(
 /// trip's lowercase `payment_status` string; "All" matches everything.
 enum PaymentFilter {
   all('All', Icons.account_balance_wallet_rounded, null),
-  paid('Paid', Icons.check_circle_rounded, 'paid'),
-  unpaid('Unpaid', Icons.error_outline_rounded, 'unpaid'),
-  partiallyPaid('Partially Paid', Icons.timelapse_rounded, 'partially paid');
+  paid('Paid', Icons.check_circle_rounded, {'paid'}),
+  unpaid('Unpaid', Icons.error_outline_rounded, {'unpaid'}),
+  partiallyPaid(
+      'Partially Paid', Icons.timelapse_rounded, {'partially paid'}),
 
-  const PaymentFilter(this.label, this.icon, this.statusKey);
+  /// Not offered as a manual chip — only used by the dashboard's "Outstanding
+  /// dues" deep link, which sums both unpaid and partially-paid trips and
+  /// must show that same combined set when tapped.
+  due('Due', Icons.error_outline_rounded, {'unpaid', 'partially paid'});
+
+  const PaymentFilter(this.label, this.icon, this.statusKeys);
 
   final String label;
   final IconData icon;
 
-  /// The lowercase `payment_status` value this filter matches, or null for
+  /// The lowercase `payment_status` values this filter matches, or null for
   /// "All" (matches everything).
-  final String? statusKey;
+  final Set<String>? statusKeys;
 
   bool matches(String? paymentStatus) {
-    final key = statusKey;
-    if (key == null) return true;
-    return (paymentStatus?.toLowerCase() ?? '') == key;
+    final keys = statusKeys;
+    if (keys == null) return true;
+    return keys.contains(paymentStatus?.toLowerCase() ?? '');
   }
 }
 
@@ -235,7 +241,9 @@ class _TripPageState extends ConsumerState<TripPage> {
       return (status: TripFilter.all, payment: PaymentFilter.paid);
     }
     if (key == 'unpaid') {
-      return (status: TripFilter.all, payment: PaymentFilter.unpaid);
+      // Matches the dashboard's "Outstanding dues" total, which counts both
+      // unpaid and partially-paid trips.
+      return (status: TripFilter.all, payment: PaymentFilter.due);
     }
     final status = TripFilter.fromKey(key);
     if (status == null) return null;
@@ -757,6 +765,7 @@ class _TripPageState extends ConsumerState<TripPage> {
                               title: 'PAYMENT STATUS',
                               chips: [
                                 for (final p in PaymentFilter.values)
+                                  if (p != PaymentFilter.due)
                                   choiceChip(
                                     label: p.label,
                                     icon: p.icon,
@@ -934,7 +943,7 @@ class _TripPageState extends ConsumerState<TripPage> {
         color: AppColors.brandPrimary,
         child: ListView(
           physics: kBouncyAlwaysScrollable,
-          padding: const EdgeInsets.fromLTRB(4, 8, 4, 110),
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 110),
           children: const [
             TripCardSkeleton(),
             TripCardSkeleton(),
@@ -958,7 +967,7 @@ class _TripPageState extends ConsumerState<TripPage> {
           items: items,
           // Extra bottom padding so the last card scrolls clear of the
           // floating pill nav (nav height ~64 + margin + safety).
-          padding: const EdgeInsets.fromLTRB(12, 8, 12, 110),
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 110),
           onRefresh: () => _loadListForFilter(filter),
           resetToken:
               '$_searchQuery|${filter.key}|${_selectedPayment.label}|${_selectedRange.label}|${_customRange?.start}|${_customRange?.end}',

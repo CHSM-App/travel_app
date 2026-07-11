@@ -60,6 +60,15 @@ class Vehicles {
       this.insuranceExpiry,
   });
 
+  /// True when either the PUC or insurance has already lapsed, or lapses
+  /// within [withinDays] days (default 7). Used to drive the expiry-reminder
+  /// popup shown on app open.
+  bool isDocumentExpiringSoon({int withinDays = 7}) {
+    final threshold = DateTime.now().add(Duration(days: withinDays));
+    bool dueSoon(DateTime? d) => d != null && d.isBefore(threshold);
+    return dueSoon(pucExpiry) || dueSoon(insuranceExpiry);
+  }
+
   factory Vehicles.fromJson(Map<String, dynamic> json) => Vehicles(
         vehicleId: _readInt(
           json,

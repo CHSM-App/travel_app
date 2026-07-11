@@ -944,6 +944,9 @@ child: state.isLoading
         content: Text(message),
         backgroundColor:
             isError ? Colors.red.shade600 : Colors.green.shade600,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        margin: const EdgeInsets.fromLTRB(16, 0, 16, 90),
       ),
     );
   }

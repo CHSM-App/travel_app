@@ -32,6 +32,20 @@ class TripCard extends ConsumerWidget {
   static const Color _warningSoft = Color(0xFFFEF0E6);
   static const Color _danger = Color(0xFFE53935);
   static const Color _dangerSoft = Color(0xFFFFEBEE);
+    
+  // Floating snackbar with enough bottom margin to clear the floating pill
+  // nav bar (MainBottomNav) instead of rendering underneath/behind it.
+  static void _snack(BuildContext context, String msg, Color color) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(msg),
+        backgroundColor: color,
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.fromLTRB(16, 0, 16, 90),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+    );
+  }
 
   String _formatDate(DateTime? date) {
     if (date == null) return '--';
@@ -204,13 +218,7 @@ class TripCard extends ConsumerWidget {
     final approved = bookinginfo.amountApprove ?? 0;
     final received = bookinginfo.amountReceived ?? 0;
     final pending = approved - received;
-    final receivedController = TextEditingController(
-      text: paymentStatus == "Partially Paid"
-          ? pending.toString()
-          : received == 0
-          ? approved.toString()
-          : received.toString(),
-    );
+    final receivedController = TextEditingController();
 
     const List<String> paymentModes = [
       'Cash',
@@ -227,6 +235,7 @@ class TripCard extends ConsumerWidget {
           ? bookinginfo.paymentMode
           : null,
     );
+    final paymentModeErrorNotifier = ValueNotifier<bool>(false);
 
     // Kick off the payment-history load for this trip; the sheet's Consumer
     // reads it from TripPageViewModel's state.paymentHistory.
@@ -361,31 +370,53 @@ class TripCard extends ConsumerWidget {
           String label,
           IconData icon, {
           bool highlight = false,
+          bool compact = false,
+          bool hasError = false,
+          ValueChanged<String>? onChanged,
         }) {
-          final color = highlight
+          final color = hasError
+              ? _danger
+              : highlight
               ? AppColors.brandPrimary
               : const Color(0xFF6B7280);
+          final fieldReadOnly = !(isEditable || paymentStatus == "Partially Paid");
           return TextField(
             controller: ctrl,
-            readOnly: !(isEditable || paymentStatus == "Partially Paid"),
+            readOnly: fieldReadOnly,
+            onTap: () {
+              if (!fieldReadOnly && (double.tryParse(ctrl.text) ?? -1) == 0) {
+                ctrl.clear();
+              }
+            },
+            onChanged: onChanged,
             keyboardType: TextInputType.number,
             inputFormatters: [FilteringTextInputFormatter.digitsOnly],
             style: TextStyle(
               fontWeight: FontWeight.w600,
-              fontSize: isSmall ? 13 : 14,
+              fontSize: compact ? 12.5 : (isSmall ? 13 : 14),
               color: !isEditable
                   ? Colors.grey.shade600
                   : const Color(0xFF1A1A2E),
             ),
             decoration: InputDecoration(
+              isDense: compact,
               labelText: label,
               labelStyle: TextStyle(
-                fontSize: isSmall ? 11.5 : 12.5,
+                fontSize: compact ? 12.5 : (isSmall ? 11.5 : 12.5),
                 color: color,
               ),
-              prefixIcon: Icon(icon, size: isSmall ? 15 : 17, color: color),
+              prefixIcon: compact
+                  ? null
+                  : Icon(icon, size: isSmall ? 15 : 17, color: color),
+              prefixIconConstraints: compact
+                  ? const BoxConstraints(minWidth: 0, minHeight: 0)
+                  : null,
               prefixText: "₹ ",
-              prefixStyle: TextStyle(fontWeight: FontWeight.w700, color: color),
+              prefixStyle: TextStyle(
+                fontWeight: FontWeight.w700,
+                color: color,
+                fontSize: compact ? 12.5 : null,
+              ),
               filled: true,
               fillColor: !isEditable
                   ? Colors.grey.shade50
@@ -393,13 +424,15 @@ class TripCard extends ConsumerWidget {
                   ? AppColors.brandPrimary.withOpacity(0.04)
                   : Colors.grey.shade50,
               contentPadding: EdgeInsets.symmetric(
-                vertical: fieldVertPad,
-                horizontal: 14,
+                vertical: compact ? 12 : fieldVertPad,
+                horizontal: compact ? 12 : 14,
               ),
               enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(compact ? 10 : 12),
                 borderSide: BorderSide(
-                  color: !isEditable
+                  color: hasError
+                      ? _danger
+                      : !isEditable
                       ? Colors.grey.shade200
                       : highlight
                       ? AppColors.brandPrimary.withOpacity(0.3)
@@ -407,9 +440,9 @@ class TripCard extends ConsumerWidget {
                 ),
               ),
               focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(
-                  color: AppColors.brandPrimary,
+                borderRadius: BorderRadius.circular(compact ? 10 : 12),
+                borderSide: BorderSide(
+                  color: hasError ? _danger : AppColors.brandPrimary,
                   width: 1.5,
                 ),
               ),
@@ -482,143 +515,52 @@ class TripCard extends ConsumerWidget {
         }
 
         Widget paymentFields() {
-          if (isLarge) {
-            return Column(
-              children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: amountField(
-                        tollController,
-                        "Toll Charges",
-                        Icons.toll,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: amountField(
-                        repairController,
-                        "Repair Charges",
-                        Icons.build_outlined,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 10),
-                Row(
-                  children: [
-                    Expanded(
-                      child: amountField(
-                        driverController,
-                        "Driver Charges",
-                        Icons.payments_outlined,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: amountField(
-                        fuelController,
-                        "Fuel Charges",
-                        Icons.local_gas_station_outlined,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 10),
-                Row(
-                  children: [
-                    Expanded(
-                      child: amountField(
-                        receivedController,
-                        "Amount Received",
-                        Icons.account_balance_wallet_outlined,
-                        highlight: true,
-                      ),
-                    ),
-                  ],
-                ),
-                if (paymentStatus != "Paid") ...[
-                const SizedBox(height: 10),
-                ValueListenableBuilder<String?>(
-                  valueListenable: paymentModeNotifier,
-                  builder: (_, selectedMode, __) =>
-                      DropdownButtonFormField<String>(
-                        value: selectedMode,
-                        decoration: InputDecoration(
-                          labelText: "Payment Mode *",
-                          labelStyle: TextStyle(
-                            fontSize: isSmall ? 11.5 : 12.5,
-                            color: AppColors.brandPrimary,
-                          ),
-                          prefixIcon: Icon(
-                            Icons.payment_outlined,
-                            size: isSmall ? 15 : 17,
-                            color: AppColors.brandPrimary,
-                          ),
-                          filled: true,
-                          fillColor: AppColors.brandPrimary.withOpacity(0.04),
-                          contentPadding: EdgeInsets.symmetric(
-                            vertical: fieldVertPad,
-                            horizontal: 14,
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(
-                              color: AppColors.brandPrimary.withOpacity(0.3),
-                            ),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: const BorderSide(
-                              color: AppColors.brandPrimary,
-                              width: 1.5,
-                            ),
-                          ),
-                        ),
-                        items: paymentModes
-                            .map(
-                              (mode) => DropdownMenuItem(
-                                value: mode,
-                                child: Text(
-                                  mode,
-                                  style: TextStyle(
-                                    fontSize: isSmall ? 13 : 14,
-                                    fontWeight: FontWeight.w600,
-                                    color: const Color(0xFF1A1A2E),
-                                  ),
-                                ),
-                              ),
-                            )
-                            .toList(),
-                        onChanged: (val) => paymentModeNotifier.value = val,
-                      ),
-                ),
-                ],
-              ],
-            );
-          }
           return Column(
             children: [
-              amountField(tollController, "Toll Charges", Icons.toll),
-              const SizedBox(height: 10),
-              amountField(
-                repairController,
-                "Repair Charges",
-                Icons.build_outlined,
+              Row(
+                children: [
+                  Expanded(
+                    child: amountField(
+                      tollController,
+                      "Toll Charges",
+                      Icons.toll,
+                      compact: true,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: amountField(
+                      repairController,
+                      "Repair Charges",
+                      Icons.build_outlined,
+                      compact: true,
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 10),
-              amountField(
-                driverController,
-                "Driver Charges",
-                Icons.payments_outlined,
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: amountField(
+                      driverController,
+                      "Driver Charges",
+                      Icons.payments_outlined,
+                      compact: true,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: amountField(
+                      fuelController,
+                      "Fuel Charges",
+                      Icons.local_gas_station_outlined,
+                      compact: true,
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 10),
-              amountField(
-                fuelController,
-                "Fuel Charges",
-                Icons.local_gas_station_outlined,
-              ),
-              const SizedBox(height: 10),
+              const SizedBox(height: 14),
               amountField(
                 receivedController,
                 "Amount Received",
@@ -626,61 +568,97 @@ class TripCard extends ConsumerWidget {
                 highlight: true,
               ),
               if (paymentStatus != "Paid") ...[
-              const SizedBox(height: 10),
-              ValueListenableBuilder<String?>(
-                valueListenable: paymentModeNotifier,
-                builder: (_, selectedMode, __) =>
-                    DropdownButtonFormField<String>(
-                      value: selectedMode,
-                      decoration: InputDecoration(
-                        labelText: "Payment Mode *",
-                        labelStyle: TextStyle(
-                          fontSize: isSmall ? 11.5 : 12.5,
-                          color: AppColors.brandPrimary,
-                        ),
-                        prefixIcon: Icon(
-                          Icons.payment_outlined,
-                          size: isSmall ? 15 : 17,
-                          color: AppColors.brandPrimary,
-                        ),
-                        filled: true,
-                        fillColor: AppColors.brandPrimary.withOpacity(0.04),
-                        contentPadding: EdgeInsets.symmetric(
-                          vertical: fieldVertPad,
-                          horizontal: 14,
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(
-                            color: AppColors.brandPrimary.withOpacity(0.3),
-                          ),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(
-                            color: AppColors.brandPrimary,
-                            width: 1.5,
-                          ),
-                        ),
-                      ),
-                      items: paymentModes
-                          .map(
-                            (mode) => DropdownMenuItem(
-                              value: mode,
-                              child: Text(
-                                mode,
-                                style: TextStyle(
-                                  fontSize: isSmall ? 13 : 14,
-                                  fontWeight: FontWeight.w600,
-                                  color: const Color(0xFF1A1A2E),
+                const SizedBox(height: 10),
+                ValueListenableBuilder<bool>(
+                  valueListenable: paymentModeErrorNotifier,
+                  builder: (_, showError, __) =>
+                      ValueListenableBuilder<String?>(
+                        valueListenable: paymentModeNotifier,
+                        builder: (_, selectedMode, __) => Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            DropdownButtonFormField<String>(
+                              value: selectedMode,
+                              decoration: InputDecoration(
+                                labelText: "Payment Mode *",
+                                labelStyle: TextStyle(
+                                  fontSize: isSmall ? 11.5 : 12.5,
+                                  color: AppColors.brandPrimary,
+                                ),
+                                prefixIcon: Icon(
+                                  Icons.payment_outlined,
+                                  size: isSmall ? 15 : 17,
+                                  color: AppColors.brandPrimary,
+                                ),
+                                filled: true,
+                                fillColor: AppColors.brandPrimary.withOpacity(
+                                  0.04,
+                                ),
+                                contentPadding: EdgeInsets.symmetric(
+                                  vertical: fieldVertPad,
+                                  horizontal: 14,
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide(
+                                    color: showError
+                                        ? _danger
+                                        : AppColors.brandPrimary.withOpacity(
+                                            0.3,
+                                          ),
+                                  ),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide(
+                                    color: showError
+                                        ? _danger
+                                        : AppColors.brandPrimary,
+                                    width: 1.5,
+                                  ),
                                 ),
                               ),
+                              items: paymentModes
+                                  .map(
+                                    (mode) => DropdownMenuItem(
+                                      value: mode,
+                                      child: Text(
+                                        mode,
+                                        style: TextStyle(
+                                          fontSize: isSmall ? 13 : 14,
+                                          fontWeight: FontWeight.w600,
+                                          color: const Color(0xFF1A1A2E),
+                                        ),
+                                      ),
+                                    ),
+                                  )
+                                  .toList(),
+                              onChanged: (val) {
+                                paymentModeNotifier.value = val;
+                                if (val != null) {
+                                  paymentModeErrorNotifier.value = false;
+                                }
+                              },
                             ),
-                          )
-                          .toList(),
-                      onChanged: (val) => paymentModeNotifier.value = val,
-                    ),
-              ),
+                            if (showError)
+                              Padding(
+                                padding: const EdgeInsets.only(
+                                  top: 6,
+                                  left: 4,
+                                ),
+                                child: Text(
+                                  "Please select a payment mode",
+                                  style: TextStyle(
+                                    fontSize: isSmall ? 11 : 12,
+                                    color: _danger,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                ),
               ],
             ],
           );
@@ -944,14 +922,14 @@ class TripCard extends ConsumerWidget {
                                     ),
                                   ),
                                   Padding(
-                                    padding: EdgeInsets.all(isSmall ? 12 : 16),
+                                    padding: EdgeInsets.all(isSmall ? 10 : 12),
                                     child: Column(
                                       children: [
                                         // Approved amount highlight — always shown
                                         Container(
                                           padding: EdgeInsets.symmetric(
-                                            horizontal: isSmall ? 12 : 16,
-                                            vertical: isSmall ? 12 : 14,
+                                            horizontal: isSmall ? 10 : 14,
+                                            vertical: isSmall ? 9 : 11,
                                           ),
                                           decoration: BoxDecoration(
                                             color: const Color(0xFFD8F3DC),
@@ -964,9 +942,9 @@ class TripCard extends ConsumerWidget {
                                               Icon(
                                                 Icons.verified_rounded,
                                                 color: const Color(0xFF2D6A4F),
-                                                size: isSmall ? 17 : 20,
+                                                size: isSmall ? 15 : 18,
                                               ),
-                                              SizedBox(width: isSmall ? 8 : 10),
+                                              SizedBox(width: isSmall ? 7 : 9),
                                               Expanded(
                                                 child: Text(
                                                   "Approved Amount",
@@ -975,7 +953,9 @@ class TripCard extends ConsumerWidget {
                                                       0xFF2D6A4F,
                                                     ),
                                                     fontWeight: FontWeight.w600,
-                                                    fontSize: isSmall ? 12 : 13,
+                                                    fontSize: isSmall
+                                                        ? 11.5
+                                                        : 12.5,
                                                   ),
                                                 ),
                                               ),
@@ -986,7 +966,7 @@ class TripCard extends ConsumerWidget {
                                                     0xFF1B4332,
                                                   ),
                                                   fontWeight: FontWeight.w800,
-                                                  fontSize: isSmall ? 15 : 18,
+                                                  fontSize: isSmall ? 14 : 16.5,
                                                 ),
                                               ),
                                             ],
@@ -994,48 +974,62 @@ class TripCard extends ConsumerWidget {
                                         ),
                                         if (paymentStatus ==
                                             "Partially Paid") ...[
-                                          const SizedBox(height: 12),
+                                          SizedBox(height: isSmall ? 8 : 10),
 
                                           Row(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.spaceBetween,
                                             children: [
-                                              Column(
-                                                crossAxisAlignment:
-                                                    CrossAxisAlignment.start,
-                                                children: [
-                                                  const Text(
-                                                    "Paid Amount",
-                                                    style: TextStyle(
-                                                      fontWeight:
-                                                          FontWeight.w600,
+                                              Expanded(
+                                                child: Row(
+                                                  mainAxisSize:
+                                                      MainAxisSize.min,
+                                                  children: [
+                                                    Text(
+                                                      "Paid",
+                                                      style: TextStyle(
+                                                        fontSize: isSmall
+                                                            ? 11
+                                                            : 12,
+                                                        fontWeight:
+                                                            FontWeight.w600,
+                                                        color: _textSec,
+                                                      ),
                                                     ),
-                                                  ),
-                                                  Text(
-                                                    "₹$received",
-                                                    style: const TextStyle(
-                                                      fontWeight:
-                                                          FontWeight.w700,
-                                                      color: Colors.green,
+                                                    const SizedBox(width: 6),
+                                                    Text(
+                                                      "₹$received",
+                                                      style: TextStyle(
+                                                        fontSize: isSmall
+                                                            ? 12.5
+                                                            : 13.5,
+                                                        fontWeight:
+                                                            FontWeight.w700,
+                                                        color: Colors.green,
+                                                      ),
                                                     ),
-                                                  ),
-                                                ],
+                                                  ],
+                                                ),
                                               ),
-
-                                              Column(
-                                                crossAxisAlignment:
-                                                    CrossAxisAlignment.end,
+                                              Row(
+                                                mainAxisSize: MainAxisSize.min,
                                                 children: [
-                                                  const Text(
-                                                    "Pending Amount",
+                                                  Text(
+                                                    "Pending",
                                                     style: TextStyle(
+                                                      fontSize: isSmall
+                                                          ? 11
+                                                          : 12,
                                                       fontWeight:
                                                           FontWeight.w600,
+                                                      color: _textSec,
                                                     ),
                                                   ),
+                                                  const SizedBox(width: 6),
                                                   Text(
                                                     "₹$pending",
-                                                    style: const TextStyle(
+                                                    style: TextStyle(
+                                                      fontSize: isSmall
+                                                          ? 12.5
+                                                          : 13.5,
                                                       fontWeight:
                                                           FontWeight.w700,
                                                       color: Colors.red,
@@ -1046,11 +1040,11 @@ class TripCard extends ConsumerWidget {
                                             ],
                                           ),
                                         ],
-                                        const SizedBox(height: 12),
+                                        SizedBox(height: isSmall ? 10 : 12),
                                         // ── Input fields: hidden for active/upcoming unpaid ──
                                         if (!isActiveOrUpcoming &&
                                             !isCancelled) ...[
-                                          SizedBox(height: isSmall ? 10 : 12),
+                                          SizedBox(height: isSmall ? 8 : 10),
                                           paymentFields(),
                                           // ── Submit Payment (below payment mode) ──
                                           const SizedBox(height: 16),
@@ -1058,19 +1052,24 @@ class TripCard extends ConsumerWidget {
                                               paymentStatus == "Partially Paid")
                                             GestureDetector(
                                               onTap: () async {
-                                                if (paymentModeNotifier.value ==
-                                                    null) {
-                                                  ScaffoldMessenger.of(
-                                                    context,
-                                                  ).showSnackBar(
-                                                    const SnackBar(
-                                                      content: Text(
-                                                        "Please select a payment mode",
-                                                      ),
-                                                      backgroundColor:
-                                                          Colors.red,
-                                                    ),
-                                                  );
+                                                final receivedEmpty =
+                                                    receivedController.text
+                                                        .trim()
+                                                        .isEmpty;
+                                                // No amount received => no payment is being
+                                                // recorded this time, so payment mode isn't
+                                                // required — user is only updating charges.
+                                                final modeMissing =
+                                                    !receivedEmpty &&
+                                                    paymentModeNotifier
+                                                            .value ==
+                                                        null;
+
+                                                paymentModeErrorNotifier
+                                                        .value =
+                                                    modeMissing;
+
+                                                if (modeMissing) {
                                                   return;
                                                 }
 
@@ -1113,16 +1112,10 @@ class TripCard extends ConsumerWidget {
                                                       updated,
                                                     );
                                                 if (err != null) {
-                                                  ScaffoldMessenger.of(
+                                                  _snack(
                                                     context,
-                                                  ).showSnackBar(
-                                                    SnackBar(
-                                                      content: Text(
-                                                        "Payment not saved: $err",
-                                                      ),
-                                                      backgroundColor:
-                                                          Colors.red,
-                                                    ),
+                                                    "Payment not saved: $err",
+                                                    Colors.red,
                                                   );
                                                   return;
                                                 }
@@ -1141,16 +1134,10 @@ class TripCard extends ConsumerWidget {
                                                   await onTripUpdated!();
                                                 }
                                                 Navigator.pop(ctx);
-                                                ScaffoldMessenger.of(
+                                                _snack(
                                                   context,
-                                                ).showSnackBar(
-                                                  const SnackBar(
-                                                    content: Text(
-                                                      "Payment details updated successfully!",
-                                                    ),
-                                                    backgroundColor:
-                                                        Colors.green,
-                                                  ),
+                                                  "Payment details updated successfully!",
+                                                  Colors.green,
                                                 );
                                               },
                                               child: Container(
@@ -1334,7 +1321,7 @@ class TripCard extends ConsumerWidget {
                                               14,
                                               8,
                                               14,
-                                              isSmall ? 10 : 12,
+                                              isSmall ? 8 : 10,
                                             ),
                                             child: body,
                                           ),
@@ -1444,74 +1431,77 @@ class TripCard extends ConsumerWidget {
                                             ) ...[
                                               if (i > 0)
                                                 Divider(
-                                                  height: 14,
+                                                  height: 8,
                                                   color: Colors.grey.shade100,
                                                 ),
                                               Row(
                                                 children: [
                                                   Container(
-                                                    width: isSmall ? 34 : 38,
-                                                    height: isSmall ? 34 : 38,
+                                                    width: isSmall ? 26 : 28,
+                                                    height: isSmall ? 26 : 28,
                                                     decoration: BoxDecoration(
                                                       color: _successSoft,
                                                       borderRadius:
                                                           BorderRadius.circular(
-                                                            10,
+                                                            8,
                                                           ),
                                                     ),
                                                     child: Icon(
                                                       Icons
                                                           .account_balance_wallet_rounded,
-                                                      size: isSmall ? 16 : 18,
+                                                      size: isSmall ? 13 : 14,
                                                       color: _success,
                                                     ),
                                                   ),
-                                                  const SizedBox(width: 12),
+                                                  const SizedBox(width: 9),
                                                   Expanded(
-                                                    child: Column(
-                                                      crossAxisAlignment:
-                                                          CrossAxisAlignment
-                                                              .start,
-                                                      children: [
-                                                        Text(
-                                                          payments[i]
-                                                                      .PaymentMode
-                                                                      ?.isNotEmpty ==
-                                                                  true
-                                                              ? payments[i]
-                                                                    .PaymentMode!
-                                                              : "Payment",
-                                                          style: TextStyle(
-                                                            fontSize: isSmall
-                                                                ? 12.5
-                                                                : 13.5,
-                                                            fontWeight:
-                                                                FontWeight.w700,
-                                                            color: _textPrimary,
+                                                    child: Text.rich(
+                                                      TextSpan(
+                                                        children: [
+                                                          TextSpan(
+                                                            text:
+                                                                payments[i]
+                                                                            .PaymentMode
+                                                                            ?.isNotEmpty ==
+                                                                        true
+                                                                    ? payments[i]
+                                                                          .PaymentMode!
+                                                                    : "Payment",
+                                                            style: TextStyle(
+                                                              fontSize: isSmall
+                                                                  ? 12
+                                                                  : 13,
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .w700,
+                                                              color:
+                                                                  _textPrimary,
+                                                            ),
                                                           ),
-                                                        ),
-                                                        const SizedBox(
-                                                          height: 2,
-                                                        ),
-                                                        Text(
-                                                          _prettyDateTime(
-                                                            payments[i]
-                                                                .PaymentDate,
+                                                          TextSpan(
+                                                            text:
+                                                                "  •  ${_prettyDateTime(payments[i].PaymentDate)}",
+                                                            style: TextStyle(
+                                                              fontSize: 10.5,
+                                                              color: _textSec,
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .w500,
+                                                            ),
                                                           ),
-                                                          style: TextStyle(
-                                                            fontSize: 11,
-                                                            color: _textSec,
-                                                          ),
-                                                        ),
-                                                      ],
+                                                        ],
+                                                      ),
+                                                      overflow: TextOverflow
+                                                          .ellipsis,
                                                     ),
                                                   ),
+                                                  const SizedBox(width: 6),
                                                   Text(
                                                     "₹${(payments[i].Amount ?? 0).toStringAsFixed(0)}",
                                                     style: TextStyle(
                                                       fontSize: isSmall
-                                                          ? 14
-                                                          : 15.5,
+                                                          ? 13
+                                                          : 14,
                                                       fontWeight:
                                                           FontWeight.w800,
                                                       color: _success,
@@ -1521,7 +1511,7 @@ class TripCard extends ConsumerWidget {
                                               ),
                                             ],
                                             Divider(
-                                              height: 18,
+                                              height: 14,
                                               color: Colors.grey.shade200,
                                             ),
                                             Row(
@@ -1533,8 +1523,8 @@ class TripCard extends ConsumerWidget {
                                                   "Total Paid",
                                                   style: TextStyle(
                                                     fontSize: isSmall
-                                                        ? 12.5
-                                                        : 13.5,
+                                                        ? 12
+                                                        : 13,
                                                     fontWeight: FontWeight.w700,
                                                     color: _textPrimary,
                                                   ),
@@ -1543,8 +1533,8 @@ class TripCard extends ConsumerWidget {
                                                   "₹${total.toStringAsFixed(0)}",
                                                   style: TextStyle(
                                                     fontSize: isSmall
-                                                        ? 15
-                                                        : 16.5,
+                                                        ? 14
+                                                        : 15.5,
                                                     fontWeight: FontWeight.w800,
                                                     color: _accent,
                                                   ),
@@ -1653,12 +1643,10 @@ class TripCard extends ConsumerWidget {
 
                                     final trip_id = bookinginfo.tripId;
                                     if (trip_id == null) {
-                                      ScaffoldMessenger.of(
+                                      _snack(
                                         context,
-                                      ).showSnackBar(
-                                        const SnackBar(
-                                          content: Text("Invalid Trip ID"),
-                                        ),
+                                        "Invalid Trip ID",
+                                        Colors.red,
                                       );
                                       return;
                                     }
@@ -1669,15 +1657,10 @@ class TripCard extends ConsumerWidget {
                                         )
                                         .cancelTrip(trip_id);
                                     if (cancelErr != null) {
-                                      ScaffoldMessenger.of(
+                                      _snack(
                                         context,
-                                      ).showSnackBar(
-                                        SnackBar(
-                                          content: Text(
-                                            "Trip not cancelled: $cancelErr",
-                                          ),
-                                          backgroundColor: Colors.red,
-                                        ),
+                                        "Trip not cancelled: $cancelErr",
+                                        Colors.red,
                                       );
                                       return;
                                     }
@@ -1688,13 +1671,10 @@ class TripCard extends ConsumerWidget {
                                       await onTripUpdated!();
                                     }
                                     Navigator.pop(ctx);
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                        content: Text(
-                                          "Trip cancelled successfully!",
-                                        ),
-                                        backgroundColor: Colors.green,
-                                      ),
+                                    _snack(
+                                      context,
+                                      "Trip cancelled successfully!",
+                                      Colors.green,
                                     );
                                   }
                                 },
@@ -1885,10 +1865,9 @@ class TripCard extends ConsumerWidget {
     final fuelCtrl = TextEditingController(
       text: bookinginfo.fuelCharges?.toString() ?? "",
     );
-    final receivedCtrl = TextEditingController(
-      text: approved == 0 ? "" : approved.toStringAsFixed(0),
-    );
+    final receivedCtrl = TextEditingController();
     String? endTripPaymentMode;
+    bool endTripPaymentModeError = false;
     bool submitting = false;
 
     showModalBottomSheet(
@@ -2059,22 +2038,15 @@ class TripCard extends ConsumerWidget {
             Future<void> submit() async {
               final tripId = bookinginfo.tripId;
               if (tripId == null) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text("Invalid Trip ID")),
-                );
+                _snack(context, "Invalid Trip ID", Colors.red);
+                return;
+              }
+              final receivedAmount = double.tryParse(receivedCtrl.text) ?? 0;
+              if (receivedAmount > 0 && endTripPaymentMode == null) {
+                setSheet(() => endTripPaymentModeError = true);
                 return;
               }
               setSheet(() => submitting = true);
-              if (endTripPaymentMode == null) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text("Please select a payment mode"),
-                    backgroundColor: Colors.red,
-                  ),
-                );
-                setSheet(() => submitting = false);
-                return;
-              }
               final updated = BookingInfo(
                 tripId: tripId,
                 endDateTime: endSel,
@@ -2082,7 +2054,7 @@ class TripCard extends ConsumerWidget {
                 repairingCharges: double.tryParse(repairCtrl.text) ?? 0,
                 driverCharges: double.tryParse(driverCtrl.text) ?? 0,
                 fuelCharges: double.tryParse(fuelCtrl.text) ?? 0,
-                amountReceived: double.tryParse(receivedCtrl.text) ?? 0,
+                amountReceived: receivedAmount,
                 paymentMode: endTripPaymentMode,
               );
               final err = await ref
@@ -2090,12 +2062,7 @@ class TripCard extends ConsumerWidget {
                   .endTrip(updated);
               if (err != null) {
                 setSheet(() => submitting = false);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text("Trip not ended: $err"),
-                    backgroundColor: Colors.red,
-                  ),
-                );
+                _snack(context, "Trip not ended: $err", Colors.red);
                 return;
               }
               await ref
@@ -2103,12 +2070,7 @@ class TripCard extends ConsumerWidget {
                   .paymentHistory(tripId);
               if (onTripUpdated != null) await onTripUpdated!();
               if (ctx.mounted) Navigator.pop(ctx);
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text("Trip ended — marked as $payLabel"),
-                  backgroundColor: _success,
-                ),
-              );
+              _snack(context, "Trip ended — marked as $payLabel", _success);
             }
 
             return Padding(
@@ -2373,16 +2335,20 @@ class TripCard extends ConsumerWidget {
                                             12,
                                           ),
                                           borderSide: BorderSide(
-                                            color: AppColors.brandPrimary
-                                                .withOpacity(0.35),
+                                            color: endTripPaymentModeError
+                                                ? _danger
+                                                : AppColors.brandPrimary
+                                                      .withOpacity(0.35),
                                           ),
                                         ),
                                         focusedBorder: OutlineInputBorder(
                                           borderRadius: BorderRadius.circular(
                                             12,
                                           ),
-                                          borderSide: const BorderSide(
-                                            color: AppColors.brandPrimary,
+                                          borderSide: BorderSide(
+                                            color: endTripPaymentModeError
+                                                ? _danger
+                                                : AppColors.brandPrimary,
                                             width: 1.5,
                                           ),
                                         ),
@@ -2413,10 +2379,28 @@ class TripCard extends ConsumerWidget {
                                                 ),
                                               )
                                               .toList(),
-                                      onChanged: (val) => setSheet(
-                                        () => endTripPaymentMode = val,
-                                      ),
+                                      onChanged: (val) => setSheet(() {
+                                        endTripPaymentMode = val;
+                                        if (val != null) {
+                                          endTripPaymentModeError = false;
+                                        }
+                                      }),
                                     ),
+                                    if (endTripPaymentModeError)
+                                      Padding(
+                                        padding: const EdgeInsets.only(
+                                          top: 6,
+                                          left: 4,
+                                        ),
+                                        child: Text(
+                                          "Please select a payment mode",
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            color: _danger,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                      ),
                                     const SizedBox(height: 14),
                                     summaryRow(
                                       "Approved fare",
@@ -2589,7 +2573,7 @@ class TripCard extends ConsumerWidget {
         _showTripDetail(context, ref);
       },
       child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        margin: const EdgeInsets.symmetric(vertical: 4),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         decoration: BoxDecoration(
           color: Colors.white,
@@ -2945,8 +2929,10 @@ Future<void> _openTripReminderSheet(
   final tripId = booking.tripId;
   final start = booking.startDateTime;
   if (tripId == null || start == null) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("This trip has no start time to remind about")),
+    TripCard._snack(
+      context,
+      "This trip has no start time to remind about",
+      Colors.red,
     );
     return;
   }
@@ -2970,15 +2956,12 @@ Future<void> _openTripReminderSheet(
     if (!context.mounted) return;
     Navigator.pop(context);
     onChanged();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          ok
-              ? "Reminder set for ${_fmtReminder(fireAt)}"
-              : "That time has already passed — pick a later time",
-        ),
-        backgroundColor: ok ? const Color(0xFF2DB976) : danger,
-      ),
+    TripCard._snack(
+      context,
+      ok
+          ? "Reminder set for ${_fmtReminder(fireAt)}"
+          : "That time has already passed — pick a later time",
+      ok ? const Color(0xFF2DB976) : danger,
     );
   }
 
@@ -3164,9 +3147,7 @@ Future<void> _openTripReminderSheet(
                     if (!ctx.mounted) return;
                     Navigator.pop(ctx);
                     onChanged();
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text("Reminder removed")),
-                    );
+                    TripCard._snack(context, "Reminder removed", accent);
                   },
                 ),
               const SizedBox(height: 8),

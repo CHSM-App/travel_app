@@ -1443,6 +1443,5 @@ class _CustomerRevenueCard extends StatelessWidget {
 String _formatCompact(double v) {
   if (v.abs() >= 1e7) return '${(v / 1e7).toStringAsFixed(2)}Cr';
   if (v.abs() >= 1e5) return '${(v / 1e5).toStringAsFixed(2)}L';
-  if (v.abs() >= 1e3) return '${(v / 1e3).toStringAsFixed(2)}K';
-  return v.toStringAsFixed(0);
+  return NumberFormat.decimalPattern('en_IN').format(v.round());
 }

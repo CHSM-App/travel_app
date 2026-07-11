@@ -48,6 +48,8 @@ class _CustomerListPageState extends ConsumerState<CustomerListPage>
   final FocusNode _searchFocus = FocusNode();
   String _query = '';
   bool _searchFocused = false;
+  // 'all' | 'due' | 'paid'
+  String _statusFilter = 'all';
 
   @override
   void initState() {
@@ -111,8 +113,15 @@ class _CustomerListPageState extends ConsumerState<CustomerListPage>
   }
 
   List<Customer> _applyFilter(List<Customer> list) {
-    if (_query.isEmpty) return list;
-    return list.where((c) {
+    var result = list;
+    if (_statusFilter != 'all') {
+      result = result.where((c) {
+        final hasDues = (c.pendingAmount ?? 0) > 0;
+        return _statusFilter == 'due' ? hasDues : !hasDues;
+      }).toList();
+    }
+    if (_query.isEmpty) return result;
+    return result.where((c) {
       final name = c.name?.toLowerCase() ?? '';
       final phone = c.phone?.toLowerCase() ?? '';
       final address = c.address?.toLowerCase() ?? '';
@@ -120,6 +129,106 @@ class _CustomerListPageState extends ConsumerState<CustomerListPage>
           phone.contains(_query) ||
           address.contains(_query);
     }).toList();
+  }
+
+  // Funnel icon button next to the search bar. Mirrors the Trips page's
+  // filter entry point (brand colour + count badge when active), but opens a
+  // dropdown menu instead of a bottom sheet since there's only one filter axis.
+  Widget _filterButton() {
+    final hasActive = _statusFilter != 'all';
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        PopupMenuButton<String>(
+          tooltip: 'Filter',
+          padding: EdgeInsets.zero,
+          offset: const Offset(0, 50),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          elevation: 12,
+          shadowColor: Colors.black.withValues(alpha: 0.15),
+          color: _C.surface,
+          onSelected: (val) => setState(() => _statusFilter = val),
+          itemBuilder: (ctx) => [
+            _filterMenuItem('all', 'All', Icons.people_alt_rounded, _C.indigo),
+            _filterMenuItem('due', 'Due', Icons.error_outline_rounded, _C.error),
+            _filterMenuItem('paid', 'Paid', Icons.check_circle_outline_rounded, _C.success),
+          ],
+          child: Material(
+            color: hasActive ? _C.indigo : _C.slate100,
+            borderRadius: BorderRadius.circular(12),
+            child: Container(
+              width: 44,
+              height: 44,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: hasActive ? _C.indigo : _C.slate300,
+                ),
+              ),
+              child: Icon(
+                Icons.filter_alt_rounded,
+                size: 22,
+                color: hasActive ? Colors.white : _C.slate700,
+              ),
+            ),
+          ),
+        ),
+        if (hasActive)
+          Positioned(
+            right: -4,
+            top: -4,
+            child: IgnorePointer(
+              child: Container(
+                padding: const EdgeInsets.all(4),
+                constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
+                decoration: BoxDecoration(
+                  color: Colors.red.shade500,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.white, width: 1.5),
+                ),
+                alignment: Alignment.center,
+                child: const Text(
+                  '1',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w800,
+                    height: 1,
+                  ),
+                ),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
+  PopupMenuItem<String> _filterMenuItem(
+      String value, String label, IconData icon, Color color) {
+    final selected = _statusFilter == value;
+    return PopupMenuItem(
+      value: value,
+      height: 46,
+      child: Row(
+        children: [
+          Icon(icon, size: 17, color: color),
+          const SizedBox(width: 12),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 13.5,
+              fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
+              color: selected ? _C.slate900 : _C.slate700,
+            ),
+          ),
+          if (selected) ...[
+            const Spacer(),
+            Icon(Icons.check_rounded, size: 16, color: color),
+          ],
+        ],
+      ),
+    );
   }
 
   // ── Customer Card ────────────────────────────────────────────────────────────
@@ -482,7 +591,7 @@ class _CustomerListPageState extends ConsumerState<CustomerListPage>
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12),
                               ),
-                              margin: const EdgeInsets.all(16),
+                              margin: const EdgeInsets.fromLTRB(16, 0, 16, 90),
                             ),
                           );
                         } else {
@@ -498,7 +607,7 @@ class _CustomerListPageState extends ConsumerState<CustomerListPage>
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12),
                               ),
-                              margin: const EdgeInsets.all(16),
+                              margin: const EdgeInsets.fromLTRB(16, 0, 16, 90),
                             ),
                           );
                         }
@@ -549,7 +658,7 @@ class _CustomerListPageState extends ConsumerState<CustomerListPage>
           Text(
             !hasData
                 ? 'Tap the button below to add\nyour first customer'
-                : 'Try searching by name,\nphone or address',
+                : 'Try a different search or\nchange the status filter',
             textAlign: TextAlign.center,
             style: const TextStyle(fontSize: 14, color: _C.slate500, height: 1.6),
           ),
@@ -661,10 +770,12 @@ class _CustomerListPageState extends ConsumerState<CustomerListPage>
                           ),
                         ),
                       ),
+                      const SizedBox(width: 8),
+                      _filterButton(),
                     ],
                   ),
 
-                  
+                  const SizedBox(height: 4),
                 ],
               ),
             ),
@@ -715,7 +826,7 @@ class _CustomerListPageState extends ConsumerState<CustomerListPage>
                     items: filtered,
                     padding: const EdgeInsets.fromLTRB(16, 14, 16, 100),
                     onRefresh: () async => _refresh(),
-                    resetToken: _query,
+                    resetToken: '$_query|$_statusFilter',
                     itemLabel: 'customers',
                     itemBuilder: (_, item, i) => _card(item, i),
                   );

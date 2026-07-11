@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:vego/Screens/driver_history.dart';
+import 'package:vego/Screens/vehicle_details.dart';
 import 'package:vego/core/theme/app_colors.dart';
 import 'package:vego/core/theme/app_scroll_behavior.dart';
 import 'package:vego/core/widgets/error_view.dart';
@@ -28,7 +30,6 @@ class _DeletedRecordsPageState extends ConsumerState<DeletedRecordsPage>
   static const _text2       = Color(0xFF7B82A0);
   static const _divider     = Color(0xFFE8EBF4);
   static const _red         = Color(0xFFE53935);
-  static const _redSoft     = Color(0xFFFFEBEE);
   static const _green       = Color(0xFF2DB976);
   static const _greenSoft   = Color(0xFFE8F8F1);
   static const _diesel      = Color(0xFF1D4ED8);
@@ -167,7 +168,18 @@ class _DeletedRecordsPageState extends ConsumerState<DeletedRecordsPage>
           (success ? 'Restored successfully' : 'Restore failed'),
       success: success,
     );
-    if (success) await _loadDeletedItems();
+    if (success) {
+      await _loadDeletedItems();
+      // Also refresh the active vehicle/driver lists so VehiclePage reflects
+      // the restored item immediately, without needing a manual refresh.
+      final agencyId = ref.read(loginViewModelProvider).agencyId ?? '';
+      if (agencyId.isNotEmpty) {
+        await Future.wait([
+          ref.read(tripBookingViewModelProvider.notifier).vehicleList(agencyId),
+          ref.read(tripBookingViewModelProvider.notifier).driverList(agencyId),
+        ]);
+      }
+    }
   }
 
   Future<void> _restoreVehicle(Vehicles v) async {
@@ -210,6 +222,65 @@ class _DeletedRecordsPageState extends ConsumerState<DeletedRecordsPage>
     return parts.length >= 2
         ? '${parts.first[0]}${parts[1][0]}'.toUpperCase()
         : parts.first[0].toUpperCase();
+  }
+
+  // ─── Three-dot menu ───────────────────────────────────────────────────────
+  Widget _menuBtn({
+    required List<PopupMenuEntry<String>> items,
+    required void Function(String) onSelected,
+  }) {
+    return PopupMenuButton<String>(
+      padding: EdgeInsets.zero,
+      icon: Container(
+        width: 32,
+        height: 32,
+        decoration: BoxDecoration(
+          color: _surfaceAlt,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: _divider),
+        ),
+        child: const Icon(Icons.more_vert_rounded, color: _text2, size: 16),
+      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+      elevation: 8,
+      color: _surface,
+      onSelected: onSelected,
+      itemBuilder: (_) => items,
+    );
+  }
+
+  PopupMenuItem<String> _menuItem(
+    String val,
+    IconData icon,
+    String label,
+    Color color,
+    Color bg,
+  ) {
+    return PopupMenuItem(
+      value: val,
+      height: 44,
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              color: bg,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(icon, size: 14, color: color),
+          ),
+          const SizedBox(width: 10),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: color,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   // ─── Widgets ──────────────────────────────────────────────────────────────
@@ -391,7 +462,7 @@ class _DeletedRecordsPageState extends ConsumerState<DeletedRecordsPage>
           const Padding(
             padding: EdgeInsets.fromLTRB(16, 0, 16, 14),
             child: Text(
-              'View items removed from your active list. Tap a card to restore it.',
+              'View items removed from your active list. Tap three dots to restore it.',
               style: TextStyle(fontSize: 12, color: _text2, height: 1.4),
             ),
           ),
@@ -399,64 +470,7 @@ class _DeletedRecordsPageState extends ConsumerState<DeletedRecordsPage>
         ],
       ),
     );
-  }
-
-  /// Stats banner shown at top of each list
-  Widget _statsBanner(int count, {required bool vehicle}) {
-    return Container(
-      margin: const EdgeInsets.fromLTRB(16, 12, 16, 6),
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
-      decoration: BoxDecoration(
-        color: _surface,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: _divider),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 34,
-            height: 34,
-            decoration: BoxDecoration(
-              color: _redSoft,
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Icon(
-              vehicle
-                  ? Icons.no_transfer_rounded
-                  : Icons.person_remove_alt_1_rounded,
-              color: _red,
-              size: 16,
-            ),
-          ),
-          const SizedBox(width: 10),
-          Text(
-            '$count deleted ${vehicle ? 'vehicle${count != 1 ? 's' : ''}' : 'driver${count != 1 ? 's' : ''}'}',
-            style: const TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w700,
-              color: _text1,
-            ),
-          ),
-          const Spacer(),
-          Container(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-            decoration: BoxDecoration(
-              color: _redSoft,
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: const Text(
-              'Archived',
-              style: TextStyle(
-                fontSize: 10,
-                fontWeight: FontWeight.w700,
-                color: _red,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
+  
   }
 
   /// Vehicle card
@@ -491,7 +505,10 @@ class _DeletedRecordsPageState extends ConsumerState<DeletedRecordsPage>
           borderRadius: BorderRadius.circular(_cardRadius),
           child: InkWell(
             borderRadius: BorderRadius.circular(_cardRadius),
-            onTap: () => _restoreVehicle(v),
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => VehicleManagePage(vehicle: v)),
+            ),
             child: Padding(
               padding:
                   const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
@@ -566,7 +583,20 @@ class _DeletedRecordsPageState extends ConsumerState<DeletedRecordsPage>
                         ),
                       ),
                       const SizedBox(width: 8),
-                      _deletedBadge(),
+                      _menuBtn(
+                        items: [
+                          _menuItem(
+                            'activate',
+                            Icons.restore_rounded,
+                            'Activate',
+                            _green,
+                            _greenSoft,
+                          ),
+                        ],
+                        onSelected: (val) {
+                          if (val == 'activate') _restoreVehicle(v);
+                        },
+                      ),
                     ],
                   ),
                   const SizedBox(height: 10),
@@ -639,7 +669,10 @@ class _DeletedRecordsPageState extends ConsumerState<DeletedRecordsPage>
           borderRadius: BorderRadius.circular(14),
           child: InkWell(
             borderRadius: BorderRadius.circular(14),
-            onTap: () => _restoreDriver(d),
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => DriverHistoryPage(driver: d)),
+            ),
             child: Padding(
               padding:
                   const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -712,7 +745,20 @@ class _DeletedRecordsPageState extends ConsumerState<DeletedRecordsPage>
                     ),
                   ),
                   const SizedBox(width: 8),
-                  _deletedBadge(),
+                  _menuBtn(
+                    items: [
+                      _menuItem(
+                        'activate',
+                        Icons.restore_rounded,
+                        'Activate',
+                        _green,
+                        _greenSoft,
+                      ),
+                    ],
+                    onSelected: (val) {
+                      if (val == 'activate') _restoreDriver(d);
+                    },
+                  ),
                 ],
               ),
             ),
@@ -792,24 +838,6 @@ class _DeletedRecordsPageState extends ConsumerState<DeletedRecordsPage>
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _deletedBadge() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: _redSoft,
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: const Text(
-        'Deleted',
-        style: TextStyle(
-          fontSize: 10,
-          fontWeight: FontWeight.w700,
-          color: _red,
-        ),
       ),
     );
   }
@@ -950,7 +978,6 @@ class _DeletedRecordsPageState extends ConsumerState<DeletedRecordsPage>
 
     return Column(
       children: [
-        _statsBanner(filtered.length, vehicle: true),
         Expanded(
           child: PaginatedListView<Vehicles>(
             items: filtered,
@@ -996,8 +1023,7 @@ class _DeletedRecordsPageState extends ConsumerState<DeletedRecordsPage>
     }
 
     return Column(
-      children: [
-        _statsBanner(filtered.length, vehicle: false),
+      children: [  
         Expanded(
           child: PaginatedListView<Drivers>(
             items: filtered,

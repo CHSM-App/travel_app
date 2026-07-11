@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 import 'package:vego/Screens/add_customer.dart';
 import 'package:vego/Screens/add_driver.dart';
 import 'package:vego/Screens/add_tripbooking.dart';
 import 'package:vego/Screens/add_vehicle.dart';
+import 'package:vego/Screens/document_expiry_dialog.dart';
 import 'package:vego/Screens/report_page.dart';
 import 'package:vego/Screens/transactions_page.dart';
 import 'package:vego/core/theme/app_colors.dart';
@@ -27,13 +29,32 @@ class TravelAdminDashboard extends ConsumerStatefulWidget {
       _TravelAdminDashboardState();
 }
 
-class _TravelAdminDashboardState extends ConsumerState<TravelAdminDashboard> {
+class _TravelAdminDashboardState extends ConsumerState<TravelAdminDashboard>
+    with WidgetsBindingObserver {
+  bool _expiryDialogOpen = false;
+
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadAll();
     });
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // Catches the case where the app was merely backgrounded (not
+    // cold-started) while a document was left expiring/expired.
+    if (state == AppLifecycleState.resumed) {
+      _checkDocumentExpiry();
+    }
   }
 
   void _loadAll() {
@@ -48,7 +69,30 @@ class _TravelAdminDashboardState extends ConsumerState<TravelAdminDashboard> {
     // Vehicle list + agency ledger drive today's revenue/expenditure so the
     // dashboard figures match the Vehicle Report's "Today" filter exactly.
     // The ledger itself is fetched lazily by watching its provider in build().
-    ref.read(tripBookingViewModelProvider.notifier).vehicleList(agencyId);
+    ref
+        .read(tripBookingViewModelProvider.notifier)
+        .vehicleList(agencyId)
+        .then((_) => _checkDocumentExpiry());
+  }
+
+  // Shows the non-dismissible PUC/insurance expiry popup when any vehicle is
+  // expired or expiring within 7 days. Guarded by _expiryDialogOpen so app
+  // resume + refresh don't stack duplicate dialogs; the dialog closes itself
+  // (see DocumentExpiryDialog) once every flagged vehicle is fixed.
+  void _checkDocumentExpiry() {
+    if (_expiryDialogOpen || !mounted) return;
+    final agencyId = ref.read(loginViewModelProvider).agencyId ?? '';
+    if (agencyId.trim().isEmpty) return;
+    final vehicles =
+        ref.read(tripBookingViewModelProvider).fetchVehicleList.asData?.value ??
+            const <Vehicles>[];
+    final hasExpiring = vehicles.any((v) => v.isDocumentExpiringSoon());
+    if (!hasExpiring) return;
+
+    _expiryDialogOpen = true;
+    DocumentExpiryDialog.show(context, agencyId: agencyId).then((_) {
+      _expiryDialogOpen = false;
+    });
   }
 
   // Triggered by RefreshIndicator. Awaits all fetches so the spinner stays
@@ -1342,9 +1386,8 @@ class _DashboardStats {
 }
 
 String _formatCompact(double v) {
-  if (v >= 1e7) return '${(v / 1e7).toStringAsFixed(2)}Cr';
-  if (v >= 1e5) return '${(v / 1e5).toStringAsFixed(2)}L';
-  if (v >= 1e3) return '${(v / 1e3).toStringAsFixed(2)}K';
-  return v.toStringAsFixed(0);
+  if (v.abs() >= 1e7) return '${(v / 1e7).toStringAsFixed(2)}Cr';
+  if (v.abs() >= 1e5) return '${(v / 1e5).toStringAsFixed(2)}L';
+  return NumberFormat.decimalPattern('en_IN').format(v.round());
 }
 

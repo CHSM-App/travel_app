@@ -206,9 +206,9 @@ class _VehicleManagePageState extends ConsumerState<VehicleManagePage>
   }
 
   String _fmt(double v) {
-    if (v >= 100000) return '₹${(v / 100000).toStringAsFixed(1)}L';
-    if (v >= 1000) return '₹${(v / 1000).toStringAsFixed(1)}K';
-    return '₹${v.toStringAsFixed(0)}';
+    if (v.abs() >= 1e7) return '₹${(v / 1e7).toStringAsFixed(2)}Cr';
+    if (v.abs() >= 1e5) return '₹${(v / 1e5).toStringAsFixed(2)}L';
+    return '₹${NumberFormat.decimalPattern('en_IN').format(v.round())}';
   }
 
   // ── Report export (this vehicle only) ─────────────────────────────────────
@@ -374,29 +374,31 @@ class _VehicleManagePageState extends ConsumerState<VehicleManagePage>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
-                  crossAxisAlignment: CrossAxisAlignment.baseline,
-                  textBaseline: TextBaseline.alphabetic,
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    Text(
-                      '${isProfit ? '' : '−'}${_fmt(net.abs())}',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 24,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: -0.8,
-                        height: 1,
+                    Flexible(
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          '${isProfit ? '' : '−'}${_fmt(net.abs())}',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 24,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: -0.8,
+                            height: 1,
+                          ),
+                        ),
                       ),
                     ),
                     const SizedBox(width: 8),
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 3),
-                      child: Text(
-                        isProfit ? 'net profit' : 'net loss',
-                        style: TextStyle(
-                          color: Colors.white.withOpacity(0.82),
-                          fontSize: 10.5,
-                          fontWeight: FontWeight.w600,
-                        ),
+                    Text(
+                      isProfit ? 'net profit' : 'net loss',
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.82),
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                     const Spacer(),
@@ -494,15 +496,21 @@ class _VehicleManagePageState extends ConsumerState<VehicleManagePage>
           ],
         ),
         const SizedBox(height: 3),
-        Text(
-          value,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 15.5,
-            fontWeight: FontWeight.w800,
-            letterSpacing: -0.4,
+        Align(
+          alignment: Alignment.centerLeft,
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              value,
+              maxLines: 1,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 15.5,
+                fontWeight: FontWeight.w800,
+                letterSpacing: -0.4,
+              ),
+            ),
           ),
         ),
       ],

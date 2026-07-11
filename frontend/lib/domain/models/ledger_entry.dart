@@ -30,6 +30,10 @@ class LedgerEntry {
   final String? drop;
   final String? paymentMode;
 
+  // Maintenance-only context (null for every other entry type).
+  final String? serviceName;
+  final String? description;
+
   const LedgerEntry({
     this.vehicleId,
     this.vehicleName,
@@ -46,6 +50,8 @@ class LedgerEntry {
     this.pickup,
     this.drop,
     this.paymentMode,
+    this.serviceName,
+    this.description,
   });
 
   bool get isBooking => entryType == 'NEW_BOOKING';
@@ -69,6 +75,8 @@ class LedgerEntry {
         pickup: _toStr(json['pickup'] ?? json['pickup_location']),
         drop: _toStr(json['drop'] ?? json['drop_location']),
         paymentMode: _toStr(json['payment_mode']),
+        serviceName: _toStr(json['service_name']),
+        description: _toStr(json['description']),
       );
 
   static int? _toInt(dynamic v) {

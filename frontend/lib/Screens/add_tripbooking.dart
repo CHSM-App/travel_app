@@ -714,6 +714,7 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
 
   // ── DateTime Picker ────────────────────────────────────────────────────────
   Future<void> _pickDt(bool isStart) async {
+    FocusScope.of(context).unfocus();
     final now = DateTime.now();
     // Past dates are allowed so the operator can log a trip that already
     // happened (a completed trip). The end date still can't precede the start.
@@ -1899,7 +1900,10 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
     return Scaffold(
       backgroundColor: _C.bg,
       body: SafeArea(
-        child: Column(
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: () => FocusScope.of(context).unfocus(),
+          child: Column(
           children: [
             _topBar(isEdit),
             Expanded(
@@ -1999,6 +2003,7 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
                                     icon: Icons.location_on_rounded,
                                     iconColor: _C.orange,
                                     iconBg: _C.orangeSoft,
+                                    lockable: true,
                                   ),
                                   if (selCustomer != null) ...[
                                     const SizedBox(height: 8),
@@ -2121,6 +2126,7 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
                                 icon: Icons.straighten_rounded,
                                 iconColor: _C.accent,
                                 iconBg: _C.accentSoft,
+                                lockable: true,
                                 // Tapping the Distance field auto-calculates the
                                 // road distance from the entered pickup/drop.
                                 onTap: () => _maybeFetchDistance(),
@@ -2240,6 +2246,7 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
                                   icon: Icons.local_gas_station_rounded,
                                   iconColor: _C.orange,
                                   iconBg: _C.orangeSoft,
+                                  lockable: true,
                                   keyboard:
                                       const TextInputType.numberWithOptions(
                                     decimal: true,
@@ -2268,6 +2275,7 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
                                         icon: Icons.currency_rupee_rounded,
                                         iconColor: _C.purple,
                                         iconBg: _C.purpleSoft,
+                                        lockable: true,
                                         prefix: "₹  ",
                                         keyboard: const TextInputType
                                             .numberWithOptions(decimal: true),
@@ -2381,6 +2389,7 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
             ),
             _saveBar(isEdit, pb),
           ],
+          ),
         ),
       ),
     );
@@ -2705,7 +2714,30 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
     String? Function(String?)? validator,
     Widget? suffixIcon,
     VoidCallback? onTap,
+    // Auto-filled fields (distance, fuel, charges, ...) shouldn't pop the
+    // keyboard on the first tap — that's just the admin glancing at / tapping
+    // through the form. The keyboard only appears on a deliberate second tap
+    // on an already-focused field, when they actually mean to edit it.
+    bool lockable = false,
   }) {
+    if (lockable) {
+      return _LockUnlockField(
+        label: label,
+        ctrl: ctrl,
+        icon: icon,
+        iconColor: iconColor,
+        iconBg: iconBg,
+        prefix: prefix,
+        keyboard: keyboard,
+        textCapitalization: textCapitalization,
+        fmt: fmt,
+        focusNode: focusNode,
+        onFieldSubmitted: onFieldSubmitted,
+        validator: validator,
+        suffixIcon: suffixIcon,
+        onTap: onTap,
+      );
+    }
     return TextFormField(
       controller: ctrl,
       focusNode: focusNode,
@@ -3075,15 +3107,20 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         GestureDetector(
-          onTap: () => _showDropSheet(
-            items,
-            selected,
-            onSelect,
-            color,
-            bg,
-            onAdd: onAdd,
-            addLabel: addLabel,
-          ),
+          onTap: () {
+            // Dismiss any keyboard left open by a previously focused field so
+            // it doesn't reappear over the picker sheet.
+            FocusScope.of(context).unfocus();
+            _showDropSheet(
+              items,
+              selected,
+              onSelect,
+              color,
+              bg,
+              onAdd: onAdd,
+              addLabel: addLabel,
+            );
+          },
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 200),
             width: double.infinity,
@@ -3352,6 +3389,7 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
               icon: icon,
               iconColor: color,
               iconBg: bg,
+              lockable: true,
               prefix: "₹  ",
               keyboard: const TextInputType.numberWithOptions(decimal: true),
               fmt: [FilteringTextInputFormatter.allow(RegExp(r'[\d.]'))],
@@ -3659,7 +3697,7 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
         ),
         backgroundColor: _C.red,
         behavior: SnackBarBehavior.floating,
-        margin: const EdgeInsets.all(16),
+        margin: const EdgeInsets.fromLTRB(16, 0, 16, 90),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
     );
@@ -3687,7 +3725,7 @@ class _TripBookingFormState extends ConsumerState<TripBookingForm>
         ),
         backgroundColor: Colors.green,
         behavior: SnackBarBehavior.floating,
-        margin: const EdgeInsets.all(16),
+        margin: const EdgeInsets.fromLTRB(16, 0, 16, 90),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
     );
@@ -4346,6 +4384,154 @@ class _ScrollTypeTimeFieldState extends State<_ScrollTypeTimeField> {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+//  TAP-TO-EDIT FIELD  ← used for auto-filled inputs (distance, fuel, charges,
+//  customer address, ...). The first tap only focuses the field — no keyboard.
+//  The keyboard only appears once the field is tapped again while it's
+//  already focused, i.e. the admin deliberately means to edit it.
+// ══════════════════════════════════════════════════════════════════════════
+class _LockUnlockField extends StatefulWidget {
+  final String label;
+  final TextEditingController ctrl;
+  final IconData icon;
+  final Color iconColor;
+  final Color iconBg;
+  final String? prefix;
+  final TextInputType? keyboard;
+  final TextCapitalization textCapitalization;
+  final List<TextInputFormatter>? fmt;
+  final FocusNode? focusNode;
+  final void Function(String)? onFieldSubmitted;
+  final String? Function(String?)? validator;
+  final Widget? suffixIcon;
+  final VoidCallback? onTap;
+
+  const _LockUnlockField({
+    required this.label,
+    required this.ctrl,
+    required this.icon,
+    required this.iconColor,
+    required this.iconBg,
+    this.prefix,
+    this.keyboard,
+    this.textCapitalization = TextCapitalization.words,
+    this.fmt,
+    this.focusNode,
+    this.onFieldSubmitted,
+    this.validator,
+    this.suffixIcon,
+    this.onTap,
+  });
+
+  @override
+  State<_LockUnlockField> createState() => _LockUnlockFieldState();
+}
+
+class _LockUnlockFieldState extends State<_LockUnlockField> {
+  late final FocusNode _focusNode;
+  late final bool _ownsFocusNode;
+  bool _locked = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _ownsFocusNode = widget.focusNode == null;
+    _focusNode = widget.focusNode ?? FocusNode();
+    _focusNode.addListener(_handleFocusChange);
+  }
+
+  void _handleFocusChange() {
+    // Re-lock once the field loses focus, so the next visit starts over
+    // requiring the deliberate second tap before the keyboard shows.
+    if (!_focusNode.hasFocus && mounted) {
+      setState(() => _locked = true);
+    }
+  }
+
+  @override
+  void dispose() {
+    _focusNode.removeListener(_handleFocusChange);
+    if (_ownsFocusNode) _focusNode.dispose();
+    super.dispose();
+  }
+
+  void _handleTap() {
+    widget.onTap?.call();
+    if (!_focusNode.hasFocus) {
+      _focusNode.requestFocus();
+    } else if (_locked) {
+      setState(() => _locked = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return TextFormField(
+      controller: widget.ctrl,
+      focusNode: _focusNode,
+      readOnly: _locked,
+      showCursor: !_locked,
+      onTap: _handleTap,
+      onFieldSubmitted: widget.onFieldSubmitted,
+      keyboardType: widget.keyboard,
+      textCapitalization: widget.textCapitalization,
+      inputFormatters: widget.fmt,
+      style: const TextStyle(
+        fontSize: 14,
+        fontWeight: FontWeight.w600,
+        color: _C.text1,
+      ),
+      validator: widget.validator ??
+          (v) => (v == null || v.isEmpty) ? "Required" : null,
+      decoration: InputDecoration(
+        labelText: widget.label,
+        labelStyle: const TextStyle(color: _C.text2, fontSize: 13),
+        prefixText: widget.prefix,
+        prefixStyle: TextStyle(
+          color: widget.iconColor,
+          fontWeight: FontWeight.w700,
+          fontSize: 14,
+        ),
+        prefixIcon: Padding(
+          padding: const EdgeInsets.all(9),
+          child: Container(
+            width: 34,
+            height: 34,
+            decoration: BoxDecoration(
+              color: widget.iconBg,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(widget.icon, size: 15, color: widget.iconColor),
+          ),
+        ),
+        suffixIcon: widget.suffixIcon,
+        filled: true,
+        fillColor: _C.surfaceLight,
+        contentPadding: const EdgeInsets.symmetric(
+          vertical: 16,
+          horizontal: 14,
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: const BorderSide(color: _C.divider),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: const BorderSide(color: _C.accent, width: 1.5),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: const BorderSide(color: _C.red),
+        ),
+        focusedErrorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: const BorderSide(color: _C.red, width: 1.5),
         ),
       ),
     );

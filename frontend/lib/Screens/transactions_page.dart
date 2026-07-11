@@ -238,7 +238,7 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> {
   /// First available human label: customer → vehicle → generic.
   String _title(LedgerEntry e) {
     if (e.customerName != null) return e.customerName!;
-    if (e.isMaintenance) return 'Maintenance';
+    if (e.isMaintenance) return e.serviceName ?? 'Maintenance';
     return e.vehicleName ?? 'Trip';
   }
 
@@ -1180,6 +1180,10 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> {
     add(Icons.person_outline_rounded, 'Customer', e.customerName);
     if (e.pickup != null && e.drop != null) {
       add(Icons.route_rounded, 'Route', '${e.pickup} → ${e.drop}');
+    }
+    if (e.isMaintenance) {
+      add(Icons.build_outlined, 'Service', e.serviceName);
+      add(Icons.notes_rounded, 'Notes', e.description);
     }
     add(Icons.directions_car_outlined, 'Vehicle',
         [e.vehicleName, e.vehicleNumber].where((s) => s != null).join(' · '));

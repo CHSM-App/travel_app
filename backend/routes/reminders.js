@@ -29,21 +29,26 @@ async function buildAgencyReminders() {
     GROUP BY agency_id
   `);
 
-  // Active vehicles with PUC / insurance expiring today..+7 days.
-  const veh = await db.request().query(`
-    SELECT agency_id,
-      SUM(CASE WHEN puc_expiry IS NOT NULL
-               AND puc_expiry BETWEEN CAST(GETDATE() AS DATE)
-                                  AND DATEADD(DAY, ${EXPIRY_DAYS}, CAST(GETDATE() AS DATE))
-               THEN 1 ELSE 0 END) AS puc_cnt,
-      SUM(CASE WHEN insurance_expiry IS NOT NULL
-               AND insurance_expiry BETWEEN CAST(GETDATE() AS DATE)
-                                        AND DATEADD(DAY, ${EXPIRY_DAYS}, CAST(GETDATE() AS DATE))
-               THEN 1 ELSE 0 END) AS ins_cnt
+  // Active vehicles with PUC expiring today..+7 days (per-vehicle rows).
+  const pucVeh = await db.request().query(`
+    SELECT agency_id, name, number, puc_expiry
     FROM   dbo.vehicles
     WHERE  active_status = 0
       AND  agency_id IS NOT NULL
-    GROUP BY agency_id
+      AND  puc_expiry IS NOT NULL
+      AND  puc_expiry BETWEEN CAST(GETDATE() AS DATE)
+                          AND DATEADD(DAY, ${EXPIRY_DAYS}, CAST(GETDATE() AS DATE))
+  `);
+
+  // Active vehicles with Insurance expiring today..+7 days (per-vehicle rows).
+  const insVeh = await db.request().query(`
+    SELECT agency_id, name, number, insurance_expiry
+    FROM   dbo.vehicles
+    WHERE  active_status = 0
+      AND  agency_id IS NOT NULL
+      AND  insurance_expiry IS NOT NULL
+      AND  insurance_expiry BETWEEN CAST(GETDATE() AS DATE)
+                                AND DATEADD(DAY, ${EXPIRY_DAYS}, CAST(GETDATE() AS DATE))
   `);
 
   // Active drivers whose licence expires today..+7 days.
@@ -59,24 +64,64 @@ async function buildAgencyReminders() {
   `);
 
   const map = {};
-  const ensure = (id) => (map[id] = map[id] || { agency_id: id, trips: 0, puc: 0, ins: 0, lic: 0 });
+  const ensure = (id) =>
+    (map[id] = map[id] || { agency_id: id, trips: 0, puc: [], ins: [], lic: 0 });
   for (const r of trips.recordset) ensure(r.agency_id).trips = r.cnt;
-  for (const r of veh.recordset) {
-    ensure(r.agency_id).puc = r.puc_cnt;
-    ensure(r.agency_id).ins = r.ins_cnt;
+  for (const r of pucVeh.recordset) {
+    ensure(r.agency_id).puc.push({ name: r.name, number: r.number, expiry: r.puc_expiry });
+  }
+  for (const r of insVeh.recordset) {
+    ensure(r.agency_id).ins.push({ name: r.name, number: r.number, expiry: r.insurance_expiry });
   }
   for (const r of drv.recordset) ensure(r.agency_id).lic = r.lic_cnt;
 
-  return Object.values(map).filter((a) => a.trips > 0 || a.puc > 0 || a.ins > 0 || a.lic > 0);
+  return Object.values(map).filter(
+    (a) => a.trips > 0 || a.puc.length > 0 || a.ins.length > 0 || a.lic > 0
+  );
 }
 
-function composeMessage(a) {
-  const parts = [];
-  if (a.trips > 0) parts.push(`${a.trips} trip${a.trips > 1 ? 's' : ''} scheduled tomorrow`);
-  if (a.puc > 0) parts.push(`${a.puc} PUC${a.puc > 1 ? 's' : ''} expiring within ${EXPIRY_DAYS} days`);
-  if (a.ins > 0) parts.push(`${a.ins} insurance ${a.ins > 1 ? 'policies' : 'policy'} expiring within ${EXPIRY_DAYS} days`);
-  if (a.lic > 0) parts.push(`${a.lic} driver licence${a.lic > 1 ? 's' : ''} expiring within ${EXPIRY_DAYS} days`);
-  return { title: 'Daily Reminder', body: parts.join('  •  ') };
+function vehicleLabel(v) {
+  return v.name ? `${v.name} (${v.number})` : v.number;
+}
+
+// Builds one notification per concern (trips / PUC / insurance) instead of a
+// single combined summary, so each shows up as a separate push notification.
+function composeMessages(a) {
+  const messages = [];
+
+  if (a.trips > 0) {
+    messages.push({
+      title: 'Trips Tomorrow',
+      body: `${a.trips} trip${a.trips > 1 ? 's' : ''} scheduled tomorrow`,
+      type: 'trip_reminder',
+    });
+  }
+
+  if (a.puc.length > 0) {
+    messages.push({
+      title: 'PUC Expiry Reminder',
+      body: `PUC expiring within ${EXPIRY_DAYS} days: ${a.puc.map(vehicleLabel).join(', ')}`,
+      type: 'puc_reminder',
+    });
+  }
+
+  if (a.ins.length > 0) {
+    messages.push({
+      title: 'Insurance Expiry Reminder',
+      body: `Insurance expiring within ${EXPIRY_DAYS} days: ${a.ins.map(vehicleLabel).join(', ')}`,
+      type: 'insurance_reminder',
+    });
+  }
+
+  if (a.lic > 0) {
+    messages.push({
+      title: 'Licence Expiry Reminder',
+      body: `${a.lic} driver licence${a.lic > 1 ? 's' : ''} expiring within ${EXPIRY_DAYS} days`,
+      type: 'licence_reminder',
+    });
+  }
+
+  return messages;
 }
 
 async function tokensForAgency(agencyId) {
@@ -97,7 +142,8 @@ async function removeInvalidTokens(tokens) {
   }
 }
 
-// Sends the daily summary to every agency that has something to report.
+// Sends one push notification per concern (trips / PUC / insurance / licence)
+// to every agency that has something to report.
 async function sendDailyReminders() {
   const agencies = await buildAgencyReminders();
   let notifications = 0;
@@ -106,13 +152,14 @@ async function sendDailyReminders() {
     const tokens = await tokensForAgency(a.agency_id);
     if (!tokens.length) continue;
 
-    const { title, body } = composeMessage(a);
-    const res = await fcm.sendToTokens(tokens, title, body, {
-      type: 'daily_reminder',
-      agency_id: a.agency_id,
-    });
-    if (res.invalidTokens.length) await removeInvalidTokens(res.invalidTokens);
-    notifications += res.successCount;
+    for (const { title, body, type } of composeMessages(a)) {
+      const res = await fcm.sendToTokens(tokens, title, body, {
+        type,
+        agency_id: a.agency_id,
+      });
+      if (res.invalidTokens.length) await removeInvalidTokens(res.invalidTokens);
+      notifications += res.successCount;
+    }
   }
 
   console.log(`[reminders] agencies=${agencies.length} notifications_sent=${notifications}`);
@@ -128,17 +175,26 @@ async function sendReminderForAgency(agencyId) {
   const agencies = await buildAgencyReminders();
   const a = agencies.find((x) => x.agency_id === agencyId);
 
-  const msg = a
-    ? composeMessage(a)
-    : { title: 'Daily Reminder', body: 'No trips tomorrow and no documents expiring in the next 7 days. (Test message)' };
+  const messages = a
+    ? composeMessages(a)
+    : [{
+        title: 'Daily Reminder',
+        body: 'No trips tomorrow and no documents expiring in the next 7 days. (Test message)',
+        type: 'daily_reminder',
+      }];
 
-  const res = await fcm.sendToTokens(tokens, msg.title, msg.body, {
-    type: 'daily_reminder',
-    agency_id: agencyId,
-  });
-  if (res.invalidTokens.length) await removeInvalidTokens(res.invalidTokens);
+  let sent = 0;
+  let failed = 0;
+  const bodies = [];
+  for (const { title, body, type } of messages) {
+    const res = await fcm.sendToTokens(tokens, title, body, { type, agency_id: agencyId });
+    if (res.invalidTokens.length) await removeInvalidTokens(res.invalidTokens);
+    sent += res.successCount;
+    failed += res.failureCount;
+    bodies.push(body);
+  }
 
-  return { sent: res.successCount, failed: res.failureCount, body: msg.body };
+  return { sent, failed, body: bodies.join(' | ') };
 }
 
 module.exports = { sendDailyReminders, sendReminderForAgency };
