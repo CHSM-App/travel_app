@@ -1,0 +1,33 @@
+[dotenv@17.2.3] injecting env (4) from .env -- tip: 🔑 add access controls to secrets: https://dotenvx.com/ops
+[dotenv@17.2.3] injecting env (0) from .env -- tip: ⚙️  load multiple .env files with { path: ['.env.local', '.env'] }
+[dotenv@17.2.3] injecting env (0) from .env -- tip: 🔐 prevent committing .env to code: https://dotenvx.com/precommit
+[dotenv@17.2.3] injecting env (0) from .env -- tip: ⚙️  enable debug logging with { debug: true }
+Listning on :\\.\pipe\3d84813b-2211-4661-bbeb-12a284d7009d
+[0mGET /users/Home/DueHistory/7 [31m500 [0m94.532 ms - 33[0m
+[0mGET /users/visitor/byflat/7 [31m500 [0m78.764 ms - 33[0m
+[0mGET /users/Helpdesk/?societyID=C10001 [31m500 [0m77.287 ms - 33[0m
+[0mGET /users/Home/DueHistory/7 [31m500 [0m76.599 ms - 33[0m
+[0mGET /users/visitor/byflat/7 [31m500 [0m76.215 ms - 33[0m
+Connection Successful
+[0mGET / [32m200 [0m2.585 ms - 18[0m
+[0mGET /users/visitor/byflat/7 [32m200 [0m60.147 ms - 3182[0m
+[0mGET /users/visitor/byflat/7 [32m200 [0m22.281 ms - 3182[0m
+[0mGET /users/visitor/byflat/7 [32m200 [0m11.443 ms - 3182[0m
+[0mGET /users/Helpdesk/?societyID=C10001 [32m200 [0m22.292 ms - 10323[0m
+[0mGET /users/visitor/byflat/7 [32m200 [0m10.495 ms - 3182[0m
+[0mGET /users/Home/DueHistory/7 [32m200 [0m15.391 ms - 2369[0m
+[0mGET /users/Maintenance/7/4 [32m200 [0m11.871 ms - 1084[0m
+[0mGET / [32m200 [0m1.869 ms - 18[0m
+[0mGET /users/Home/BasicInfo?pre_mob=7057133255&fId=7&OwnerId=7 [32m200 [0m9.255 ms - 899[0m
+[0mGET /users/Notifications/C10001/7 [32m200 [0m11.057 ms - 421[0m
+[0mGET /users/Home/TotalDue/7 [32m200 [0m10.186 ms - 19[0m
+[0mGET /upload/ProfilePhoto/7/1759220153220scaled_a3b92779-8129-4700-a4b0-ec353d66d37b7540620241183869528.jpg [32m200 [0m9.083 ms - 358828[0m
+[0mGET /users/visitor/2025-11-17/7 [32m200 [0m14.877 ms - 3182[0m
+[0mPOST /notify/OwnerApp/Insert/NewToken?owner_id=7&type=Owner&token=czD_4vIjROqIDpBQQpB8D_%3AAPA91bHp0nmjA7xa35QTu4s9VBzi3R0f9Bh2PXj59TZ12P_JEhmrnZMrl3DisKWz5a-NKVbroojkokjh1IHmzzxY7k_cPOxdVpNOlWMwnZr7PlE6s28PHOc [32m200 [0m6.808 ms - 41[0m
+[0mGET /users/Community/Broadcast?society_id=C10001&owner_id=7 [32m200 [0m151.536 ms - 1468[0m
+[0mGET /users/Notifications/C10001/7 [32m200 [0m7.101 ms - 421[0m
+[0mGET /users/Helpdesk/?societyID=C10001 [32m200 [0m25.110 ms - 10323[0m
+[0mGET /users/visitor/byflat/7 [32m200 [0m18.995 ms - 3182[0m
+[0mGET /users/Home/DueHistory/7 [32m200 [0m27.599 ms - 2369[0m
+[0mGET /users/visitor/byflat/7 [32m200 [0m115.755 ms - 3182[0m
+[0mGET /users/Home/DueHistory/7 [32m200 [0m26.425 ms - 2561[0m

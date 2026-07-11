@@ -1,0 +1,10 @@
+[dotenv@17.2.3] injecting env (4) from .env -- tip: 👥 sync secrets across teammates & machines: https://dotenvx.com/ops
+[dotenv@17.2.3] injecting env (0) from .env -- tip: 👥 sync secrets across teammates & machines: https://dotenvx.com/ops
+[dotenv@17.2.3] injecting env (0) from .env -- tip: ⚙️  suppress all logs with { quiet: true }
+[dotenv@17.2.3] injecting env (0) from .env -- tip: 🔐 prevent committing .env to code: https://dotenvx.com/precommit
+Listning on :\\.\pipe\60742746-e101-4d1f-bd0f-4fd4f052e5c2
+[0mGET / [32m200 [0m73.023 ms - 18[0m
+Connection Successful
+[0mGET / [36m304 [0m3.704 ms - -[0m
+[0mGET / [36m304 [0m1.945 ms - -[0m
+[0mGET / [36m304 [0m2.008 ms - -[0m

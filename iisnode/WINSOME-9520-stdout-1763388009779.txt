@@ -1,0 +1,45 @@
+[dotenv@17.2.3] injecting env (4) from .env -- tip: ⚙️  specify custom .env file path with { path: '/custom/path/.env' }
+[dotenv@17.2.3] injecting env (0) from .env -- tip: ⚙️  load multiple .env files with { path: ['.env.local', '.env'] }
+[dotenv@17.2.3] injecting env (0) from .env -- tip: ⚙️  override existing env vars with { override: true }
+[dotenv@17.2.3] injecting env (0) from .env -- tip: ⚙️  override existing env vars with { override: true }
+Listning on :\\.\pipe\fb354d51-dc78-41a2-98de-d2cd31f71235
+[0mGET / [32m200 [0m78.837 ms - 18[0m
+[0mGET /users/Home/BasicInfo?pre_mob=7057133255&fId=7&OwnerId=7 [31m500 [0m69.897 ms - 33[0m
+Connection Successful
+[0mGET /users/Notifications/C10001/7 [32m200 [0m49.886 ms - 1129[0m
+[0mGET / [32m200 [0m1.225 ms - 18[0m
+[0mGET /users/Home/BasicInfo?pre_mob=7057133255&fId=7&OwnerId=7 [32m200 [0m16.956 ms - 899[0m
+[0mGET /users/Notifications/C10001/7 [32m200 [0m13.484 ms - 1129[0m
+[0mGET /upload/ProfilePhoto/7/1759220153220scaled_a3b92779-8129-4700-a4b0-ec353d66d37b7540620241183869528.jpg [32m200 [0m9.216 ms - 358828[0m
+[0mGET /users/Home/TotalDue/7 [32m200 [0m9.806 ms - 15[0m
+[0mPOST /notify/OwnerApp/Insert/NewToken?owner_id=7&type=Owner&token=dkLGTaSbThuxqhrdVKd-pz%3AAPA91bHeP1yW9A0cQeqdA193YP5pa_uF__ybXiK7dbW_y1dhKAV9t8u03IctT6um_Zm2V-60TsL8ZwwsiatZz-RaFNrKDHYwYHG6k6onmQ3y0JYqxfu8aZI [32m200 [0m13.230 ms - 41[0m
+[0mGET /users/visitor/2025-11-17/7 [32m200 [0m25.630 ms - 3182[0m
+[0mGET /users/Community/Broadcast?society_id=C10001&owner_id=7 [32m200 [0m19.315 ms - 1465[0m
+[0mGET /users/Notifications/C10001/7 [32m200 [0m9.421 ms - 1129[0m
+[0mGET /users/visitor/byflat/7 [32m200 [0m15.155 ms - 3182[0m
+[0mGET /users/Helpdesk/?societyID=C10001 [32m200 [0m19.139 ms - 10323[0m
+[0mGET /users/Home/DueHistory/7 [32m200 [0m31.568 ms - 551[0m
+[0mGET /users/visitor/byflat/7 [32m200 [0m8.519 ms - 3182[0m
+[0mGET /users/Helpdesk/?societyID=C10001 [32m200 [0m17.354 ms - 10323[0m
+[0mPOST /notify/OwnerApp/Insert/NewToken?owner_id=7&type=Owner&token=dkLGTaSbThuxqhrdVKd-pz%3AAPA91bHeP1yW9A0cQeqdA193YP5pa_uF__ybXiK7dbW_y1dhKAV9t8u03IctT6um_Zm2V-60TsL8ZwwsiatZz-RaFNrKDHYwYHG6k6onmQ3y0JYqxfu8aZI [32m200 [0m4.848 ms - 41[0m
+[0mGET /users/Home/TotalDue/7 [32m200 [0m6.304 ms - 15[0m
+[0mGET /users/visitor/2025-11-17/7 [32m200 [0m15.089 ms - 3182[0m
+[0mGET /users/Community/Broadcast?society_id=C10001&owner_id=7 [32m200 [0m17.780 ms - 1465[0m
+[0mGET /users/Notifications/C10001/7 [32m200 [0m9.150 ms - 1129[0m
+[0mGET /users/Helpdesk/?societyID=C10001 [32m200 [0m203.438 ms - 10323[0m
+[0mGET /users/visitor/byflat/7 [32m200 [0m124.615 ms - 3182[0m
+[0mGET /users/Home/DueHistory/7 [32m200 [0m101.595 ms - 551[0m
+[0mGET /users/Facilities/BookingList/7 [32m200 [0m5.839 ms - 3746[0m
+[0mGET /users/Home/DueHistory/7 [32m200 [0m41.360 ms - 551[0m
+[0mGET /users/visitor/byflat/7 [32m200 [0m16.712 ms - 3182[0m
+[0mGET /users/Helpdesk/?societyID=C10001 [32m200 [0m15.815 ms - 10323[0m
+[0mGET /users/Home/TotalDue/7 [32m200 [0m8.196 ms - 15[0m
+[0mGET /users/visitor/2025-11-17/7 [32m200 [0m14.685 ms - 3182[0m
+[0mGET /users/Community/Broadcast?society_id=C10001&owner_id=7 [32m200 [0m17.078 ms - 1465[0m
+[0mPOST /notify/OwnerApp/Insert/NewToken?owner_id=7&type=Owner&token=dkLGTaSbThuxqhrdVKd-pz%3AAPA91bHeP1yW9A0cQeqdA193YP5pa_uF__ybXiK7dbW_y1dhKAV9t8u03IctT6um_Zm2V-60TsL8ZwwsiatZz-RaFNrKDHYwYHG6k6onmQ3y0JYqxfu8aZI [32m200 [0m22.966 ms - 41[0m
+[0mGET /users/Notifications/C10001/7 [32m200 [0m8.082 ms - 1129[0m
+[0mGET /users/Helpdesk/?societyID=C10001 [32m200 [0m24.735 ms - 10323[0m
+[0mGET /users/visitor/byflat/7 [32m200 [0m31.893 ms - 3182[0m
+[0mGET /users/Home/DueHistory/7 [32m200 [0m12.869 ms - 551[0m
+[0mGET /users/Facilities/BookingList/7 [32m200 [0m5.475 ms - 3746[0m
+[0mGET / [32m200 [0m1.553 ms - 18[0m
