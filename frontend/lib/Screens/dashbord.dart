@@ -29,32 +29,15 @@ class TravelAdminDashboard extends ConsumerStatefulWidget {
       _TravelAdminDashboardState();
 }
 
-class _TravelAdminDashboardState extends ConsumerState<TravelAdminDashboard>
-    with WidgetsBindingObserver {
+class _TravelAdminDashboardState extends ConsumerState<TravelAdminDashboard> {
   bool _expiryDialogOpen = false;
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadAll();
     });
-  }
-
-  @override
-  void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
-    super.dispose();
-  }
-
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    // Catches the case where the app was merely backgrounded (not
-    // cold-started) while a document was left expiring/expired.
-    if (state == AppLifecycleState.resumed) {
-      _checkDocumentExpiry();
-    }
   }
 
   void _loadAll() {
@@ -76,9 +59,12 @@ class _TravelAdminDashboardState extends ConsumerState<TravelAdminDashboard>
   }
 
   // Shows the non-dismissible PUC/insurance expiry popup when any vehicle is
-  // expired or expiring within 7 days. Guarded by _expiryDialogOpen so app
-  // resume + refresh don't stack duplicate dialogs; the dialog closes itself
-  // (see DocumentExpiryDialog) once every flagged vehicle is fixed.
+  // expired or expiring within 7 days. Only triggered from a fresh app
+  // launch (via _loadAll), not on resume from the recents tray/background,
+  // so switching apps doesn't keep re-surfacing it. Guarded by
+  // _expiryDialogOpen so a pull-to-refresh mid-dialog doesn't stack another;
+  // the dialog closes itself (see DocumentExpiryDialog) once every flagged
+  // vehicle is fixed.
   void _checkDocumentExpiry() {
     if (_expiryDialogOpen || !mounted) return;
     final agencyId = ref.read(loginViewModelProvider).agencyId ?? '';
