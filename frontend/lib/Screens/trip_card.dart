@@ -560,13 +560,15 @@ class TripCard extends ConsumerWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: 14),
-              amountField(
-                receivedController,
-                "Amount Received",
-                Icons.account_balance_wallet_outlined,
-                highlight: true,
-              ),
+              if (paymentStatus != "Paid") ...[
+                const SizedBox(height: 14),
+                amountField(
+                  receivedController,
+                  "Amount Received",
+                  Icons.account_balance_wallet_outlined,
+                  highlight: true,
+                ),
+              ],
               if (paymentStatus != "Paid") ...[
                 const SizedBox(height: 10),
                 ValueListenableBuilder<bool>(

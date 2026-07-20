@@ -161,6 +161,7 @@ class _ModernSettingsPageState extends ConsumerState<ModernSettingsPage>
                           },
                         ),
                       ]),
+                      
                       const SizedBox(height: 24),
 
                       _sectionLabel('Support'),
@@ -320,10 +321,6 @@ class _ModernSettingsPageState extends ConsumerState<ModernSettingsPage>
       ),
     );
   }
-
-  
-
-
 
   // ─────────────────────────── MENU GROUP ─────────────────────────
 
